@@ -1,0 +1,38 @@
+Module Writing
+--------------
+Modules are intended to be easily written and incorporated into the MultiScanner framework. A finished module must be in the modules folder for it to be used on the next run.
+
+### Functions ###
+When writing a new module, there are two mandatory functions that must be defined: check() and scan(). Additional functions can be written if required.
+
+### check() ###
+The check() function tests whether or not the scan function should be run.
+
+**Inputs:** There are two supported argument sets with this function: `check()` and `check(conf=DEAFULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
+
+**Outputs:** The return value of the check() function is a boolean (True or False). A True return value indicated the scan() function should be run; a False return value indicates the module should no longer be run.
+
+### scan() ###
+The scan() function performs the analytic and returns the results. 
+
+**Inputs:** There are two supported argument sets with this function: `scan(filelist)` and `scan(filelist, conf=DEAFULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
+
+**Outputs:** There are two return values of the scan() function: Results and Metadata (i.e., `return (Results, Metadata)`).  
+
+- **Results** is a list of tuples, the tuples values being the filename and the corresponding scan results (i.e.,`[("file1.exe", "Executable"), ("file2.jpg", "Picture")]`)
+
+- **Metadata** is a dictionary of metadata information from the module. There are two required pieces of metadata `Name` and `Type`. Name is the name in the module and will be used in the report. Type is what type of module it is (e.g., Antivirus, content detonation). This information is used for a grouping feature in the report generation and is helpful to provide context to a newly written module. Optionally, metadata information can be disabled and not be included in the report by setting `metadata["Include"] = False`.
+
+### Special Globals ###
+There are two global variables that when present, affect the way the module is called.
+
+**DEFAULTCONF** - This is a dictionary of configuration settings. When set, the settings will be written to the configuration file, making it user editable. The configuration object will be passed to the module's check and scan function and must be an argument in both functions.
+
+**REQUIRES** - This is a list of the module results needed for a module. For example, `REQUIRES = ['MD5']` will be set to the output from the module MD5.py. A code sample is provided in [examples/include_module.py](examples/include_module.py)
+
+### Config ###
+If a module requires configuration, the DEFAULTCONF global variable must be defined. This variable is passed to both check() and scan(). The configuration will be read from the configuration file if it is present. If the file is not present, it will be written into the configuration file.
+
+If `replacement path` is set in the configuration, the module will receive file names, with the folder path replaced with the variable's value. This is useful for analytics which are run on a remote machine.
+
+By default, ConfigParser reads everything in as a string, before options are passed to the module `ast.literal_eval()` is ran on each option. If a string is not returned when expected, this is why. This does mean that the correct python type will be returned instead of all strings.

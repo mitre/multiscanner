@@ -1,0 +1,5 @@
+bitstring
+paramiko
+pefile
+python-magic
+ssdeep

@@ -1,0 +1,4 @@
+bitstring
+paramiko
+python-magic
+ssdeep

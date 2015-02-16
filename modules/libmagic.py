@@ -1,0 +1,47 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+try:
+    import magic
+except:
+    print("python-magic module not installed...")
+    magic = False
+
+__author__ = "Drew Bonasera"
+__license__ = "MPL 2.0"
+
+TYPE = "Metadata"
+NAME = "libmagic"
+DEAFULTCONF = {
+    'magicfile':None,
+    'ENABLED': True
+    }
+
+def check(conf=DEAFULTCONF):
+    if not conf['ENABLED']:
+        return False
+    if magic:
+        return True
+    else:
+        return False
+
+def scan(filelist, conf=DEAFULTCONF):
+    if conf['magicfile']:
+        try:
+            maaagic = magic.Magic(magic_file=conf['magicfile'])
+        except:
+            print("ERROR: Failed to use magic file", conf['magicfile'])
+            maaagic = magic.Magic()
+    else:
+        maaagic = magic.Magic()
+    results = []
+    for fname in filelist:
+        results.append((fname, maaagic.from_file(fname).decode(encoding='UTF-8', errors='replace')))
+
+    metadata = {}
+    metadata["Name"] = NAME
+    metadata["Type"] = TYPE
+    metadata["Include"] = False
+    return (results, metadata)
+

@@ -1,0 +1,72 @@
+### General ###
+- **path** - This is where the executable is located
+- **cmdline** - This is an array of command line options be to passed to the executable
+- **host** - This is the hostname, port, and username of the machine that will be SSHed into to run the analytic if the executable is not present on the local machine.
+- **key** - This is the SSH key to be used to SSH into the host.
+- **replacement path** - If the main config is set to copy the scanned files this will be what it replaces the path with. It should be where the network share is mounted
+- **ENABLED** - When set to false the module will not run
+
+### [main] ###
+This is the configuration for the main script
+
+- **copyfilesto** - This is where the script will copy each file that is to be scanned. This can be removed or set to False to disable this feature
+- **group-types** - This is the type of analytics to group into sections for the report. This can be removed or set to False to disable this feature
+
+### [AVGScan] ###
+This module scans a file with AVG 2014 anti-virus.
+
+### [ExifToolsScan] ###
+This module scans the file with Exif tools and returns the results.
+
+- **remove-entry** - A python list of ExifTool results that should not be included in the report. File system level attributes are not useful and stripped out 
+
+### [FireeyeScan] ###
+This module uses a FireEye AX to scan the files. It uses the Malware Repository feature to automatically scan files. This may not be the best way but it does work. It will copy the files to be scanned to the mounted share folders.
+*NOTE*: This module is suuuuuper slow
+
+- **base path** - The mount point where the fireeye images folders are
+- **src folder** - The folder name where input files are put
+- **fireeye images** - A python list of the VMs in fireeye. These are used to generate where to copy the files.
+- **enabled** - True or False
+- **good path** - The folder name where good files are put
+- **cheatsheet** - Not implemented yet
+
+### [KasperskyScan] ###
+This module scans a file with Kaspersky anti-virus 15.
+
+### [MD5] ###
+This module generates the MD5 hash of the files.
+
+### [McAfeeScan] ###
+This module scans the files with McAfee AntiVirus Command Line.
+
+### [PEFile] ###
+This module extracts out feature information from EXE files. It uses [pefile](https://code.google.com/p/pefile/) which is currently not available for python 3.
+
+### [SHA256] ###
+This module generates the SHA256 hash of the files.
+
+### [TrID] ###
+This module runs [TrID](http://mark0.net/soft-trid-e.html) against the files. The definition file should be in the same folder as the executable
+
+### [YaraScan] ###
+This module scans the files with yara and returns the results. You will need yara-python installed for this module.
+
+- **ruledir** - The directory to look for rule files in
+- **fileextensions** - A python array of all valid rule file extensions. Files not ending in one of these will be ignored.
+- **ignore-tags** - A python array of yara rule tags that will not be included in the report.
+
+### [libmagic] ###
+This module runs libmagic against the files.
+
+- **magicfile** - The path to the compiled magic file you wish to use. If None it will use the default one.
+
+### [pdfinfo] ###
+This module extracts out feature information from PDF files. It uses [pdf-parser](http://blog.didierstevens.com/programs/pdf-tools/)
+
+### [ssdeeper] ###
+This module generates context triggered piecewise hashes (CTPH) for the files. More information can be found on the [ssdeep website](http://ssdeep.sourceforge.net/).
+
+### [vtsearch] ###
+This module searches [virustotal](https://www.virustotal.com/) for the files hash and download the report if available.
+- **apikey** - This is your public/private api key. You can optionally make it a list and the requests will be distributed across them. This is useful when two groups with private api keys want to share the load and reports
