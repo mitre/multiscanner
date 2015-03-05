@@ -16,12 +16,12 @@ __license__ = "MPL 2.0"
 TYPE = "Antivirus"
 NAME = "VirusTotal"
 REQUIRES = ["MD5"]
-DEAFULTCONF = {
+DEFAULTCONF = {
     'apikey': None,
     'ENABLED': True
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if None in REQUIRES:
@@ -30,7 +30,7 @@ def check(conf=DEAFULTCONF):
         return False
     return True
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     #Check for key rotation
     apikey = conf['apikey']
     rotkey = False

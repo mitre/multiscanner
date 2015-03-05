@@ -39,7 +39,7 @@ CONFIG = os.path.join(MS_WD, "config.ini")
 MODULEDIR = os.path.join(MS_WD, "modules")
 
 # The default configuration options for the main script
-DEAFULTCONF = {
+DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"]
     }
@@ -111,7 +111,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
     # Try and read in the default conf if one was not passed
     if not conf:
         try:
-            conf = mod.DEAFULTCONF
+            conf = mod.DEFAULTCONF
         except:
             pass
 
@@ -221,7 +221,7 @@ def _get_main_config(Config, filepath=CONFIG):
     ConfNeedsWrite = False
     if 'main' not in Config.sections():
         ConfNeedsWrite = True
-        maindefaults = DEAFULTCONF
+        maindefaults = DEFAULTCONF
         Config.add_section('main')
         for key in maindefaults:
             Config.set('main', key, maindefaults[key])
@@ -304,7 +304,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
                 mod = _loadModule(os.path.basename(module.split('.')[0]), [MODULEDIR])
                 if mod:
                     try:
-                        conf = mod.DEAFULTCONF
+                        conf = mod.DEFAULTCONF
                     except:
                         continue
                     ConfNeedsWrite = True
@@ -333,7 +333,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
             mod = _loadModule(os.path.basename(module.split('.')[0]), [MODULEDIR])
             if mod:
                 try:
-                    conf = mod.DEAFULTCONF
+                    conf = mod.DEFAULTCONF
                 except:
                     continue
                 Config.add_section(modname)

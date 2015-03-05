@@ -13,7 +13,7 @@ __license__ = "MPL 2.0"
 
 TYPE = "Detonation"
 NAME = "FireEye"
-DEAFULTCONF = {
+DEFAULTCONF = {
 "fireeye images":["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
 #"cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
 "ENABLED":False,
@@ -22,10 +22,10 @@ DEAFULTCONF = {
 "bad path":"bad",
 "src path":"src"}
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     #cheatsheet = conf["cheatsheet"]
     base = conf["base path"]
     FEGood = conf["good path"]

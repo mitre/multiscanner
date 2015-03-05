@@ -13,12 +13,12 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "libmagic"
-DEAFULTCONF = {
+DEFAULTCONF = {
     'magicfile':None,
     'ENABLED': True
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if magic:
@@ -26,7 +26,7 @@ def check(conf=DEAFULTCONF):
     else:
         return False
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     if conf['magicfile']:
         try:
             maaagic = magic.Magic(magic_file=conf['magicfile'])

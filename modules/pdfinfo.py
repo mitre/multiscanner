@@ -18,19 +18,19 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "pdfinfo"
 REQUIRES = ["libmagic"]
-DEAFULTCONF = {
+DEFAULTCONF = {
     'ENABLED': True,
     'fast': False	
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if None in REQUIRES:
         return False
     return True
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     results = []
     libmagicresults, libmagicmeta = REQUIRES[0]
     for fname, libmagicresult in libmagicresults:

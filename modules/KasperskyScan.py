@@ -22,7 +22,7 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
-DEAFULTCONF = {"path":"C:\\Program Files\\Kaspersky Lab\\Kaspersky Anti-Virus 15.0.0\\avp.exe", 
+DEFAULTCONF = {"path":"C:\\Program Files\\Kaspersky Lab\\Kaspersky Anti-Virus 15.0.0\\avp.exe", 
     "key":KEY, 
     "cmdline":["scan", "/i0", "/fa"], 
     'host':HOST, 
@@ -30,7 +30,7 @@ DEAFULTCONF = {"path":"C:\\Program Files\\Kaspersky Lab\\Kaspersky Anti-Virus 15
     'ENABLED': True
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if os.path.isfile(conf["path"]) or SSH:
@@ -38,7 +38,7 @@ def check(conf=DEAFULTCONF):
     else:
         return False
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
     elif SSH:

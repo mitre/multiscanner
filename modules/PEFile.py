@@ -29,11 +29,11 @@ from time import strftime, localtime
 TYPE = "Metadata"
 NAME = "pefile"
 REQUIRES = ["libmagic"]
-DEAFULTCONF = {
+DEFAULTCONF = {
     'ENABLED': True
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if not pefile:
@@ -42,7 +42,7 @@ def check(conf=DEAFULTCONF):
         return False
     return True
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     results = []
     libmagicresults, libmagicmeta = REQUIRES[0]
     

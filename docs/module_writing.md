@@ -8,14 +8,14 @@ When writing a new module, there are two mandatory functions that must be define
 ### check() ###
 The check() function tests whether or not the scan function should be run.
 
-**Inputs:** There are two supported argument sets with this function: `check()` and `check(conf=DEAFULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
+**Inputs:** There are two supported argument sets with this function: `check()` and `check(conf=DEFAULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
 
 **Outputs:** The return value of the check() function is a boolean (True or False). A True return value indicated the scan() function should be run; a False return value indicates the module should no longer be run.
 
 ### scan() ###
 The scan() function performs the analytic and returns the results. 
 
-**Inputs:** There are two supported argument sets with this function: `scan(filelist)` and `scan(filelist, conf=DEAFULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
+**Inputs:** There are two supported argument sets with this function: `scan(filelist)` and `scan(filelist, conf=DEFAULTCONF)`. If a module has a global variable DEFAULTCONF, the second argument set is required.
 
 **Outputs:** There are two return values of the scan() function: Results and Metadata (i.e., `return (Results, Metadata)`).  
 

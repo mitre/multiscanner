@@ -23,7 +23,7 @@ PATHREPLACE = "X:\\"
 #Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
-DEAFULTCONF = {'cmdline':["-t"], 
+DEFAULTCONF = {'cmdline':["-t"], 
     "path":"C:\\exiftool.exe", 
     "key":KEY, 
     'host':HOST, 
@@ -32,7 +32,7 @@ DEAFULTCONF = {'cmdline':["-t"],
     'ENABLED': True
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if os.path.isfile(conf["path"]):
@@ -45,7 +45,7 @@ def check(conf=DEAFULTCONF):
     else:
         return False
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
     elif SSH:

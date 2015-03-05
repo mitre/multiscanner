@@ -3,11 +3,11 @@ from __future__ import division, absolute_import, with_statement, print_function
 TYPE = "Example"
 NAME = "include example"
 REQUIRES = ["libmagic", "MD5"]
-DEAFULTCONF = {
+DEFAULTCONF = {
     'ENABLED': True,
     }
 
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     # If the config disabled the module don't run
     if not conf['ENABLED']:
         return False
@@ -16,7 +16,7 @@ def check(conf=DEAFULTCONF):
         return False
     return True
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     # Define our results array
     results = []
     # Pull out the libmagic results and metadata

@@ -12,7 +12,7 @@ __license__ = "MPL 2.0"
 
 TYPE = "Pattern Scan"
 NAME = "Yara"
-DEAFULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'libs', 'yarasigs'),
+DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'libs', 'yarasigs'),
     "fileextensions":[".yar", ".yara", ".sig"],
     "ignore-tags":["TLPRED"],
     'ENABLED': True
@@ -24,14 +24,14 @@ except:
     print("yara-python module not installed...")
     yara = False
     
-def check(conf=DEAFULTCONF):
+def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if not yara:
         return False
     return True
 
-def scan(filelist, conf=DEAFULTCONF):
+def scan(filelist, conf=DEFAULTCONF):
     ruleDir = conf["ruledir"]
     extlist = conf["fileextensions"]
     ruleset = {}
