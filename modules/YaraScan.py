@@ -12,7 +12,7 @@ __license__ = "MPL 2.0"
 
 TYPE = "Pattern Scan"
 NAME = "Yara"
-DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'libs', 'yarasigs'),
+DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
     "fileextensions":[".yar", ".yara", ".sig"],
     "ignore-tags":["TLPRED"],
     'ENABLED': True
