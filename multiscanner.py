@@ -52,6 +52,7 @@ from common import conf2dic
 from common import basename
 from common import convert_encoding
 
+
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
@@ -67,7 +68,7 @@ class _Thread(threading.Thread):
         self.name = ""
         self.starttime = 0
         self.endtime = 0
-        
+
     def run(self):
         self.started = True
         self.starttime = time.time()
@@ -80,21 +81,23 @@ class _Thread(threading.Thread):
             # an argument that has a member that points to the thread.
             del self.__target, self.__args, self.__kwargs
 
+
 def _loadModule(name, path):
     """
     Loads a module by filename and path. Returns module object
-    
+
     name - Filename without .py
     path - A list of dirs to search
     """
     try:
-        (file, pathname, description) = imp.find_module(name, path)
-        loaded_mod = imp.load_module(name, file, pathname, description)
+        (fname, pathname, description) = imp.find_module(name, path)
+        loaded_mod = imp.load_module(name, fname, pathname, description)
     except Exception as e:
         loaded_mod = None
         print(e)
 
     return loaded_mod
+
 
 def _runModule(modname, mod, filelist, threadDict, conf=None):
     """
@@ -210,6 +213,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
         elif VERBOSE:
             print(modname, "failed check()")
 
+
 def _get_main_config(Config, filepath=CONFIG):
     """
     Reads in config for main script. It will write defaults if not present. Returns dictionary.
@@ -232,7 +236,8 @@ def _get_main_config(Config, filepath=CONFIG):
         conffile.close()
     # Read in main config
     return conf2dic(Config.items('main'))
-            
+
+
 def _copy_to_share(filelist, filedic, sharedir):
     """
     Copies files from filelist to a share and populates the filedic. Returns a list of files.
@@ -256,6 +261,7 @@ def _copy_to_share(filelist, filedic, sharedir):
     # Prevents file shares from making modules crash, this might not be the best but meh
     time.sleep(3)
     return filelist
+
 
 def _start_module_threads(filelist, ModuleList, Config):
     """
@@ -289,6 +295,7 @@ def _start_module_threads(filelist, ModuleList, Config):
         thread.start()
     return ThreadList
 
+
 def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
@@ -318,6 +325,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
         return True
     return False
 
+
 def _rewite_config(ModuleList, Config, filepath=CONFIG):
     """
     Write in default config for all modules.
@@ -343,6 +351,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
     Config.write(conffile)
     conffile.close()
 
+
 def config_init(filepath):
     """
     Creates a new config file at filepath
@@ -353,6 +362,7 @@ def config_init(filepath):
     Config.optionxform = str
     ModuleList = parseDir(MODULEDIR)
     _rewite_config(ModuleList, Config, filepath)
+
 
 def parseReports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
     """Turn report dictionaries into json output. Returns a string.
@@ -388,7 +398,7 @@ def parseReports(resultlist, groups=[], ugly=True, includeMetadata=False, python
                 metadatas[metadata['Name']] = metadata
 
     if includeMetadata:
-        finaldata = {"Files":files, "Metadata":metadatas}
+        finaldata = {"Files": files, "Metadata": metadatas}
     else:
         finaldata = files
 
@@ -400,7 +410,8 @@ def parseReports(resultlist, groups=[], ugly=True, includeMetadata=False, python
     if not ugly:
         return json.dumps(finaldata, sort_keys=True, indent=3)
     else:
-        return json.dumps(finaldata, sort_keys=True, separators=(',',':'))
+        return json.dumps(finaldata, sort_keys=True, separators=(',', ':'))
+
 
 def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     """
@@ -489,6 +500,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
                 results[i] = (result, metadata)
     return results
 
+
 def _parse_args():
     """
     Parses arguments
@@ -507,8 +519,9 @@ def _parse_args():
     parser.add_argument("--resume", action="store_true", help="Read in the report file and continue where we left off")
     parser.add_argument('Files', help="Files and Directories to analyse", nargs='+')
     return parser.parse_args()
-    
-if __name__ == "__main__":	
+
+
+def _main():
     # Get args
     args = _parse_args()
     # Set verbose
@@ -551,30 +564,30 @@ if __name__ == "__main__":
     for filelist in filelists:
         # Record start time for metadata
         starttime = str(datetime.datetime.now())
-        
+
         # Run the multiscan
         results = multiscan(filelist, recursive=None, configfile=args.config)
-        
+
         # We need to read in the config for the parseReports call
         Config = ConfigParser.ConfigParser()
         Config.optionxform = str
         Config.read(args.config)
         config = _get_main_config(Config)
-        
+
         # Add in script metadata
         endtime = str(datetime.datetime.now())
-        
+
         # For windows compatibility
         try:
             username = os.getlogin()
         except:
             username = os.getenv('USERNAME')
-        
-        results.append(([], {"Name":"MultiScanner", 
-            "Start Time":starttime, 
-            "End Time":endtime, 
+
+        results.append(([], {"Name": "MultiScanner",
+            "Start Time": starttime,
+            "End Time": endtime,
             # "Command Line":list2cmdline(sys.argv),
-            "Run by":username
+            "Run by": username
         }))
 
         if not args.quiet:
@@ -585,7 +598,7 @@ if __name__ == "__main__":
             elif not config["group-types"]:
                 config["group-types"] = []
             report = parseReports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
-            
+
             # Print report and write to file
             print(report)
 
@@ -598,3 +611,6 @@ if __name__ == "__main__":
             print(e)
             print("ERROR: Could not write report file, report not saved")
             exit(2)
+
+if __name__ == "__main__":
+    _main()
