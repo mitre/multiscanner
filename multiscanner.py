@@ -23,6 +23,7 @@ elif sys.version_info > (3,):
 
 if PY3:
     import configparser as ConfigParser
+    raw_input = input
 else:
     import ConfigParser
 
@@ -521,12 +522,37 @@ def _parse_args():
     return parser.parse_args()
 
 
+def _init(args):
+    # Initialize configuration file
+    if os.path.isfile(args.config):
+        print('Warning:', args.config, 'already exists, overwriting will destroy changes')
+        answer = raw_input('Do you wish to overwrite the configuration file [y/N]:')
+        if answer == 'y':
+            config_init(args.config)
+            print('Configuration file initialized at', args.config)
+        else:
+            print('Checking for missing modules in configuration...')
+            ModuleList = parseDir(MODULEDIR)
+            Config = ConfigParser.ConfigParser()
+            Config.optionxform = str
+            Config.read(args.config)
+            _write_missing_module_configs(ModuleList, Config, filepath=args.config)
+    else:
+        config_init(args.config)
+        print('Configuration file initialized at', args.config)
+    exit(0)
+
+
 def _main():
     # Get args
     args = _parse_args()
     # Set verbose
     if args.verbose:
         VERBOSE = args.verbose
+
+    # Checks if user is trying to initialize
+    if args.Files == ['init'] and not os.path.isfile('init'):
+        _init(args)
 
     if not os.path.isfile(args.config):
         config_init(args.config)
