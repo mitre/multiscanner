@@ -14,7 +14,7 @@ Requirements can be installed by running `pip install -r requirements.txt` after
 Installation
 ------------
 ### MultiScanner ###
-Generate the MultiScanner default configuration by running `python multiscanner.py errmagerdflipflerps` after cloning the repository. This need only be run once.
+Generate the MultiScanner default configuration by running `python multiscanner.py init` after cloning the repository. This can be used to rewrite the configuration file to its default state or, if you add new modules to add their configuration to the configuration file.
 
 ### Analytic Machine ###
 Default modules have the option to be run locally or via SSH. The environment used by the development team runs MultiScanner on a Linux host and hosts the majority of analytical tools on a separate Windows 
