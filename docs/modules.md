@@ -21,7 +21,6 @@ This module submits a file to a Cuckoo Sandbox cluster for analysis
 - **API URL** - This is the URL to the API server
 - **timeout** - This is max time a sample with run for
 - **delete tasks** - When set to True, tasks will be deleted from cuckoo after detonation. This is to prevent filling up the Cuckoo machine's disk with reports.
-- **rerun** - When set to False, the module will check to see if the file's MD5 has been submitted and if there is a report. If a report exists it will use that instead of detonating the file again. When set to True, all files will be detonated.
 
 ### [ExifToolsScan] ###
 This module scans the file with Exif tools and returns the results.

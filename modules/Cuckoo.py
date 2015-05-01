@@ -17,9 +17,7 @@ DEFAULTCONF = {
     "API URL": 'http://cuckoo:8090/',
     "timeout": 360,
     "delete tasks": False,
-    "rerun": False
 }
-REQUIRES = ['MD5']
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
@@ -35,19 +33,6 @@ def scan(filelist, conf=DEFAULTCONF):
     report_url = url + 'tasks/report/'
     view_url = url + 'tasks/view/'
     delete_url = url + 'tasks/delete/'
-    files_view_url = url + 'files/view/md5/'
-
-    if not conf['rerun'] and REQUIRES[0]:
-        md5s = dict(REQUIRES[0])
-        for fname in filelist[:]:
-            md5 = md5s[fname]
-            r = requests.get(files_view_url+md5)
-            if r.status_code == 200:
-                task_id = r.json()['sample']['id']
-                r = requests.get(report_url + task_id)
-                if r.status_code == 200:
-                    resultlist.append((fname, r.json()))
-                    filelist.remove(fname)
 
     for fname in filelist:
         with open(fname, "rb") as sample:
@@ -65,7 +50,7 @@ def scan(filelist, conf=DEFAULTCONF):
     # Wait for tasks to finish
     while tasks:
         for fname, task_id in tasks[:]:
-            status = requests.get(view_url+task_id).json()['status']
+            status = requests.get(view_url+task_id).json()['task']['status']
 
             # If we have a report
             if status == 'reported':
@@ -80,7 +65,8 @@ def scan(filelist, conf=DEFAULTCONF):
                     # Do we ever actually hit here?
                     pass
             # If there is an unknown status
-            elif status not in ['pending', 'processing', 'finished']:
+            elif status not in ['pending', 'processing', 'finished', 'completed', 'running']:
+                print(status)
                 tasks.remove((fname, task_id))
 
         time.sleep(15)
