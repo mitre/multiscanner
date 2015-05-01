@@ -14,5 +14,4 @@ This is a list of things that are wanted features
 - **REST API** - Creating a script that provides a web api to submit files and pull reports.
 
 # New Modules #
-- Cuckoo Sandbox
 - OPSWAT Metascan

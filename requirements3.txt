@@ -1,4 +1,5 @@
 bitstring
 paramiko
 python-magic
+requests
 ssdeep

@@ -15,6 +15,13 @@ This is the configuration for the main script
 ### [AVGScan] ###
 This module scans a file with AVG 2014 anti-virus.
 
+### [Cuckcoo] ###
+This module submits a file to a Cuckoo Sandbox cluster for analysis
+
+- **API URL** - This is the URL to the API server
+- **timeout** - This is max time a sample with run for
+- **delete tasks** - When set to True, tasks will be deleted from cuckoo after detonation. This is to prevent filling up the Cuckoo machine's disk with reports.
+
 ### [ExifToolsScan] ###
 This module scans the file with Exif tools and returns the results.
 
