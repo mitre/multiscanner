@@ -319,6 +319,13 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
                     Config.add_section(modname)
                     for key in conf:
                         Config.set(modname, key, conf[key])
+
+    if 'main' not in Config.sections():
+        ConfNeedsWrite = True
+        Config.add_section('main')
+        for key in DEFAULTCONF:
+            Config.set('main', key, DEFAULTCONF[key])
+
     if ConfNeedsWrite:
         conffile = open(filepath, 'w')
         Config.write(conffile)
@@ -348,6 +355,11 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
                 Config.add_section(modname)
                 for key in conf:
                     Config.set(modname, key, conf[key])
+
+    Config.add_section('main')
+    for key in DEFAULTCONF:
+        Config.set('main', key, DEFAULTCONF[key])
+
     conffile = open(filepath, 'w')
     Config.write(conffile)
     conffile.close()
