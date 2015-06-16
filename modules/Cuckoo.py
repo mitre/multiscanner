@@ -6,6 +6,7 @@ import requests
 import json
 import time
 from common import basename
+from collections import Counter
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -16,6 +17,7 @@ DEFAULTCONF = {
     "ENABLED": False,
     "API URL": 'http://cuckoo:8090/',
     "timeout": 360,
+    "running timeout": 120,
     "delete tasks": False,
 }
 
@@ -48,6 +50,7 @@ def scan(filelist, conf=DEFAULTCONF):
             pass
 
     # Wait for tasks to finish
+    task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
             status = requests.get(view_url+task_id).json()['task']['status']
@@ -64,11 +67,20 @@ def scan(filelist, conf=DEFAULTCONF):
                 else:
                     # Do we ever actually hit here?
                     pass
+
+            # Check for dead tasks
+            elif status == 'running':
+                if task_id not in task_status:
+                    task_status[task_id] = time.time() + conf['timeout'] + conf['task timeout']
+                else:
+                    if time.time() > task_status[task_id]:
+                        #TODO Log timeout
+                        tasks.remove((fname, task_id))
+
             # If there is an unknown status
             elif status not in ['pending', 'processing', 'finished', 'completed', 'running']:
-                print(status)
+                #TODO Log errors better
                 tasks.remove((fname, task_id))
-
         time.sleep(15)
 
     metadata = {}
