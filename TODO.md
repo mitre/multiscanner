@@ -15,3 +15,4 @@ This is a list of things that are wanted features
 
 # New Modules #
 - OPSWAT Metascan
+- PEframe https://github.com/guelfoweb/peframe
