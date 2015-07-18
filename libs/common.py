@@ -5,6 +5,7 @@ from __future__ import division, absolute_import, with_statement, print_function
 import os
 import ast
 import sys
+import zipfile
 PY3 = False
 if sys.version_info > (3,):
     PY3 = True
@@ -107,7 +108,14 @@ def parseFileList(FileList, recursive=False):
         if os.path.isdir(item):
             filelist.extend(parseDir(item, recursive))
         elif os.path.isfile(item):
-            filelist.append(item)
+            if zipfile.is_zipfile(item):
+                z = zipfile.ZipFile(item)
+                z.extractall() # TODO these should be deleted after
+                for zip in z.namelist():
+                    current_dir = os.getcwd()
+                    filelist.append('%s/%s' % (current_dir, zip))
+            else:    
+                filelist.append(item)
         else:
             pass
     return filelist

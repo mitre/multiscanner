@@ -48,4 +48,3 @@ Results is a dictionary object where each key is a filename of a scanned file.
 Other Reading
 -------------
 For more information on module configuration or writing modules check the [docs](docs) folder.
-Test commit.
