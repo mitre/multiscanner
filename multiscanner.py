@@ -584,11 +584,13 @@ def _main():
                 unzip_dir = os.path.join('_tmp', os.path.basename(fname))
                 z = zipfile.ZipFile(fname)
                 # TODO: Add password capabilities
+                if PY3:
+                    args.password = bytes(args.password, 'utf-8')
                 try:
                     z.extractall(path=unzip_dir, pwd=args.password)
                     for uzfile in z.namelist():
                         parsedlist.append(os.path.join(unzip_dir, uzfile))
-                except RuntimeError, e:
+                except RuntimeError as e:
                     print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
                 parsedlist.remove(fname)
 
