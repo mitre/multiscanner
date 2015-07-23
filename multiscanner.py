@@ -589,7 +589,7 @@ def _main():
                     for uzfile in z.namelist():
                         parsedlist.append(os.path.join(unzip_dir, uzfile))
                 except RuntimeError, e:
-                    print("Failed to extract zipfile due to: %s" % e)
+                    print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
                 parsedlist.remove(fname)
 
     # Resume from report
