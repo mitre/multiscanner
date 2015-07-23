@@ -15,8 +15,7 @@ import datetime
 import random
 import string
 import threading
-import zipfile
-import shutil
+
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
     print("WARNING: You're running an untested version of python")
@@ -558,6 +557,8 @@ def _init(args):
 
 
 def _main():
+    # Import dependencies only needed by _main()
+    import zipfile
     # Get args
     args = _parse_args()
     # Set verbose
@@ -665,7 +666,10 @@ def _main():
             exit(2)
 
     # Cleanup zip extracted files
-    shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
+    try:
+        shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
+    except OSError, e: # tmp files only get created for archives
+        pass           # fail silently
 
 if __name__ == "__main__":
     _main()
