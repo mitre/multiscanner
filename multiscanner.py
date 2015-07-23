@@ -15,6 +15,7 @@ import datetime
 import random
 import string
 import threading
+
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
     print("WARNING: You're running an untested version of python")
@@ -526,6 +527,8 @@ def _parse_args():
     parser.add_argument("-m", "--metadata", help="This will include the metadata section from the report", action="store_true")
     parser.add_argument('-n', '--numberper', help="The max number of files per report", required=False, metavar="num", default=200, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
+    parser.add_argument("-z", "--extractzips", action="store_true", help="If any zip files are detected, extract them and scan the contents")
+    parser.add_argument("-p", "--password", help="Password to unzip any archives listed", default="")
     parser.add_argument("-q", "--quiet", action="store_true", help="Do not print report to screen")
     parser.add_argument("-u", "--ugly", help="If set the printed json will not have whitespace", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -556,6 +559,8 @@ def _init(args):
 
 
 def _main():
+    # Import dependencies only needed by _main()
+    import zipfile
     # Get args
     args = _parse_args()
     # Set verbose
@@ -571,6 +576,23 @@ def _main():
 
     # Parse the file list
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
+
+    # Unzip zip files if asked to
+    if args.extractzips:
+        for fname in parsedlist:
+            if zipfile.is_zipfile(fname):
+                unzip_dir = os.path.join('_tmp', os.path.basename(fname))
+                z = zipfile.ZipFile(fname)
+                # TODO: Add password capabilities
+                if PY3:
+                    args.password = bytes(args.password, 'utf-8')
+                try:
+                    z.extractall(path=unzip_dir, pwd=args.password)
+                    for uzfile in z.namelist():
+                        parsedlist.append(os.path.join(unzip_dir, uzfile))
+                except RuntimeError as e:
+                    print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
+                parsedlist.remove(fname)
 
     # Resume from report
     if args.resume:
@@ -649,6 +671,10 @@ def _main():
             print(e)
             print("ERROR: Could not write report file, report not saved")
             exit(2)
+
+    # Cleanup zip extracted files
+    if args.extractzips:
+        shutil.rmtree('_tmp')
 
 if __name__ == "__main__":
     _main()
