@@ -16,6 +16,7 @@ import random
 import string
 import threading
 import zipfile
+import shutil
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
     print("WARNING: You're running an untested version of python")
@@ -574,15 +575,16 @@ def _main():
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
 
     # Unzip zip files if asked to
-    if False: # TODO: Add real check with argparse
-        for fname in parseFileList:
+    if True: # TODO: Add real check with argparse
+        for fname in parsedlist:
             if zipfile.is_zipfile(fname):
+                unzip_dir = os.getcwd() + '/_tmp/' + fname.split('/')[-1]
                 z = zipfile.ZipFile(fname)
-                z.extractall() # TODO extract to folder thats identifies the zip
+                # TODO: Add password capabilities
+                z.extractall(unzip_dir)
                 for zip in z.namelist():
-                    current_dir = os.getcwd()
-                    # TODO add to parsedlist
-                # TODO removed zipfile from parsedlist
+                    parsedlist.append('%s/%s' % (unzip_dir, zip))            
+                parsedlist.remove(fname)
 
     # Resume from report
     if args.resume:
@@ -662,7 +664,8 @@ def _main():
             print("ERROR: Could not write report file, report not saved")
             exit(2)
 
-    # TODO: Cleanup zip extracted files
+    # Cleanup zip extracted files
+    shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
 
 if __name__ == "__main__":
     _main()
