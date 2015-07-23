@@ -15,8 +15,7 @@ import datetime
 import random
 import string
 import threading
-import zipfile
-import shutil
+
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
     print("WARNING: You're running an untested version of python")
@@ -528,6 +527,8 @@ def _parse_args():
     parser.add_argument("-m", "--metadata", help="This will include the metadata section from the report", action="store_true")
     parser.add_argument('-n', '--numberper', help="The max number of files per report", required=False, metavar="num", default=200, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
+    parser.add_argument("-z", "--extractzips", action="store_true", help="If any zip files are detected, extract them and scan the contents")
+    parser.add_argument("-p", "--password", help="Password to unzip any archives listed", default="")
     parser.add_argument("-q", "--quiet", action="store_true", help="Do not print report to screen")
     parser.add_argument("-u", "--ugly", help="If set the printed json will not have whitespace", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -558,6 +559,8 @@ def _init(args):
 
 
 def _main():
+    # Import dependencies only needed by _main()
+    import zipfile
     # Get args
     args = _parse_args()
     # Set verbose
@@ -575,15 +578,18 @@ def _main():
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
 
     # Unzip zip files if asked to
-    if True: # TODO: Add real check with argparse
+    if args.extractzips:
         for fname in parsedlist:
             if zipfile.is_zipfile(fname):
                 unzip_dir = os.getcwd() + '/_tmp/' + fname.split('/')[-1]
                 z = zipfile.ZipFile(fname)
                 # TODO: Add password capabilities
-                z.extractall(unzip_dir)
-                for zip in z.namelist():
-                    parsedlist.append('%s/%s' % (unzip_dir, zip))            
+                try:
+                    z.extractall(path=unzip_dir, pwd=args.password)
+                    for zip in z.namelist():
+                        parsedlist.append('%s/%s' % (unzip_dir, zip))            
+                except RuntimeError, e:
+                    print("Failed to extract zipfile due to: %s" % e)
                 parsedlist.remove(fname)
 
     # Resume from report
@@ -665,7 +671,8 @@ def _main():
             exit(2)
 
     # Cleanup zip extracted files
-    shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
+    if args.extractzips:
+        shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
 
 if __name__ == "__main__":
     _main()
