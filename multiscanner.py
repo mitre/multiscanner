@@ -581,13 +581,13 @@ def _main():
     if args.extractzips:
         for fname in parsedlist:
             if zipfile.is_zipfile(fname):
-                unzip_dir = os.getcwd() + '/_tmp/' + fname.split('/')[-1]
+                unzip_dir = os.path.join('_tmp', os.path.basename(fname))
                 z = zipfile.ZipFile(fname)
                 # TODO: Add password capabilities
                 try:
                     z.extractall(path=unzip_dir, pwd=args.password)
-                    for zip in z.namelist():
-                        parsedlist.append('%s/%s' % (unzip_dir, zip))            
+                    for uzfile in z.namelist():
+                        parsedlist.append(os.path.join(unzip_dir, uzfile))
                 except RuntimeError, e:
                     print("Failed to extract zipfile due to: %s" % e)
                 parsedlist.remove(fname)
@@ -672,7 +672,7 @@ def _main():
 
     # Cleanup zip extracted files
     if args.extractzips:
-        shutil.rmtree('%s/%s' % (os.getcwd(), '_tmp'))
+        shutil.rmtree('_tmp')
 
 if __name__ == "__main__":
     _main()
