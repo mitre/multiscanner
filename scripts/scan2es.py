@@ -44,7 +44,7 @@ if __name__ == '__main__':
     args = parse_args()
     print "Starting scan..."
     results = multiscanner.multiscan(args.Files, recursive=args.recursive)
-    results = multiscanner.parseReports(results, python=True, includeMetadata=False)
+    results = multiscanner.parse_reports(results, python=True, includeMetadata=False)
     print "Storing results..."
     results2es(results)
     print "Done!"

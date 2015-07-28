@@ -38,7 +38,7 @@ MultiScanner can be incorporated as a module in another projects. Below is the s
 ```python
 import multiscanner
 output = multiscanner.multiscan(FileList)
-Results = multiscanner.parseReports(output, python=True)
+Results = multiscanner.parse_reports(output, python=True)
 ```
 
 Results is a dictionary object where each key is a filename of a scanned file.

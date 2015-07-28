@@ -378,7 +378,7 @@ def config_init(filepath):
     _rewite_config(ModuleList, Config, filepath)
 
 
-def parseReports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
+def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
     """Turn report dictionaries into json output. Returns a string.
 
     resultlist - A list of the scan return values
@@ -426,6 +426,8 @@ def parseReports(resultlist, groups=[], ugly=True, includeMetadata=False, python
     else:
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'))
 
+# Keep old API compatibility
+parseReports = parse_reports
 
 def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     """
@@ -657,14 +659,14 @@ def _main():
                 config["group-types"] = []
             elif not config["group-types"]:
                 config["group-types"] = []
-            report = parseReports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
+            report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
 
             # Print report and write to file
             print(report)
 
         try:
             reportfile = open(args.json, 'a')
-            reportfile.write(parseReports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata))
+            reportfile.write(parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata))
             reportfile.write('\n')
             reportfile.close()
         except Exception as e:
