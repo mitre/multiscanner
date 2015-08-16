@@ -54,6 +54,9 @@ from common import conf2dic
 from common import basename
 from common import convert_encoding
 
+# Force all prints to go to stderr
+stdout = sys.stdout
+sys.stdout = sys.stderr
 
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
@@ -652,7 +655,8 @@ def _main():
             "Run by": username
         }))
 
-        if not args.quiet:
+        report = None
+        if not args.quiet and stdout.isatty():
             # TODO: Make this output something readable
             # Parse Results
             if "group-types" not in config:
@@ -662,17 +666,40 @@ def _main():
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
 
             # Print report and write to file
-            print(report)
+            print(report, file=stdout)
 
-        try:
-            reportfile = open(args.json, 'a')
-            reportfile.write(parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata))
-            reportfile.write('\n')
-            reportfile.close()
-        except Exception as e:
-            print(e)
-            print("ERROR: Could not write report file, report not saved")
-            exit(2)
+        if not stdout.isatty():
+            report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
+            print(report, file=stdout)
+            # Don't write the default location if we are redirecting output
+            if args.json == 'report.json':
+                print('Not writing results to report.json, pick a different filename to override')
+            else:
+                try:
+                    reportfile = open(args.json, 'a')
+                    reportfile.write(report)
+                    reportfile.write('\n')
+                    reportfile.close()
+                except Exception as e:
+                    print(e)
+                    print("ERROR: Could not write report file, report not saved")
+                    exit(2)
+        else:
+            # Check if we need to run the report again
+            if report is not None and args.ugly is True:
+                pass
+            else:
+                report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
+            # Try to write report
+            try:
+                reportfile = open(args.json, 'a')
+                reportfile.write(report)
+                reportfile.write('\n')
+                reportfile.close()
+            except Exception as e:
+                print(e)
+                print("ERROR: Could not write report file, report not saved")
+                exit(2)
 
     # Cleanup zip extracted files
     if args.extractzips:
