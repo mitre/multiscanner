@@ -54,10 +54,6 @@ from common import conf2dic
 from common import basename
 from common import convert_encoding
 
-# Force all prints to go to stderr
-stdout = sys.stdout
-sys.stdout = sys.stderr
-
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
@@ -441,6 +437,11 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     configregen - If True a new config file will be created overwriting the old
     configfile - What config file to use
     """
+    # Redirect stdout to stderr
+    stdout = sys.stdout
+    sys.stdout = sys.stderr
+    # TODO: Make sure the cleanup from this works is something breaks
+
     # Init some vars
     # If recursive is None we don't parse the file list and take it as is.
     if recursive is not None:
@@ -464,6 +465,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     
     # If none of the files existed
     if not filelist:
+        sys.stdout = stdout
         raise ValueError("No valid files")
 
     # Copy files to a share if configured
@@ -473,6 +475,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
         if os.path.isdir(config["copyfilesto"]):
             filelist = _copy_to_share(filelist, filedic, config["copyfilesto"])
         else:
+            sys.stdout = stdout
             raise IOError('The copyfilesto dir" ' + config["copyfilesto"] + '" is not a valid dir')
 
     # Start a thread for each module
@@ -517,6 +520,9 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
                     result[j] = (filename, hit)
             if modded:
                 results[i] = (result, metadata)
+
+    # Return stdout to previous state
+    sys.stdout = stdout
     return results
 
 
@@ -564,6 +570,9 @@ def _init(args):
 
 
 def _main():
+    # Force all prints to go to stderr
+    stdout = sys.stdout
+    sys.stdout = sys.stderr
     # Import dependencies only needed by _main()
     import zipfile
     # Get args
