@@ -680,6 +680,7 @@ def _main():
         if not stdout.isatty():
             report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
             print(report, file=stdout)
+            stdout.flush()
             # Don't write the default location if we are redirecting output
             if args.json == 'report.json':
                 print('Not writing results to report.json, pick a different filename to override')
