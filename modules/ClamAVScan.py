@@ -1,15 +1,14 @@
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+#from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
 __author__ = 'Mike Long'
 
 DEFAULTCONF ={
     "ENABLED":True,
-    "alt_path": "/etc/clam.d/clamd.conf"
 }
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
-    # or we can always run be uncommenting below
+    # or we can always run by uncommenting below
     # return True
 
 
@@ -25,11 +24,13 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             clamScanner.ping()
         except:
-            raise ValueError("Connection configuration: Unable to connect to clamd server")
+            raise ValueError("Check connection: Unable to connect to clamd server")
 
     # common error string, if pyclamd cannot scan as file
-    error_str = "[('ERROR', 'lstat() failed: No such file or directory.')]"
-
+    error_str = [
+        "[('ERROR', 'lstat() failed: No such file or directory.')]",
+        "[('ERROR', 'lstat() failed: Permission denied.')]",
+    ]
 
     # Scan each file from filelist for virus
     for f in filelist:
@@ -42,11 +43,11 @@ def scan(filelist, conf=DEFAULTCONF):
         file_results = output.values()
         msg = str(file_results[0:1])
 
-        # Check to for the error_str message
-        if error_str in msg:
+        # Check for the error_str message
+        if any("Error" in msg for msg in error_str):
             # IF BUFFER IS LARGER THAN ACCEPTED BUFFER SIZE MAY NOT BE IDEAL
             # Since file was not found load contents in buffer and scan as buffer
-            file_as_buffer = open(f, 'rU').read()
+            file_as_buffer = open(f, 'r').read()
             buffer_results = clamScanner.scan_stream(file_as_buffer)
 
             if buffer_results is not None:
