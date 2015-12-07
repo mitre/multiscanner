@@ -42,7 +42,7 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
             # I think this works?
             return data.encode(encoding=encoding, errors=errors).decode(encoding=encoding, errors=errors)
         else:
-            return data.decode(encoding=encoding, errors=errors)
+            return data.decode(encoding, errors)
     else:
         return data
 
