@@ -4,6 +4,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from builtins import *
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import os
 import imp
@@ -15,6 +18,8 @@ import datetime
 import random
 import string
 import threading
+import configparser
+import codecs
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -23,10 +28,7 @@ elif sys.version_info > (3,):
     PY3 = True
 
 if PY3:
-    import configparser as ConfigParser
     raw_input = input
-else:
-    import ConfigParser
 
 # Gets the directory that this file is in
 MS_WD = os.path.dirname(os.path.abspath(__file__))
@@ -103,7 +105,7 @@ def _loadModule(name, path):
 def _runModule(modname, mod, filelist, threadDict, conf=None):
     """
     Runs a module on a file list.
-    
+
     Modules are loaded and check is called followed by scan.
     modname - The name of the module
     mod - The imported module
@@ -142,7 +144,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
                 reqresults.append(None)
         # Overwrite REQUIRES var
         mod.REQUIRES = reqresults
-        threadDict[reqmodname].starttime = time.time()
+        threadDict[modname].starttime = time.time()
 
     if conf:
         if mod.check(conf=conf) is True:
@@ -166,7 +168,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
                         else:
                             filelist[i] = conf["replacement path"] + "/" + basename(filelist[i])
                     filedict[filelist[i]] = oldname
-            
+
                 # Replace the paths on required modules if any
                 if required:
                     for mresult in reqresults:
@@ -189,7 +191,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
                                     filename = conf["replacement path"] + "/" + basename(filename)
                             result[j] = (filename, hit)
                     mod.REQUIRES = reqresults
-            
+
             # Run the scan
             results = mod.scan(filelist, conf=conf)
 
@@ -218,7 +220,7 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
 def _get_main_config(Config, filepath=CONFIG):
     """
     Reads in config for main script. It will write defaults if not present. Returns dictionary.
-    
+
     Config - The config object
     filepath - The path to the config file
     """
@@ -229,10 +231,10 @@ def _get_main_config(Config, filepath=CONFIG):
         maindefaults = DEFAULTCONF
         Config.add_section('main')
         for key in maindefaults:
-            Config.set('main', key, maindefaults[key])
-    
+            Config.set('main', key, str(maindefaults[key]))
+
     if ConfNeedsWrite:
-        conffile = open(filepath, 'w')
+        conffile = codecs.open(filepath, 'w', 'utf-8')
         Config.write(conffile)
         conffile.close()
     # Read in main config
@@ -242,7 +244,7 @@ def _get_main_config(Config, filepath=CONFIG):
 def _copy_to_share(filelist, filedic, sharedir):
     """
     Copies files from filelist to a share and populates the filedic. Returns a list of files.
-    
+
     filelist - The list of file to be copied
     filedic - A dictionary used to translate files back to their original filenames
     sharedir - Where the files are copied to
@@ -258,7 +260,7 @@ def _copy_to_share(filelist, filedic, sharedir):
         newfile = os.path.join(sharedir, newfile)
         shutil.copyfile(fname, newfile)
         filelist.append(newfile)
-    del tmpfilelist	
+    del tmpfilelist
     # Prevents file shares from making modules crash, this might not be the best but meh
     time.sleep(3)
     return filelist
@@ -267,7 +269,7 @@ def _copy_to_share(filelist, filedic, sharedir):
 def _start_module_threads(filelist, ModuleList, Config):
     """
     Starts each module on the file list in a separate thread. Returns a list of threads
-    
+
     filelist - A lists of strings. The strings are files to be scanned
     ModuleList - A list of all the modules to be run
     Config - The config object
@@ -276,7 +278,7 @@ def _start_module_threads(filelist, ModuleList, Config):
         print("Starting modules...")
     ThreadList = []
     ThreadDict = {}
-    # Starts a thread for each module. 
+    # Starts a thread for each module.
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
@@ -300,7 +302,7 @@ def _start_module_threads(filelist, ModuleList, Config):
 def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
-    
+
     ModuleList - The list of modules
     Config - The config object
     """
@@ -318,16 +320,16 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
                     ConfNeedsWrite = True
                     Config.add_section(modname)
                     for key in conf:
-                        Config.set(modname, key, conf[key])
+                        Config.set(modname, key, str(conf[key]))
 
     if 'main' not in Config.sections():
         ConfNeedsWrite = True
         Config.add_section('main')
         for key in DEFAULTCONF:
-            Config.set('main', key, DEFAULTCONF[key])
+            Config.set('main', key, str(DEFAULTCONF[key]))
 
     if ConfNeedsWrite:
-        conffile = open(filepath, 'w')
+        conffile = codecs.open(filepath, 'w', 'utf-8')
         Config.write(conffile)
         conffile.close()
         return True
@@ -337,7 +339,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
 def _rewite_config(ModuleList, Config, filepath=CONFIG):
     """
     Write in default config for all modules.
-    
+
     ModuleList - The list of modules
     Config - The config object
     """
@@ -354,13 +356,13 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
                     continue
                 Config.add_section(modname)
                 for key in conf:
-                    Config.set(modname, key, conf[key])
+                    Config.set(modname, key, str(conf[key]))
 
     Config.add_section('main')
     for key in DEFAULTCONF:
-        Config.set('main', key, DEFAULTCONF[key])
+        Config.set('main', key, str(DEFAULTCONF[key]))
 
-    conffile = open(filepath, 'w')
+    conffile = codecs.open(filepath, 'w', 'utf-8')
     Config.write(conffile)
     conffile.close()
 
@@ -371,7 +373,7 @@ def config_init(filepath):
 
     filepath - The config file to create
     """
-    Config = ConfigParser.ConfigParser()
+    Config = configparser.SafeConfigParser()
     Config.optionxform = str
     ModuleList = parseDir(MODULEDIR)
     _rewite_config(ModuleList, Config, filepath)
@@ -431,7 +433,7 @@ parseReports = parse_reports
 def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     """
     The meat and potatoes. Returns the list of module results
-    
+
     Files - A list of files and dirs to be scanned
     recursive - If true it will search the dirs in Files recursively
     configregen - If True a new config file will be created overwriting the old
@@ -453,16 +455,16 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     ModuleList = parseDir(MODULEDIR)
     # A dictionary used for the copyfileto parameter
     filedic = {}
-    
+
     # Read in config file
-    Config = ConfigParser.ConfigParser()
+    Config = configparser.SafeConfigParser()
     Config.optionxform = str
     # Regen the config if needed or wanted
     if configregen or not os.path.isfile(configfile):
         _rewite_config(ModuleList, Config, filepath=configfile)
     Config.read(configfile)
     config = _get_main_config(Config, filepath=configfile)
-    
+
     # If none of the files existed
     if not filelist:
         sys.stdout = stdout
@@ -480,10 +482,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
 
     # Start a thread for each module
     ThreadList = _start_module_threads(filelist, ModuleList, Config)
-    
+
     # Write the default configure settings for missing ones
     _write_missing_module_configs(ModuleList, Config, filepath=configfile)
-    
+
     # Wait for all threads to finish
     for thread in ThreadList:
         thread.join()
@@ -491,7 +493,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     if VERBOSE:
         for thread in ThreadList:
             print(thread.name, "took", thread.endtime-thread.starttime)
-        
+
     # Delete copied files
     if config["copyfilesto"]:
         for item in filelist:
@@ -559,7 +561,7 @@ def _init(args):
         else:
             print('Checking for missing modules in configuration...')
             ModuleList = parseDir(MODULEDIR)
-            Config = ConfigParser.ConfigParser()
+            Config = configparser.SafeConfigParser()
             Config.optionxform = str
             Config.read(args.config)
             _write_missing_module_configs(ModuleList, Config, filepath=args.config)
@@ -579,6 +581,7 @@ def _main():
     args = _parse_args()
     # Set verbose
     if args.verbose:
+        global VERBOSE
         VERBOSE = args.verbose
 
     # Checks if user is trying to initialize
@@ -643,7 +646,7 @@ def _main():
         results = multiscan(filelist, recursive=None, configfile=args.config)
 
         # We need to read in the config for the parseReports call
-        Config = ConfigParser.ConfigParser()
+        Config = configparser.SafeConfigParser()
         Config.optionxform = str
         Config.read(args.config)
         config = _get_main_config(Config)
