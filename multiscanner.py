@@ -423,9 +423,9 @@ def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, pytho
     finaldata = convert_encoding(finaldata)
 
     if not ugly:
-        return json.dumps(finaldata, sort_keys=True, indent=3)
+        return json.dumps(finaldata, sort_keys=True, indent=3, ensure_ascii=False)
     else:
-        return json.dumps(finaldata, sort_keys=True, separators=(',', ':'))
+        return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 # Keep old API compatibility
 parseReports = parse_reports
@@ -615,7 +615,7 @@ def _main():
     if args.resume:
         i = len(parsedlist)
         try:
-            reportfile = open(args.json, 'r')
+            reportfile = codecs.open(args.json, 'r', 'utf-8')
         except Exception as e:
             print("ERROR: Could not open report file")
             exit(1)
@@ -689,7 +689,7 @@ def _main():
                 print('Not writing results to report.json, pick a different filename to override')
             else:
                 try:
-                    reportfile = open(args.json, 'a')
+                    reportfile = codecs.open(args.json, 'a', 'utf-8')
                     reportfile.write(report)
                     reportfile.write('\n')
                     reportfile.close()
@@ -705,7 +705,7 @@ def _main():
                 report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
             # Try to write report
             try:
-                reportfile = open(args.json, 'a')
+                reportfile = codecs.open(args.json, 'a', 'utf-8')
                 reportfile.write(report)
                 reportfile.write('\n')
                 reportfile.close()
