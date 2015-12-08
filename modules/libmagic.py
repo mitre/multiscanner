@@ -37,7 +37,7 @@ def scan(filelist, conf=DEFAULTCONF):
         maaagic = magic.Magic()
     results = []
     for fname in filelist:
-        results.append((fname, maaagic.from_file(fname).decode(encoding='UTF-8', errors='replace')))
+        results.append((fname, maaagic.from_file(fname).decode('UTF-8', 'replace')))
 
     metadata = {}
     metadata["Name"] = NAME
