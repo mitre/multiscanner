@@ -48,6 +48,6 @@ class Test_main(_runmulti_tests):
             pass
 
     def test_basic_main(self):
-        sys.argv = ['-z', '-q', '-j', 'tmp_report.json']
+        sys.argv = ['-z', '-j', 'tmp_report.json']
         sys.argv.extend(self.filelist)
         multiscanner._main()
