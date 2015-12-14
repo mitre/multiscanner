@@ -542,7 +542,7 @@ def _parse_args():
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
     parser.add_argument("-z", "--extractzips", action="store_true", help="If any zip files are detected, extract them and scan the contents")
     parser.add_argument("-p", "--password", help="Password to unzip any archives listed", default="")
-    parser.add_argument("-q", "--quiet", action="store_true", help="Do not print report to screen")
+    parser.add_argument("-s", "--show", action="store_true", help="Print report to screen")
     parser.add_argument("-u", "--ugly", help="If set the printed json will not have whitespace", action="store_true")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--resume", action="store_true", help="Read in the report file and continue where we left off")
@@ -668,7 +668,9 @@ def _main():
         }))
 
         report = None
-        if not args.quiet and stdout.isatty():
+        report_write = True
+        report_ugly = None
+        if args.show:
             # TODO: Make this output something readable
             # Parse Results
             if "group-types" not in config:
@@ -676,30 +678,23 @@ def _main():
             elif not config["group-types"]:
                 config["group-types"] = []
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
-
+            report_ugly = args.ugly
             # Print report and write to file
             print(report, file=stdout)
 
-        if not stdout.isatty():
+        elif not stdout.isatty():
             report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
+            report_ugly = True
             print(report, file=stdout)
             stdout.flush()
             # Don't write the default location if we are redirecting output
             if args.json == 'report.json':
                 print('Not writing results to report.json, pick a different filename to override')
-            else:
-                try:
-                    reportfile = codecs.open(args.json, 'a', 'utf-8')
-                    reportfile.write(report)
-                    reportfile.write('\n')
-                    reportfile.close()
-                except Exception as e:
-                    print(e)
-                    print("ERROR: Could not write report file, report not saved")
-                    exit(2)
-        else:
+                report_write = False
+
+        if report_write:
             # Check if we need to run the report again
-            if report is not None and args.ugly is True:
+            if report is not None and report_ugly is True:
                 pass
             else:
                 report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
