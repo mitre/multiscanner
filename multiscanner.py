@@ -20,6 +20,8 @@ import string
 import threading
 import configparser
 import codecs
+import multiprocessing
+import tempfile
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -55,6 +57,7 @@ from common import parseFileList
 from common import conf2dic
 from common import basename
 from common import convert_encoding
+from common import queue2list
 
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
@@ -102,7 +105,61 @@ def _loadModule(name, path):
     return loaded_mod
 
 
-def _runModule(modname, mod, filelist, threadDict, conf=None):
+class _GlobalModuleInterface(object):
+    """
+    The global module interface is a set of shared interfaces between modules.
+    """
+    def __init__(self, processes=None):
+        self._scan_queue = multiprocessing.Queue()
+        self._pool = None
+        self._processes = processes
+        self.write_dir = tempfile.mkdtemp(prefix='multiscan-')
+        self.run_count = -1
+
+    def _cleanup(self):
+        # Remove the temp dir
+        shutil.rmtree(self.write_dir, ignore_errors=True)
+        if self._pool:
+            self._pool.terminate()
+
+    def scan_file(self, file_path, from_filename, module_name):
+        self._scan_queue.put((file_path, from_filename, module_name))
+
+    def _get_subscan_list(self):
+        return queue2list(self._scan_queue)
+
+    def apply_async(self, func, args=(), kwds={}, callback=None):
+        # TODO: add option to disable async
+        if not self._pool:
+            self._pool = multiprocessing.Pool(processes=self._processes, maxtasksperchild=10)
+        return self._pool.apply_async(func, args=args, kwds=kwds, callback=callback)
+
+
+class _ModuleInterface(object):
+    """
+    The module interface is a per-module interface.
+
+    module_name - The name of the module this object will be given to
+    global_interface - The global interface object that is shared among modules
+    """
+    def __init__(self, module_name, global_interface):
+        self.global_interface = global_interface
+        self.module_name = module_name
+        self.write_dir = tempfile.mkdtemp(dir=self.global_interface.write_dir)
+        # Put global_interface into main namespace
+        self.apply_async = self.global_interface.apply_async
+        self.run_count = self.global_interface.run_count
+
+    # TODO: Finish scan_file code
+    def scan_file(self, file_path, from_filename):
+        self.global_interface.scan_file(file_path, from_filename, self.module_name)
+
+    def _cleanup(self):
+        # Remove the temp dir
+        shutil.rmtree(self.write_dir, ignore_errors=True)
+
+
+def _runModule(modname, mod, filelist, threadDict, global_module_interface, conf=None):
     """
     Runs a module on a file list.
 
@@ -111,8 +168,11 @@ def _runModule(modname, mod, filelist, threadDict, conf=None):
     mod - The imported module
     filelist - The list of files on the host to be scanned
     threadDict - A dictionary of all threads. {modname: Thread}
+    global_module_interface - The global module interface to be injected in each module
     conf - The config to be passed to the module. If None it will try to use the default conf
     """
+
+    mod.multiscanner = _ModuleInterface(modname, global_module_interface)
 
     # Try and read in the default conf if one was not passed
     if not conf:
@@ -266,18 +326,20 @@ def _copy_to_share(filelist, filedic, sharedir):
     return filelist
 
 
-def _start_module_threads(filelist, ModuleList, Config):
+def _start_module_threads(filelist, ModuleList, Config, global_module_interface):
     """
     Starts each module on the file list in a separate thread. Returns a list of threads
 
     filelist - A lists of strings. The strings are files to be scanned
     ModuleList - A list of all the modules to be run
     Config - The config object
+    global_module_interface - The global module interface to be injected in each module
     """
     if VERBOSE:
         print("Starting modules...")
     ThreadList = []
     ThreadDict = {}
+    global_module_interface.run_count += 1
     # Starts a thread for each module.
     for module in ModuleList:
         if module.endswith(".py"):
@@ -289,7 +351,7 @@ def _start_module_threads(filelist, ModuleList, Config):
             conf = None
             if modname in Config.sections():
                 conf = conf2dic(Config.items(modname))
-            thread = _Thread(target=_runModule, args=(modname, mod, filelist, ThreadDict, conf))
+            thread = _Thread(target=_runModule, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
             thread.name = modname
             thread.setDaemon(True)
             ThreadList.append(thread)
@@ -452,7 +514,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
         filelist = Files
     # A list of files in the module dir
     # TODO: This should just be a list of .py's that is passed
-    ModuleList = parseDir(MODULEDIR)
+    module_list = parseDir(MODULEDIR)
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
@@ -461,9 +523,9 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
     Config.optionxform = str
     # Regen the config if needed or wanted
     if configregen or not os.path.isfile(configfile):
-        _rewite_config(ModuleList, Config, filepath=configfile)
+        _rewite_config(module_list, Config, filepath=configfile)
     Config.read(configfile)
-    config = _get_main_config(Config, filepath=configfile)
+    main_config = _get_main_config(Config, filepath=configfile)
 
     # If none of the files existed
     if not filelist:
@@ -471,37 +533,40 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
         raise ValueError("No valid files")
 
     # Copy files to a share if configured
-    if "copyfilesto" not in config:
-        config["copyfilesto"] = False
-    if config["copyfilesto"]:
-        if os.path.isdir(config["copyfilesto"]):
-            filelist = _copy_to_share(filelist, filedic, config["copyfilesto"])
+    if "copyfilesto" not in main_config:
+        main_config["copyfilesto"] = False
+    if main_config["copyfilesto"]:
+        if os.path.isdir(main_config["copyfilesto"]):
+            filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
         else:
             sys.stdout = stdout
-            raise IOError('The copyfilesto dir" ' + config["copyfilesto"] + '" is not a valid dir')
+            raise IOError('The copyfilesto dir" ' + main_config["copyfilesto"] + '" is not a valid dir')
+
+    # Create the global module interface
+    global_module_interface = _GlobalModuleInterface()
 
     # Start a thread for each module
-    ThreadList = _start_module_threads(filelist, ModuleList, Config)
+    thread_list = _start_module_threads(filelist, module_list, Config, global_module_interface)
 
     # Write the default configure settings for missing ones
-    _write_missing_module_configs(ModuleList, Config, filepath=configfile)
+    _write_missing_module_configs(module_list, Config, filepath=configfile)
 
     # Wait for all threads to finish
-    for thread in ThreadList:
+    for thread in thread_list:
         thread.join()
 
     if VERBOSE:
-        for thread in ThreadList:
+        for thread in thread_list:
             print(thread.name, "took", thread.endtime-thread.starttime)
 
     # Delete copied files
-    if config["copyfilesto"]:
+    if main_config["copyfilesto"]:
         for item in filelist:
             os.remove(item)
 
     # Get Result list
     results = []
-    for thread in ThreadList:
+    for thread in thread_list:
         if thread.ret is not None:
             results.append(thread.ret)
         del thread
@@ -514,8 +579,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
             modded = False
             for j in range(0, len(result)):
                 (filename, hit) = result[j]
-                # This is ugly but os.path.basename is os dependent
-                base = filename.split("\\")[-1].split("/")[-1]
+                base = basename(filename)
                 if base in filedic:
                     filename = filedic[base]
                     modded = True
@@ -523,10 +587,137 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG):
             if modded:
                 results[i] = (result, metadata)
 
+    # Scan subfiles if needed
+    subscan_list = global_module_interface._get_subscan_list()
+    if subscan_list:
+        # Translate from_filename back to original if needed
+        if filedic:
+            for i in range(0, len(subscan_list)):
+                file_path, from_filename, module_name = subscan_list[i]
+                base = basename(from_filename)
+                if base in filedic:
+                    from_filename = filedic[base]
+                    subscan_list[i] = (file_path, from_filename, module_name)
+
+        results.extend(_subscan(subscan_list, Config, main_config, module_list, global_module_interface))
+
+    global_module_interface._cleanup()
+
     # Return stdout to previous state
     sys.stdout = stdout
     return results
 
+
+def _subscan(subscan_list, Config, main_config, module_list, global_module_interface):
+    """
+    Scans files created by modules
+
+    subscan_list - The result of _get_subscan_list() from the global module interface
+    Config - The configparser object
+    main_config - A dictionary of the configuration for main
+    module_list - The list of modules
+    global_module_interface - The global module interface
+    """
+    # The file list to be scanned
+    filelist = []
+    # Keeps mapping of files when they are copied to a share
+    filedic = {}
+    # Maps the subfile to its parent
+    file_mapping = {}
+    # The result list to be returned
+    results = []
+
+    # The results to map children to their parent
+    parent_results = []
+    # Used to map parents to their children
+    subfiles_dict = {}
+    # The results to map parents to their children
+    subfiles_results = []
+    # The results to show which module created the file
+    createdby_results = []
+
+    for file_path, from_filename, module_name in subscan_list:
+        # Add each file to be scanned
+        filelist.append(file_path)
+        # Map file_path to the filename that will be used in the results
+        new_filename = os.path.join(from_filename, basename(file_path))
+        file_mapping[file_path] = (from_filename, new_filename)
+        # Map the child file to its parent
+        parent_results.append((new_filename, from_filename))
+        # Map parent files to their children
+        if from_filename not in subfiles_dict:
+            subfiles_dict[from_filename] = []
+        subfiles_dict[from_filename].append(new_filename)
+        # Add createdby result
+        createdby_results.append((new_filename, module_name))
+
+    # Create the results for parent files
+    for parent_file in subfiles_dict:
+        subfiles_results.append((parent_file, subfiles_dict[parent_file]))
+
+    # Emulate a module for so the parent child relationships are in the reports
+    results.append((parent_results, {'Name': 'Parent', 'Type': 'subscan', 'Include': False}))
+    results.append((subfiles_results, {'Name': 'Children', 'Type': 'subscan', 'Include': False}))
+    results.append((createdby_results, {'Name': 'Created by', 'Type': 'subscan', 'Include': False}))
+
+    del subscan_list, subfiles_dict
+
+    # Copy files to a share if configured
+    if "copyfilesto" not in main_config:
+        main_config["copyfilesto"] = False
+    if main_config["copyfilesto"]:
+        filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
+
+    # Start a thread for each module
+    thread_list = _start_module_threads(filelist, module_list, Config, global_module_interface)
+
+    # Wait for all threads to finish
+    for thread in thread_list:
+        thread.join()
+
+    # Delete copied files
+    if main_config["copyfilesto"]:
+        for item in filelist:
+            os.remove(item)
+
+    # Get Result list
+    for thread in thread_list:
+        if thread.ret is not None:
+            results.append(thread.ret)
+        del thread
+
+    # I have no idea if this is the best way to do in-place modifications
+    for i in range(0, len(results)):
+        (result, metadata) = results[i]
+        for j in range(0, len(result)):
+            (filename, hit) = result[j]
+            base = basename(filename)
+            # Convert filename back if copied
+            if base in filedic:
+                filename = filedic[base]
+                base = basename(filename)
+            # Change filename to represent original file
+            if filename in file_mapping:
+                from_filename, new_filename = file_mapping[filename]
+                result[j] = (new_filename, hit)
+        results[i] = (result, metadata)
+
+    # Scan subfiles if needed
+    subscan_list = global_module_interface._get_subscan_list()
+    if subscan_list:
+        for i in range(0, len(subscan_list)):
+            file_path, from_filename, module_name = subscan_list[i]
+            base = basename(from_filename)
+            # Translate from_filename back to original if needed
+            if base in filedic:
+                from_filename = filedic[base]
+            if from_filename in file_mapping:
+                null, from_filename = file_mapping[from_filename]
+            subscan_list[i] = (file_path, from_filename, module_name)
+
+        results.extend(_subscan(subscan_list, Config, main_config, module_list, global_module_interface))
+
+    return results
 
 def _parse_args():
     """
@@ -680,7 +871,10 @@ def _main():
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
             report_ugly = args.ugly
             # Print report and write to file
-            print(report, file=stdout)
+            try:
+                print(report, file=stdout)
+            except IOError:
+                pass
 
         elif not stdout.isatty():
             report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
