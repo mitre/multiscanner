@@ -46,15 +46,18 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
     else:
         return data
 
-def conf2dic(items):
-    """Take the output from Config.items and turns it into a dictionary with the correct python types"""
-    ret = dict(items)
-    for key in ret:
-        try:
-            ret[key] = ast.literal_eval(ret[key])
-        except:
-            pass
-    return ret
+def parse_config(config_object):
+    """Take a config object and returns it as a dictionary"""
+    return_var = {}
+    for section in config_object.sections():
+        section_dict = dict(config_object.items(section))
+        for key in section_dict:
+            try:
+                section_dict[key] = ast.literal_eval(section_dict[key])
+            except:
+                pass
+        return_var[section] = section_dict
+    return return_var
 
 def dirname(path):
     """OS independent version of os.path.dirname"""
