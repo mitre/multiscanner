@@ -126,12 +126,14 @@ class _GlobalModuleInterface(object):
         self._scan_queue.put((file_path, from_filename, module_name))
 
     def _get_subscan_list(self):
+        # The sleep lets the queue catch up. Sometimes results queue was detected as empty otherwise.
+        time.sleep(.01)
         return queue2list(self._scan_queue)
 
     def apply_async(self, func, args=(), kwds={}, callback=None):
         # TODO: add option to disable async
         if not self._pool:
-            self._pool = multiprocessing.Pool(processes=self._processes, maxtasksperchild=10)
+            self._pool = multiprocessing.Pool(processes=self._processes)
         return self._pool.apply_async(func, args=args, kwds=kwds, callback=callback)
 
 
@@ -150,7 +152,6 @@ class _ModuleInterface(object):
         self.apply_async = self.global_interface.apply_async
         self.run_count = self.global_interface.run_count
 
-    # TODO: Finish scan_file code
     def scan_file(self, file_path, from_filename):
         self.global_interface.scan_file(file_path, from_filename, self.module_name)
 
