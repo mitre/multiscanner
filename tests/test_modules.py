@@ -87,15 +87,15 @@ class Test_runModule_test_2(_runmod_tests):
 
 class test_start_module_threads(_runmod_tests):
     def setup(self):
-        self.Config = configparser.ConfigParser()
+        self.config = {}
         self.global_module_interface = multiscanner._GlobalModuleInterface()
 
     def teardown(self):
-        del self.Config
+        del self.config
         self.global_module_interface._cleanup()
 
     def test_all_started(self):
-        ThreadList = multiscanner._start_module_threads(self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.Config, self.global_module_interface)
+        ThreadList = multiscanner._start_module_threads(self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started
