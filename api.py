@@ -67,7 +67,7 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the DB.
     '''
-    return jsonify({'tasks': TASKS})
+    return jsonify({'Tasks': TASKS})
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
@@ -79,7 +79,7 @@ def get_task(task_id):
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Message': task[0]})
+    return jsonify({'Task': task[0]})
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
