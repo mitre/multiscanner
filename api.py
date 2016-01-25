@@ -11,7 +11,7 @@ GET /api/v1/tasks/delete/<task_id> ----> delete task_id
 POST /api/v1/tasks/create ---> POST file and receive report id
 '''
 
-from flask import Flask, jsonify, make_response, request
+from flask import Flask, jsonify, make_response, request, abort
 
 TASKS = [
     {'id': 1, 'report': {"/tmp/example.log":{"MD5":"53f43f9591749b8cae536ff13e48d6de","SHA256":"815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66","libmagic":"ASCII text"}}},
@@ -19,9 +19,19 @@ TASKS = [
 ]
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
-INVALID_REQUEST = {'Message': 'Invalide request parameters'}
+INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 
 app = Flask(__name__)
+
+
+@app.errorhandler(400)
+def invalid_request(error):
+    return make_response(jsonify(INVALID_REQUEST), 400)
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify(TASK_NOT_FOUND), 404)
+
 
 @app.route('/')
 def index():
@@ -37,7 +47,7 @@ def task_list():
 def get_task(task_id):
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
-        return make_response(jsonify(TASK_NOT_FOUND), 404)
+        abort(404)
     return jsonify({'Message': task[0]})
 
 
@@ -45,15 +55,15 @@ def get_task(task_id):
 def delete_task(task_id):
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
-        return make_response(jsonify(TASK_NOT_FOUND), 404)
+        abort(404)
     TASKS.remove(task[0])
     return jsonify({'Message': 'Deleted'})
 
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
 def create_task():
-    if not request.json or not 'title' in request.json:
-        make_response(jsonify(INVALID_REQUEST), 400)
+    if not request.json or not 'report' in request.json:
+        abort(400)
     task = {
         'id': TASKS[-1]['id'] + 1,
         'report': request.json['report'],
