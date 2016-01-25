@@ -21,16 +21,21 @@ TASKS = [
 TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 
+HTTP_OK = 200
+HTTP_CREATED = 201
+HTTP_BAD_REQUEST = 400
+HTTP_NOT_FOUND = 404
+
 app = Flask(__name__)
 
 
-@app.errorhandler(400)
+@app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
-    return make_response(jsonify(INVALID_REQUEST), 400)
+    return make_response(jsonify(INVALID_REQUEST), HTTP_BAD_REQUEST)
 
-@app.errorhandler(404)
+@app.errorhandler(HTTP_NOT_FOUND)
 def not_found(error):
-    return make_response(jsonify(TASK_NOT_FOUND), 404)
+    return make_response(jsonify(TASK_NOT_FOUND), HTTP_NOT_FOUND)
 
 
 @app.route('/')
@@ -47,7 +52,7 @@ def task_list():
 def get_task(task_id):
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
-        abort(404)
+        abort(HTTP_NOT_FOUND)
     return jsonify({'Message': task[0]})
 
 
@@ -55,7 +60,7 @@ def get_task(task_id):
 def delete_task(task_id):
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
-        abort(404)
+        abort(HTTP_NOT_FOUND)
     TASKS.remove(task[0])
     return jsonify({'Message': 'Deleted'})
 
@@ -63,13 +68,13 @@ def delete_task(task_id):
 @app.route('/api/v1/tasks/create/', methods=['POST'])
 def create_task():
     if not request.json or not 'report' in request.json:
-        abort(400)
+        abort(HTTP_BAD_REQUEST)
     task = {
         'id': TASKS[-1]['id'] + 1,
         'report': request.json['report'],
     }
     TASKS.append(task)
-    return jsonify({'Message': 'Added'}), 201
+    return jsonify({'Message': 'Added'}), HTTP_CREATED
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
