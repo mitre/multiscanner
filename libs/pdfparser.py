@@ -717,26 +717,26 @@ def ConditionalCanonicalize(sIn, nocanonicalizedoutput):
 
 # http://code.google.com/p/pdfminerr/source/browse/trunk/pdfminer/pdfminer/ascii85.py
 def ASCII85Decode(data):
-  import struct
-  n = b = 0
-  out = ''
-  for c in data:
-    if '!' <= c and c <= 'u':
-      n += 1
-      b = b*85+(ord(c)-33)
-      if n == 5:
-        out += struct.pack('>L',b)
-        n = b = 0
-    elif c == 'z':
-      assert n == 0
-      out += '\0\0\0\0'
-    elif c == '~':
-      if n:
-        for _ in range(5-n):
-          b = b*85+84
-        out += struct.pack('>L',b)[:n-1]
-      break
-  return out
+    import struct
+    n = b = 0
+    out = ''
+    for c in data:
+        if '!' <= c and c <= 'u':
+            n += 1
+            b = b*85+(ord(c)-33)
+            if n == 5:
+                out += struct.pack('>L',b)
+                n = b = 0
+        elif c == 'z':
+            assert n == 0
+            out += '\0\0\0\0'
+        elif c == '~':
+            if n:
+                for _ in range(5-n):
+                    b = b*85+84
+            out += struct.pack('>L',b)[:n-1]
+        break
+    return out
 
 def ASCIIHexDecode(data):
     return binascii.unhexlify(''.join([c for c in data if c not in ' \t\n\r']).rstrip('>'))
