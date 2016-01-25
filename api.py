@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 '''
+THIS APP IS NOT PRODUCTION READY!! DO NOT USE!
+
 Flask app that provides a RESTful API to
 the multiscanner.
 
@@ -40,26 +42,40 @@ app = Flask(__name__)
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
+    '''Return a 400 with the INVALID_REQUEST message.'''
     return make_response(jsonify(INVALID_REQUEST), HTTP_BAD_REQUEST)
 
 
 @app.errorhandler(HTTP_NOT_FOUND)
 def not_found(error):
+    '''Return a 404 with a TASK_NOT_FOUND message.'''
     return make_response(jsonify(TASK_NOT_FOUND), HTTP_NOT_FOUND)
 
 
 @app.route('/')
 def index():
+    '''
+    Return a default standard message
+    for testing connectivity.
+    '''
     return jsonify({'Message': 'True'})
 
 
 @app.route('/api/v1/tasks/list/', methods=['GET'])
 def task_list():
+    '''
+    Return a JSON dictionary containing all the tasks
+    in the DB.
+    '''
     return jsonify({'tasks': TASKS})
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
 def get_task(task_id):
+    '''
+    Return a JSON dictionary corresponding
+    to the given task ID.
+    '''
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
         abort(HTTP_NOT_FOUND)
@@ -68,6 +84,9 @@ def get_task(task_id):
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
 def delete_task(task_id):
+    '''
+    Delete the specified task. Return deleted message.
+    '''
     task = [task for task in TASKS if task['id'] == task_id]
     if len(task) == 0:
         abort(HTTP_NOT_FOUND)
@@ -77,6 +96,10 @@ def delete_task(task_id):
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
 def create_task():
+    '''
+    Create a new task. Save the submitted file
+    to UPLOAD_FOLDER. Return task id and 201 status.
+    '''
     file_ = request.files['file']
     extension = os.path.splitext(file_.filename)[1]
     f_name = str(uuid.uuid4()) + extension
@@ -89,12 +112,15 @@ def create_task():
     # output = multiscanner.multiscan([file_path])
     # report = multiscanner.parseReports
 
-    id = TASKS[-1]['id'] + 1
-    TASKS.append({'id': id, 'report': 'pending'})
-    return make_response(jsonify({'Message': {'task_id': id}}), HTTP_CREATED)
+    task_id = TASKS[-1]['id'] + 1
+    TASKS.append({'id': task_id, 'report': 'pending'})
+    return make_response(
+        jsonify({'Message': {'task_id': task_id}}),
+        HTTP_CREATED
+    )
 
 if __name__ == '__main__':
-    if (not os.path.isdir(UPLOAD_FOLDER)):
+    if not os.path.isdir(UPLOAD_FOLDER):
         print 'Creating upload dir'
         os.makedirs(UPLOAD_FOLDER)
     app.run(host='0.0.0.0', port=8080, debug=True)
