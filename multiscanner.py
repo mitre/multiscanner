@@ -583,7 +583,6 @@ def _main():
             if zipfile.is_zipfile(fname):
                 unzip_dir = os.path.join('_tmp', os.path.basename(fname))
                 z = zipfile.ZipFile(fname)
-                # TODO: Add password capabilities
                 if PY3:
                     args.password = bytes(args.password, 'utf-8')
                 try:
