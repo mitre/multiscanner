@@ -13,8 +13,8 @@ Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
 TODO:
-* POST to /api/v1/tasks/create should accept a file
 * Add a backend DB to store reports
+* Make this app agnostic to choice of backend DB
 * Add doc strings to functions
 '''
 import os
@@ -94,4 +94,7 @@ def create_task():
     return make_response(jsonify({'Message': {'task_id': id}}), HTTP_CREATED)
 
 if __name__ == '__main__':
+    if (not os.path.isdir(UPLOAD_FOLDER)):
+        print 'Creating upload dir'
+        os.makedirs(UPLOAD_FOLDER)
     app.run(host='0.0.0.0', port=8080, debug=True)
