@@ -20,11 +20,10 @@ TODO:
 import os
 import uuid
 from flask import Flask, jsonify, make_response, request, abort
-import multiscanner
 
 TASKS = [
-    {'id': 1, 'report': {"/tmp/example.log":{"MD5":"53f43f9591749b8cae536ff13e48d6de","SHA256":"815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66","libmagic":"ASCII text"}}},
-    {'id': 2, 'report': {"/opt/grep_in_mem.py":{"MD5":"96b47da202ddba8d7a6b91fecbf89a41","SHA256":"26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f","libmagic":"a /bin/python script text executable"}}},
+    {'id': 1, 'report': {"/tmp/example.log": {"MD5": "53f43f9591749b8cae536ff13e48d6de", "SHA256": "815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66", "libmagic": "ASCII text"}}},
+    {'id': 2, 'report': {"/opt/grep_in_mem.py": {"MD5": "96b47da202ddba8d7a6b91fecbf89a41", "SHA256": "26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f", "libmagic": "a /bin/python script text executable"}}},
 ]
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
@@ -83,12 +82,12 @@ def create_task():
     f_name = str(uuid.uuid4()) + extension
     file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
+
     # TODO: save file to DB
     # TODO: run multiscan on the file, have it update the
     # DB when done
     # output = multiscanner.multiscan([file_path])
     # report = multiscanner.parseReports
-    
 
     id = TASKS[-1]['id'] + 1
     TASKS.append({'id': id, 'report': 'pending'})
