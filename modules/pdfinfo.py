@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from builtins import *
 import hashlib
 import pdfparser
 import math
@@ -57,6 +58,7 @@ def scan(filelist, conf=DEFAULTCONF):
 def H(data):
     if not data:
         return 0
+    data = data.decode('utf-8', 'replace')
     entropy = 0
     for x in range(256):
         p_x = float(data.count(chr(x)))/len(data)
@@ -66,11 +68,7 @@ def H(data):
 
 def _get_pdf_version(data):
     header_ver = re.compile('%PDF-([A-Za-z0-9\.]{1,3})[\r\n]', re.M)
-    matches = None
-    if PY3:
-        matches = header_ver.match(data.decode(encoding='UTF-8', errors='replace'))
-    else:
-        matches = header_ver.match(data)
+    matches = header_ver.match(data.decode('UTF-8', 'replace'))
     if matches:
         return matches.group(1)
     else:
@@ -119,9 +117,11 @@ def run(fname, data, fast=False):
         if pdf_object != None:
             if pdf_object.type in [pdfparser.PDF_ELEMENT_INDIRECT_OBJECT]:
                 rawContent = pdfparser.FormatOutput(pdf_object.content, True)
+                if PY3:
+                    rawContent = rawContent.encode('utf-8', 'replace')
                 object_type = pdf_object.GetType()
                 if not fast:
-                    section_md5_digest = hashlib.md5(rawContent.encode(encoding='UTF-8', errors='replace')).hexdigest()
+                    section_md5_digest = hashlib.md5(rawContent).hexdigest()
                     section_entropy = H(rawContent)
                     result = {
                             "obj_id": pdf_object.id,

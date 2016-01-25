@@ -71,7 +71,7 @@ def scan(filelist, conf=DEFAULTCONF):
             # Check for dead tasks
             elif status == 'running':
                 if task_id not in task_status:
-                    task_status[task_id] = time.time() + conf['timeout'] + conf['task timeout']
+                    task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
                         #TODO Log timeout

@@ -69,7 +69,7 @@ def scan(filelist, conf=DEFAULTCONF):
         except:
             return None
     #Parse output
-    output = output.decode("utf-8")
+    output = output.decode("utf-8", errors='replace')
     virusresults = re.findall("([^\r\n]+) Virus identified (.+)\s+$", output, re.MULTILINE)
     #Stupid AVG prepends the UNC for mapped drives
     uncdetect = "\(\\\\.*\) ([a-zA-Z]:\\\\.*)$"
@@ -87,7 +87,8 @@ def scan(filelist, conf=DEFAULTCONF):
     if verinfo:
         metadata["Program version"] = verinfo.group(1)
         metadata["Engine version"] = verinfo.group(2)
-        verinfo = re.search("Virus Database: Version ([\d/]+) ([\d-]+)", output)
+    verinfo = re.search("Virus Database: Version ([\d/]+) ([\d-]+)", output)
+    if verinfo:
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
     return (virusresults, metadata)
