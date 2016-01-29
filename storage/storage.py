@@ -62,25 +62,24 @@ def parse_config(config_object):
     return return_var
 
 
-def get_storage(config_file):
-    #print config.get(STORAGE_SECTION, 'database')
-    config_object = get_config(config_file)
-    config_dict = parse_config(config_object)
-    db_choice = config_dict['Database']['database']
-
-    mod_name = '%s_storage' % db_choice.lower()
-    if db_choice == 'ElasticSearch':
-        mod = import_module(mod_name)
-        return mod.ElasticSearchStorage(config_dict['Database'])
-    elif db_choice == 'Mongo':
-        mod = import_module(mod_name)
-        return mod.MongoStorage(config_dict['Database'])
-    else:
-        raise ValueError('Unsupported DB type')
-
-
 class Storage(object):
     __metaclass__ = abc.ABCMeta
+
+    @staticmethod
+    def get_storage(config_file):
+        config_object = get_config(config_file)
+        config_dict = parse_config(config_object)
+        db_choice = config_dict['Database']['database']
+
+        mod_name = '%s_storage' % db_choice.lower()
+        if db_choice == 'ElasticSearch':
+            mod = import_module(mod_name)
+            return mod.ElasticSearchStorage(config_dict['Database'])
+        elif db_choice == 'Mongo':
+            mod = import_module(mod_name)
+            return mod.MongoStorage(config_dict['Database'])
+        else:
+            raise ValueError('Unsupported DB type')
 
     @abc.abstractmethod
     def store(self, task):
