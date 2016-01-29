@@ -43,7 +43,7 @@ def get_config(config_file):
     '''
     config = ConfigParser.SafeConfigParser()
     config.optionxform = str
-    config.read(STORAGE_CONFIG)
+    config.read(config_file)
     return config
 
 
