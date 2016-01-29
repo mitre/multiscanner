@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-import storage
+from storage import Storage
 
 STORAGE_CONFIG = 'config_storage.ini'
 
 def main():
-    db_store = storage.get_storage(STORAGE_CONFIG)
+    db_store = Storage.get_storage(STORAGE_CONFIG)
     for key, value in db_store.__dict__.iteritems():
         print '%s: %s' % (key, value)
 
