@@ -5,6 +5,7 @@ from __future__ import division, absolute_import, with_statement, print_function
 import os
 import ast
 import sys
+import imp
 PY3 = False
 if sys.version_info > (3,):
     PY3 = True
@@ -13,6 +14,21 @@ try:
     SSH = True
 except:
     SSH = False
+
+def load_module(name, path):
+    """
+    Loads a module by filename and path. Returns module object
+
+    name - Filename without .py
+    path - A list of dirs to search
+    """
+    try:
+        (fname, pathname, description) = imp.find_module(name, path)
+        loaded_mod = imp.load_module(name, fname, pathname, description)
+    except Exception as e:
+        loaded_mod = None
+        print(e)
+    return loaded_mod
 
 def list2cmdline(list):
     """

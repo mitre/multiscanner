@@ -9,7 +9,6 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-import imp
 import json
 import re
 import shutil
@@ -48,6 +47,7 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"]
+
     }
 
 VERBOSE = False
@@ -58,6 +58,7 @@ from common import parse_config
 from common import basename
 from common import convert_encoding
 from common import queue2list
+from common import load_module
 
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
@@ -86,23 +87,6 @@ class _Thread(threading.Thread):
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
             del self.__target, self.__args, self.__kwargs
-
-
-def _loadModule(name, path):
-    """
-    Loads a module by filename and path. Returns module object
-
-    name - Filename without .py
-    path - A list of dirs to search
-    """
-    try:
-        (fname, pathname, description) = imp.find_module(name, path)
-        loaded_mod = imp.load_module(name, fname, pathname, description)
-    except Exception as e:
-        loaded_mod = None
-        print(e)
-
-    return loaded_mod
 
 
 class _GlobalModuleInterface(object):
@@ -345,7 +329,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
             moddir = os.path.dirname(module)
-            mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+            mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
             if not mod:
                 print(module, " not a valid module...")
                 continue
@@ -392,7 +376,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
             modname = os.path.basename(module.split('.')[0])
             moddir = os.path.dirname(module)
             if modname not in Config.sections():
-                mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+                mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
                 if mod:
                     try:
                         conf = mod.DEFAULTCONF
@@ -430,7 +414,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
         if module.endswith(".py"):
             modname = os.path.basename(module.split('.')[0])
             moddir = os.path.dirname(module)
-            mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+            mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
             if mod:
                 try:
                     conf = mod.DEFAULTCONF
