@@ -17,10 +17,6 @@ Get:
     - Returns a dictionary representing the task requested
     - If the task has not finished, the report field will
       be "pending"
-List:
-    - Equivalent to a "Get All"
-    - Returns a list of dictionaries representing all
-      tasks currently stored in the DB
 Delete:
     - Accepts an ID #
     - Deletes the specified task
