@@ -54,3 +54,5 @@ coverage.xml
 docs/_build/
 # PyBuilder
 target/
+# Sqlite DB
+sqlite.db
