@@ -17,6 +17,9 @@ Get:
     - Returns a dictionary representing the task requested
     - If the task has not finished, the report field will
       be "pending"
+Get Report:
+    - Accepts an ID #
+    - Returns a dictionary representing the report requested
 Delete:
     - Accepts an ID #
     - Deletes the specified task
@@ -76,6 +79,10 @@ class Storage(object):
 
     @abc.abstractmethod
     def get(self, task_id):
+        pass
+
+    @abc.abstractmethod
+    def get_report(self, report_id):
         pass
 
     @abc.abstractmethod
