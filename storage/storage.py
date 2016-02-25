@@ -24,13 +24,21 @@ Delete:
       404 {"Message": "No task with that ID found"} dictionary
 '''
 
+import os
+import sys
 from importlib import import_module
 import abc
 import ConfigParser
 
-STORAGE_CONFIG = 'config_storage.ini'
+
+MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
+
+STORAGE_CONFIG = os.path.join(MS_WD, 'config_storage.ini')
 STORAGE_SECTION = 'Database'
 
+from common import parse_config
 
 def get_config(config_file):
     '''
@@ -43,26 +51,11 @@ def get_config(config_file):
     return config
 
 
-# TODO: import this function from libs/common.py
-def parse_config(config_object):
-    """Take a config object and returns it as a dictionary"""
-    return_var = {}
-    for section in config_object.sections():
-        section_dict = dict(config_object.items(section))
-        for key in section_dict:
-            try:
-                section_dict[key] = ast.literal_eval(section_dict[key])
-            except:
-                pass
-        return_var[section] = section_dict
-    return return_var
-
-
 class Storage(object):
     __metaclass__ = abc.ABCMeta
 
     @staticmethod
-    def get_storage(config_file):
+    def get_storage(config_file=STORAGE_CONFIG):
         config_object = get_config(config_file)
         config_dict = parse_config(config_object)
         db_choice = config_dict['Database']['database']
