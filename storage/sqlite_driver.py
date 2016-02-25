@@ -61,10 +61,11 @@ def update_record(task_id, task_status, report_id=None):
     ses = Session()
 
     record = ses.query(Record).get(task_id)
-    record.task_status = task_status
-    record.report_id = report_id
-    ses.commit()
-    return record
+    if record:
+        record.task_status = task_status
+        record.report_id = report_id
+        ses.commit()
+        return record
 
 def print_all_records():
     eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
@@ -80,7 +81,7 @@ def main():
     init_sqlite_db()
 
     task_id = add_record()
-    update_record(task_id=task_id, task_status='Complete', report_id=1)
+    update_record(task_id=task_id, task_status='Complete', report_id=task_id)
 
     print_all_records()
 
