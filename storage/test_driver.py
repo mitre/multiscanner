@@ -2,10 +2,10 @@
 
 from storage import Storage
 
-STORAGE_CONFIG = 'config_storage.ini'
+# STORAGE_CONFIG = '/opt/multiscanner/config_storage.ini'
 
 def main():
-    db_store = Storage.get_storage(STORAGE_CONFIG)
+    db_store = Storage.get_storage()
     for key, value in db_store.__dict__.iteritems():
         print '%s: %s' % (key, value)
 
