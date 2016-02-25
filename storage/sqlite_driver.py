@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_NAME = 'sqlite.db'
@@ -40,9 +41,30 @@ def add_record(task_id=None, task_status='Pending', report_id=None):
     Session = sessionmaker(bind=eng)
     ses = Session()
 
+    record = Record(
+        task_id=task_id,
+        task_status='Pending',
+        report_id=None
+    )
+    try:
+        ses.add(record)
+        ses.commit()
+    except IntegrityError as e:
+        print 'PRIMARY KEY must be unique! %s' % e
+        return -1
+    return record.task_id
 
-    ses.add(Record(task_status='Pending', report_id=None))
+
+def update_record(task_id, task_status, report_id=None):
+    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+    Session = sessionmaker(bind=eng)
+    ses = Session()
+
+    record = ses.query(Record).get(task_id)
+    record.task_status = task_status
+    record.report_id = report_id
     ses.commit()
+    return record
 
 def print_all_records():
     eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
@@ -57,7 +79,8 @@ def print_all_records():
 def main():
     init_sqlite_db()
 
-    add_record()
+    task_id = add_record()
+    update_record(task_id=task_id, task_status='Complete', report_id=1)
 
     print_all_records()
 
