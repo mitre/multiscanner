@@ -4,7 +4,7 @@ storage framework.
 The underpinning of the storage will be a sqlite database.
 The sqlite database will have several duties.
 
-The sqlite DB will track 3 things: task_id, task status,
+The sqlite DB will track 3 things: task_id, task status, and
 report id. Task ID will be a unique ID generate automatically
 by SQLite. 
 
