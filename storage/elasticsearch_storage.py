@@ -10,14 +10,11 @@ class ElasticSearchStorage(Storage):
         self.index = config_dict['index']
         self.doc_type = config_dict['doc_type']
 
-    def store(self, task):
-        return 'Task ID'
-
-    def get_task(self, task_id):
-        return {1: {'task': 'data'}}
+    def store(self, report):
+        return 'Report ID'
 
     def get_report(self, report_id):
         return {1: {'report': 'data'}}
 
-    def delete(self, task_id):
+    def delete(self, report_id):
         return {'Message': 'deleted'}

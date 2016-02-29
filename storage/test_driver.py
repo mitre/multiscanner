@@ -10,7 +10,7 @@ def main():
         print '%s: %s' % (key, value)
 
     print '\n'
-    print db_store.get_task(1)
+    print db_store.get_report(1)
 
 
 if __name__ == '__main__':

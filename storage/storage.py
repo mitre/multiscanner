@@ -75,11 +75,7 @@ class Storage(object):
             raise ValueError('Unsupported DB type')
 
     @abc.abstractmethod
-    def store(self, task):
-        pass
-
-    @abc.abstractmethod
-    def get_task(self, task_id):
+    def store(self, report):
         pass
 
     @abc.abstractmethod
@@ -87,5 +83,5 @@ class Storage(object):
         pass
 
     @abc.abstractmethod
-    def delete(self, task_id):
+    def delete(self, report_id):
         pass
