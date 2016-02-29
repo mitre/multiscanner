@@ -23,10 +23,17 @@ import os
 import uuid
 from flask import Flask, jsonify, make_response, request, abort
 
+
 TASKS = [
-    {'id': 1, 'report': {"/tmp/example.log": {"MD5": "53f43f9591749b8cae536ff13e48d6de", "SHA256": "815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66", "libmagic": "ASCII text"}}},
-    {'id': 2, 'report': {"/opt/grep_in_mem.py": {"MD5": "96b47da202ddba8d7a6b91fecbf89a41", "SHA256": "26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f", "libmagic": "a /bin/python script text executable"}}},
+    {'task_id': 1, 'task_status': 'Complete', 'report_id': 1},
+    {'task_id': 2, 'task_status': 'Pending', 'report_id': None},
 ]
+REPORTS = [
+    {'report_id': 1, 'report': {"/tmp/example.log": {"MD5": "53f43f9591749b8cae536ff13e48d6de", "SHA256": "815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66", "libmagic": "ASCII text"}}},
+    {'report_id': 2, 'report': {"/opt/grep_in_mem.py": {"MD5": "96b47da202ddba8d7a6b91fecbf89a41", "SHA256": "26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f", "libmagic": "a /bin/python script text executable"}}},
+
+]
+
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -76,7 +83,7 @@ def get_task(task_id):
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-    task = [task for task in TASKS if task['id'] == task_id]
+    task = [task for task in TASKS if task['task_id'] == task_id]
     if len(task) == 0:
         abort(HTTP_NOT_FOUND)
     return jsonify({'Task': task[0]})
@@ -87,7 +94,7 @@ def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
     '''
-    task = [task for task in TASKS if task['id'] == task_id]
+    task = [task for task in TASKS if task['task_id'] == task_id]
     if len(task) == 0:
         abort(HTTP_NOT_FOUND)
     TASKS.remove(task[0])
@@ -112,13 +119,36 @@ def create_task():
     # output = multiscanner.multiscan([file_path])
     # report = multiscanner.parseReports
 
-    task_id = TASKS[-1]['id'] + 1
-    TASKS.append({'id': task_id, 'report': 'pending'})
+    task_id = TASKS[-1]['task_id'] + 1
+    TASKS.append({'task_id': task_id, 'report': 'pending'})
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
         HTTP_CREATED
     )
 
+
+@app.route('/api/v1/reports/list/<int:report_id>', methods=['GET'])
+def get_report(report_id):
+    '''
+    Return a JSON dictionary corresponding
+    to the given report ID.
+    '''
+    report = [report for report in REPORTS if report['report_id'] == report_id]
+    if len(report) == 0:
+        abort(HTTP_NOT_FOUND)
+    return jsonify({'Report': report[0]})
+
+
+@app.route('/api/v1/reports/delete/<int:report_id>', methods=['GET'])
+def delete_report(report_id):
+    '''
+    Delete the specified report. Return deleted message.
+    '''
+    report = [report for report in REPORTS if report['report_id'] == report_id]
+    if len(report) == 0:
+        abort(HTTP_NOT_FOUND)
+    REPORTS.remove(report[0])
+    return jsonify({'Message': 'Deleted'})
 if __name__ == '__main__':
 
     # TODO initialize sqlite DB
