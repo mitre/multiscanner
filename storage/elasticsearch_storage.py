@@ -13,11 +13,11 @@ class ElasticSearchStorage(Storage):
     def store(self, task):
         return 'Task ID'
 
-    def get(self, task_id):
-        return {1: {'report': 'data'}}
+    def get_task(self, task_id):
+        return {1: {'task': 'data'}}
 
-    def list(self):
-        return [{1: {'report': 'data'}}]
+    def get_report(self, report_id):
+        return {1: {'report': 'data'}}
 
     def delete(self, task_id):
         return {'Message': 'deleted'}

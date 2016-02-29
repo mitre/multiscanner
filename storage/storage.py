@@ -9,12 +9,13 @@ the end user chooses.
 The storage subclass simply must support the following
 4 operations:
 Store:
-    - Accepts a dictionary representing a task and
+    - Accepts a dictionary representing a report and
       stores it in the DB
     - Returns an ID #
-Get:
+Get Task:
     - Accepts an ID #
     - Returns a dictionary representing the task requested
+        - <task_id, task_status, report_id>
     - If the task has not finished, the report field will
       be "pending"
 Get Report:
@@ -78,15 +79,11 @@ class Storage(object):
         pass
 
     @abc.abstractmethod
-    def get(self, task_id):
+    def get_task(self, task_id):
         pass
 
     @abc.abstractmethod
     def get_report(self, report_id):
-        pass
-
-    @abc.abstractmethod
-    def list(self):
         pass
 
     @abc.abstractmethod

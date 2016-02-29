@@ -120,6 +120,9 @@ def create_task():
     )
 
 if __name__ == '__main__':
+
+    # TODO initialize sqlite DB
+
     if not os.path.isdir(UPLOAD_FOLDER):
         print 'Creating upload dir'
         os.makedirs(UPLOAD_FOLDER)
