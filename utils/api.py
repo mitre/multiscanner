@@ -21,8 +21,16 @@ TODO:
 * Add doc strings to functions
 '''
 import os
+import sys
 import uuid
 from flask import Flask, jsonify, make_response, request, abort
+
+MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.join(MS_WD, 'storage') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+
+
+import sqlite_driver as database
 
 
 TASKS = [
@@ -46,6 +54,7 @@ HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
 app = Flask(__name__)
+db = database.Database()
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -75,7 +84,9 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the DB.
     '''
-    return jsonify({'Tasks': TASKS})
+    db = database.Database()
+
+    return jsonify({'Tasks': db.get_all_tasks()})
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
@@ -84,10 +95,11 @@ def get_task(task_id):
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-    task = [task for task in TASKS if task['task_id'] == task_id]
-    if len(task) == 0:
+    task = db.get_task(task_id)
+    if task:
+        return jsonify({'Task': task})
+    else:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Task': task[0]})
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
@@ -95,10 +107,9 @@ def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
     '''
-    task = [task for task in TASKS if task['task_id'] == task_id]
-    if len(task) == 0:
+    result = db.delete_task(task_id)
+    if not result:
         abort(HTTP_NOT_FOUND)
-    TASKS.remove(task[0])
     return jsonify({'Message': 'Deleted'})
 
 
@@ -120,8 +131,7 @@ def create_task():
     # output = multiscanner.multiscan([file_path])
     # report = multiscanner.parseReports
 
-    task_id = TASKS[-1]['task_id'] + 1
-    TASKS.append({'task_id': task_id, 'report': 'pending'})
+    task_id = db.add_task()
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
         HTTP_CREATED
@@ -150,9 +160,11 @@ def delete_report(report_id):
         abort(HTTP_NOT_FOUND)
     REPORTS.remove(report[0])
     return jsonify({'Message': 'Deleted'})
+
+
 if __name__ == '__main__':
 
-    # TODO initialize sqlite DB
+    db.init_sqlite_db()
 
     if not os.path.isdir(UPLOAD_FOLDER):
         print 'Creating upload dir'

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import json
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
@@ -28,74 +29,99 @@ class Record(Base):
             self.task_id, self.task_status, self.report_id
         )
 
+    def to_dict(self):
+        return {attr.name: getattr(self, attr.name) for attr in self.__table__.columns}
 
-def init_sqlite_db():
-    global Base
-    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
-    Base.metadata.bind = eng
-    Base.metadata.create_all()
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
-
-def add_record(task_id=None, task_status='Pending', report_id=None):
-    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
-    Session = sessionmaker(bind=eng)
-    ses = Session()
-
-    record = Record(
-        task_id=task_id,
-        task_status='Pending',
-        report_id=None
-    )
-    try:
-        ses.add(record)
-        ses.commit()
-    except IntegrityError as e:
-        print 'PRIMARY KEY must be unique! %s' % e
-        return -1
-    return record.task_id
+class Database(object):
+    def init_sqlite_db(self):
+        global Base
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Base.metadata.bind = eng
+        Base.metadata.create_all()
 
 
-def update_record(task_id, task_status, report_id=None):
-    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
-    Session = sessionmaker(bind=eng)
-    ses = Session()
+    def add_task(self, task_id=None, task_status='Pending', report_id=None):
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
 
-    record = ses.query(Record).get(task_id)
-    if record:
-        record.task_status = task_status
-        record.report_id = report_id
-        ses.commit()
-        return record
+        record = Record(
+            task_id=task_id,
+            task_status='Pending',
+            report_id=None
+        )
+        try:
+            ses.add(record)
+            ses.commit()
+        except IntegrityError as e:
+            print 'PRIMARY KEY must be unique! %s' % e
+            return -1
+        return record.task_id
 
 
-def get_task(task_id):
-    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
-    Session = sessionmaker(bind=eng)
-    ses = Session()
+    def update_record(self, task_id, task_status, report_id=None):
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
 
-    record = ses.query(Record).get(task_id)
-    return record
+        record = ses.query(Record).get(task_id)
+        if record:
+            record.task_status = task_status
+            record.report_id = report_id
+            ses.commit()
+            return record.to_dict()
 
-def print_all_records():
-    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
-    Session = sessionmaker(bind=eng)
-    ses = Session()
-    rs = ses.query(Record).all()
+    def get_task(self, task_id):
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
 
-    for record in rs:
-           print record
+        record = ses.query(Record).get(task_id)
+        if record:
+            return record.to_dict()
+
+    def get_all_tasks(self):
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
+        rs = ses.query(Record).all()
+
+        # For testing, do not use in production
+        record_list = []
+        for record in rs:
+               record_list.append(record.to_dict())
+        return record_list
+
+    def delete_task(self, task_id):
+        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
+
+        record = ses.query(Record).get(task_id)
+        if record:
+            ses.delete(record)
+            ses.commit()
+            return True
+        else:
+            return False
 
 
 def main():
-    init_sqlite_db()
+    db = Database()
+    db.init_sqlite_db()
 
-    # task_id = add_record()
-    # update_record(task_id=task_id, task_status='Complete', report_id=task_id)
-    print get_task(5)
-    print get_task(2)
-    print get_task(55)
+    task_id = db.add_task()
+    db.update_record(task_id=task_id, task_status='Complete', report_id=task_id)
+    print db.get_task(5)
+    print db.get_task(2)
+    print db.delete_task(3)
+    print db.delete_task(33)
 
-    # print_all_records()
+    for record in db.get_all_tasks():
+        print record
 
 
 if __name__ == '__main__':
