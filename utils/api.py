@@ -31,6 +31,7 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 
 
 import sqlite_driver as database
+from storage import Storage
 
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
@@ -44,7 +45,7 @@ HTTP_NOT_FOUND = 404
 
 app = Flask(__name__)
 db = database.Database()
-
+db_store = Storage.get_storage()
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
@@ -132,10 +133,11 @@ def get_report(report_id):
     Return a JSON dictionary corresponding
     to the given report ID.
     '''
-    report = [report for report in REPORTS if report['report_id'] == report_id]
-    if len(report) == 0:
+    report = db_store.get_report(report_id)
+    if report:
+        return jsonify({'Report': report})
+    else:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Report': report[0]})
 
 
 @app.route('/api/v1/reports/delete/<int:report_id>', methods=['GET'])
@@ -143,11 +145,10 @@ def delete_report(report_id):
     '''
     Delete the specified report. Return deleted message.
     '''
-    report = [report for report in REPORTS if report['report_id'] == report_id]
-    if len(report) == 0:
+    if db_store.delete(report_id):
+        return jsonify({'Message': 'Deleted'})
+    else:
         abort(HTTP_NOT_FOUND)
-    REPORTS.remove(report[0])
-    return jsonify({'Message': 'Deleted'})
 
 
 if __name__ == '__main__':
