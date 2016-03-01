@@ -7,41 +7,48 @@ MultiScanner is a file analysis framework that allows the user to evaluate a set
 of files with a set of tools. Tools can be custom built python scripts, web
 APIs, software running on another machine, etc. Tools are incorporated by creating
 modules that run in the MultiScanner framework. Modules are designed to be quickly
-written and easily incorporated into the framework. Currently written and maintained modules are related
-to malware analytics, but the framework is not limited to that scope.
+written and easily incorporated into the framework. Currently written and maintained
+modules are related to malware analytics, but the framework is not limited to that
+scope.
 
 Requirements
 ------------
 Python 2.7 is recommended. Compatibility with 2.6+ and
-3.3+ is supported but not thoroughly maintained and tested. Please submit an issue or a pull request fixing any issues found with other versions of Python.
+3.3+ is supported but not thoroughly maintained and tested. Please submit an issue
+or a pull request fixing any issues found with other versions of Python.
 
 
-An installer script is included in the project [install.sh](<install.sh>), which installs
-the prerequisites on most systems.
+An installer script is included in the project [install.sh](<install.sh>), which
+installs the prerequisites on most systems.
 
 Installation
 ------------
 ### MultiScanner ###
-MultiScanner must have a configuration file to run. Generate the MultiScanner default configuration by running `python
-multiscanner.py init` after cloning the repository. This command can be used to rewrite
-the configuration file to its default state or, if new modules have been written, to add
-their configuration to the configuration file.
+MultiScanner must have a configuration file to run. Generate the MultiScanner default
+configuration by running `python multiscanner.py init` after cloning the repository.
+This command can be used to rewrite the configuration file to its default state or,
+if new modules have been written, to add their configuration to the configuration
+file.
 
 ### Analytic Machine ###
-Default modules have the option to be run locally or via SSH. The development team runs MultiScanner on a Linux host and hosts the
-majority of analytical tools on a separate Windows machine. The SSH server used
-in this environment is freeSSHd from <http://www.freesshd.com/>. 
+Default modules have the option to be run locally or via SSH. The development team
+runs MultiScanner on a Linux host and hosts the majority of analytical tools on
+a separate Windows machine. The SSH server used in this environment is freeSSHd
+from <http://www.freesshd.com/>. 
 
-A network share accessible to both the MultiScanner and the Analytic Machines is required for the multi-machine setup. Once configured, the network share path must be identified in the configuration file, config.ini. To do this, set the
-`copyfilesto` option under `[main]` to be the mount point on the system running
-MultiScanner. Modules can have a `replacement path` option, which is the network
-share mount point on the analytic machine.
+A network share accessible to both the MultiScanner and the Analytic Machines is
+required for the multi-machine setup. Once configured, the network share path must
+be identified in the configuration file, config.ini. To do this, set the `copyfilesto`
+option under `[main]` to be the mount point on the system running MultiScanner.
+Modules can have a `replacement path` option, which is the network share mount point
+on the analytic machine.
 
 Module Writing
 --------------
 Modules are intended to be quickly written and incorporated into the framework.
-A finished module must be placed in the modules folder before it can be used. The configuration file does not need to be manually updated. See [docs/module\_writing.md](<docs/module_writing.md>) for more
-information.
+A finished module must be placed in the modules folder before it can be used. The
+configuration file does not need to be manually updated. See [docs/module\_writing.md](<docs/module_writing.md>)
+for more information.
 
 Module Configuration
 --------------------
@@ -50,8 +57,8 @@ Modules are configured within the configuration file, config.ini. See
 
 Use in other projects
 ---------------------
-MultiScanner can be incorporated as a module in another projects. Below is a
-simple example of how to import MultiScanner into a Python script.
+MultiScanner can be incorporated as a module in another projects. Below is a simple
+example of how to import MultiScanner into a Python script.
 
 ``` python
 import multiscanner
