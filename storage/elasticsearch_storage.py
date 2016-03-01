@@ -30,7 +30,7 @@ class ElasticSearchStorage(Storage):
         report = [report for report in REPORTS if report['report_id'] == report_id]
         if len(report) == 0:
             return {}
-        return json.dumps(report[0])
+        return report[0]
 
     def delete(self, report_id):
         report = [report for report in REPORTS if report['report_id'] == report_id]
