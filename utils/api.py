@@ -127,7 +127,7 @@ def create_task():
     )
 
 
-@app.route('/api/v1/reports/list/<int:report_id>', methods=['GET'])
+@app.route('/api/v1/reports/list/<report_id>', methods=['GET'])
 def get_report(report_id):
     '''
     Return a JSON dictionary corresponding
