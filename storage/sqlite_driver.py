@@ -67,6 +67,15 @@ def update_record(task_id, task_status, report_id=None):
         ses.commit()
         return record
 
+
+def get_task(task_id):
+    eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+    Session = sessionmaker(bind=eng)
+    ses = Session()
+
+    record = ses.query(Record).get(task_id)
+    return record
+
 def print_all_records():
     eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
     Session = sessionmaker(bind=eng)
@@ -80,10 +89,13 @@ def print_all_records():
 def main():
     init_sqlite_db()
 
-    task_id = add_record()
-    update_record(task_id=task_id, task_status='Complete', report_id=task_id)
+    # task_id = add_record()
+    # update_record(task_id=task_id, task_status='Complete', report_id=task_id)
+    print get_task(5)
+    print get_task(2)
+    print get_task(55)
 
-    print_all_records()
+    # print_all_records()
 
 
 if __name__ == '__main__':
