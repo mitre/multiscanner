@@ -125,7 +125,6 @@ def create_task():
     file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
 
-    # TODO: save file to DB
     # TODO: run multiscan on the file, have it update the
     # DB when done
     # output = multiscanner.multiscan([file_path])
