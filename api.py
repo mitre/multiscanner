@@ -8,8 +8,9 @@ the multiscanner.
 Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
-GET /api/v1/tasks/<task_id> ---> receive report in JSON format
-GET /api/v1/tasks/delete/<task_id> ----> delete task_id
+GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
+GET /api/v1/reports/list/<report_id> ---> receive report in JSON
+GET /api/v1/reports/delete/<report_id> ----> delete report_id
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
