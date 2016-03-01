@@ -10,13 +10,15 @@ def main():
         print '%s: %s' % (key, value)
     print '\n'
 
-    report_id = db_store.store(NEW_REPORT)
+    # report_id = db_store.store(NEW_REPORT)
+    report_id = 'AVM0dGOF6iQbRONBw9yB'
 
     print db_store.get_report(report_id)
     print db_store.get_report(3)
 
-    db_store.delete(report_id)
-    print db_store.delete(2)
+    # db_store.delete(report_id)
+    # print db_store.delete(2)
+
 
 
 if __name__ == '__main__':
