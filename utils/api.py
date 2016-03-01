@@ -140,7 +140,7 @@ def get_report(report_id):
         abort(HTTP_NOT_FOUND)
 
 
-@app.route('/api/v1/reports/delete/<int:report_id>', methods=['GET'])
+@app.route('/api/v1/reports/delete/<report_id>', methods=['GET'])
 def delete_report(report_id):
     '''
     Delete the specified report. Return deleted message.
