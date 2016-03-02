@@ -19,15 +19,13 @@ def main():
     db_store = Storage.get_storage()
     sql_db = Database()
     sql_db.init_sqlite_db()
-    '''
-    for key, value in db_store.__dict__.iteritems():
-        print '%s: %s' % (key, value)
-    print '\n'
-    '''
+
+
     task_id = sql_db.add_task()
     print sql_db.get_task(task_id)
 
-    report_ids = populate_es()
+    report_ids = db_store.store(REPORTS)
+
     sql_db.update_record(
         task_id=task_id,
         task_status='Complete',
