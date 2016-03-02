@@ -23,7 +23,7 @@ class ElasticSearchStorage(Storage):
             clean_report = report.values()[0]
         except:
             report_id = ''
-            clean_report = report.keys()[0]
+            clean_report = report.values()[0]
         result = self.es.index(
             index=self.index,
             doc_type=self.doc_type,
