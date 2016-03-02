@@ -1,4 +1,4 @@
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 
 from storage import Storage
 
@@ -17,20 +17,33 @@ class ElasticSearchStorage(Storage):
         )
 
     def store(self, report):
-        try:
-            report_id = report.values()[0]['SHA256']
-            report.values()[0]['filename'] = report.keys()[0]
-            clean_report = report.values()[0]
-        except:
-            report_id = ''
-            clean_report = report.values()[0]
+        report_id_list = []
+        report_list = []
+        for filename in report:
+            report[filename]['filename'] = filename
+            try:
+                report_id = report[filename]['SHA256']
+                report_id_list.append(report_id)
+            except KeyError:
+                report_id = ''
+            report_list.append(
+                {
+                    '_index': self.index,
+                    '_type': self.doc_type,
+                    '_id': report[filename]['SHA256'],
+                    '_source': report[filename]
+                }
+            )
+        result = helpers.bulk(self.es, report_list)
+        '''
         result = self.es.index(
             index=self.index,
             doc_type=self.doc_type,
             id=report_id,
             body=clean_report
         )
-        return result['_id']
+        '''
+        return report_id_list
 
     def get_report(self, report_id):
         try:
