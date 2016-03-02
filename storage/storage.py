@@ -34,6 +34,7 @@ from importlib import import_module
 import abc
 import ConfigParser
 
+import sqlite_driver
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'libs') not in sys.path:
@@ -57,6 +58,10 @@ def get_config(config_file):
 
 class Storage(object):
     __metaclass__ = abc.ABCMeta
+    sql_db = sqlite_driver.Database()
+
+    def __init__(self):
+        self.sql_db.init_sqlite_db()
 
     @staticmethod
     def get_storage(config_file=STORAGE_CONFIG):
@@ -73,6 +78,16 @@ class Storage(object):
             return mod.MongoStorage(config_dict['Database'])
         else:
             raise ValueError('Unsupported DB type')
+
+    def _store(self, task_id, task_status, report):
+        report_ids = self.store(report)
+        self.sql_db.update_record(
+            task_id=task_id,
+            task_status=task_status,
+            report_id=report_ids
+        )
+        return report_ids
+        
 
     @abc.abstractmethod
     def store(self, report):
