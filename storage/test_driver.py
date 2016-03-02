@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from storage import Storage
+from sqlite_driver import Database
 
 NEW_REPORT = {'foo': 'bar', 'boo': 'baz'}
 REPORTS = {
@@ -16,21 +17,32 @@ def populate_es():
 
 def main():
     db_store = Storage.get_storage()
+    sql_db = Database()
+    sql_db.init_sqlite_db()
     '''
     for key, value in db_store.__dict__.iteritems():
         print '%s: %s' % (key, value)
     print '\n'
     '''
+    task_id = sql_db.add_task()
+    print sql_db.get_task(task_id)
 
     report_ids = populate_es()
+    sql_db.update_record(
+        task_id=task_id,
+        task_status='Complete',
+        report_id=report_ids
+    )
+    print sql_db.get_task(task_id)
 
     print db_store.get_report(report_ids[0])
-    print db_store.get_report(3)
 
-    db_store.delete(report_ids[0])
-    print db_store.delete(2)
+    # print db_store.get_report(3)
 
-    print db_store.get_report(report_ids[0])
+    # db_store.delete(report_ids[0])
+    # print db_store.delete(2)
+
+    # print db_store.get_report(report_ids[0])
 
 
 
