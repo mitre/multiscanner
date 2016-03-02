@@ -35,14 +35,6 @@ class ElasticSearchStorage(Storage):
                 }
             )
         result = helpers.bulk(self.es, report_list)
-        '''
-        result = self.es.index(
-            index=self.index,
-            doc_type=self.doc_type,
-            id=report_id,
-            body=clean_report
-        )
-        '''
         return report_id_list
 
     def get_report(self, report_id):
