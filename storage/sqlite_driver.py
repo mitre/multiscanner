@@ -63,6 +63,9 @@ class Database(object):
 
 
     def update_record(self, task_id, task_status, report_id=None):
+        '''
+        report_id will be a list of sha values
+        '''
         eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
         Session = sessionmaker(bind=eng)
         ses = Session()
@@ -70,7 +73,7 @@ class Database(object):
         record = ses.query(Record).get(task_id)
         if record:
             record.task_status = task_status
-            record.report_id = report_id
+            record.report_id = repr(report_id)
             ses.commit()
             return record.to_dict()
 
@@ -114,10 +117,10 @@ def main():
     db.init_sqlite_db()
 
     task_id = db.add_task()
-    db.update_record(task_id=task_id, task_status='Complete', report_id=task_id)
-    print db.get_task(5)
-    print db.get_task(2)
-    print db.delete_task(3)
+    print db.get_task(task_id)
+    report_id = ['815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66', '4aa3d6a17af264d26536b5551e58af4c2c2a13d40b47ac52d782911ec76612a8']
+    db.update_record(task_id=task_id, task_status='Complete', report_id=report_id)
+    print db.get_task(task_id)
     print db.delete_task(33)
 
     for record in db.get_all_tasks():
