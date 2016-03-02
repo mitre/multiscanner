@@ -1,8 +1,6 @@
-import json
-from storage import Storage
-
 from elasticsearch import Elasticsearch
 
+from storage import Storage
 
 class ElasticSearchStorage(Storage):
     def __init__(self, config_dict):
@@ -19,10 +17,18 @@ class ElasticSearchStorage(Storage):
         )
 
     def store(self, report):
+        try:
+            report_id = report.values()[0]['SHA256']
+            report.values()[0]['filename'] = report.keys()[0]
+            clean_report = report.values()[0]
+        except:
+            report_id = ''
+            clean_report = report.keys()[0]
         result = self.es.index(
             index=self.index,
             doc_type=self.doc_type,
-            body=report
+            id=report_id,
+            body=clean_report
         )
         return result['_id']
 
@@ -38,7 +44,7 @@ class ElasticSearchStorage(Storage):
 
     def delete(self, report_id):
         try:
-            result = self.es.delete(
+            self.es.delete(
                 index=self.index, doc_type=self.doc_type,
                 id=report_id
             )

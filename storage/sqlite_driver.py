@@ -92,7 +92,7 @@ class Database(object):
         # For testing, do not use in production
         record_list = []
         for record in rs:
-               record_list.append(record.to_dict())
+            record_list.append(record.to_dict())
         return record_list
 
     def delete_task(self, task_id):
