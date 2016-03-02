@@ -22,7 +22,7 @@ class Record(Base):
 
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
-    report_id = Column(Integer, unique=True)
+    report_id = Column(Integer, unique=False)
 
     def __repr__(self):
         return '<Task("{0}","{1}","{2}")>'.format(
