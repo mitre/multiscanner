@@ -30,7 +30,7 @@ class ElasticSearchStorage(Storage):
                 {
                     '_index': self.index,
                     '_type': self.doc_type,
-                    '_id': report[filename]['SHA256'],
+                    '_id': report_id,
                     '_source': report[filename]
                 }
             )
