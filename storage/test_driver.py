@@ -24,13 +24,17 @@ def main():
     task_id = sql_db.add_task()
     print sql_db.get_task(task_id)
 
-    report_ids = db_store.store(REPORTS)
-
-    sql_db.update_record(
+    report_ids = db_store._store(
         task_id=task_id,
-        task_status='Complete',
-        report_id=report_ids
+        task_status='Completed',
+        report=REPORTS
     )
+
+    #sql_db.update_record(
+    #    task_id=task_id,
+    #    task_status='Complete',
+    #    report_id=report_ids
+    #)
     print sql_db.get_task(task_id)
 
     print db_store.get_report(report_ids[0])
