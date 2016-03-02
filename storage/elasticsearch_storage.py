@@ -1,3 +1,4 @@
+from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 
 from storage import Storage
@@ -19,13 +20,14 @@ class ElasticSearchStorage(Storage):
     def store(self, report):
         report_id_list = []
         report_list = []
+
         for filename in report:
             report[filename]['filename'] = filename
             try:
                 report_id = report[filename]['SHA256']
-                report_id_list.append(report_id)
             except KeyError:
-                report_id = ''
+                report_id = uuid4()
+            report_id_list.append(report_id)
             report_list.append(
                 {
                     '_index': self.index,
@@ -34,6 +36,7 @@ class ElasticSearchStorage(Storage):
                     '_source': report[filename]
                 }
             )
+
         result = helpers.bulk(self.es, report_list)
         return report_id_list
 
