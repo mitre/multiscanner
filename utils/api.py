@@ -34,7 +34,7 @@ import sqlite_driver as database
 from storage import Storage
 
 
-TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
+TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 UPLOAD_FOLDER = 'tmp/'
 
