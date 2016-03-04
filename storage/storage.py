@@ -12,11 +12,6 @@ Store:
     - Accepts a dictionary representing a report and
       stores it in the DB
     - Returns an ID #
-Get Task:
-    - Accepts an ID #
-    - Returns a dictionary representing the task requested
-        - <task_id, task_status, report_id>
-    - If the task has not finished, the report field will
       be "pending"
 Get Report:
     - Accepts an ID #
@@ -57,6 +52,13 @@ def get_config(config_file):
 
 
 class Storage(object):
+    '''
+    Abstract class with one function _store that
+    multiscanner will call to store records in the
+    backend database. The abstract methods
+    (store, get_report, delete) will be implemented
+    by the subclasses.
+    '''
     __metaclass__ = abc.ABCMeta
     sql_db = sqlite_driver.Database()
 
@@ -65,6 +67,10 @@ class Storage(object):
 
     @staticmethod
     def get_storage(config_file=STORAGE_CONFIG):
+        '''
+        Load the storage class specified in the
+        config_storage.ini config file
+        '''
         config_object = get_config(config_file)
         config_dict = parse_config(config_object)
         db_choice = config_dict['Database']['database']
@@ -87,7 +93,6 @@ class Storage(object):
             report_id=report_ids
         )
         return report_ids
-        
 
     @abc.abstractmethod
     def store(self, report):

@@ -1,9 +1,15 @@
+'''
+Storage module that will interact with elasticsearch.
+'''
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 
 from storage import Storage
 
 class ElasticSearchStorage(Storage):
+    '''
+    Subclass of Storage.
+    '''
     def __init__(self, config_dict):
         self.db = config_dict['database']
         self.host = config_dict['host']
