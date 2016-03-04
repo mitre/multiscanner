@@ -201,7 +201,6 @@ class TestTaskDeleteCase(unittest.TestCase):
 class TestReportCase(unittest.TestCase):
     def setUp(self):
         self.app = api.app.test_client()
-        api.db_store = MockStorage()
 
     '''
     def test_get_report(self):
