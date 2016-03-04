@@ -43,8 +43,11 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
+FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
+
+
 app = Flask(__name__)
-db = database.Database()
+db = database.Database(FULL_DB_PATH)
 db_store = Storage.get_storage()
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -74,7 +77,6 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the DB.
     '''
-    db = database.Database()
 
     return jsonify({'Tasks': db.get_all_tasks()})
 
