@@ -20,7 +20,6 @@ def main():
     sql_db = Database()
     sql_db.init_sqlite_db()
 
-
     task_id = sql_db.add_task()
     print sql_db.get_task(task_id)
 
