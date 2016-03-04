@@ -40,7 +40,8 @@ class TestRecordSerialization(unittest.TestCase):
 
     def test_record_json_serialization(self):
         self.assertEqual(
-            json.dumps(TEST_RECORD), self.record.to_json())
+            json.dumps(TEST_RECORD), self.record.to_json()
+        )
 
     def tearDown(self):
         os.remove(TEST_DB_PATH)
