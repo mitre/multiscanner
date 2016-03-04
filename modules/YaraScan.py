@@ -46,14 +46,14 @@ def scan(filelist, conf=DEFAULTCONF):
     goodtogo = False
     i = 0
     yararules = None
-    while not goodtogo and i < 5:
+    while not goodtogo:
         try:
             yararules = yara.compile(filepaths=ruleset)
             goodtogo = True
-        except Exception as e:
-            print('yara:', e)
-            time.sleep(3)
-            i += 1
+        except yara.SyntaxError as e:
+            bad_file = e.message.split('(')[0]
+            del ruleset[bad_file]
+            print(e)
 
     matches = []
     for m in filelist:
