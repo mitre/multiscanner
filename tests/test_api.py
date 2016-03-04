@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import json
 import responses
@@ -64,3 +65,4 @@ class TestURLCase(unittest.TestCase):
 
     def tearDown(self):
         os.remove(TEST_DB_PATH)
+        shutil.rmtree(TEST_UPLOAD_FOLDER)
