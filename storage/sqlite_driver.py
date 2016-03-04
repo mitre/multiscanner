@@ -36,15 +36,18 @@ class Record(Base):
         return json.dumps(self.to_dict())
 
 class Database(object):
+    def __init__(self, db_path=FULL_DB_PATH):
+        self.db_path = db_path
+
     def init_sqlite_db(self):
         global Base
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Base.metadata.bind = eng
         Base.metadata.create_all()
 
 
     def add_task(self, task_id=None, task_status='Pending', report_id=None):
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
@@ -66,7 +69,7 @@ class Database(object):
         '''
         report_id will be a list of sha values
         '''
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
@@ -78,7 +81,7 @@ class Database(object):
             return record.to_dict()
 
     def get_task(self, task_id):
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
@@ -87,7 +90,7 @@ class Database(object):
             return record.to_dict()
 
     def get_all_tasks(self):
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
         rs = ses.query(Record).all()
@@ -99,7 +102,7 @@ class Database(object):
         return record_list
 
     def delete_task(self, task_id):
-        eng = create_engine('sqlite:///%s' % FULL_DB_PATH)
+        eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
