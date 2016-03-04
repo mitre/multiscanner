@@ -30,11 +30,6 @@ def main():
         report=REPORTS
     )
 
-    #sql_db.update_record(
-    #    task_id=task_id,
-    #    task_status='Complete',
-    #    report_id=report_ids
-    #)
     print sql_db.get_task(task_id)
 
     print db_store.get_report(report_ids[0])
