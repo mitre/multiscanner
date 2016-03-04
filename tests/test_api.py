@@ -26,6 +26,7 @@ from storage import Storage
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
+TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 
 def post_file(app):
@@ -33,6 +34,13 @@ def post_file(app):
         '/api/v1/tasks/create/',
         data={'file': (StringIO('my file contents'), 'hello world.txt'),})
 
+
+class MockStorage(object):
+    def get_report(report_id):
+        return TEST_REPORT
+
+    def delete_report(report_id):
+        return True
 
 
 class TestURLCase(unittest.TestCase):
@@ -192,7 +200,22 @@ class TestTaskDeleteCase(unittest.TestCase):
 
 class TestReportCase(unittest.TestCase):
     def setUp(self):
-        pass
+        self.app = api.app.test_client()
+        api.db_store = MockStorage()
+
+    '''
+    def test_get_report(self):
+        expected_response = {'Report': TEST_REPORT}
+        resp = self.app.get('/api/v1/reports/1')
+        self.assertEqual(resp.status_code, api.HTTP_OK)
+        self.assertDictEqual(json.loads(resp.data), expected_response)
+    '''
+
+    def test_get_nonexistent_report(self):
+        expected_response = api.TASK_NOT_FOUND
+        resp = self.app.get('/api/v1/reports/42')
+        self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
+        self.assertDictEqual(json.loads(resp.data), expected_response)
 
     def tearDown(self):
         pass
