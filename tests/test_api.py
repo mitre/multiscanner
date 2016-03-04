@@ -1,11 +1,9 @@
 import os
-import time
 import shutil
 import sys
 import json
-import responses
-import unittest
 from StringIO import StringIO
+import unittest
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,7 +16,6 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
 
-import multiscanner
 import api
 from sqlite_driver import Database
 from storage import Storage
@@ -36,10 +33,10 @@ def post_file(app):
 
 
 class MockStorage(object):
-    def get_report(report_id):
+    def get_report(self, report_id):
         return TEST_REPORT
 
-    def delete_report(report_id):
+    def delete_report(self, report_id):
         return True
 
 
@@ -53,7 +50,6 @@ class TestURLCase(unittest.TestCase):
         api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
         if not os.path.isdir(api.UPLOAD_FOLDER):
             os.makedirs(api.UPLOAD_FOLDER)
-        
 
     def test_index(self):
         expected_response = {'Message': 'True'}
