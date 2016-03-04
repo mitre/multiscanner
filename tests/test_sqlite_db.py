@@ -21,6 +21,7 @@ from sqlite_driver import Database, Record
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
+TEST_RECORD = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 
@@ -35,16 +36,11 @@ class TestRecordSerialization(unittest.TestCase):
         )
 
     def test_record_dict_serialization(self):
-        self.assertDictEqual(
-            {'task_id': 1, 'task_status': 'Pending', 'report_id': None},
-            self.record.to_dict()
-        )
+        self.assertDictEqual(TEST_RECORD, self.record.to_dict())
 
     def test_record_json_serialization(self):
         self.assertEqual(
-            json.dumps({'task_id': 1, 'task_status': 'Pending', 'report_id': None}),
-            self.record.to_json()
-        )
+            json.dumps(TEST_RECORD), self.record.to_json())
 
     def tearDown(self):
         os.remove(TEST_DB_PATH)
