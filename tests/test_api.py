@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import sys
 import json
@@ -29,6 +30,13 @@ HTTP_OK = 200
 HTTP_CREATED = 201
 
 
+def post_file(app):
+    return app.post(
+        '/api/v1/tasks/create/',
+        data={'file': (StringIO('my file contents'), 'hello world.txt'),})
+
+
+
 class TestURLCase(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(TEST_DB_PATH)
@@ -55,14 +63,43 @@ class TestURLCase(unittest.TestCase):
 
     def test_create_first_task(self):
         expected_response = {'Message': {'task_id': 1}}
-        resp = self.app.post(
-            '/api/v1/tasks/create/',
-            data={
-                'file': (StringIO('my file contents'), 'hello world.txt'),}
-        )
+        resp = post_file(self.app)
         self.assertEqual(resp.status_code, HTTP_CREATED)
         self.assertEqual(json.loads(resp.data), expected_response)
 
     def tearDown(self):
+        # Clean up Test DB and upload folder
+        os.remove(TEST_DB_PATH)
+        shutil.rmtree(TEST_UPLOAD_FOLDER)
+
+
+class TestTaskCreateCase(unittest.TestCase):
+    def setUp(self):
+        self.sql_db = Database(TEST_DB_PATH)
+        self.sql_db.init_sqlite_db()
+        self.app = api.app.test_client()
+        # Replace the real production DB w/ a testing DB
+        api.db = self.sql_db
+        api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
+        if not os.path.isdir(api.UPLOAD_FOLDER):
+            os.makedirs(api.UPLOAD_FOLDER)
+
+        # populate the DB w/ a task
+        post_file(self.app)
+
+    def test_get_task(self):
+        expected_response = {
+            'Task': {
+                'task_id': 1,
+                'task_status': 'Pending',
+                'report_id': None
+            }
+        }
+        resp = self.app.get('/api/v1/tasks/list/1')
+        self.assertEqual(resp.status_code, HTTP_OK)
+        self.assertDictEqual(json.loads(resp.data), expected_response)
+
+    def tearDown(self):
+        # Clean up Test DB and upload folder
         os.remove(TEST_DB_PATH)
         shutil.rmtree(TEST_UPLOAD_FOLDER)
