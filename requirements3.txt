@@ -4,3 +4,5 @@ paramiko
 python-magic
 requests
 ssdeep
+sqlalchemy
+StringIO
