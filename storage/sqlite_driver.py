@@ -17,8 +17,8 @@ FULL_DB_PATH = os.path.join(MS_WD, DB_NAME)
 Base = declarative_base()
 
 
-class Record(Base):
-    __tablename__ = "Records"
+class Task(Base):
+    __tablename__ = "Tasks"
 
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
@@ -51,21 +51,21 @@ class Database(object):
         Session = sessionmaker(bind=eng)
         ses = Session()
 
-        record = Record(
+        task = Task(
             task_id=task_id,
             task_status='Pending',
             report_id=None
         )
         try:
-            ses.add(record)
+            ses.add(task)
             ses.commit()
         except IntegrityError as e:
             print 'PRIMARY KEY must be unique! %s' % e
             return -1
-        return record.task_id
+        return task.task_id
 
 
-    def update_record(self, task_id, task_status, report_id=None):
+    def update_task(self, task_id, task_status, report_id=None):
         '''
         report_id will be a list of sha values
         '''
@@ -73,42 +73,42 @@ class Database(object):
         Session = sessionmaker(bind=eng)
         ses = Session()
 
-        record = ses.query(Record).get(task_id)
-        if record:
-            record.task_status = task_status
-            record.report_id = repr(report_id)
+        task = ses.query(Task).get(task_id)
+        if task:
+            task.task_status = task_status
+            task.report_id = repr(report_id)
             ses.commit()
-            return record.to_dict()
+            return task.to_dict()
 
     def get_task(self, task_id):
         eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
-        record = ses.query(Record).get(task_id)
-        if record:
-            return record.to_dict()
+        task = ses.query(Task).get(task_id)
+        if task:
+            return task.to_dict()
 
     def get_all_tasks(self):
         eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
-        rs = ses.query(Record).all()
+        rs = ses.query(Task).all()
 
         # For testing, do not use in production
-        record_list = []
-        for record in rs:
-            record_list.append(record.to_dict())
-        return record_list
+        task_list = []
+        for task in rs:
+            task_list.append(task.to_dict())
+        return task_list
 
     def delete_task(self, task_id):
         eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
-        record = ses.query(Record).get(task_id)
-        if record:
-            ses.delete(record)
+        task = ses.query(Task).get(task_id)
+        if task:
+            ses.delete(task)
             ses.commit()
             return True
         else:
@@ -122,12 +122,12 @@ def main():
     task_id = db.add_task()
     print db.get_task(task_id)
     report_id = ['815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66', '4aa3d6a17af264d26536b5551e58af4c2c2a13d40b47ac52d782911ec76612a8']
-    db.update_record(task_id=task_id, task_status='Complete', report_id=report_id)
+    db.update_task(task_id=task_id, task_status='Complete', report_id=report_id)
     print db.get_task(task_id)
     print db.delete_task(33)
 
-    for record in db.get_all_tasks():
-        print record
+    for task in db.get_all_tasks():
+        print task
 
 
 if __name__ == '__main__':

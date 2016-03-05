@@ -54,7 +54,7 @@ def get_config(config_file):
 class Storage(object):
     '''
     Abstract class with one function _store that
-    multiscanner will call to store records in the
+    multiscanner will call to store tasks in the
     backend database. The abstract methods
     (store, get_report, delete) will be implemented
     by the subclasses.
@@ -87,7 +87,7 @@ class Storage(object):
 
     def _store(self, task_id, task_status, report):
         report_ids = self.store(report)
-        self.sql_db.update_record(
+        self.sql_db.update_task(
             task_id=task_id,
             task_status=task_status,
             report_id=report_ids
