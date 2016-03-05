@@ -132,7 +132,7 @@ class TestTaskUpdateCase(unittest.TestCase):
 
         # populate the DB w/ a task
         post_file(self.app)
-        self.sql_db.update_record(
+        self.sql_db.update_task(
             task_id=1,
             task_status='Complete',
             report_id=['report1', 'report2']
