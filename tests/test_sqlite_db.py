@@ -5,6 +5,7 @@ Fairly similar to the test_api tests...
 import os
 import sys
 import json
+import magic
 import unittest
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -43,6 +44,18 @@ class TestTaskSerialization(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+
+class TestDBInit(unittest.TestCase):
+    def setUp(self):
+        self.sql_db = Database(TEST_DB_PATH)
+        self.sql_db.init_sqlite_db()
+
+    def test_db_init(self):
+        self.assertEqual('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
+
+    def tearDown(self):
+        os.remove(TEST_DB_PATH)
 
 
 class TestTaskAdd(unittest.TestCase):
