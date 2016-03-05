@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 import os
 import json
 
@@ -60,7 +60,7 @@ class Database(object):
             ses.add(task)
             ses.commit()
         except IntegrityError as e:
-            print 'PRIMARY KEY must be unique! %s' % e
+            print('PRIMARY KEY must be unique! %s' % e)
             return -1
         return task.task_id
 
@@ -120,14 +120,14 @@ def main():
     db.init_sqlite_db()
 
     task_id = db.add_task()
-    print db.get_task(task_id)
+    print(db.get_task(task_id))
     report_id = ['815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66', '4aa3d6a17af264d26536b5551e58af4c2c2a13d40b47ac52d782911ec76612a8']
     db.update_task(task_id=task_id, task_status='Complete', report_id=report_id)
-    print db.get_task(task_id)
-    print db.delete_task(33)
+    print(db.get_task(task_id))
+    print(db.delete_task(33))
 
     for task in db.get_all_tasks():
-        print task
+        print(task)
 
 
 if __name__ == '__main__':
