@@ -21,6 +21,7 @@ import configparser
 import codecs
 import multiprocessing
 import tempfile
+import storage
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -46,8 +47,8 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 # The default configuration options for the main script
 DEFAULTCONF = {
     "copyfilesto": False,
-    "group-types": ["Antivirus"]
-
+    "group-types": ["Antivirus"],
+    "storage-config": 'storage.ini'
     }
 
 VERBOSE = False
@@ -758,7 +759,7 @@ def _parse_args():
     # argparse stuff
     parser = argparse.ArgumentParser(description="Analyse files against multiple engines")
     parser.add_argument("-c", "--config", help="The config file to use", required=False, default=CONFIG)
-    parser.add_argument('-j', '--json', help="The json file to write", required=False, metavar="filepath", default='report.json')
+    parser.add_argument('-j', '--json', help="The json file to write", required=False, metavar="filepath", default=None)
     parser.add_argument("-m", "--metadata", help="This will include the metadata section from the report", action="store_true")
     parser.add_argument('-n', '--numberper', help="The max number of files per report", required=False, metavar="num", default=200, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
@@ -894,46 +895,28 @@ def _main():
             "Run by": username
         }))
 
-        report = None
-        report_write = True
-        report_ugly = None
-        if args.show:
+        if args.show or not stdout.isatty():
             # TODO: Make this output something readable
             # Parse Results
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
-            report_ugly = args.ugly
-            # Print report and write to file
+            # Print report
             try:
                 print(report, file=stdout)
+                stdout.flush()
             except IOError:
                 pass
 
-        elif not stdout.isatty():
-            report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
-            report_ugly = True
-            print(report, file=stdout)
-            stdout.flush()
-            # Don't write the default location if we are redirecting output
-            if args.json == 'report.json':
-                print('Not writing results to report.json, pick a different filename to override')
-                report_write = False
+        report = parse_reports(results, groups=config["group-types"], includeMetadata=args.metadata, python=True)
 
-        if report_write:
-            # Check if we need to run the report again
-            if report is not None and report_ugly is True:
-                pass
-            else:
-                report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
-            # Try to write report
-            try:
-                reportfile = codecs.open(args.json, 'a', 'utf-8')
-                reportfile.write(report)
-                reportfile.write('\n')
-                reportfile.close()
-            except Exception as e:
-                print(e)
-                print("ERROR: Could not write report file, report not saved")
-                exit(2)
+        update_conf = None
+        if args.json:
+            update_conf = {'File': {'path': args.json}}
+            if args.json.endswith('.gz') or args.json.endswith('.gzip'):
+                update_conf['File']['gzip'] = True
+
+        storage_handle = storage.StorageHandler(configfile=config["storage-config"], config=update_conf)
+        storage_handle.store(report)
+        storage_handle.close()
 
     # Cleanup zip extracted files
     if args.extractzips:
