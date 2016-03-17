@@ -6,6 +6,7 @@ import os
 import ast
 import sys
 import imp
+import configparser
 PY3 = False
 if sys.version_info > (3,):
     PY3 = True
@@ -74,6 +75,13 @@ def parse_config(config_object):
                 pass
         return_var[section] = section_dict
     return return_var
+
+def get_storage_config_path(config_file):
+    """Gets the location of the storage config file from the multiscanner config file"""
+    conf = configparser.SafeConfigParser()
+    conf.read(config_file)
+    conf = parse_config(conf)
+    return conf['main']['storage-config']
 
 def dirname(path):
     """OS independent version of os.path.dirname"""
