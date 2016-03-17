@@ -17,8 +17,41 @@ MS_WD = os.path.dirname(STORAGE_DIR)
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
 import common
-STORE_LOCK = threading.Lock()
 CONFIG = os.path.join(MS_WD, "storage.ini")
+
+
+class ThreadCounter(object):
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.value = 0
+        self.event = threading.Event()
+
+    def add(self):
+        self.lock.acquire()
+        self.value += 1
+        self.lock.release()
+        self._check_event()
+
+    def sub(self):
+        self.lock.acquire()
+        self.value -= 1
+        self.lock.release()
+        self._check_event()
+
+    def _check_event(self):
+        if self.value == 0:
+            self.event.set()
+        elif self.event.is_set():
+            self.event.clear()
+
+    def wait(self, timeout=None):
+        self.event.wait(timeout=timeout)
+
+    def is_done(self):
+        if self.value == 0:
+            return True
+        else:
+            return False
 
 
 class Storage(object):
@@ -41,6 +74,8 @@ class Storage(object):
 
 class StorageHandler(object):
     def __init__(self, configfile=CONFIG, config=None, configregen=False):
+        self.storage_lock = threading.Lock()
+        self.storage_counter = ThreadCounter()
         # Load all storage classes
         storage_classes = _get_storage_classes()
 
@@ -98,23 +133,36 @@ class StorageHandler(object):
         self.loaded_storage = loaded_storage
 
     def store(self, dictionary, wait=True):
-        # TODO: Allow another store call to not block
-        STORE_LOCK.acquire()
+        """
+        Takes a dictionary and stores it in each of the active storage modules. If wait is False a thread object is returned.
+        """
+        if wait:
+            self._store_thread(dictionary)
+        else:
+            t = threading.Thread(target=self._store_thread, args=(dictionary,))
+            t.daemon = False
+            t.start()
+            return t
+
+    def _store_thread(self, dictionary):
+        self.storage_counter.add()
+        self.storage_lock.acquire()
         thread_list = []
         for storage in self.loaded_storage:
             t = threading.Thread(target=storage.store, args=(dict(dictionary),))
             t.daemon = False
             t.start()
             thread_list.append(t)
-
-        if wait:
-            _store_wait(thread_list)
-        else:
-            t = threading.Thread(target=_store_wait, args=(thread_list,))
-            t.daemon = False
-            t.start()
+        for t in thread_list:
+            t.join()
+        self.storage_lock.release()
+        self.storage_counter.sub()
 
     def close(self):
+        """
+        Waits for all storage operations to finish and closes each storage module
+        """
+        self.storage_counter.wait()
         thread_list = []
         for storage in self.loaded_storage:
             t = threading.Thread(target=storage.teardown)
@@ -123,6 +171,14 @@ class StorageHandler(object):
             thread_list.append(t)
         for t in thread_list:
             t.join()
+        self.loaded_storage = []
+
+    def is_done(self, wait=False):
+        if wait:
+            self.storage_counter.wait()
+            return True
+        else:
+            return self.storage_counter.is_done()
 
 
 def _rewite_config(storage_classes, config_object, filepath):
@@ -184,19 +240,3 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
                 if inspect.isclass(member) and issubclass(member, Storage):
                     storage_classes[member_name] = member()
     return storage_classes
-
-
-def _store_wait(thread_list, lock=STORE_LOCK):
-    for t in thread_list:
-            t.join()
-    lock.release()
-
-
-def store_ready(wait=False):
-    if STORE_LOCK.acquire(wait):
-        STORE_LOCK.release()
-        return True
-    else:
-        return False
-
-
