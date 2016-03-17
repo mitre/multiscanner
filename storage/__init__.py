@@ -1,1 +1,1 @@
-from . storage import store_ready, Storage, StorageHandler
+from . storage import Storage, StorageHandler
