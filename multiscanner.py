@@ -22,6 +22,7 @@ import codecs
 import multiprocessing
 import tempfile
 import storage
+import common
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -48,7 +49,7 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": 'storage.ini'
+    "storage-config": os.path.join(MS_WD, 'storage.ini')
     }
 
 VERBOSE = False
