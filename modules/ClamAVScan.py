@@ -1,19 +1,30 @@
-#from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+try:
+    import pyclamd
+except:
+    print("pyclamd module not installed...")
+    pyclamd = None
 
 __author__ = 'Mike Long'
+__license__ = "MPL 2.0"
 
 DEFAULTCONF ={
-    "ENABLED":True,
+    "ENABLED": True,
 }
 
+
 def check(conf=DEFAULTCONF):
-    return conf["ENABLED"]
-    # or we can always run by uncommenting below
-    # return True
+    if not conf['ENABLED']:
+        return False
+    if not pyclamd:
+        return False
+    return True
 
 
 def scan(filelist, conf=DEFAULTCONF):
-    import pyclamd
     results = []
 
     try:
@@ -24,46 +35,31 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             clamScanner.ping()
         except:
-            raise ValueError("Check connection: Unable to connect to clamd server")
-
-    # common error string, if pyclamd cannot scan as file
-    error_str = [
-        "[('ERROR', 'lstat() failed: No such file or directory.')]",
-        "[('ERROR', 'lstat() failed: Permission denied.')]",
-    ]
+            raise ValueError("Unable to connect to clamd")
 
     # Scan each file from filelist for virus
     for f in filelist:
-        # Rest temp placeholders
-        output = None
-        file_results = None
-        msg = None
-
         output = clamScanner.scan_file(f)
-        file_results = output.values()
-        msg = str(file_results[0:1])
+        if output is None:
+            continue
 
-        # Check for the error_str message
-        if any("Error" in msg for msg in error_str):
-            # IF BUFFER IS LARGER THAN ACCEPTED BUFFER SIZE MAY NOT BE IDEAL
-            # Since file was not found load contents in buffer and scan as buffer
-            file_as_buffer = open(f, 'r').read()
-            buffer_results = clamScanner.scan_stream(file_as_buffer)
+        if output.values()[0][0] == 'ERROR':
+            with open(f, 'r') as file_handle:
+                output = clamScanner.scan_stream(file_handle.read())
 
-            if buffer_results is not None:
-                # Assumes virus is found
-                # place results in results[]
-                results.append((f, buffer_results.values()))
+        if output is None:
+            continue
 
-        elif file_results is not None:
-            # Assumes virus is found
-            # place results in results[]
-            results.append((f, file_results.values()))
+        if output.values()[0][0] == 'FOUND':
+            results.append((f, output.values()[0][1]))
+        elif output.values()[0][0] == 'ERROR':
+            print('ClamAV: ERROR:', output.values()[0][1])
 
     # Set metadata tags
     metadata = {
-        'Name': "Anti-virus",
-        'Type': "ClamAV",
+        'Name': "ClamAV",
+        'Type': "Antivirus",
+        'Version': clamScanner.version()
     }
 
     return (results, metadata)
