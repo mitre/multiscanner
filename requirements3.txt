@@ -1,6 +1,9 @@
+#Required
 future
+#Required by modules
 bitstring
 paramiko
+pyclamd
 python-magic
 requests
 ssdeep
