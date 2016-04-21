@@ -9,7 +9,8 @@ APIs, software running on another machine, etc. Tools are incorporated by creati
 modules that run in the MultiScanner framework. Modules are designed to be quickly
 written and easily incorporated into the framework. Currently written and maintained
 modules are related to malware analytics, but the framework is not limited to that
-scope.
+scope. For a list of modules you can look in [modules](modules), descriptions and config
+options can be found in [docs/modules.md](docs/modules.md)
 
 Requirements
 ------------
@@ -24,6 +25,10 @@ installs the prerequisites on most systems.
 Installation
 ------------
 ### MultiScanner ###
+If you're running on a RedHat or Debian based linux distribution you should try and run
+[install.sh](<install.sh>). Otherwise the required python packages are defined in
+[requirements2.txt](<requirements2.txt>) and [requirements3.txt](<requirements3.txt>).
+
 MultiScanner must have a configuration file to run. Generate the MultiScanner default
 configuration by running `python multiscanner.py init` after cloning the repository.
 This command can be used to rewrite the configuration file to its default state or,
