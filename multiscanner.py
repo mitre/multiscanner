@@ -522,7 +522,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULEDIR)
+        module_list = parseDir(MODULEDIR, recursive=True)
     # A dictionary used for the copyfileto parameter
     filedic = {}
     # What will be the config file object
