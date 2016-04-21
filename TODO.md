@@ -1,10 +1,6 @@
 This is a list of things that are wanted features
 
-# Minor Changes #
-- **Config passing** - For the API, having multiscan() accept a dictionary/config object instead of a config file would be useful
-
 # Feature Updates #
-- **Storage Backends** - A plugin type architecture for storing results would be fantastic. Something for Elasticsearch and MongoDB.
 - **Better output** - Printing json to the console is not super pretty. Maybe making an HTML output available for an analyst?
 - **Module logging** - Create an API that allows modules to log errors and messages to a file.
 - **Multiprocessing** - Currently modules are only run as threads, giving modules access to a multiprocessing pool for cpu intensive modules would be good.
