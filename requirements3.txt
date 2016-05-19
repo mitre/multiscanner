@@ -3,6 +3,7 @@ future
 #Required by modules
 bitstring
 paramiko
+pefile
 pyclamd
 python-magic
 requests
