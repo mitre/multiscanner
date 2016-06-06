@@ -302,6 +302,7 @@ def _copy_to_share(filelist, filedic, sharedir):
     for fname in tmpfilelist:
         uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         newfile = uid + os.path.basename(fname)
+        newfile = newfile.replace(' ', '_')
         filedic[newfile] = fname
         newfile = os.path.join(sharedir, newfile)
         shutil.copyfile(fname, newfile)
@@ -583,6 +584,12 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Write the default configure settings for missing ones
     if config_object:
         _write_missing_module_configs(module_list, config_object, filepath=configfile)
+
+    # Warn about spaces in file names
+    for f in filelist:
+        if ' ' in f:
+            print('WARNING: You are using file paths with spaces. This may result in modules not reporting correctly.')
+            break
 
     # Wait for all threads to finish
     for thread in thread_list:
