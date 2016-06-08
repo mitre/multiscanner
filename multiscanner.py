@@ -436,7 +436,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
     conffile.close()
 
 
-def config_init(filepath):
+def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True)):
     """
     Creates a new config file at filepath
 
@@ -444,8 +444,7 @@ def config_init(filepath):
     """
     Config = configparser.SafeConfigParser()
     Config.optionxform = str
-    ModuleList = parseDir(MODULEDIR)
-    _rewite_config(ModuleList, Config, filepath)
+    _rewite_config(module_list, Config, filepath)
 
 
 def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
@@ -791,7 +790,7 @@ def _init(args):
             print('Configuration file initialized at', args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULEDIR)
+            ModuleList = parseDir(MODULEDIR, recursive=True)
             Config = configparser.SafeConfigParser()
             Config.optionxform = str
             Config.read(args.config)
@@ -907,6 +906,7 @@ def _main():
             # TODO: Make this output something readable
             # Parse Results
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
+
             # Print report
             try:
                 print(report, file=stdout)
