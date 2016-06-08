@@ -43,17 +43,17 @@ def scan(filelist, conf=DEFAULTCONF):
         if output is None:
             continue
 
-        if output.values()[0][0] == 'ERROR':
-            with open(f, 'r') as file_handle:
+        if list(output.values())[0][0] == 'ERROR':
+            with open(f, 'rb') as file_handle:
                 output = clamScanner.scan_stream(file_handle.read())
 
         if output is None:
             continue
 
-        if output.values()[0][0] == 'FOUND':
-            results.append((f, output.values()[0][1]))
-        elif output.values()[0][0] == 'ERROR':
-            print('ClamAV: ERROR:', output.values()[0][1])
+        if list(output.values())[0][0] == 'FOUND':
+            results.append((f, list(output.values())[0][1]))
+        elif list(output.values())[0][0] == 'ERROR':
+            print('ClamAV: ERROR:', list(output.values())[0][1])
 
     # Set metadata tags
     metadata = {
