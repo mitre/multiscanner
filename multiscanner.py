@@ -909,10 +909,10 @@ def _main():
 
             # Print report
             try:
-                print(report, file=stdout)
+                print(convert_encoding(report, encoding='ascii', errors='replace'), file=stdout)
                 stdout.flush()
-            except IOError:
-                pass
+            except Exception as e:
+                print('ERROR: Can\'t print report -', e)
 
         report = parse_reports(results, groups=config["group-types"], includeMetadata=args.metadata, python=True)
 
