@@ -45,7 +45,10 @@ def scan(filelist, conf=DEFAULTCONF):
 
         if list(output.values())[0][0] == 'ERROR':
             with open(f, 'rb') as file_handle:
-                output = clamScanner.scan_stream(file_handle.read())
+                try:
+                    output = clamScanner.scan_stream(file_handle.read())
+                except pyclamd.BufferTooLongError:
+                    continue
 
         if output is None:
             continue
