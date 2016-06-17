@@ -33,18 +33,18 @@ class File(storage.Storage):
                 if i >= self.config['files-per-line']:
                     if metadata:
                         writedata = {'Files': writedata, 'Metadata': metadata}
-                    self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+                    self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8', errors='replace'))
                     self.file_handle.write('\n')
                     i = 0
                     writedata = {}
             if writedata:
                 if metadata:
                         writedata = {'Files': writedata, 'Metadata': metadata}
-                self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+                self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8', errors='replace'))
                 self.file_handle.write('\n')
 
         else:
-            self.file_handle.write(json.dumps(results, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+            self.file_handle.write(json.dumps(results, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8', errors='replace'))
             self.file_handle.write('\n')
 
     def teardown(self):
