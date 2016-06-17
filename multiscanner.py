@@ -62,6 +62,20 @@ from common import convert_encoding
 from common import queue2list
 from common import load_module
 
+
+class _Print():
+    def __init__(self, lock=threading.Lock(), real_print=print):
+        self.lock = lock
+        self.real_print = real_print
+
+    def __call__(self, *args, **kwargs):
+        self.lock.acquire()
+        try:
+            self.real_print(*args, **kwargs)
+        finally:
+            self.lock.release()
+print = _Print()
+
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
     def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
@@ -160,6 +174,7 @@ def _runModule(modname, mod, filelist, threadDict, global_module_interface, conf
     """
 
     mod.multiscanner = _ModuleInterface(modname, global_module_interface)
+    mod.print = print
 
     if not conf:
         try:
