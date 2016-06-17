@@ -102,8 +102,9 @@ class StorageHandler(object):
         else:
             if config is None:
                 config = {}
-            else:
-                config['_load_default'] = True
+                for storage_name in storage_classes:
+                    config[storage_name] = {}
+            config['_load_default'] = True
 
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
@@ -113,7 +114,7 @@ class StorageHandler(object):
                     if '_load_default' in config[storage_name]:
                         del config[storage_name]['_load_default']
                     # Update the default storage config
-                    storage_classes[storage_name].config = storage_classes[storage_name].DEFAULTCONFIG
+                    storage_classes[storage_name].config = storage_classes[storage_name].DEFAULTCONF
                     storage_classes[storage_name].config.update(config[storage_name])
                 else:
                     storage_classes[storage_name].config = config[storage_name]

@@ -967,6 +967,8 @@ def _main():
             if args.json.endswith('.gz') or args.json.endswith('.gzip'):
                 update_conf['File']['gzip'] = True
 
+        if 'storage-config' not in config:
+            config["storage-config"] = None
         storage_handle = storage.StorageHandler(configfile=config["storage-config"], config=update_conf)
         storage_handle.store(report)
         storage_handle.close()
