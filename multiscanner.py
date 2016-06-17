@@ -591,12 +591,25 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
             break
 
     # Wait for all threads to finish
-    for thread in thread_list:
-        thread.join()
-
-    if VERBOSE:
-        for thread in thread_list:
-            print(thread.name, "took", thread.endtime-thread.starttime)
+    thread_wait_list = thread_list[:]
+    i = 0
+    while thread_wait_list:
+        i += 1
+        for thread in thread_wait_list:
+            if not thread.is_alive():
+                i = 0
+                thread_wait_list.remove(thread)
+                if VERBOSE:
+                    print(thread.name, "took", thread.endtime-thread.starttime)
+        if i == 15:
+            i = 0
+            if VERBOSE:
+                p = 'Waiting on'
+                for thread in thread_wait_list:
+                    p += ' ' + thread.name
+                p += '...'
+                print(p)
+        time.sleep(1)
 
     # Delete copied files
     if main_config["copyfilesto"]:
@@ -711,8 +724,25 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
 
     # Wait for all threads to finish
-    for thread in thread_list:
-        thread.join()
+    thread_wait_list = thread_list[:]
+    i = 0
+    while thread_wait_list:
+        i += 1
+        for thread in thread_wait_list:
+            if not thread.is_alive():
+                i = 0
+                thread_wait_list.remove(thread)
+                if VERBOSE:
+                    print(thread.name, "took", thread.endtime-thread.starttime)
+        if i == 15:
+            i = 0
+            if VERBOSE:
+                p = 'Waiting on'
+                for thread in thread_wait_list:
+                    p += ' ' + thread.name
+                p += '...'
+                print(p)
+        time.sleep(1)
 
     # Delete copied files
     if main_config["copyfilesto"]:
