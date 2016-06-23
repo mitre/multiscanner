@@ -389,6 +389,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
     Config - The config object
     """
     ConfNeedsWrite = False
+    ModuleList.sort()
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module.split('.')[0])
@@ -428,6 +429,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
     """
     if VERBOSE:
         print("Rewriting config...")
+    ModuleList.sort()
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module.split('.')[0])
