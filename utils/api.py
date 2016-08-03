@@ -8,8 +8,9 @@ the multiscanner.
 Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
-GET /api/v1/tasks/<task_id> ---> receive report in JSON format
-GET /api/v1/tasks/delete/<task_id> ----> delete task_id
+GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
+GET /api/v1/reports/list/<report_id> ---> receive report in JSON
+GET /api/v1/reports/delete/<report_id> ----> delete report_id
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
@@ -19,16 +20,22 @@ TODO:
 * Make this app agnostic to choice of backend DB
 * Add doc strings to functions
 '''
+from __future__ import print_function
 import os
+import sys
 import uuid
 from flask import Flask, jsonify, make_response, request, abort
 
-TASKS = [
-    {'id': 1, 'report': {"/tmp/example.log": {"MD5": "53f43f9591749b8cae536ff13e48d6de", "SHA256": "815d310bdbc8684c1163b62f583dbaffb2df74b9104e2aadabf8f8491bafab66", "libmagic": "ASCII text"}}},
-    {'id': 2, 'report': {"/opt/grep_in_mem.py": {"MD5": "96b47da202ddba8d7a6b91fecbf89a41", "SHA256": "26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f", "libmagic": "a /bin/python script text executable"}}},
-]
+MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.join(MS_WD, 'storage') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
 
-TASK_NOT_FOUND = {'Message': 'No task with that ID not found!'}
+
+import sqlite_driver as database
+from storage import Storage
+
+
+TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 UPLOAD_FOLDER = 'tmp/'
 
@@ -37,8 +44,12 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-app = Flask(__name__)
+FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
+
+app = Flask(__name__)
+db = database.Database(FULL_DB_PATH)
+db_store = Storage.get_storage()
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
@@ -67,7 +78,8 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the DB.
     '''
-    return jsonify({'Tasks': TASKS})
+
+    return jsonify({'Tasks': db.get_all_tasks()})
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
@@ -76,10 +88,11 @@ def get_task(task_id):
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-    task = [task for task in TASKS if task['id'] == task_id]
-    if len(task) == 0:
+    task = db.get_task(task_id)
+    if task:
+        return jsonify({'Task': task})
+    else:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Task': task[0]})
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
@@ -87,10 +100,9 @@ def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
     '''
-    task = [task for task in TASKS if task['id'] == task_id]
-    if len(task) == 0:
+    result = db.delete_task(task_id)
+    if not result:
         abort(HTTP_NOT_FOUND)
-    TASKS.remove(task[0])
     return jsonify({'Message': 'Deleted'})
 
 
@@ -106,21 +118,47 @@ def create_task():
     file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
 
-    # TODO: save file to DB
     # TODO: run multiscan on the file, have it update the
     # DB when done
     # output = multiscanner.multiscan([file_path])
     # report = multiscanner.parseReports
 
-    task_id = TASKS[-1]['id'] + 1
-    TASKS.append({'id': task_id, 'report': 'pending'})
+    task_id = db.add_task()
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
         HTTP_CREATED
     )
 
+
+@app.route('/api/v1/reports/list/<report_id>', methods=['GET'])
+def get_report(report_id):
+    '''
+    Return a JSON dictionary corresponding
+    to the given report ID.
+    '''
+    report = db_store.get_report(report_id)
+    if report:
+        return jsonify({'Report': report})
+    else:
+        abort(HTTP_NOT_FOUND)
+
+
+@app.route('/api/v1/reports/delete/<report_id>', methods=['GET'])
+def delete_report(report_id):
+    '''
+    Delete the specified report. Return deleted message.
+    '''
+    if db_store.delete(report_id):
+        return jsonify({'Message': 'Deleted'})
+    else:
+        abort(HTTP_NOT_FOUND)
+
+
 if __name__ == '__main__':
+
+    db.init_sqlite_db()
+
     if not os.path.isdir(UPLOAD_FOLDER):
-        print 'Creating upload dir'
+        print('Creating upload dir')
         os.makedirs(UPLOAD_FOLDER)
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080)
