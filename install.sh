@@ -27,18 +27,18 @@ if [[ $(python -V 2>&1) == Python\ 3* ]]; then
 fi
 
 #Code to compile and install yara
-read -p "Compile yara 3.4.0? <y/N> " prompt
+read -p "Compile yara 3.5.0? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   cd /tmp
-  curl -L https://github.com/plusvic/yara/archive/v3.4.0.tar.gz | tar -xz
-  cd yara-3.4.0
+  curl -L https://github.com/VirusTotal/yara/archive/v3.5.0.tar.gz | tar -xz
+  cd yara-3.5.0
   ./bootstrap.sh
   ./configure --prefix=/usr
   make && make install
   cd yara-python
   python setup.py install
   cd ../../
-  rm -rf yara-3.4.0
+  rm -rf yara-3.5.0
   ln -s /usr/lib/libyara.so.3 /lib64/libyara.so.3
   cd "$CWD"
 fi
