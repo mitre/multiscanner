@@ -182,6 +182,18 @@ class StorageHandler(object):
             return self.storage_counter.is_done()
 
 
+def config_init(filepath, overwrite=False, storage_classes=None):
+    if storage_classes is None:
+        storage_classes = _get_storage_classes()
+    config_object = configparser.SafeConfigParser()
+    config_object.optionxform = str
+    if overwrite or not os.path.isfile(filepath):
+        _rewite_config(storage_classes, config_object, filepath)
+    else:
+        config_object.read(filepath)
+        _write_missing_config(config_object, filepath, storage_classes=storage_classes)
+
+
 def _rewite_config(storage_classes, config_object, filepath):
     for class_name in storage_classes:
         conf = storage_classes[class_name].DEFAULTCONF
@@ -205,6 +217,7 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
     if storage_classes is None:
         storage_classes = _get_storage_classes()
     ConfNeedsWrite = False
+    storage_classes.sort()
     for module in storage_classes:
         try:
             conf = module.DEFAULTCONF
@@ -234,7 +247,7 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
             moddir = os.path.dirname(filename)
             mod = common.load_module(os.path.basename(modname), [moddir])
             if not mod:
-                print(filename, " not a valid module...")
+                print(filename, 'not a valid storage module...')
                 continue
             for member_name in dir(mod):
                 member = getattr(mod, member_name)
