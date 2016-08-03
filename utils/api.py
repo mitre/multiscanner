@@ -29,11 +29,12 @@ from flask import Flask, jsonify, make_response, request, abort
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if MS_WD not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD))
 
-
+import multiscanner
 import sqlite_driver as database
 from storage import Storage
-
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -49,7 +50,7 @@ FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
 app = Flask(__name__)
 db = database.Database(FULL_DB_PATH)
-db_store = Storage.get_storage()
+# db_store = Storage.get_storage()
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
@@ -120,8 +121,7 @@ def create_task():
 
     # TODO: run multiscan on the file, have it update the
     # DB when done
-    # output = multiscanner.multiscan([file_path])
-    # report = multiscanner.parseReports
+    output = multiscanner.multiscan([file_path])
 
     task_id = db.add_task()
     return make_response(
@@ -136,7 +136,8 @@ def get_report(report_id):
     Return a JSON dictionary corresponding
     to the given report ID.
     '''
-    report = db_store.get_report(report_id)
+    # report = db_store.get_report(report_id)
+    report = {'file': 'data'}
     if report:
         return jsonify({'Report': report})
     else:
@@ -148,7 +149,8 @@ def delete_report(report_id):
     '''
     Delete the specified report. Return deleted message.
     '''
-    if db_store.delete(report_id):
+    # if db_store.delete(report_id):
+    if True:
         return jsonify({'Message': 'Deleted'})
     else:
         abort(HTTP_NOT_FOUND)
