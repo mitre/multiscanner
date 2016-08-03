@@ -1,5 +1,6 @@
 #Local config
 config.ini
+storage.ini
 
 #Default report location
 report.json
