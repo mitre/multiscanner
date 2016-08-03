@@ -16,12 +16,12 @@ import common
 
 def test_loadModule():
     """Ensure _loadModule works"""
-    m = multiscanner._loadModule('test_1', [os.path.join(CWD, "modules")])
+    m = multiscanner.load_module('test_1', [os.path.join(CWD, "modules")])
     assert isinstance(m, types.ModuleType)
 
 def test_fail_loadModule():
     """Ensure _loadModule works"""
-    m = multiscanner._loadModule('notathing', [os.path.join(CWD, "modules")])
+    m = multiscanner.load_module('notathing', [os.path.join(CWD, "modules")])
     assert m is None
 
 class _runmod_tests(object):
@@ -40,7 +40,7 @@ class _runmod_tests(object):
 
 class Test_runModule_test_1(_runmod_tests):
     def setup(self):
-        m = multiscanner._loadModule('test_1', [multiscanner.MODULEDIR])
+        m = multiscanner.load_module('test_1', [multiscanner.MODULEDIR])
         global_module_interface = multiscanner._GlobalModuleInterface()
         self.result = multiscanner._runModule('test_1', m, self.filelist, self.threadDict, global_module_interface)
         global_module_interface._cleanup()
@@ -56,7 +56,7 @@ class Test_runModule_test_1(_runmod_tests):
 
 class Test_runModule_test_2(_runmod_tests):
     def setup(self):
-        self.m = multiscanner._loadModule('test_2', [multiscanner.MODULEDIR])
+        self.m = multiscanner.load_module('test_2', [multiscanner.MODULEDIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
         self.threadDict['test_1'].ret = ([('a','a'), ('C:\\c','c')], {})

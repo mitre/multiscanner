@@ -72,7 +72,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     #Parse output
     output = output.decode("utf-8")
-    virusresults = re.findall(".*\t([^\t]*)\tdetected\t([^\t\r\n]*)", output, re.MULTILINE)
+    virusresults = re.findall(".*\t([^\t]*)\t(?:detected|suspicion)\t([^\t\r\n]*)", output, re.MULTILINE)
     metadata = {}
     #Sometimes reports come out as FILE//data#### this will just make that go into the main file report
     tofix = []
@@ -94,7 +94,8 @@ def scan(filelist, conf=DEFAULTCONF):
             if file in fixdict:
                 blerp = fixdict[file]
                 if isinstance(blerp, list):
-                    blerp.append(result)
+                    if result not in blerp:
+                        blerp.append(result)
                     fixdict[file] = blerp
                 else:
                     blerp = fixdict[file]
