@@ -228,6 +228,9 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
     dir_list = common.parseDir(dir_path, recursive=True)
     dir_list.remove(os.path.join(dir_path, 'storage.py'))
     dir_list.remove(os.path.join(dir_path, '__init__.py'))
+    dir_list.remove(os.path.join(dir_path, 'mongo_storage.py'))
+    dir_list.remove(os.path.join(dir_path, 'sqlite_driver.py'))
+    dir_list.remove(os.path.join(dir_path, 'test_driver.py'))
     for filename in dir_list:
         if filename.endswith('.py'):
             modname = os.path.basename(filename[:-3])
