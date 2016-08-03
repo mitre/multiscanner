@@ -197,6 +197,7 @@ def _rewite_config(storage_classes, config_object, filepath):
 def _write_missing_config(config_object, filepath, storage_classes=None):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
+
     config_object - The config object
     filepath - The path to the config file
     storage_classes - The dictionary object from _get_storage_classes. If None we call _get_storage_classes()
