@@ -4,24 +4,30 @@ Storage module that will interact with elasticsearch.
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 
-from storage import Storage
+import storage
 
-class ElasticSearchStorage(Storage):
+class ElasticSearchStorage(storage.Storage):
     '''
     Subclass of Storage.
     '''
-    def __init__(self, config_dict):
-        self.db = config_dict['database']
-        self.host = config_dict['host']
-        self.port = config_dict['port']
-        self.username = config_dict['username']
-        self.password = config_dict['password']
-        self.index = config_dict['index']
-        self.doc_type = config_dict['doc_type']
+    DEFAULTCONF = {
+        'ENABLED': True,
+        'host': 'localhost',
+        'port': 9200,
+        'index': 'multiscanner_reports',
+        'doc_type': 'reports',
+    }
+
+    def setup(self):
+        self.host = self.config['host']
+        self.port = self.config['port']
+        self.index = self.config['index']
+        self.doc_type = self.config['doc_type']
         self.es = Elasticsearch(
             host=self.host,
             port=self.port
         )
+        return True
 
     def store(self, report):
         report_id_list = []
@@ -65,3 +71,6 @@ class ElasticSearchStorage(Storage):
             return True
         except:
             return False
+
+    def teardown(self):
+        pass
