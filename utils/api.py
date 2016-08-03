@@ -23,6 +23,7 @@ TODO:
 from __future__ import print_function
 import os
 import sys
+import subprocess
 import uuid
 from flask import Flask, jsonify, make_response, request, abort
 
@@ -118,10 +119,12 @@ def create_task():
     f_name = str(uuid.uuid4()) + extension
     file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
+    full_path = os.path.join(MS_WD, file_path)
 
     # TODO: run multiscan on the file, have it update the
     # DB when done
-    output = multiscanner.multiscan([file_path])
+    # output = multiscanner.multiscan([full_path])
+    subprocess.call(['/opt/venv_multiscanner/bin/python', '/opt/multiscanner/multiscanner.py', full_path])
 
     task_id = db.add_task()
     return make_response(
