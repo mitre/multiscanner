@@ -25,7 +25,7 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {"path":"C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe", 
     "key":KEY, 
-    "cmdline":[], 
+    "cmdline":['/A', '/H', '/PRIORITY=High'],
     'host':HOST, 
     "replacement path":PATHREPLACE,
     'ENABLED': True
@@ -70,16 +70,21 @@ def scan(filelist, conf=DEFAULTCONF):
             return None
     #Parse output
     output = output.decode("utf-8", errors='replace')
-    virusresults = re.findall("([^\r\n]+) Virus identified (.+)\s+$", output, re.MULTILINE)
-    #Stupid AVG prepends the UNC for mapped drives
-    uncdetect = "\(\\\\.*\) ([a-zA-Z]:\\\\.*)$"
+    virusresults = re.findall("(?:\([^\)]*\) )?([^\s]+) (.+)\s+$", output, re.MULTILINE)
+    results = []
     for (file, result) in virusresults[:]:
-        retest = re.match(uncdetect, file)
-        if not retest:
-            continue
-        virusresults.remove((file, result))
-        virusresults.append((retest.group(1), result))
-    
+        if result.endswith(' '):
+            result = result[:-1]
+        result = result.split(' ')
+        if file not in filelist:
+            file = file.split(':')[0]
+            while file not in filelist and result:
+                file = file + ' ' + result.pop(0)
+            if file not in filelist or not result:
+                continue
+        result = result[-1]
+        results.append((file,result))
+
     metadata = {}
     verinfo = re.search("Program version ([\d\.]+), engine ([\d\.]+)", output)
     metadata["Name"] = NAME
@@ -91,5 +96,5 @@ def scan(filelist, conf=DEFAULTCONF):
     if verinfo:
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
-    return (virusresults, metadata)
+    return (results, metadata)
 

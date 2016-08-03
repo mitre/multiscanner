@@ -15,6 +15,9 @@ This is the configuration for the main script
 ### [AVGScan] ###
 This module scans a file with AVG 2014 anti-virus.
 
+### [ClamAVScan] ###
+This module scans a file with ClamAV.
+
 ### [Cuckcoo] ###
 This module submits a file to a Cuckoo Sandbox cluster for analysis
 

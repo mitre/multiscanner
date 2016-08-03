@@ -9,7 +9,6 @@ from future import standard_library
 standard_library.install_aliases()
 import sys
 import os
-import imp
 import json
 import re
 import shutil
@@ -22,6 +21,8 @@ import configparser
 import codecs
 import multiprocessing
 import tempfile
+import storage
+import common
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -47,7 +48,8 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 # The default configuration options for the main script
 DEFAULTCONF = {
     "copyfilesto": False,
-    "group-types": ["Antivirus"]
+    "group-types": ["Antivirus"],
+    "storage-config": os.path.join(MS_WD, 'storage.ini')
     }
 
 VERBOSE = False
@@ -58,6 +60,21 @@ from common import parse_config
 from common import basename
 from common import convert_encoding
 from common import queue2list
+from common import load_module
+
+
+class _Print():
+    def __init__(self, lock=threading.Lock(), real_print=print):
+        self.lock = lock
+        self.real_print = real_print
+
+    def __call__(self, *args, **kwargs):
+        self.lock.acquire()
+        try:
+            self.real_print(*args, **kwargs)
+        finally:
+            self.lock.release()
+print = _Print()
 
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
@@ -86,23 +103,6 @@ class _Thread(threading.Thread):
             # Avoid a refcycle if the thread is running a function with
             # an argument that has a member that points to the thread.
             del self.__target, self.__args, self.__kwargs
-
-
-def _loadModule(name, path):
-    """
-    Loads a module by filename and path. Returns module object
-
-    name - Filename without .py
-    path - A list of dirs to search
-    """
-    try:
-        (fname, pathname, description) = imp.find_module(name, path)
-        loaded_mod = imp.load_module(name, fname, pathname, description)
-    except Exception as e:
-        loaded_mod = None
-        print(e)
-
-    return loaded_mod
 
 
 class _GlobalModuleInterface(object):
@@ -174,6 +174,7 @@ def _runModule(modname, mod, filelist, threadDict, global_module_interface, conf
     """
 
     mod.multiscanner = _ModuleInterface(modname, global_module_interface)
+    mod.print = print
 
     if not conf:
         try:
@@ -316,6 +317,7 @@ def _copy_to_share(filelist, filedic, sharedir):
     for fname in tmpfilelist:
         uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         newfile = uid + os.path.basename(fname)
+        newfile = newfile.replace(' ', '_')
         filedic[newfile] = fname
         newfile = os.path.join(sharedir, newfile)
         shutil.copyfile(fname, newfile)
@@ -345,7 +347,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
             moddir = os.path.dirname(module)
-            mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+            mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
             if not mod:
                 print(module, " not a valid module...")
                 continue
@@ -387,12 +389,13 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
     Config - The config object
     """
     ConfNeedsWrite = False
+    ModuleList.sort()
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module.split('.')[0])
             moddir = os.path.dirname(module)
             if modname not in Config.sections():
-                mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+                mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
                 if mod:
                     try:
                         conf = mod.DEFAULTCONF
@@ -426,11 +429,12 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
     """
     if VERBOSE:
         print("Rewriting config...")
+    ModuleList.sort()
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module.split('.')[0])
             moddir = os.path.dirname(module)
-            mod = _loadModule(os.path.basename(module.split('.')[0]), [moddir])
+            mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
             if mod:
                 try:
                     conf = mod.DEFAULTCONF
@@ -449,7 +453,7 @@ def _rewite_config(ModuleList, Config, filepath=CONFIG):
     conffile.close()
 
 
-def config_init(filepath):
+def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True)):
     """
     Creates a new config file at filepath
 
@@ -457,8 +461,7 @@ def config_init(filepath):
     """
     Config = configparser.SafeConfigParser()
     Config.optionxform = str
-    ModuleList = parseDir(MODULEDIR)
-    _rewite_config(ModuleList, Config, filepath)
+    _rewite_config(module_list, Config, filepath)
 
 
 def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
@@ -536,7 +539,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULEDIR)
+        module_list = parseDir(MODULEDIR, recursive=True)
     # A dictionary used for the copyfileto parameter
     filedic = {}
     # What will be the config file object
@@ -598,13 +601,32 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     if config_object:
         _write_missing_module_configs(module_list, config_object, filepath=configfile)
 
-    # Wait for all threads to finish
-    for thread in thread_list:
-        thread.join()
+    # Warn about spaces in file names
+    for f in filelist:
+        if ' ' in f:
+            print('WARNING: You are using file paths with spaces. This may result in modules not reporting correctly.')
+            break
 
-    if VERBOSE:
-        for thread in thread_list:
-            print(thread.name, "took", thread.endtime-thread.starttime)
+    # Wait for all threads to finish
+    thread_wait_list = thread_list[:]
+    i = 0
+    while thread_wait_list:
+        i += 1
+        for thread in thread_wait_list:
+            if not thread.is_alive():
+                i = 0
+                thread_wait_list.remove(thread)
+                if VERBOSE:
+                    print(thread.name, "took", thread.endtime-thread.starttime)
+        if i == 15:
+            i = 0
+            if VERBOSE:
+                p = 'Waiting on'
+                for thread in thread_wait_list:
+                    p += ' ' + thread.name
+                p += '...'
+                print(p)
+        time.sleep(1)
 
     # Delete copied files
     if main_config["copyfilesto"]:
@@ -719,8 +741,25 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
 
     # Wait for all threads to finish
-    for thread in thread_list:
-        thread.join()
+    thread_wait_list = thread_list[:]
+    i = 0
+    while thread_wait_list:
+        i += 1
+        for thread in thread_wait_list:
+            if not thread.is_alive():
+                i = 0
+                thread_wait_list.remove(thread)
+                if VERBOSE:
+                    print(thread.name, "took", thread.endtime-thread.starttime)
+        if i == 15:
+            i = 0
+            if VERBOSE:
+                p = 'Waiting on'
+                for thread in thread_wait_list:
+                    p += ' ' + thread.name
+                p += '...'
+                print(p)
+        time.sleep(1)
 
     # Delete copied files
     if main_config["copyfilesto"]:
@@ -766,6 +805,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
 
     return results
 
+
 def _parse_args():
     """
     Parses arguments
@@ -774,7 +814,7 @@ def _parse_args():
     # argparse stuff
     parser = argparse.ArgumentParser(description="Analyse files against multiple engines")
     parser.add_argument("-c", "--config", help="The config file to use", required=False, default=CONFIG)
-    parser.add_argument('-j', '--json', help="The json file to write", required=False, metavar="filepath", default='report.json')
+    parser.add_argument('-j', '--json', help="The json file to write", required=False, metavar="filepath", default=None)
     parser.add_argument("-m", "--metadata", help="This will include the metadata section from the report", action="store_true")
     parser.add_argument('-n', '--numberper', help="The max number of files per report", required=False, metavar="num", default=200, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
@@ -798,7 +838,7 @@ def _init(args):
             print('Configuration file initialized at', args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULEDIR)
+            ModuleList = parseDir(MODULEDIR, recursive=True)
             Config = configparser.SafeConfigParser()
             Config.optionxform = str
             Config.read(args.config)
@@ -828,6 +868,12 @@ def _main():
 
     if not os.path.isfile(args.config):
         config_init(args.config)
+
+    # Make sure report is not a dir
+    if args.json:
+        if os.path.isdir(args.json):
+            print('ERROR:', args.json, 'is a directory, a file is expected')
+            return False
 
     # Parse the file list
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
@@ -909,46 +955,31 @@ def _main():
             "Run by": username
         }))
 
-        report = None
-        report_write = True
-        report_ugly = None
-        if args.show:
+        if args.show or not stdout.isatty():
             # TODO: Make this output something readable
             # Parse Results
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
-            report_ugly = args.ugly
-            # Print report and write to file
-            try:
-                print(report, file=stdout)
-            except IOError:
-                pass
 
-        elif not stdout.isatty():
-            report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
-            report_ugly = True
-            print(report, file=stdout)
-            stdout.flush()
-            # Don't write the default location if we are redirecting output
-            if args.json == 'report.json':
-                print('Not writing results to report.json, pick a different filename to override')
-                report_write = False
-
-        if report_write:
-            # Check if we need to run the report again
-            if report is not None and report_ugly is True:
-                pass
-            else:
-                report = parse_reports(results, groups=config["group-types"], ugly=True, includeMetadata=args.metadata)
-            # Try to write report
+            # Print report
             try:
-                reportfile = codecs.open(args.json, 'a', 'utf-8')
-                reportfile.write(report)
-                reportfile.write('\n')
-                reportfile.close()
+                print(convert_encoding(report, encoding='ascii', errors='replace'), file=stdout)
+                stdout.flush()
             except Exception as e:
-                print(e)
-                print("ERROR: Could not write report file, report not saved")
-                exit(2)
+                print('ERROR: Can\'t print report -', e)
+
+        report = parse_reports(results, groups=config["group-types"], includeMetadata=args.metadata, python=True)
+
+        update_conf = None
+        if args.json:
+            update_conf = {'File': {'path': args.json}}
+            if args.json.endswith('.gz') or args.json.endswith('.gzip'):
+                update_conf['File']['gzip'] = True
+
+        if 'storage-config' not in config:
+            config["storage-config"] = None
+        storage_handle = storage.StorageHandler(configfile=config["storage-config"], config=update_conf)
+        storage_handle.store(report)
+        storage_handle.close()
 
     # Cleanup zip extracted files
     if args.extractzips:
