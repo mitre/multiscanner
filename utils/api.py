@@ -177,6 +177,8 @@ def get_report(task_id):
     to the given report ID.
     '''
     task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
         storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
@@ -196,13 +198,22 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
 
-@app.route('/api/v1/reports/delete/<report_id>', methods=['GET'])
-def delete_report(report_id):
+@app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
+def delete_report(task_id):
     '''
     Delete the specified report. Return deleted message.
     '''
-    # if db_store.delete(report_id):
-    if True:
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+    for handler in storage_handler.loaded_storage:
+        if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+            break
+
+    if handler.delete(task.report_id):
         return jsonify({'Message': 'Deleted'})
     else:
         abort(HTTP_NOT_FOUND)
