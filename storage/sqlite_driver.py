@@ -22,7 +22,7 @@ class Task(Base):
 
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
-    report_id = Column(Integer, unique=False)
+    report_id = Column(String, unique=False)
 
     def __repr__(self):
         return '<Task("{0}","{1}","{2}")>'.format(
@@ -76,7 +76,7 @@ class Database(object):
         task = ses.query(Task).get(task_id)
         if task:
             task.task_status = task_status
-            task.report_id = repr(report_id)
+            task.report_id = report_id
             ses.commit()
             return task.to_dict()
 
@@ -87,7 +87,16 @@ class Database(object):
 
         task = ses.query(Task).get(task_id)
         if task:
-            return task.to_dict()
+            return task
+
+    def get_report_id_from_task(self, task_id):
+        eng = create_engine('sqlite:///%s' % self.db_path)
+        Session = sessionmaker(bind=eng)
+        ses = Session()
+
+        task = ses.query(Task).get(task_id)
+        if task:
+            return task.report_id
 
     def get_all_tasks(self):
         eng = create_engine('sqlite:///%s' % self.db_path)
