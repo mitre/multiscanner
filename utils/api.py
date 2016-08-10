@@ -54,11 +54,15 @@ FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
 app = Flask(__name__)
 db = database.Database(FULL_DB_PATH)
+storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+for handler in storage_handler.loaded_storage:
+    if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+        break
+
 
 def multiscanner_process(file_, task_id, report_id):
     filelist = [file_]
-    storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
-    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
     results = multiscanner.parse_reports(resultlist, python=True)
@@ -181,12 +185,6 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
-        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-        for handler in storage_handler.loaded_storage:
-            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-                break
-
         report = handler.get_report(task.report_id)
 
     elif task.task_status == 'Pending':
@@ -206,12 +204,6 @@ def delete_report(task_id):
     task = db.get_task(task_id)
     if not task:
         abort(HTTP_NOT_FOUND)
-
-    storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
-    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-    for handler in storage_handler.loaded_storage:
-        if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-            break
 
     if handler.delete(task.report_id):
         return jsonify({'Message': 'Deleted'})
