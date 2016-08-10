@@ -35,7 +35,7 @@ def post_file(app):
         data={'file': (StringIO('my file contents'), 'hello world.txt'),})
 
 
-def fake_multiscanner_process(file_, task_id, report_id):
+def fake_multiscanner_process(file_, original_filename, task_id, report_id):
     pass
 
 
