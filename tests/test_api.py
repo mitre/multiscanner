@@ -35,7 +35,7 @@ def post_file(app):
         data={'file': (StringIO('my file contents'), 'hello world.txt'),})
 
 
-def fake_multiscanner_process(file_):
+def fake_multiscanner_process(file_, task_id, report_id):
     pass
 
 
@@ -96,16 +96,14 @@ class TestTaskCreateCase(unittest.TestCase):
         api.multiscanner_process = fake_multiscanner_process
 
         # populate the DB w/ a task
-        # The report should finish instantly b/c it is
-        # not actually being scanned
         post_file(self.app)
 
     def test_get_task(self):
         expected_response = {
             'Task': {
                 'task_id': 1,
-                'task_status': 'Complete',
-                'report_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+                'task_status': 'Pending',
+                'report_id': None
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
@@ -120,7 +118,7 @@ class TestTaskCreateCase(unittest.TestCase):
 
     def test_get_task_list(self):
         # expected_response = {'Tasks': [{'report_id': None, 'task_id': 1, 'task_status': 'Pending'}]}
-        expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Complete', 'report_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'}]}
+        expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Pending', 'report_id': None}]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.data), expected_response)
