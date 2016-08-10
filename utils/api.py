@@ -23,6 +23,7 @@ TODO:
 from __future__ import print_function
 import os
 import sys
+import time
 import subprocess
 import hashlib
 import multiprocessing
@@ -44,6 +45,10 @@ TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 UPLOAD_FOLDER = 'tmp/'
 
+BATCH_SIZE = 100
+WAIT_SECONDS =60 # Number of seconds to wait for additional files
+                  # submitted to the create/ API
+
 HTTP_OK = 200
 HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
@@ -59,33 +64,54 @@ storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
+work_queue = multiprocessing.Queue()
 
 
-def multiscanner_process(file_, original_filename, task_id, report_id):
-    filelist = [file_]
+def multiscanner_process(work_queue, exit_signal):
+    metadata_list = []
+    time_stamp = None
+    while True:
+        time.sleep(1)
+        try:
+            metadata_list.append(work_queue.get_nowait())
+            if not time_stamp:
+                time_stamp = time.time()
+            while len(metadata_list) < BATCH_SIZE:
+                metadata_list.append(work_queue.get_nowait())
+        except queue.Empty:
+            if metadata_list and time_stamp:
+                if len(metadata_list) >= BATCH_SIZE:
+                    pass
+                elif time.time() - time_stamp > WAIT_SECONDS:
+                    pass
+                else:
+                    continue
+            else:
+                continue
 
-    resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
-    results = multiscanner.parse_reports(resultlist, python=True)
+        filelist = [item[0] for item in metadata_list]
+        resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
+        results = multiscanner.parse_reports(resultlist, python=True)
 
-    for file_name in results:
-        os.remove(file_name)
+        for file_name in results:
+            os.remove(file_name)
 
-    results[original_filename] = results[file_]
-    del results[file_]
+        for item in metadata_list:
 
-    storage_handler.store(results, wait=False)
+            results[item[1]] = results[item[0]]
+            del results[item[0]]
 
+            db.update_task(
+                task_id=item[2],
+                task_status='Complete',
+                report_id=item[3]
+            )
+
+        storage_handler.store(results, wait=False)
+
+        filelist = []
+        time_stamp = None
     storage_handler.close()
-
-    # Update sqlite DB with report ID
-    # and complete status
-    db.update_task(
-        task_id=task_id,
-        task_status='Complete',
-        report_id=report_id
-    )
-    # TODO: add error handling if multiscanner_process
-    # throws an exception
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -165,11 +191,14 @@ def create_task():
     # Add task to sqlite DB
     task_id = db.add_task()
 
+    '''
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
         args=(full_path, original_filename, task_id, f_name)
     )
     ms_process.start()
+    '''
+    work_queue.put((full_path, original_filename, task_id, f_name))
 
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
@@ -221,4 +250,12 @@ if __name__ == '__main__':
     if not os.path.isdir(UPLOAD_FOLDER):
         print('Creating upload dir')
         os.makedirs(UPLOAD_FOLDER)
+
+    exit_signal = multiprocessing.Value('b')
+    exit_signal.value = False
+    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, exit_signal))
+    ms_process.start()
+
     app.run(host='0.0.0.0', port=8080)
+
+    ms_process.join()
