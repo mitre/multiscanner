@@ -23,6 +23,9 @@ from storage import Storage
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
+if not os.path.isdir(TEST_UPLOAD_FOLDER):
+    print('Creating upload dir')
+    os.makedirs(TEST_UPLOAD_FOLDER)
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 
@@ -30,6 +33,10 @@ def post_file(app):
     return app.post(
         '/api/v1/tasks/create/',
         data={'file': (StringIO('my file contents'), 'hello world.txt'),})
+
+
+def fake_multiscanner_process(file_):
+    pass
 
 
 class MockStorage(object):
@@ -50,6 +57,7 @@ class TestURLCase(unittest.TestCase):
         api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
         if not os.path.isdir(api.UPLOAD_FOLDER):
             os.makedirs(api.UPLOAD_FOLDER)
+        api.multiscanner_process = fake_multiscanner_process
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -85,16 +93,19 @@ class TestTaskCreateCase(unittest.TestCase):
         api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
         if not os.path.isdir(api.UPLOAD_FOLDER):
             os.makedirs(api.UPLOAD_FOLDER)
+        api.multiscanner_process = fake_multiscanner_process
 
         # populate the DB w/ a task
+        # The report should finish instantly b/c it is
+        # not actually being scanned
         post_file(self.app)
 
     def test_get_task(self):
         expected_response = {
             'Task': {
                 'task_id': 1,
-                'task_status': 'Pending',
-                'report_id': None
+                'task_status': 'Complete',
+                'report_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
@@ -108,7 +119,8 @@ class TestTaskCreateCase(unittest.TestCase):
         self.assertDictEqual(json.loads(resp.data), expected_response)
 
     def test_get_task_list(self):
-        expected_response = {'Tasks': [{'report_id': None, 'task_id': 1, 'task_status': 'Pending'}]}
+        # expected_response = {'Tasks': [{'report_id': None, 'task_id': 1, 'task_status': 'Pending'}]}
+        expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Complete', 'report_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'}]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.data), expected_response)
@@ -135,7 +147,7 @@ class TestTaskUpdateCase(unittest.TestCase):
         self.sql_db.update_task(
             task_id=1,
             task_status='Complete',
-            report_id=['report1', 'report2']
+            report_id='report1'
         )
 
     def test_get_updated_task(self):
@@ -143,7 +155,7 @@ class TestTaskUpdateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Complete',
-                'report_id': "['report1', 'report2']"
+                'report_id': 'report1'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
