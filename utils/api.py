@@ -55,7 +55,7 @@ FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 app = Flask(__name__)
 db = database.Database(FULL_DB_PATH)
 
-def multiscanner_process(file_):
+def multiscanner_process(file_, task_id, report_id):
     filelist = [file_]
     storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
@@ -69,6 +69,16 @@ def multiscanner_process(file_):
     storage_handler.store(results, wait=False)
 
     storage_handler.close()
+
+    # Update sqlite DB with report ID
+    # and complete status
+    db.update_task(
+        task_id=task_id,
+        task_status='Complete',
+        report_id=report_id
+    )
+    # TODO: add error handling if multiscanner_process
+    # throws an exception
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -150,20 +160,9 @@ def create_task():
 
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
-        args=(full_path,)
+        args=(full_path, task_id, f_name)
     )
     ms_process.start()
-
-    # TODO: add error handling if multiscanner_process
-    # throws an exception
-
-    # Update sqlite DB with report ID
-    # and complete status
-    db.update_task(
-        task_id=task_id,
-        task_status='Complete',
-        report_id=f_name
-    )
 
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
