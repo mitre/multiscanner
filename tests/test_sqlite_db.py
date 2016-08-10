@@ -92,16 +92,18 @@ class TestTaskManipulation(unittest.TestCase):
 
     def test_get_task(self):
         resp = self.sql_db.get_task(task_id=1)
-        self.assertDictEqual(TEST_TASK, resp)
+        self.assertEqual(resp.task_id, 1)
+        self.assertEqual(resp.task_status, 'Pending')
+        self.assertEqual(resp.report_id, None)
 
     def test_update_task(self):
         resp = self.sql_db.update_task(
             task_id=1,
             task_status='Complete',
-            report_id =  ['88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f']
+            report_id =  '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'
         )
-        self.assertDictEqual(resp, self.sql_db.get_task(1))
-        self.assertDictEqual(resp, {'task_id': 1, 'task_status': 'Complete', 'report_id': "['88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f']"})
+        self.assertDictEqual(resp, self.sql_db.get_task(1).to_dict())
+        self.assertDictEqual(resp, {'task_id': 1, 'task_status': 'Complete', 'report_id': '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'})
 
     def test_delete_task(self):
         deleted = self.sql_db.delete_task(task_id=1)
