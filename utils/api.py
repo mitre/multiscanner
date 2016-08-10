@@ -24,7 +24,9 @@ from __future__ import print_function
 import os
 import sys
 import subprocess
-import uuid
+import hashlib
+import multiprocessing
+import queue
 from flask import Flask, jsonify, make_response, request, abort
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +38,7 @@ if MS_WD not in sys.path:
 import multiscanner
 import sqlite_driver as database
 from storage import Storage
+import elasticsearch_storage
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -51,7 +54,22 @@ FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
 app = Flask(__name__)
 db = database.Database(FULL_DB_PATH)
-# db_store = Storage.get_storage()
+
+def multiscanner_process(file_):
+    filelist = [file_]
+    storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+
+    resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
+    results = multiscanner.parse_reports(resultlist, python=True)
+
+    for file_name in results:
+        os.remove(file_name)
+
+    storage_handler.store(results, wait=False)
+
+    storage_handler.close()
+
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
@@ -92,7 +110,7 @@ def get_task(task_id):
     '''
     task = db.get_task(task_id)
     if task:
-        return jsonify({'Task': task})
+        return jsonify({'Task': task.to_dict()})
     else:
         abort(HTTP_NOT_FOUND)
 
@@ -115,32 +133,64 @@ def create_task():
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
     file_ = request.files['file']
-    extension = os.path.splitext(file_.filename)[1]
-    f_name = str(uuid.uuid4()) + extension
+    # TODO: Figure out how to get multiscanner to report
+    # the original filename
+    original_filename = file_.filename
+    f_name = hashlib.sha256(file_.read()).hexdigest()
+    # Reset the file pointer to the beginning
+    # to allow us to save it
+    file_.seek(0)
+
     file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
 
-    # TODO: run multiscan on the file, have it update the
-    # DB when done
-    # output = multiscanner.multiscan([full_path])
-    subprocess.call(['/opt/venv_multiscanner/bin/python', '/opt/multiscanner/multiscanner.py', full_path])
-
+    # Add task to sqlite DB
     task_id = db.add_task()
+
+    ms_process = multiprocessing.Process(
+        target=multiscanner_process,
+        args=(full_path,)
+    )
+    ms_process.start()
+
+    # TODO: add error handling if multiscanner_process
+    # throws an exception
+
+    # Update sqlite DB with report ID
+    # and complete status
+    db.update_task(
+        task_id=task_id,
+        task_status='Complete',
+        report_id=f_name
+    )
+
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
         HTTP_CREATED
     )
 
 
-@app.route('/api/v1/reports/list/<report_id>', methods=['GET'])
-def get_report(report_id):
+@app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
+def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
     to the given report ID.
     '''
-    # report = db_store.get_report(report_id)
-    report = {'file': 'data'}
+    task = db.get_task(task_id)
+
+    if task.task_status == 'Complete':
+        storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+        for handler in storage_handler.loaded_storage:
+            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+                break
+
+        report = handler.get_report(task.report_id)
+
+    elif task.task_status == 'Pending':
+        report = {'Report': 'Task still pending'}
+
     if report:
         return jsonify({'Report': report})
     else:
