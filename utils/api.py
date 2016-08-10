@@ -61,7 +61,7 @@ for handler in storage_handler.loaded_storage:
         break
 
 
-def multiscanner_process(file_, task_id, report_id):
+def multiscanner_process(file_, original_filename, task_id, report_id):
     filelist = [file_]
 
     resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
@@ -69,6 +69,9 @@ def multiscanner_process(file_, task_id, report_id):
 
     for file_name in results:
         os.remove(file_name)
+
+    results[original_filename] = results[file_]
+    del results[file_]
 
     storage_handler.store(results, wait=False)
 
@@ -164,7 +167,7 @@ def create_task():
 
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
-        args=(full_path, task_id, f_name)
+        args=(full_path, original_filename, task_id, f_name)
     )
     ms_process.start()
 
