@@ -9,15 +9,13 @@ Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
 GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
-GET /api/v1/reports/list/<report_id> ---> receive report in JSON
-GET /api/v1/reports/delete/<report_id> ----> delete report_id
+GET /api/v1/tasks/report/<task_id> ---> receive report in JSON
+GET /api/v1/tasks/delete/<task_id> ----> delete task_id
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
 TODO:
-* Add a backend DB to store reports
-* Make this app agnostic to choice of backend DB
 * Add doc strings to functions
 '''
 from __future__ import print_function
@@ -191,13 +189,6 @@ def create_task():
     # Add task to sqlite DB
     task_id = db.add_task()
 
-    '''
-    ms_process = multiprocessing.Process(
-        target=multiscanner_process,
-        args=(full_path, original_filename, task_id, f_name)
-    )
-    ms_process.start()
-    '''
     work_queue.put((full_path, original_filename, task_id, f_name))
 
     return make_response(
@@ -210,7 +201,7 @@ def create_task():
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
-    to the given report ID.
+    to the given task ID.
     '''
     task = db.get_task(task_id)
     if not task:
@@ -231,7 +222,7 @@ def get_report(task_id):
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
 def delete_report(task_id):
     '''
-    Delete the specified report. Return deleted message.
+    Delete the specified task. Return deleted message.
     '''
     task = db.get_task(task_id)
     if not task:
