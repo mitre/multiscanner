@@ -22,7 +22,6 @@ from __future__ import print_function
 import os
 import sys
 import time
-import subprocess
 import hashlib
 import multiprocessing
 import queue
@@ -44,8 +43,8 @@ INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 UPLOAD_FOLDER = 'tmp/'
 
 BATCH_SIZE = 100
-WAIT_SECONDS =60 # Number of seconds to wait for additional files
-                  # submitted to the create/ API
+WAIT_SECONDS = 60   # Number of seconds to wait for additional files
+                    # submitted to the create/ API
 
 HTTP_OK = 200
 HTTP_CREATED = 201
@@ -88,7 +87,9 @@ def multiscanner_process(work_queue, exit_signal):
                 continue
 
         filelist = [item[0] for item in metadata_list]
-        resultlist = multiscanner.multiscan(filelist, configfile=multiscanner.CONFIG)
+        resultlist = multiscanner.multiscan(
+            filelist, configfile=multiscanner.CONFIG
+        )
         results = multiscanner.parse_reports(resultlist, python=True)
 
         for file_name in results:
@@ -244,7 +245,10 @@ if __name__ == '__main__':
 
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
-    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, exit_signal))
+    ms_process = multiprocessing.Process(
+        target=multiscanner_process,
+        args=(work_queue, exit_signal)
+    )
     ms_process.start()
 
     app.run(host='0.0.0.0', port=8080)
