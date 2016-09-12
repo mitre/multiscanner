@@ -1,5 +1,6 @@
 #Local config
 config.ini
+storage.ini
 
 #Default report location
 report.json
@@ -54,3 +55,7 @@ coverage.xml
 docs/_build/
 # PyBuilder
 target/
+# Sqlite DB
+sqlite.db
+# Tmp Upload Dir
+utils/tmp/
