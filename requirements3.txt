@@ -8,5 +8,8 @@ pyclamd
 python-magic
 requests
 ssdeep
+#Required by API
 sqlalchemy
 StringIO
+#Required by storage modules
+elasticsearch
