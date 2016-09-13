@@ -70,8 +70,14 @@ def _parse_scan_result(response):
     if status_code == requests.codes.ok:
         process_info = response_json.get('process_info', {})
         prog_percent = process_info.get('progress_percentage', None)
-                
-        if prog_percent != PERCENT_SCAN_COMPLETE:  
+        
+        # Metadefender returns a 200 rather than a 404 if there's no scan 
+        # result, so we have to check the output for a progress percentage...        
+        if prog_percent == None:            
+            overall_status = STATUS_FAIL
+            error_msg = 'Scan not found'
+            engine_results = []
+        elif prog_percent != PERCENT_SCAN_COMPLETE:  
             return(False, None)
         else:             
             overall_status = STATUS_SUCCESS 
