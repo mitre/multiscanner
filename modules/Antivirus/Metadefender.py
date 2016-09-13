@@ -69,8 +69,8 @@ def _parse_scan_result(response):
     response_json = response.json()         
     if status_code == requests.codes.ok:
         process_info = response_json.get('process_info', {})
-        prog_percent = process_info.get('progress_percentage', None)    
-        
+        prog_percent = process_info.get('progress_percentage', None)
+                
         if prog_percent != PERCENT_SCAN_COMPLETE:  
             return(False, None)
         else:             
@@ -98,7 +98,53 @@ def _parse_scan_result(response):
                   }
     return (True, scan_result)
        
-         
+
+def _submit_sample(fname, scan_url, user_agent):
+    '''
+    Submits the specified sample file to Metadefender and returns 
+    Metadefender's response.
+    Parameters:
+        fname - sample file name
+        scan_url - API URL for scan submission
+        user_agent - Metadefender user agent string
+    Returns:
+        JSON object in the form:
+        {
+            status_code: <HTTP status code>,
+            scan_id: <scan ID if present> | None,
+            error: <error message if present> | None
+        }
+    '''    
+    with open(fname, "rb") as sample: 
+            # TODO - send file in chunks if file size > some threshold.
+            # Due to MD's API, we would have to split the file up manually 
+            # and perform several POSTS        
+            headers = {'content-type': 'application/json', 
+                       'user_agent': user_agent, 
+                       'filename': basename(fname)}            
+            request = requests.post(scan_url, data=sample, headers=headers)
+    resp_status_code = request.status_code 
+    resp_json = request.json()    
+        
+    scan_id = resp_json.get('data_id', None)
+    if resp_status_code == 200:
+        error_msg = None
+    else:
+        error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
+    
+    submission_response = {'status_code': resp_status_code,
+                           'scan_id': scan_id,
+                           'error': error_msg
+                          }
+    return submission_response
+
+def _retrieve_scan_results(results_url, scan_id):
+    '''
+    Retrieves the results of a scan from Metadefender
+    '''
+    scan_output = requests.get(results_url+scan_id)
+    return scan_output
+                 
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     tasks = []
@@ -109,27 +155,19 @@ def scan(filelist, conf=DEFAULTCONF):
     scan_url = url + 'metascan_rest/file'
     results_url = url + 'metascan_rest/file/'
     
+    user_agent = conf['user agent']
     for fname in filelist:
-        with open(fname, "rb") as sample: 
-            # TODO - send file in chunks if file size > some threshold.
-            # Due to MD's API, we would have to split the file up manually 
-            # and perform several POSTS        
-            headers = {'content-type': 'application/json', 
-                       'user_agent': conf['user agent'], 
-                       'filename': basename(fname)}            
-            request = requests.post(scan_url, data=sample, headers=headers)
-            resp_status_code = request.status_code 
-            
+        submission_resp = _submit_sample(fname, scan_url, user_agent)        
+        resp_status_code = submission_resp['status_code'] 
         if resp_status_code == 200:
-            task_id = request.json().get('data_id', None)
+            task_id = submission_resp['scan_id']
             if task_id is not None:
                 tasks.append((fname, str(task_id)))
             else:
                 #TODO Do something here?
                 pass
-        else: 
-            msg = request.json()
-            err_msg = msg.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
+        else:             
+            err_msg = submission_resp['error']
             print('%s: %s not submitted: Code: %d, Message: %s' \
                   % (NAME, basename(fname), resp_status_code, err_msg))
 
@@ -138,7 +176,7 @@ def scan(filelist, conf=DEFAULTCONF):
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
-            scan_output = requests.get(results_url+task_id)
+            scan_output = _retrieve_scan_results(results_url, task_id)
             is_scan_complete, scan_result = _parse_scan_result(scan_output)
 
             # If we have a report
