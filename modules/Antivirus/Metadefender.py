@@ -1,6 +1,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
+'''
+Scanning module to interact with OPSWAT Metadefender Core 4 Version 3.x.
+The scan() method submits a set of files to the Metadefender REST
+API, and then polls Metadefender for the scan results.
+'''
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
 import json
@@ -47,23 +52,27 @@ def check(conf=DEFAULTCONF):
 def _parse_scan_result(response):
     '''
     Parses the Response object returned by the call to requests.get()
-    for the scan result. Returns a tuple (is_complete, scan_output)
-    where 
-        is_complete = boolean indicating if the scan has completed
-        scan_output = JSON object in the form:
-        {
-            overall_status: 'Success|Failure',
-            error_msg: 'Error Message if present'|''
-            engine_results: [
-                {
-                    engine_name: '<Engine Name>',
-                    threat_found: '<Threat Name>'|'',
-                    scan_result: '<Value from MD_SCAN_RES_CODES>
-                },
-                ...          
-            ]    
-        }
-        if is_completed is False, then scan_output will be None          
+    for the scan result. 
+    Parameters: 
+        response - requests.Response object returned by
+            _retrieve_scan_results()
+    Returns:
+        tuple(is_complete, scan_output) where: 
+            is_complete = boolean indicating if the scan has completed
+            scan_output = dictionary in the form:
+            {
+                overall_status: 'Success|Failure',
+                error_msg: 'Error Message if present'|''
+                engine_results: [
+                    {
+                        engine_name: '<Engine Name>',
+                        threat_found: '<Threat Name>'|'',
+                        scan_result: '<Value from MD_SCAN_RES_CODES>'
+                    },
+                    ...          
+                ]    
+            }
+            if is_completed is False, then scan_output will be None          
     '''
     status_code = response.status_code
     response_json = response.json()         
@@ -114,7 +123,7 @@ def _submit_sample(fname, scan_url, user_agent):
         scan_url - API URL for scan submission
         user_agent - Metadefender user agent string
     Returns:
-        JSON object in the form:
+        Dictionary in the form:
         {
             status_code: <HTTP status code>,
             scan_id: <scan ID if present> | None,
@@ -146,12 +155,30 @@ def _submit_sample(fname, scan_url, user_agent):
 
 def _retrieve_scan_results(results_url, scan_id):
     '''
-    Retrieves the results of a scan from Metadefender
+    Retrieves the results of a scan from Metadefender.
+    Parameters: 
+        results_url - API URL for result retrieval
+        scan_id - scan ID returned my Metadefender on sample submission
+    Returns:
+        requests.Response object 
     '''
     scan_output = requests.get(results_url+scan_id)
     return scan_output
                  
 def scan(filelist, conf=DEFAULTCONF):
+    '''
+    Submits all the files in filelist to the Metadefender API, and then
+    polls Metadefender after submission to retrieve the scan results.
+    Parameters:
+        filelist - list of filenames to be scanned
+        conf - module configuration
+    Returns:
+        tuple(resultlist, metadata) where:
+            resultlist = list of scan results, one per file. Each result is
+                a dictionary in the form of the scan_output dictionary returned
+                by _parse_scan_result()
+            metadata = module metadata (name, type)
+    '''
     resultlist = []
     tasks = []
     if conf['API URL'].endswith('/'):
