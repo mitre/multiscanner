@@ -44,7 +44,6 @@ class MongoStorage(Storage):
     def store(self, report):
         report_id_list = []
 
-
         for filename in report:
             report[filename]['filename'] = filename
             try:
