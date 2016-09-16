@@ -5,6 +5,15 @@
 Scanning module to interact with OPSWAT Metadefender Core 4 Version 3.x.
 The scan() method submits a set of files to the Metadefender REST
 API, and then polls Metadefender for the scan results.
+Notes on special configuration options:
+    'fetch delay seconds': the number of seconds for the module to
+        wait between submitting all samples and polling for scan results.
+        Increase this value if Metadefender is taking a long time to store
+        the samples
+    'poll interval seconds': the number of seconds between successive
+        queries to Metadefender for scan results
+    The value of ('fetch delay seconds' + 'poll interval seconds')
+    should be less than ('timeout' + 'running timeout')
 '''
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
@@ -23,6 +32,8 @@ DEFAULTCONF = {
     "API URL": 'http://metadefender:8008/',
     "timeout": 60,
     "running timeout": 30,
+    "fetch delay seconds": 5,
+    "poll interval seconds": 5,
     "user agent": "user_agent"
 }
 
@@ -188,6 +199,9 @@ def scan(filelist, conf=DEFAULTCONF):
                 by _parse_scan_result()
             metadata = module metadata (name, type)
     '''
+    fetch_delay_seconds = conf['fetch delay seconds']
+    poll_interval_seconds = conf['poll interval seconds']
+
     resultlist = []
     tasks = []
     if conf['API URL'].endswith('/'):
@@ -214,7 +228,7 @@ def scan(filelist, conf=DEFAULTCONF):
                   % (NAME, basename(fname), resp_status_code, err_msg))
 
     # Wait for tasks to finish
-    time.sleep(5)
+    time.sleep(fetch_delay_seconds)
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
@@ -235,7 +249,7 @@ def scan(filelist, conf=DEFAULTCONF):
                         #TODO Log timeout
                         tasks.remove((fname, task_id))
 
-        time.sleep(15)
+        time.sleep(poll_interval_seconds)
 
     metadata = {}
     metadata["Name"] = NAME
