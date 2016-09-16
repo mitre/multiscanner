@@ -21,8 +21,8 @@ NAME = "Metadefender"
 DEFAULTCONF = {
     "ENABLED": False,
     "API URL": 'http://metadefender:8008/',
-    "timeout": 360,
-    "running timeout": 120,
+    "timeout": 60,
+    "running timeout": 30,
     "user agent": "user_agent"
 }
 
