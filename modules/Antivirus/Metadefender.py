@@ -176,7 +176,8 @@ def _submit_sample(fname, scan_url, user_agent):
         error_msg = None
     else:
         scan_id = None
-        error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
+        error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code,
+                                                               UNKNOWN_ERROR))
 
     submission_response = {'status_code': resp_status_code,
                            'scan_id': scan_id,
