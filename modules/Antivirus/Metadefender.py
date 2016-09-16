@@ -142,7 +142,7 @@ def _submit_sample(fname, scan_url, user_agent):
     resp_json = request.json()    
         
     scan_id = resp_json.get('data_id', None)
-    if resp_status_code == 200:
+    if resp_status_code == requests.codes.ok:
         error_msg = None
     else:
         error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
@@ -192,7 +192,7 @@ def scan(filelist, conf=DEFAULTCONF):
     for fname in filelist:
         submission_resp = _submit_sample(fname, scan_url, user_agent)        
         resp_status_code = submission_resp['status_code'] 
-        if resp_status_code == 200:
+        if resp_status_code == requests.codes.ok:
             task_id = submission_resp['scan_id']
             if task_id is not None:
                 tasks.append((fname, str(task_id)))
