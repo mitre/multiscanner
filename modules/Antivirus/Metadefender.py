@@ -22,7 +22,7 @@ DEFAULTCONF = {
     "ENABLED": False,
     "API URL": 'http://metadefender:8008/',
     "timeout": 360,
-    "running timeout": 120,    
+    "running timeout": 120,
     "user agent": "user_agent"
 }
 
@@ -34,7 +34,7 @@ MD_SCAN_RES_CODES = {0: 'No threats Found', 1: 'Infected/Known',
                      8: 'Skipped - Infected', 9: 'Exceeded Archive Depth',
                      10: 'Not Scanned/No Scan Results', 11: 'Aborted',
                      12: 'Encrypted', 13: 'Exceeded Archive Size',
-                     14: 'Exceeded Archive File Number', 
+                     14: 'Exceeded Archive File Number',
                      15: 'Password Protected', 16: 'Exceeded Archive Timeout'}
 MD_UNKNOWN_SCAN_RES = 5
 MD_HTTP_ERR_CODES = {400: 'Unsupported HTTP Method or invalid HTTP Request',
@@ -42,6 +42,7 @@ MD_HTTP_ERR_CODES = {400: 'Unsupported HTTP Method or invalid HTTP Request',
                      404: 'Scan result not found',
                      500: 'Server temporarily unavailable'
                      }
+UNKNOWN_ERROR = 'Unknown Error'
 STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Failure'
 
@@ -52,12 +53,12 @@ def check(conf=DEFAULTCONF):
 def _parse_scan_result(response):
     '''
     Parses the Response object returned by the call to requests.get()
-    for the scan result. 
-    Parameters: 
+    for the scan result.
+    Parameters:
         response - requests.Response object returned by
             _retrieve_scan_results()
     Returns:
-        tuple(is_complete, scan_output) where: 
+        tuple(is_complete, scan_output) where:
             is_complete = boolean indicating if the scan has completed
             scan_output = dictionary in the form:
             {
@@ -69,28 +70,29 @@ def _parse_scan_result(response):
                         threat_found: '<Threat Name>'|'',
                         scan_result: '<Value from MD_SCAN_RES_CODES>'
                     },
-                    ...          
-                ]    
+                    ...
+                ]
             }
-            if is_completed is False, then scan_output will be None          
+            if is_completed is False, then scan_output will be None
     '''
     status_code = response.status_code
-    response_json = response.json()         
+
     if status_code == requests.codes.ok:
+        response_json = response.json()
         process_info = response_json.get('process_info', {})
         prog_percent = process_info.get('progress_percentage', None)
-        
-        # Metadefender returns a 200 rather than a 404 if there's no scan 
-        # result, so we have to check the output for a progress percentage...        
-        if prog_percent == None:            
+
+        # Metadefender returns a 200 rather than a 404 if there's no scan
+        # result, so we have to check the output for a progress percentage...
+        if prog_percent == None:
             overall_status = STATUS_FAIL
             error_msg = 'Scan not found'
             engine_results = []
-        elif prog_percent != PERCENT_SCAN_COMPLETE:  
+        elif prog_percent != PERCENT_SCAN_COMPLETE:
             return(False, None)
-        else:             
-            overall_status = STATUS_SUCCESS 
-            error_msg = ''                   
+        else:
+            overall_status = STATUS_SUCCESS
+            error_msg = ''
             overall_results = response_json.get("scan_results", {})
             scan_details = overall_results.get("scan_details", {})
             engine_results = []
@@ -101,22 +103,28 @@ def _parse_scan_result(response):
                                  'threat_found': engine_output.get('threat_found', ''),
                                  'scan_result': scan_result_string
                                  }
-                engine_results.append(engine_result) 
+                engine_results.append(engine_result)
     else:
-        overall_status = STATUS_FAIL              
-        error_msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code))
+        overall_status = STATUS_FAIL
+        try:
+            response_json = response.json()
+            error_msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code,
+                                                                       UNKNOWN_ERROR))
+        # It's possible (though highly unlikely) that no JSON response was returned
+        except ValueError:
+            error_msg = 'No data received from Metadefender'
         engine_results = []
-    
+
     scan_result = {'overall_status': overall_status,
                    'error_msg': error_msg,
                    'engine_results': engine_results
                   }
     return (True, scan_result)
-       
+
 
 def _submit_sample(fname, scan_url, user_agent):
     '''
-    Submits the specified sample file to Metadefender and returns 
+    Submits the specified sample file to Metadefender and returns
     Metadefender's response.
     Parameters:
         fname - sample file name
@@ -129,24 +137,25 @@ def _submit_sample(fname, scan_url, user_agent):
             scan_id: <scan ID if present> | None,
             error: <error message if present> | None
         }
-    '''    
-    with open(fname, "rb") as sample: 
+    '''
+    with open(fname, "rb") as sample:
             # TODO - send file in chunks if file size > some threshold.
-            # Due to MD's API, we would have to split the file up manually 
-            # and perform several POSTS        
-            headers = {'content-type': 'application/json', 
-                       'user_agent': user_agent, 
-                       'filename': basename(fname)}            
+            # Due to MD's API, we would have to split the file up manually
+            # and perform several POSTS
+            headers = {'content-type': 'application/json',
+                       'user_agent': user_agent,
+                       'filename': basename(fname)}
             request = requests.post(scan_url, data=sample, headers=headers)
-    resp_status_code = request.status_code 
-    resp_json = request.json()    
-        
-    scan_id = resp_json.get('data_id', None)
+    resp_status_code = request.status_code
+
     if resp_status_code == requests.codes.ok:
+        resp_json = request.json()
+        scan_id = resp_json.get('data_id', None)
         error_msg = None
     else:
+        scan_id = None
         error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
-    
+
     submission_response = {'status_code': resp_status_code,
                            'scan_id': scan_id,
                            'error': error_msg
@@ -156,15 +165,15 @@ def _submit_sample(fname, scan_url, user_agent):
 def _retrieve_scan_results(results_url, scan_id):
     '''
     Retrieves the results of a scan from Metadefender.
-    Parameters: 
+    Parameters:
         results_url - API URL for result retrieval
         scan_id - scan ID returned my Metadefender on sample submission
     Returns:
-        requests.Response object 
+        requests.Response object
     '''
     scan_output = requests.get(results_url+scan_id)
     return scan_output
-                 
+
 def scan(filelist, conf=DEFAULTCONF):
     '''
     Submits all the files in filelist to the Metadefender API, and then
@@ -187,11 +196,11 @@ def scan(filelist, conf=DEFAULTCONF):
         url = conf['API URL'] + '/'
     scan_url = url + 'metascan_rest/file'
     results_url = url + 'metascan_rest/file/'
-    
+
     user_agent = conf['user agent']
     for fname in filelist:
-        submission_resp = _submit_sample(fname, scan_url, user_agent)        
-        resp_status_code = submission_resp['status_code'] 
+        submission_resp = _submit_sample(fname, scan_url, user_agent)
+        resp_status_code = submission_resp['status_code']
         if resp_status_code == requests.codes.ok:
             task_id = submission_resp['scan_id']
             if task_id is not None:
@@ -199,7 +208,7 @@ def scan(filelist, conf=DEFAULTCONF):
             else:
                 #TODO Do something here?
                 pass
-        else:             
+        else:
             err_msg = submission_resp['error']
             print('%s: %s not submitted: Code: %d, Message: %s' \
                   % (NAME, basename(fname), resp_status_code, err_msg))
@@ -213,9 +222,9 @@ def scan(filelist, conf=DEFAULTCONF):
             is_scan_complete, scan_result = _parse_scan_result(scan_output)
 
             # If we have a report
-            if is_scan_complete:                
+            if is_scan_complete:
                 resultlist.append((fname, scan_result))
-                tasks.remove((fname, task_id))                
+                tasks.remove((fname, task_id))
 
             # Check for dead tasks
             else:
@@ -225,7 +234,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     if time.time() > task_status[task_id]:
                         #TODO Log timeout
                         tasks.remove((fname, task_id))
-            
+
         time.sleep(15)
 
     metadata = {}
