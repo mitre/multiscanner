@@ -56,6 +56,8 @@ MD_HTTP_ERR_CODES = {400: 'Unsupported HTTP Method or invalid HTTP Request',
 UNKNOWN_ERROR = 'Unknown Error'
 STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Failure'
+STATUS_PENDING = 'Pending'
+STATUS_TIMEOUT = 'Timeout'
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
@@ -73,8 +75,9 @@ def _parse_scan_result(response):
             is_complete = boolean indicating if the scan has completed
             scan_output = dictionary in the form:
             {
-                overall_status: 'Success|Failure',
-                error_msg: 'Error Message if present'|''
+                overall_status: 'Success|Pending|Failure',
+                msg: '<Error message/status explanation
+                    if status is not 'Success'>'|'N/A'
                 engine_results: [
                     {
                         engine_name: '<Engine Name>',
@@ -94,16 +97,23 @@ def _parse_scan_result(response):
         prog_percent = process_info.get('progress_percentage', None)
 
         # Metadefender returns a 200 rather than a 404 if there's no scan
-        # result, so we have to check the output for a progress percentage...
+        # result, so we have to check the output for a progress percentage.
+        # No results could mean that MD simply hasn't begun processing so
+        # we don't want to mark the scan as failed
         if prog_percent == None:
-            overall_status = STATUS_FAIL
-            error_msg = 'Scan not found'
+            is_complete = False
+            overall_status = STATUS_PENDING
+            msg = 'Scan results not found; Metadefender has likely not started analysis yet'
             engine_results = []
-        elif prog_percent != PERCENT_SCAN_COMPLETE:
-            return(False, None)
+        elif prog_percent < PERCENT_SCAN_COMPLETE:
+            is_complete = False
+            overall_status = STATUS_PENDING
+            msg = 'Scan in progress, percent complete: %d' % prog_percent
+            engine_results = []
         else:
+            is_complete = True
             overall_status = STATUS_SUCCESS
-            error_msg = ''
+            msg = ''
             overall_results = response_json.get("scan_results", {})
             scan_details = overall_results.get("scan_details", {})
             engine_results = []
@@ -116,21 +126,22 @@ def _parse_scan_result(response):
                                  }
                 engine_results.append(engine_result)
     else:
+        is_complete = True
         overall_status = STATUS_FAIL
         try:
             response_json = response.json()
-            error_msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code,
+            msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code,
                                                                        UNKNOWN_ERROR))
-        # It's possible (though highly unlikely) that no JSON response was returned
+        # It's possible (though unlikely) that no JSON response was returned
         except ValueError:
-            error_msg = 'No data received from Metadefender'
+            msg = 'No data received from Metadefender'
         engine_results = []
 
     scan_result = {'overall_status': overall_status,
-                   'error_msg': error_msg,
+                   'msg': msg,
                    'engine_results': engine_results
                   }
-    return (True, scan_result)
+    return (is_complete, scan_result)
 
 
 def _submit_sample(fname, scan_url, user_agent):
