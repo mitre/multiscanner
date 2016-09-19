@@ -36,6 +36,12 @@ def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     waitlist = []
 
+    # Checks if the img dir exist in list, if not remove
+    for imgPath in FireEyeImages:
+        if not (os.path.isdir(os.path.join(base, imgPath))):
+            print("WARNING path not found:", (os.path.join(base, imgPath)))
+            FireEyeImages.remove(imgPath)
+
     timestamp = str(time.time()).replace('.', '-')
     for fname in filelist:
         filename = timestamp + "-" + os.path.basename(fname)
