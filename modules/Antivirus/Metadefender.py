@@ -263,7 +263,10 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #TODO Log timeout
+                        #Log timeout
+                        if scan_result['overall_status'] == STATUS_PENDING:
+                            scan_result['overall_status'] = STATUS_TIMEOUT
+                        resultlist.append((fname, scan_result))
                         tasks.remove((fname, task_id))
 
         time.sleep(poll_interval_seconds)
