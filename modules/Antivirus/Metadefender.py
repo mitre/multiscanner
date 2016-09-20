@@ -77,7 +77,7 @@ def _parse_scan_result(response):
             {
                 overall_status: 'Success|Pending|Failure',
                 msg: '<Error message/status explanation
-                    if status is not 'Success'>'|'N/A'
+                    if status is not 'Success'>'|''
                 engine_results: [
                     {
                         engine_name: '<Engine Name>',
@@ -176,8 +176,13 @@ def _submit_sample(fname, scan_url, user_agent):
         error_msg = None
     else:
         scan_id = None
-        error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code,
+        try:
+            resp_json = request.json()
+            error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code,
                                                                UNKNOWN_ERROR))
+        except (ValueError, AttributeError):
+            error_msg = MD_HTTP_ERR_CODES.get(resp_status_code, UNKNOWN_ERROR)
+
 
     submission_response = {'status_code': resp_status_code,
                            'scan_id': scan_id,
