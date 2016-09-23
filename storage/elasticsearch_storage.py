@@ -11,7 +11,7 @@ class ElasticSearchStorage(storage.Storage):
     Subclass of Storage.
     '''
     DEFAULTCONF = {
-        'ENABLED': True,
+        'ENABLED': False,
         'host': 'localhost',
         'port': 9200,
         'index': 'multiscanner_reports',
