@@ -34,7 +34,8 @@ DEFAULTCONF = {
     "running timeout": 30,
     "fetch delay seconds": 5,
     "poll interval seconds": 5,
-    "user agent": "user_agent"
+    "user agent": "user_agent",
+    "API key": ""
 }
 
 PERCENT_SCAN_COMPLETE = 100
@@ -144,7 +145,7 @@ def _parse_scan_result(response):
     return (is_complete, scan_result)
 
 
-def _submit_sample(fname, scan_url, user_agent):
+def _submit_sample(fname, scan_url, user_agent, api_key=None):
     '''
     Submits the specified sample file to Metadefender and returns
     Metadefender's response.
@@ -167,6 +168,8 @@ def _submit_sample(fname, scan_url, user_agent):
             headers = {'content-type': 'application/json',
                        'user_agent': user_agent,
                        'filename': basename(fname)}
+            if api_key:
+                headers['apikey'] = api_key
             request = requests.post(scan_url, data=sample, headers=headers)
     resp_status_code = request.status_code
 
@@ -190,7 +193,7 @@ def _submit_sample(fname, scan_url, user_agent):
                           }
     return submission_response
 
-def _retrieve_scan_results(results_url, scan_id):
+def _retrieve_scan_results(results_url, scan_id, api_key=None):
     '''
     Retrieves the results of a scan from Metadefender.
     Parameters:
@@ -199,7 +202,10 @@ def _retrieve_scan_results(results_url, scan_id):
     Returns:
         requests.Response object
     '''
-    scan_output = requests.get(results_url+scan_id)
+    headers = None
+    if api_key:
+        headers = {'apikey': api_key}
+    scan_output = requests.get(results_url+scan_id, headers=headers)
     return scan_output
 
 def scan(filelist, conf=DEFAULTCONF):
@@ -218,6 +224,9 @@ def scan(filelist, conf=DEFAULTCONF):
     '''
     fetch_delay_seconds = conf['fetch delay seconds']
     poll_interval_seconds = conf['poll interval seconds']
+    api_key = conf['API key']
+    if api_key.strip() == '':
+        api_key = None
 
     resultlist = []
     tasks = []
@@ -230,7 +239,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     user_agent = conf['user agent']
     for fname in filelist:
-        submission_resp = _submit_sample(fname, scan_url, user_agent)
+        submission_resp = _submit_sample(fname, scan_url, user_agent, api_key)
         resp_status_code = submission_resp['status_code']
         if resp_status_code == requests.codes.ok:
             task_id = submission_resp['scan_id']
@@ -249,7 +258,7 @@ def scan(filelist, conf=DEFAULTCONF):
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
-            scan_output = _retrieve_scan_results(results_url, task_id)
+            scan_output = _retrieve_scan_results(results_url, task_id, api_key)
             is_scan_complete, scan_result = _parse_scan_result(scan_output)
 
             # If we have a report
