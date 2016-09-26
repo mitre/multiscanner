@@ -12,3 +12,4 @@ ssdeep
 sqlalchemy
 #Required by storage modules
 elasticsearch
+pymongo
