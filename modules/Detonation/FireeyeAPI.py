@@ -38,10 +38,10 @@ DEFAULTCONF = {
 
 VERBOSE = False
 
-def check(conf=DEFAULTCONF):
-    return conf["ENABLED"]
+token = None
 
-def scan(filelist, conf=DEFAULTCONF):
+def _authenticate(conf):
+    global token
     if VERBOSE:
         print('Authenticating to FireEye API...')
     resp = requests.post(conf['API URL']+'/auth/login', auth=(conf["username"], conf["password"]), verify=False)
@@ -56,6 +56,42 @@ def scan(filelist, conf=DEFAULTCONF):
     else:
         raise ValueError('Unknown response')
 
+def _request(conf, path, method=None, **kwargs):
+    if not token:
+        _authenticate(conf)
+    if not method:
+        if 'data' in kwargs:
+            method = 'POST'
+        else:
+            method = 'GET'
+
+    headers = {'X-FeApi-Token': token, 'Accept': 'application/json'}
+    if 'headers' in kwargs:
+        headers.update(kwargs['headers'])
+    kwargs['headers'] = headers
+
+    if method == 'GET':
+        resp = requests.get(conf['API URL'] + path, verify=False, **kwargs)
+    elif method == 'POST':
+        resp = requests.post(conf['API URL'] + path, verify=False, **kwargs)
+    else:
+        raise ValueError('Unknown HTTP method')
+
+    if resp.status_code == 401 and resp.json()['fireeyeapis']['errorCode'] == 'FEAUTH1001':
+        if VERBOSE:
+            print 'FireEye token expired, reauthenticating...'
+        _authenticate(conf)
+        if method == 'GET':
+            resp = requests.get(conf['API URL'] + path, verify=False, **kwargs)
+        elif method == 'POST':
+            resp = requests.post(conf['API URL'] + path, verify=False, **kwargs)
+
+    return resp
+
+def check(conf=DEFAULTCONF):
+    return conf["ENABLED"]
+
+def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     waitlist = []
     donelist = []
@@ -71,13 +107,13 @@ def scan(filelist, conf=DEFAULTCONF):
                     "timeout": str(conf['timeout']),
                     "application": str(conf['application id'])
                     }
-            resp = requests.post(conf['API URL']+'/submissions', headers={'X-FeApi-Token': token}, files={"filename": f}, data={"options": json.dumps(options)}, verify=False)
+            resp = _request(conf, '/submissions', files={"filename": f}, data={"options": json.dumps(options)})
             resp.raise_for_status()
             waitlist.append((fname, resp.json()[0]['ID']))
 
     while waitlist:
         for fname, fid in waitlist[:]:
-            resp = requests.get(conf['API URL']+'/submissions/status/'+fid, headers={'X-FeApi-Token': token}, verify=False)
+            resp = _request(conf, '/submissions/status/'+fid)
             resp.raise_for_status()
             if resp.json()['submissionStatus'] == 'In Progress':
                 continue
@@ -89,11 +125,11 @@ def scan(filelist, conf=DEFAULTCONF):
         time.sleep(20)
 
     for fname, fid in donelist:
-        resp = requests.get(conf['API URL']+'/submissions/results/'+fid, headers={'X-FeApi-Token': token, 'Accept': 'application/json'}, params={'info_level': conf['info level']}, verify=False)
+        resp = _request(conf, '/submissions/results/'+fid, params={'info_level': conf['info level']})
         resp.raise_for_status()
         resultlist.append((fname, resp.json()))
 
-    resp = requests.post(conf['API URL']+'/auth/logout', headers={'X-FeApi-Token': token}, verify=False)
+    resp = _request(conf, '/auth/logout', method='POST')
 
     metadata = {"Name": NAME, "Type": TYPE}
     return (resultlist, metadata)
