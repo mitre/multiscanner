@@ -79,7 +79,7 @@ def _request(conf, path, method=None, **kwargs):
 
     if resp.status_code == 401 and resp.json()['fireeyeapis']['errorCode'] == 'FEAUTH1001':
         if VERBOSE:
-            print 'FireEye token expired, reauthenticating...'
+            print('FireEye token expired, reauthenticating...')
         _authenticate(conf)
         if method == 'GET':
             resp = requests.get(conf['API URL'] + path, verify=False, **kwargs)
