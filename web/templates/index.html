@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <h1 class="text-center">Multiscanner</h1>
+    <br />
+      <form class="form-horizontal">
+      <fieldset>
+        <legend>Submit A File For Analysis</legend>
+
+        <div class="form-group">
+          <label for="uploadFileInfo" class="col-md-2 control-label">File</label>
+          <div class="col-md-10">
+            <div class="input-group">
+              <input type="text" class='form-control' id="uploadFileInfo"></input>
+              <span class="input-group-btn">
+                <label class="btn btn-primary" for="fileSelector">
+                  <input id="fileSelector" type="file" style="display:none;" onchange="$('#upload-file-info').val($(this).val());">
+                  Select File
+                </label>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="col-md-10 col-md-offset-2">
+            <button type="submit" class="btn btn-primary">Scan it!</button>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+</div>
+{% endblock %}
