@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+
+{% block script %}
+  $(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+{% endblock %}
+
+{% block title %}Task List{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">Tasks</h1>
+    <br />
+
+    <table class="table table-striped table-hover ">
+      <thead>
+        <tr>
+          <th>Task ID</th>
+          <th>Report ID</th>
+          <th>Task Status</th>
+          <th class="text-center">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>ed7ae8f6df9fa6730f4bb3dd6f34601e355fcad9504f252c9e76a68b1df94dd5</td>
+          <td>Complete</td>
+          <td class="text-center"><button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?"><span class="glyphicon glyphicon-remove"></span></button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
