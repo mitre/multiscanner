@@ -13,7 +13,7 @@ fi
 #Install requirements for Debian derivatives
 if [ -e /etc/debian_version ]; then
   apt-get update
-  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev python-pip git
+  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev python-pip git libssl-dev
 fi
 
 #Install requirements for Python 2.x
