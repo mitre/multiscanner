@@ -4,6 +4,15 @@
   $(function () {
     $('[data-toggle="tooltip"]').tooltip()
   })
+
+  $(document).ready(function($) {
+    $("td").click(function() {
+      if ($(this).hasClass('delete')) {
+        return;
+      }
+      window.document.location = $(this).parent().data("href");
+    });
+  });
 {% endblock %}
 
 {% block title %}Task List{% endblock %}
@@ -24,11 +33,11 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
+        <tr class="task-row" data-href="/report/1">
           <td>1</td>
           <td>ed7ae8f6df9fa6730f4bb3dd6f34601e355fcad9504f252c9e76a68b1df94dd5</td>
           <td>Complete</td>
-          <td class="text-center"><button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?"><span class="glyphicon glyphicon-remove"></span></button></td>
+          <td class="text-center delete"><button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?"><span class="glyphicon glyphicon-remove"></span></button></td>
         </tr>
       </tbody>
     </table>
