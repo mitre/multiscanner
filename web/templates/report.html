@@ -1,8 +1,24 @@
 {% extends "layout.html" %}
 
 {% block head %}
-<script src="/static/js/report.js"></script>
 <script type="text/javascript">
+  function createReportkRow(heading, content) {
+    return '<tr>' +
+           '<th>' + heading + '</th>' +
+           '<td>' + content + '</td>' +
+           '</tr>';
+  }
+
+  function reportSetup(apiLoc, taskId) {
+    // Get list of tasks and populate the table
+    tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/report/" + taskId, function(data, status){
+      $.each(data.Report, function(index, item) {
+        $("tbody").append(createReportkRow(index, item));
+      });
+
+    });
+  }
+
   $(document).ready(function($) {
     reportSetup("{{ api_loc }}", "{{ task_id }}");
   });
