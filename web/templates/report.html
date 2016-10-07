@@ -1,5 +1,14 @@
 {% extends "layout.html" %}
 
+{% block head %}
+<script src="/static/js/report.js"></script>
+<script type="text/javascript">
+  $(document).ready(function($) {
+    reportSetup("{{ api_loc }}", "{{ task_id }}");
+  });
+</script>
+{% endblock %}
+
 {% block title %}Report{% endblock %}
 
 {% block content %}
@@ -10,30 +19,6 @@
 
     <table class="table table-hover ">
       <tbody>
-        <tr>
-          <th>MD5</th>
-          <td>49a4046a610b22753442dc753c04fa8c</td>
-        </tr>
-        <tr>
-          <th>SHA1</th>
-          <td>1568c6f0b04d3b192b860d7ad3e62eadadaacd2a</td>
-        </tr>
-        <tr>
-          <th>SHA256</th>
-          <td>ed7ae8f6df9fa6730f4bb3dd6f34601e355fcad9504f252c9e76a68b1df94dd5</td>
-        </tr>
-        <tr>
-          <th>Filename</th>
-          <td>ls</td>
-        </tr>
-        <tr>
-          <th>libmagic</th>
-          <td>ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=07da0cea3ca1e33719560d9eba3bffe7e4c8b67f, stripped</td>
-        </tr>
-        <tr>
-          <th>ssdeep</th>
-          <td>1536:Zjp4zve2Xgye4fBGYuEkU2Gh3JsWn070221xiEYR2NB:Zjp4zmqgyPCrGh5802hE</td>
-        </tr>
       </tbody>
     </table>
   </div>
