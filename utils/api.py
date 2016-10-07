@@ -15,6 +15,9 @@ POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
+The API endpoints all have Cross Origin Resource Sharing (CORS) enabled and set
+to allow ALL origins.
+
 TODO:
 * Add doc strings to functions
 '''
@@ -25,6 +28,7 @@ import time
 import hashlib
 import multiprocessing
 import queue
+from flask_cors import cross_origin
 from flask import Flask, jsonify, make_response, request, abort
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -135,6 +139,7 @@ def index():
 
 
 @app.route('/api/v1/tasks/list/', methods=['GET'])
+@cross_origin()
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
@@ -145,6 +150,7 @@ def task_list():
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
+@cross_origin()
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -158,6 +164,7 @@ def get_task(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
+@cross_origin()
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -169,6 +176,7 @@ def delete_task(task_id):
 
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
+@cross_origin()
 def create_task():
     '''
     Create a new task. Save the submitted file
@@ -199,6 +207,7 @@ def create_task():
 
 
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
+@cross_origin()
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -221,6 +230,7 @@ def get_report(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
+@cross_origin()
 def delete_report(task_id):
     '''
     Delete the specified task. Return deleted message.
