@@ -1,5 +1,30 @@
 {% extends "layout.html" %}
 
+{% block head %}
+<script type="text/javascript">
+
+  $(document).ready(function($) {
+    $('#scan-form').submit(function (e) {
+      e.preventDefault();
+      var formData = new FormData($('#scan-form')[0]);
+      $.ajax({
+          url: 'http://{{ api_loc }}/api/v1/tasks/create/',
+          type: 'POST',
+          data: formData,
+          //Options to tell jQuery not to process data or worry about content-type.
+          contentType: false,
+          processData: false,
+      }).done(function(data, textStatus, jqXHR){
+            console.log("success")
+      }).fail(function(data, textStatus, jqXHR){
+            console.log( data.statusText );
+            console.log( jqXHR );
+      });
+    });
+  });
+</script>
+{% endblock %}
+
 {% block title %}Home{% endblock %}
 
 {% block content %}
@@ -7,7 +32,7 @@
   <div class="col-md-6 col-md-offset-3">
     <h1 class="text-center">Multiscanner</h1>
     <br />
-      <form class="form-horizontal">
+      <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
       <fieldset>
         <legend>Submit A File For Analysis</legend>
 
@@ -18,7 +43,7 @@
               <input type="text" class='form-control' id="uploadFileInfo"></input>
               <span class="input-group-btn">
                 <label class="btn btn-primary" for="fileSelector">
-                  <input id="fileSelector" type="file" style="display:none;" onchange="$('#upload-file-info').val($(this).val());">
+                  <input id="fileSelector" name="file" type="file" style="display:none;" onchange="$('#uploadFileInfo').val($(this).val());">
                   Select File
                 </label>
               </span>
