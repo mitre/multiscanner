@@ -1,0 +1,3 @@
+.task-row td:not(.delete) {
+    cursor: pointer;
+}

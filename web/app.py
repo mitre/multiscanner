@@ -15,7 +15,7 @@ def tasks():
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
-def reports(task_id):
+def reports(task_id=1):
     return render_template('report.html', task_id=task_id)
 
 
