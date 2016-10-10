@@ -10,3 +10,9 @@
     border-bottom-right-radius: 20px;
   }
 }
+
+.alert-row {
+    position: absolute;
+    right: 20px;
+    z-index: 1;
+}

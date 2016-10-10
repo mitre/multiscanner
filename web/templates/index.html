@@ -15,12 +15,16 @@
           contentType: false,
           processData: false,
       }).done(function(data, textStatus, jqXHR){
-            console.log("success")
+            $(".alert-success").show();
       }).fail(function(data, textStatus, jqXHR){
+            $(".alert-danger").show();
             console.log( data.statusText );
             console.log( jqXHR );
       });
     });
+
+    $(".alert").hide();
+    $(".alert").alert();
   });
 </script>
 {% endblock %}
@@ -28,6 +32,21 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6">
+    <div class="alert alert-dismissable alert-success fade in">
+      <a href="#" class="close" data-dismiss="alert">&times;</a>
+      <strong>Success!</strong> Your file is being analyzed.
+    </div>
+  </div>
+  <div class="col-md-6 col-md-offset-6">
+    <div class="alert alert-dismissable alert-danger fade in">
+      <a href="#" class="close" data-dismiss="alert">&times;</a>
+      <strong>Error!</strong> There was a problem with your request.
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-md-6 col-md-offset-3">
     <h1 class="text-center">Multiscanner</h1>
