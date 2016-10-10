@@ -8,7 +8,7 @@
            '<td>' + row.report_id + '</td>' +
            '<td>' + row.task_status + '</td>' +
            '<td class="text-center delete">' +
-           '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?"><span class="glyphicon glyphicon-remove"></span></button>' +
+           '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + row.task_id + '"><span class="glyphicon glyphicon-remove"></span></button>' +
            '</td></tr>';
   }
 
@@ -32,8 +32,28 @@
       // Add tooltip to Delete buttons
       $(function () {
         $('[data-toggle="tooltip"]').tooltip();
-      })
+      });
+
+      // Add delete functionality
+      $('.btn-danger').click(function() {
+        var t_id = this.dataset.id;
+        $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
+          .done(function (data, status, jqXHR) {
+            $('td').filter(function() {
+              return this.innerHTML === t_id;
+            }).parent().remove();
+            $(".alert-success span").html(data.Message);
+            $(".alert-success").show();
+          })
+          .fail(function (data, status, jqXHR) {
+            $(".alert-danger span").html("Task could not be deleted.");
+            $(".alert-danger").show();
+          });
+      });
     });
+
+    $(".alert").hide();
+    $(".alert").alert();
   }
 
   $(document).ready(function($) {
@@ -45,6 +65,21 @@
 {% block title %}Task List{% endblock %}
 
 {% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6">
+    <div class="alert alert-dismissable alert-success fade in">
+      <a href="#" class="close" data-dismiss="alert">&times;</a>
+      <strong>Success!</strong> <span></span>
+    </div>
+  </div>
+  <div class="col-md-6 col-md-offset-6">
+    <div class="alert alert-dismissable alert-danger fade in">
+      <a href="#" class="close" data-dismiss="alert">&times;</a>
+      <strong>Error!</strong> <span></span>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-md-10 col-md-offset-1">
     <h1 class="text-center">Tasks</h1>
