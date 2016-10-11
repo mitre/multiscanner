@@ -42,12 +42,10 @@
             $('td').filter(function() {
               return this.innerHTML === t_id;
             }).parent().remove();
-            $(".alert-success span").html(data.Message);
-            $(".alert-success").show();
+            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
           })
           .fail(function (data, status, jqXHR) {
-            $(".alert-danger span").html("Task could not be deleted.");
-            $(".alert-danger").show();
+            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>Task could not be deleted.</span></div>');
           });
       });
     });
@@ -66,18 +64,7 @@
 
 {% block content %}
 <div class="row alert-row">
-  <div class="col-md-6 col-md-offset-6">
-    <div class="alert alert-dismissable alert-success fade in">
-      <a href="#" class="close" data-dismiss="alert">&times;</a>
-      <strong>Success!</strong> <span></span>
-    </div>
-  </div>
-  <div class="col-md-6 col-md-offset-6">
-    <div class="alert alert-dismissable alert-danger fade in">
-      <a href="#" class="close" data-dismiss="alert">&times;</a>
-      <strong>Error!</strong> <span></span>
-    </div>
-  </div>
+  <div class="col-md-6 col-md-offset-6"></div>
 </div>
 
 <div class="row">
