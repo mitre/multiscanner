@@ -10,6 +10,7 @@ requests
 ssdeep
 #Required by API
 sqlalchemy
+flask_cors
 #Required by storage modules
 elasticsearch
 pymongo
