@@ -7,7 +7,7 @@ import subprocess
 import re
 import sys
 from common import list2cmdline
-from common import sshexec
+from common import sshconnect
 from common import SSH
 subprocess.list2cmdline = list2cmdline
 
@@ -30,6 +30,7 @@ DEFAULTCONF = {"path":"C:\\Program Files\\Microsoft Security Client\\MpCmdRun.ex
     'ENABLED': True
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -37,6 +38,7 @@ def check(conf=DEFAULTCONF):
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
@@ -53,7 +55,7 @@ def scan(filelist, conf=DEFAULTCONF):
     cmdline.insert(0, path)
 
     resultlist = []
-
+    client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
     #Generate scan option
     for item in filelist:
         cmd = cmdline[:]
@@ -71,8 +73,9 @@ def scan(filelist, conf=DEFAULTCONF):
                 returnval = e.returncode
         else:
             try:
-                output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
-            except:
+                stdin, stdout, stderr = client.exec_command(list2cmdline(cmd))
+                output = stdout.read()
+            except Exception as e:
                 return None
 
         #Parse output
