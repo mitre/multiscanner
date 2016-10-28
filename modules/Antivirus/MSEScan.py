@@ -83,10 +83,10 @@ def scan(filelist, conf=DEFAULTCONF):
         #print(output)
         
         if "<===========================LIST OF DETECTED THREATS==========================>" not in output:
-            resultlist.append((item, {"malicious": False, "raw_output": output}))
+            #resultlist.append((item, {"malicious": False, "raw_output": output}))
             continue
 
-        res = {"malicious": True, "raw_output": output, "threats": []}
+        #res = {"malicious": True, "raw_output": output, "threats": []}
 
         while '----------------------------- Threat information ------------------------------' in output:
             _, _, output = output.partition('----------------------------- Threat information ------------------------------')
@@ -96,16 +96,17 @@ def scan(filelist, conf=DEFAULTCONF):
 
             #print(block)
             lines = block.split('\n')
-            threat = {"threat": lines[0].partition(':')[2].strip(), "resources": []}
-            for line in lines[2:]:
-                if not ':' in line:
-                    continue
-                kind, _, path = line.partition(':')
-                threat['resources'].append({kind.strip(): path.strip()})
+            threat_name = lines[0].partition(':')[2].strip()
+            #threat = {"threat": threat_name, "resources": []}
+            #for line in lines[2:]:
+            #	if not ':' in line:
+            #		continue
+            #	kind, _, path = line.partition(':')
+            #	threat['resources'].append({kind.strip(): path.strip()})
 
-            res['threats'].append(threat)
+            #res['threats'].append(threat)
 
-        resultlist.append((item, res))
+        resultlist.append((item, threat_name))
 
     metadata = {}
     metadata["Name"] = NAME
