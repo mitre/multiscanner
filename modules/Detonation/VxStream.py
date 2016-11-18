@@ -21,6 +21,8 @@ DEFAULTCONF = {
     'API secret': '',
     'Environment ID': 1,
     'Verify': False,
+    'timeout': 360,
+    'running timeout': 120,
 }
 
 
@@ -129,7 +131,7 @@ def scan(filelist, conf=DEFAULTCONF):
             # Check for dead tasks
             elif status == 'IN_PROGRESS':
                 if file_sha256 not in task_status:
-                    task_status[file_sha256] = time.time() + conf['running timeout']
+                    task_status[file_sha256] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[file_sha256]:
                         # TODO Log timeout
