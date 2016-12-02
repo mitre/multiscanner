@@ -23,6 +23,14 @@
       });
     });
   });
+
+  function getFilenames(fileList) {
+    var str = fileList[0].name
+    for (var i = 0; i < fileList.length-1; i++) {
+      str += ', ' + fileList[i].name;
+    }
+    return str
+  }
 </script>
 {% endblock %}
 
@@ -39,17 +47,17 @@
     <br />
       <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
       <fieldset>
-        <legend>Submit A File For Analysis</legend>
+        <legend>Submit Files For Analysis</legend>
 
         <div class="form-group">
-          <label for="uploadFileInfo" class="col-md-2 control-label">File</label>
+          <label for="uploadFileInfo" class="col-md-2 control-label">File(s)</label>
           <div class="col-md-10">
             <div class="input-group">
               <input type="text" class='form-control' id="uploadFileInfo"></input>
               <span class="input-group-btn">
                 <label class="btn btn-primary" for="fileSelector">
-                  <input id="fileSelector" name="file" type="file" style="display:none;" onchange="$('#uploadFileInfo').val($(this).val());">
-                  Select File
+                  <input id="fileSelector" name="file" type="file" multiple="multiple" style="display:none;" onchange="$('#uploadFileInfo').val(getFilenames(this.files));">
+                  Select File(s)
                 </label>
               </span>
             </div>
