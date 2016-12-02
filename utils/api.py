@@ -182,26 +182,33 @@ def create_task():
     Create a new task. Save the submitted file
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
-    file_ = request.files['file']
-    # TODO: Figure out how to get multiscanner to report
-    # the original filename
-    original_filename = file_.filename
-    f_name = hashlib.sha256(file_.read()).hexdigest()
-    # Reset the file pointer to the beginning
-    # to allow us to save it
-    file_.seek(0)
+    task_ids = []
+    for file_ in request.files.getlist('file'):
+        # TODO: Figure out how to get multiscanner to report
+        # the original filename
+        original_filename = file_.filename
+        f_name = hashlib.sha256(file_.read()).hexdigest()
+        # Reset the file pointer to the beginning
+        # to allow us to save it
+        file_.seek(0)
 
-    file_path = os.path.join(UPLOAD_FOLDER, f_name)
-    file_.save(file_path)
-    full_path = os.path.join(MS_WD, file_path)
+        file_path = os.path.join(UPLOAD_FOLDER, f_name)
+        file_.save(file_path)
+        full_path = os.path.join(MS_WD, file_path)
 
-    # Add task to sqlite DB
-    task_id = db.add_task()
+        # Add task to sqlite DB
+        task_id = db.add_task()
 
-    work_queue.put((full_path, original_filename, task_id, f_name))
+        work_queue.put((full_path, original_filename, task_id, f_name))
+        task_ids.append(str(task_id))
+
+    if len(task_ids) == 1:
+        msg = {'task_id': task_id}
+    else:
+        msg = {'task_ids': ", ".join(task_ids)}
 
     return make_response(
-        jsonify({'Message': {'task_id': task_id}}),
+        jsonify({'Message': msg}),
         HTTP_CREATED
     )
 
