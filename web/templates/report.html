@@ -16,6 +16,14 @@
         $("tbody").append(createReportkRow(index, item));
       });
 
+      // Spruce up the table
+      $('.table').DataTable({
+        fnDrawCallback: function() {
+          // Table header is required for DataTables to initialize,
+          // but we don't need empty column headers
+          $(".table thead").remove();
+        }
+      });
     });
   }
 
@@ -34,8 +42,8 @@
     <br />
 
     <table class="table table-hover ">
-      <tbody>
-      </tbody>
+      <thead><tr><th></th><th></th></tr></thead>
+      <tbody></tbody>
     </table>
   </div>
 </div>
