@@ -53,13 +53,10 @@
             $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
           })
           .fail(function (data, status, jqXHR) {
-            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>Task could not be deleted.</span></div>');
+            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
           });
       });
     });
-
-    $(".alert").hide();
-    $(".alert").alert();
   }
 
   $(document).ready(function($) {
