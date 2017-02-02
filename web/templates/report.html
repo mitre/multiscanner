@@ -2,27 +2,76 @@
 
 {% block head %}
 <script type="text/javascript">
-  function createReportkRow(heading, content) {
+  function createRow(heading, content, isArray) {
+    isArray = typeof isArray !== 'undefined' ? isArray : false;
+    if (isArray) {
+      headText = '';
+    }
+    else {
+      headText = heading;
+    }
+
+    if (typeof content === 'string' && content.startsWith('<table')) {
+      th = '<th class="expander">';
+      td = '<td class="expander" style="display: none;">' + 
+           'Expand ' +
+           '<span class="glyphicon glyphicon-plus"></span>' +
+           '</td><td class="cell-table">';
+    }
+    else {
+      th = '<th>';
+      td = '<td>';
+    }
+
     return '<tr>' +
-           '<th>' + heading + '</th>' +
-           '<td>' + content + '</td>' +
+           th + headText + '</th>' +
+           td + content + '</td>' +
            '</tr>';
+  }
+
+  function createSubtable(data, isArray) {
+    isArray = typeof isArray !== 'undefined' ? isArray : false;
+    rows = ''
+    $.each(data, function(index, item) {
+      if (isArray) {
+        rows += determineType('', item);
+      }
+      else {
+        rows += determineType(index, item);
+      }
+    });
+    return '<table class="table table-hover"><tbody>' + rows +
+           '</tbody></table>';
+  }
+
+  function determineType(index, item) {
+    if (item === null || item === undefined) {
+      return createRow(index, '<i>None</i>');
+    }
+    else if (item.constructor === Array) {
+      return createRow(index, createSubtable(item, true));
+    }
+    else if (!(item instanceof String) && typeof item === 'object') {
+      return createRow(index, createSubtable(item));
+    }
+    else {
+      return createRow(index, item);
+    }
   }
 
   function reportSetup(apiLoc, taskId) {
     // Get list of tasks and populate the table
     tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/report/" + taskId, function(data, status){
       $.each(data.Report, function(index, item) {
-        $("tbody").append(createReportkRow(index, item));
+        $('tbody:first').append(determineType(index, item));
       });
-
-      // Spruce up the table
-      $('.table').DataTable({
-        fnDrawCallback: function() {
-          // Table header is required for DataTables to initialize,
-          // but we don't need empty column headers
-          $(".table thead").remove();
-        }
+      $('.expander').each(function(idx, elem) {
+        $(elem).click(function() {
+          $(this).siblings('td').toggle();
+          if ($(this).is('td')) {
+            $(this).hide();
+          }
+        });
       });
     });
   }
@@ -37,12 +86,11 @@
 
 {% block content %}
 <div class="row">
-  <div class="col-md-10 col-md-offset-1">
+  <div class="col-md-10 col-md-offset-1" id="report">
     <h1 class="text-center">Task {{ task_id }} Report</h1>
     <br />
 
     <table class="table table-hover ">
-      <thead><tr><th></th><th></th></tr></thead>
       <tbody></tbody>
     </table>
   </div>

@@ -16,3 +16,35 @@
     right: 20px;
     z-index: 1;
 }
+
+#report table {
+    width: auto;
+    font-size: 13px;
+}
+
+#report th {
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+#report td {
+    white-space: pre-line;
+}
+
+#report td > table {
+    margin-bottom: 0px;
+}
+
+#report .table > tbody > tr:first-of-type > th,
+#report .table > tbody > tr:first-of-type > td {
+    border-top: 0px;
+}
+
+#report td.cell-table {
+    padding-top: 0px;
+}
+
+.expander {
+    cursor: pointer;
+}
