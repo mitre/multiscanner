@@ -35,6 +35,7 @@ class Task(Base):
     def to_json(self):
         return json.dumps(self.to_dict())
 
+
 class Database(object):
     def __init__(self, db_path=FULL_DB_PATH):
         self.db_path = db_path
@@ -44,7 +45,6 @@ class Database(object):
         eng = create_engine('sqlite:///%s' % self.db_path)
         Base.metadata.bind = eng
         Base.metadata.create_all()
-
 
     def add_task(self, task_id=None, task_status='Pending', report_id=None):
         eng = create_engine('sqlite:///%s' % self.db_path)
@@ -63,7 +63,6 @@ class Database(object):
             print('PRIMARY KEY must be unique! %s' % e)
             return -1
         return task.task_id
-
 
     def update_task(self, task_id, task_status, report_id=None):
         '''
@@ -104,7 +103,7 @@ class Database(object):
         ses = Session()
         rs = ses.query(Task).all()
 
-        # For testing, do not use in production
+        # TODO: For testing, do not use in production
         task_list = []
         for task in rs:
             task_list.append(task.to_dict())

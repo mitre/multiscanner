@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
+<script src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script src="/static/js/typeahead.bundle.min.js"></script>
 <script type="text/javascript">
   function createRow(heading, content, isArray) {
     isArray = typeof isArray !== 'undefined' ? isArray : false;
@@ -78,6 +81,34 @@
 
   $(document).ready(function($) {
     reportSetup("{{ api_loc }}", "{{ task_id }}");
+
+    var tagNameArray = ['Amsterdam', "Ankara", 'Washington', 'Sydney', 'Beijing', 'Cairo'];
+    var tagNames = new Bloodhound({
+      datumTokenizer: Bloodhound.tokenizers.whitespace,
+      queryTokenizer: Bloodhound.tokenizers.whitespace,
+      // prefetch: {
+      //   url: 'assets/citynames.json',
+      //   filter: function(list) {
+      //     return $.map(list, function(cityname) {
+      //       return { name: cityname }; });
+      //   }
+      // }
+      local: tagNameArray
+    });
+    tagNames.initialize();
+
+    $('#tags').tagsinput({
+      tagClass: 'label label-primary',
+      // typeaheadjs: {
+      //   name: 'tags',
+      //   // displayKey: 'name',
+      //   // valueKey: 'name',
+      //   source: ['Benign', 'Malicious']
+      // }
+      typeaheadjs: {
+        source: tagNames.ttAdapter()
+      }
+    });
   });
 </script>
 {% endblock %}
@@ -85,11 +116,17 @@
 {% block title %}Report{% endblock %}
 
 {% block content %}
+<h1 class="text-center">Task {{ task_id }} Report</h1>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3" id="report-tags">
+    <label for="tags" class="pull-left">Tags</label>
+    <span>
+      <input type="text" id="tags" class="form-control">
+    </span>
+  </div>
+</div>
 <div class="row">
   <div class="col-md-10 col-md-offset-1" id="report">
-    <h1 class="text-center">Task {{ task_id }} Report</h1>
-    <br />
-
     <table class="table table-hover ">
       <tbody></tbody>
     </table>
