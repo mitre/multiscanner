@@ -24,9 +24,7 @@ def check(conf=DEFAULTCONF):
     return True
 
 
-def scan(filelist, conf=DEFAULTCONF):
-    results = []
-
+def _connect_clam():
     try:
         clamScanner = pyclamd.ClamdUnixSocket()
         clamScanner.ping()
@@ -36,6 +34,12 @@ def scan(filelist, conf=DEFAULTCONF):
             clamScanner.ping()
         except:
             raise ValueError("Unable to connect to clamd")
+    return clamScanner
+
+def scan(filelist, conf=DEFAULTCONF):
+    results = []
+
+    clamScanner = _connect_clam()
 
     # Scan each file from filelist for virus
     for f in filelist:
@@ -49,6 +53,10 @@ def scan(filelist, conf=DEFAULTCONF):
                     output = clamScanner.scan_stream(file_handle.read())
                 except pyclamd.BufferTooLongError:
                     continue
+                except Exception as e:
+                    print(e)
+                    clamScanner = _connect_clam()
+                    output = clamScanner.scan_stream(file_handle.read())
 
         if output is None:
             continue
