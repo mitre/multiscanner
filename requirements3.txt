@@ -13,3 +13,5 @@ sqlalchemy
 #Required by storage modules
 elasticsearch
 pymongo
+#Required for distributed
+celery[librabbitmq,redis]
