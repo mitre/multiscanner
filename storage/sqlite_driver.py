@@ -22,11 +22,12 @@ class Task(Base):
 
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
+    sample_id = Column(String, unique=False)
     report_id = Column(String, unique=False)
 
     def __repr__(self):
-        return '<Task("{0}","{1}","{2}")>'.format(
-            self.task_id, self.task_status, self.report_id
+        return '<Task("{0}","{1}","{2}","{3}")>'.format(
+            self.task_id, self.task_status, self.sample_id, self.report_id
         )
 
     def to_dict(self):
@@ -46,15 +47,16 @@ class Database(object):
         Base.metadata.bind = eng
         Base.metadata.create_all()
 
-    def add_task(self, task_id=None, task_status='Pending', report_id=None):
+    def add_task(self, task_id=None, task_status='Pending', sample_id=None, report_id=None):
         eng = create_engine('sqlite:///%s' % self.db_path)
         Session = sessionmaker(bind=eng)
         ses = Session()
 
         task = Task(
             task_id=task_id,
-            task_status='Pending',
-            report_id=None
+            task_status=task_status,
+            sample_id=sample_id,
+            report_id=report_id
         )
         try:
             ses.add(task)
@@ -64,7 +66,7 @@ class Database(object):
             return -1
         return task.task_id
 
-    def update_task(self, task_id, task_status, report_id=None):
+    def update_task(self, task_id, task_status, sample_id=None, report_id=None):
         '''
         report_id will be a list of sha values
         '''
@@ -75,6 +77,7 @@ class Database(object):
         task = ses.query(Task).get(task_id)
         if task:
             task.task_status = task_status
+            task.sample_id = sample_id
             task.report_id = report_id
             ses.commit()
             return task.to_dict()

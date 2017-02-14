@@ -28,6 +28,7 @@ import time
 import hashlib
 import multiprocessing
 import queue
+from uuid import uuid4
 from flask_cors import cross_origin
 from flask import Flask, jsonify, make_response, request, abort
 
@@ -101,13 +102,18 @@ def multiscanner_process(work_queue, exit_signal):
 
         for item in metadata_list:
 
+            # Use the filename as the index instead of the full path 
             results[item[1]] = results[item[0]]
             del results[item[0]]
+
+            r_id = str(uuid4())
+            results[item[1]]['report_id'] = r_id
 
             db.update_task(
                 task_id=item[2],
                 task_status='Complete',
-                report_id=item[3]
+                sample_id=item[3],
+                report_id=r_id
             )
 
         storage_handler.store(results, wait=False)
@@ -225,7 +231,7 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        report = handler.get_report(task.report_id)
+        report = handler.get_report(task.sample_id, task.report_id)
 
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}
