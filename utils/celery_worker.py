@@ -5,11 +5,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import multiscanner
 
 from celery import Celery
-from celery.contrib.batches import Batches
 
 app = Celery('celery_worker', broker='pyamqp://guest@localhost//')
 
-@app.task(base=Batches, flush_every=100, flush_interval=10)
+@app.task
 def multiscanner_celery(filelist, config=multiscanner.CONFIG):
     '''
     TODO: Add other ars + config options...
