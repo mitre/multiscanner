@@ -6,11 +6,15 @@ import multiscanner
 
 from celery import Celery
 
-app = Celery('celery_worker', broker='pyamqp://guest@localhost//')
+RABBIT_USER = 'guest'
+RABBIT_HOST = 'localhost'
+
+app = Celery('celery_worker', broker='pyamqp://%s@%s//' % (RABBIT_USER, RABBIT_HOST))
 
 @app.task
 def multiscanner_celery(filelist, config=multiscanner.CONFIG):
     '''
+    TODO: Figure out how to do batching.
     TODO: Add other ars + config options...
     This function essentially takes in a file list and runs
     multiscanner on them. Results are stored in the
