@@ -258,6 +258,24 @@ def delete_report(task_id):
         abort(HTTP_NOT_FOUND)
 
 
+@app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
+@cross_origin()
+def tags(task_id):
+    '''
+    Add/Remove the specified tag to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    add = request.args.get('add', '')
+    if add:
+        response = handler.add_tag(task.sample_id, add)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Added'})
+
+
 if __name__ == '__main__':
 
     db.init_sqlite_db()
