@@ -103,6 +103,13 @@
         source: tagNames.ttAdapter()
       }
     });
+
+    $('#tags').on('itemAdded', function(event) {
+      console.log(event.item);
+      tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+        return status;
+      });
+    });
   });
 </script>
 {% endblock %}
