@@ -62,9 +62,13 @@
     }
   }
 
-  function reportSetup(apiLoc, taskId) {
+  $(document).ready(function($) {
     // Get list of tasks and populate the table
-    tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/report/" + taskId, function(data, status){
+    tasks_data = $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+      tags = data.Report.tags;
+      delete data.Report.tags;
+      $('#tags').val(tags.toString());
+
       $.each(data.Report, function(index, item) {
         $('tbody:first').append(determineType(index, item));
       });
@@ -76,39 +80,38 @@
           }
         });
       });
-    });
-  }
+      
+      //Set up tags
+      var tagNameArray = [];
+      $.get("http://{{ api_loc }}/api/v1/tags/", function(data, status) {
+        buckets = data.Tags.aggregations.tags_agg.buckets;
+        $.each(buckets, function( index, value ) {
+          tagNameArray.push(value.key);
+        });
+        var tagNames = new Bloodhound({
+          datumTokenizer: Bloodhound.tokenizers.whitespace,
+          queryTokenizer: Bloodhound.tokenizers.whitespace,
+          local: tagNameArray
+        });
+        tagNames.initialize();
 
-  $(document).ready(function($) {
-    reportSetup("{{ api_loc }}", "{{ task_id }}");
-
-    var tagNameArray = ['Amsterdam', "Ankara", 'Washington', 'Sydney', 'Beijing', 'Cairo'];
-    var tagNames = new Bloodhound({
-      datumTokenizer: Bloodhound.tokenizers.whitespace,
-      queryTokenizer: Bloodhound.tokenizers.whitespace,
-      // prefetch: {
-      //   url: 'assets/citynames.json',
-      //   filter: function(list) {
-      //     return $.map(list, function(cityname) {
-      //       return { name: cityname }; });
-      //   }
-      // }
-      local: tagNameArray
-    });
-    tagNames.initialize();
-
-    $('#tags').tagsinput({
-      tagClass: 'label label-primary',
-      typeaheadjs: {
-        source: tagNames.ttAdapter()
-      }
-    });
-
-    $('#tags').on('itemAdded', function(event) {
-      console.log(event.item);
-      tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
-        return status;
-      });
+        $('#tags').tagsinput({
+          tagClass: 'label label-primary',
+          typeaheadjs: {
+            source: tagNames.ttAdapter()
+          }
+        });
+        $('#tags').on('itemAdded', function(event) {
+          tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+            return status;
+          });
+        });
+        $('#tags').on('beforeItemRemove', function(event) {
+          tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
+            return status;
+          });
+        });
+      })
     });
   });
 </script>
