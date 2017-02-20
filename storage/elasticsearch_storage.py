@@ -48,7 +48,6 @@ class ElasticSearchStorage(storage.Storage):
             })
 
         # Create de-dot preprocessor if doesn't exist yet
-        # es_ingest = IngestClient(self.es)
         dedot = self.es.ingest.get_pipeline('dedot')
         if not dedot:
             script = """
@@ -180,6 +179,46 @@ class ElasticSearchStorage(storage.Storage):
             return result
         except:
             return None
+
+    def remove_tag(self, sample_id, tag):
+        script = {
+            "script": {
+                "inline": """def i = ctx._source.tags.indexOf(params.tag);
+                    if (i > -1) { ctx._source.tags.remove(i); }""",
+                "lang": "painless",
+                "params": {
+                    "tag": tag
+                }
+            }
+        }
+
+        try:
+            result = self.es.update(
+                index=self.index, doc_type='sample',
+                id=sample_id, body=script
+            )
+            return result
+        except:
+            return None
+
+    def get_tags(self):
+        script = {
+          "query": {
+            "match_all": {}
+          },
+          "aggs": {
+            "tags_agg": {
+              "terms": {
+                "field": "tags.keyword"
+              }
+            }
+          }
+        }
+
+        result = self.es.search(
+            index=self.index, doc_type='sample', body=script
+        )
+        return result
 
     def delete(self, report_id):
         try:

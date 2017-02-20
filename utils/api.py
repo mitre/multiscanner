@@ -258,6 +258,18 @@ def delete_report(task_id):
         abort(HTTP_NOT_FOUND)
 
 
+@app.route('/api/v1/tags/', methods=['GET'])
+@cross_origin()
+def taglist():
+    '''
+    Return a list of all tags currently in use.
+    '''
+    response = handler.get_tags()
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify({'Tags': response})
+
+
 @app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
 @cross_origin()
 def tags(task_id):
@@ -274,6 +286,13 @@ def tags(task_id):
         if not response:
             abort(HTTP_BAD_REQUEST)
         return jsonify({'Message': 'Tag Added'})
+
+    remove = request.args.get('remove', '')
+    if remove:
+        response = handler.remove_tag(task.sample_id, remove)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Removed'})
 
 
 if __name__ == '__main__':
