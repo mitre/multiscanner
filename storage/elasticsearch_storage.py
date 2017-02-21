@@ -98,6 +98,8 @@ class ElasticSearchStorage(storage.Storage):
             if 'report_id' in report[filename]:
                 report_id = report[filename]['report_id']
                 del report[filename]['report_id']
+            else:
+                report_id = uuid4()
 
             # Extract metadata about the sample
             sample = {'filename': filename}
