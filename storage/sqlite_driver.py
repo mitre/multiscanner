@@ -2,6 +2,7 @@
 from __future__ import print_function
 import os
 import json
+import ConfigParser
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
@@ -10,9 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_NAME = 'sqlite.db'
-FULL_DB_PATH = os.path.join(MS_WD, DB_NAME)
-
+CONFIG_FILE = os.path.join(MS_WD, "storage.ini")
 
 Base = declarative_base()
 
@@ -36,8 +35,59 @@ class Task(Base):
         return json.dumps(self.to_dict())
 
 class Database(object):
-    def __init__(self, db_path=FULL_DB_PATH):
-        self.db_path = db_path
+    '''
+    This class enables CRUD operations with the database that holds the task definitions.
+    Note that in the configuration file, the database type (parameter: db_type) needs to be
+    a SQLAlchemy dialect: sqlite, mysql, postgresql, oracle, or mssql. The driver can optionally be
+    specified as well, i.e., 'postgresql+psycopg2' (see http://docs.sqlalchemy.org/en/latest/core/engines.html).
+    '''
+    DEFAULTCONF = {
+        'db_type': 'sqlite',
+        'host_string': 'localhost',
+        'db_name': 'task_db',
+        'username': 'multiscanner',
+        'password': 'changeme'
+    }
+
+    def __init__(self, config=None):
+        self.config = config
+        self.db_connection_string = None
+
+    def _parse_config(self):
+        '''
+        Checks if a config was passed in. If no config was passed in,
+        attempts to read the config from the storage.ini file. If the config is
+        not defined there, uses the default config
+        '''
+        if not self.config:
+            config_parser = ConfigParser.SafeConfigParser()
+            config_parser.read(CONFIG_FILE)
+            try:
+                self.config = dict(config_parser.items(self.__class__.__name__))
+            except ConfigParser.NoSectionError:
+                self.config = self.DEFAULTCONF
+
+    def _get_db_engine(self):
+        return create_engine(self.db_connection_string)
+
+    def init_db(self):
+        self._parse_config()
+        db_type = self.config['db_type']
+        db_name = self.config['db_name']
+        if db_type == 'sqlite':
+            # we can ignore host, username, password, etc
+            sql_lite_db_path = os.path.join(MS_WD, db_name)
+            self.db_connection_string = 'sqlite:///{}'.format(sql_lite_db_path)
+        else:
+            username = self.config['username']
+            password = self.config['password']
+            host_string = self.config['host_string']
+            self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
+
+        print(self.db_connection_string)
+        eng = self._get_db_engine()
+        Base.metadata.bind = eng
+        Base.metadata.create_all()
 
     def init_sqlite_db(self):
         global Base

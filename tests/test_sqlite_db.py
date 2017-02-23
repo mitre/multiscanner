@@ -21,6 +21,9 @@ from sqlite_driver import Database, Task
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
+DB_CONF = Database.DEFAULTCONF
+DB_CONF['db_name'] = TEST_DB_PATH
+
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
@@ -48,8 +51,8 @@ class TestTaskSerialization(unittest.TestCase):
 
 class TestDBInit(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
 
     def test_db_init(self):
         self.assertIn('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
@@ -60,8 +63,8 @@ class TestDBInit(unittest.TestCase):
 
 class TestTaskAdd(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
 
     def test_add_task(self):
         task_id = 1
@@ -78,8 +81,8 @@ class TestTaskAdd(unittest.TestCase):
 
 class TestTaskManipulation(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.sql_db.add_task(
             task_id=1,
             task_status='Pending',
@@ -117,8 +120,8 @@ class TestTaskManipulation(unittest.TestCase):
 
 class TestGetAllTasks(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         for i in range(0,3):
             self.sql_db.add_task()
             i += 1

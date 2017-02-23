@@ -237,7 +237,7 @@ def delete_report(task_id):
 
 if __name__ == '__main__':
 
-    db.init_sqlite_db()
+    db.init_db()
 
     if not os.path.isdir(UPLOAD_FOLDER):
         print('Creating upload dir')

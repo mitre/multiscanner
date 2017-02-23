@@ -22,6 +22,9 @@ from storage import Storage
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
+DB_CONF = Database.DEFAULTCONF
+DB_CONF['db_name'] = TEST_DB_PATH
+
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 if not os.path.isdir(TEST_UPLOAD_FOLDER):
     print('Creating upload dir')
@@ -49,8 +52,8 @@ class MockStorage(object):
 
 class TestURLCase(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
@@ -85,8 +88,8 @@ class TestURLCase(unittest.TestCase):
 
 class TestTaskCreateCase(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
@@ -131,8 +134,8 @@ class TestTaskCreateCase(unittest.TestCase):
 
 class TestTaskUpdateCase(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
@@ -174,8 +177,8 @@ class TestTaskUpdateCase(unittest.TestCase):
 
 class TestTaskDeleteCase(unittest.TestCase):
     def setUp(self):
-        self.sql_db = Database(TEST_DB_PATH)
-        self.sql_db.init_sqlite_db()
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
