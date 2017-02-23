@@ -111,6 +111,10 @@
             return status;
           });
         });
+        $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
+          .attr("title", "Type something and hit the enter key to add a tag.")
+          .attr("data-placement", "left")
+          .tooltip();
       })
     });
   });
