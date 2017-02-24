@@ -6,6 +6,7 @@
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script type="text/javascript">
   function createRow(heading, content, isArray) {
+    // Return a row to add to a table
     isArray = typeof isArray !== 'undefined' ? isArray : false;
     if (isArray) {
       headText = '';
@@ -33,6 +34,7 @@
   }
 
   function createSubtable(data, isArray) {
+    // Return a table to be nested within a row
     isArray = typeof isArray !== 'undefined' ? isArray : false;
     rows = ''
     $.each(data, function(index, item) {
@@ -48,6 +50,7 @@
   }
 
   function determineType(index, item) {
+    // Add a row to the table bases on an item's data type
     if (item === null || item === undefined) {
       return createRow(index, '<i>None</i>');
     }
@@ -60,6 +63,16 @@
     else {
       return createRow(index, item);
     }
+  }
+
+  function displayNote(data) {
+    // Display the note passed in
+    var text = data._source.text;
+    var ts = data._source.timestamp;
+    var panel = $('<div class="panel panel-default">')
+      .append($('<div class="panel-heading"><span>' + ts + '</span></div>'))
+      .append($('<div class="panel-body">' + text + '</div>'));
+    $('#note-container').append(panel);
   }
 
   $(document).ready(function($) {
@@ -81,7 +94,7 @@
         });
       });
       
-      //Set up tags
+      // Set up tags
       var tagNameArray = [];
       $.get("http://{{ api_loc }}/api/v1/tags/", function(data, status) {
         buckets = data.Tags.aggregations.tags_agg.buckets;
@@ -117,6 +130,25 @@
           .tooltip();
       })
     });
+
+    // Get notes
+    $.get("http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", function(data, status){
+      $('#note-container').empty();
+      var notes_list = data.hits.hits;
+      notes_list.forEach(function (item) {
+        displayNote(item);
+      });
+    });
+
+    // Handle submission of notes
+    $('#note-form').submit(function( event ) {
+      text = {"text": $('#note-input').val()}
+      $.post("http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+        displayNote(data);
+        return status;
+      });
+      event.preventDefault();
+    });
   });
 </script>
 {% endblock %}
@@ -138,6 +170,18 @@
     <table class="table table-hover ">
       <tbody></tbody>
     </table>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6 col-md-offset-3" id="report-notes">
+    <div id="note-container"></div>
+    <form id="note-form">
+      <div class="form-group">
+        <label for="note-input">Add a Note/Comment:</label>
+        <textarea class="form-control" rows="5" id="note-input"></textarea>
+      </div>
+      <button class="btn btn-primary">Submit</button>
+    </form>
   </div>
 </div>
 {% endblock %}
