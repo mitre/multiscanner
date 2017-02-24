@@ -295,6 +295,38 @@ def tags(task_id):
         return jsonify({'Message': 'Tag Removed'})
 
 
+@app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
+@cross_origin()
+def get_notes(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.get_notes(task.sample_id)
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note', methods=['POST'])
+@cross_origin()
+def add_note(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.add_note(task.sample_id, request.form.to_dict())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
 if __name__ == '__main__':
 
     db.init_sqlite_db()

@@ -1,6 +1,8 @@
 '''
 Storage module that will interact with elasticsearch.
 '''
+from datetime import datetime
+from time import sleep
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 
@@ -44,6 +46,11 @@ class ElasticSearchStorage(storage.Storage):
             es_indices.put_mapping(doc_type='note', body={
                 '_parent': {
                     'type': 'sample'
+                },
+                'properties': {
+                    'timestamp': {
+                        'type': 'date'
+                    }
                 }
             })
 
@@ -205,21 +212,60 @@ class ElasticSearchStorage(storage.Storage):
 
     def get_tags(self):
         script = {
-          "query": {
-            "match_all": {}
-          },
-          "aggs": {
-            "tags_agg": {
-              "terms": {
-                "field": "tags.keyword"
-              }
+            "query": {
+                "match_all": {}
+            },
+            "aggs": {
+                "tags_agg": {
+                    "terms": {
+                        "field": "tags.keyword"
+                    }
+                }
             }
-          }
         }
 
         result = self.es.search(
             index=self.index, doc_type='sample', body=script
         )
+        return result
+
+    def get_notes(self, sample_id):
+        query = {
+            "query": {
+                "has_parent": {
+                    "type": "sample",
+                    "query": {
+                        "match": {
+                            "_id": sample_id
+                        }
+                    }
+                }
+            }
+        }
+
+        result = self.es.search(
+            index=self.index, doc_type='note', body=query
+        )
+        return result
+
+    def get_note(self, sample_id, note_id):
+        try:
+            result = self.es.get(
+                index=self.index, doc_type='note',
+                id=note_id, parent=sample_id
+            )
+            return result
+        except:
+            return None
+
+    def add_note(self, sample_id, data):
+        data['timestamp'] = datetime.now().isoformat()
+        result = self.es.create(
+            index=self.index, doc_type='note', id=uuid4(), body=data,
+            parent=sample_id
+        )
+        if result['result'] == 'created':
+            return self.get_note(sample_id, result['_id'])
         return result
 
     def delete(self, report_id):

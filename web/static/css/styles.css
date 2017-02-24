@@ -17,6 +17,10 @@
     z-index: 1;
 }
 
+.container {
+    margin-bottom: 20px;
+}
+
 #report-tags {
     display: table;
 }
@@ -127,4 +131,16 @@
   text-decoration: none;
   outline: 0;
   background-color: #428bca;
+}
+
+#report-notes .panel {
+    margin-bottom: 0;
+}
+
+#report-notes .panel-heading span {
+    font-size: 13px;
+}
+
+#note-container {
+    margin-bottom: 20px;
 }
