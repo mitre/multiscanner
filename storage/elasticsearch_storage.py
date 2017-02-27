@@ -229,7 +229,7 @@ class ElasticSearchStorage(storage.Storage):
         )
         return result
 
-    def get_notes(self, sample_id):
+    def get_notes(self, sample_id, search_after=None):
         query = {
             "query": {
                 "has_parent": {
@@ -240,8 +240,22 @@ class ElasticSearchStorage(storage.Storage):
                         }
                     }
                 }
-            }
+            },
+            "sort": [
+                {
+                    "timestamp": {
+                        "order": "desc"
+                    }
+                },
+                {
+                    "_uid": {
+                        "order": "desc"
+                    }
+                }
+            ]
         }
+        if search_after:
+            query['search_after'] = search_after
 
         result = self.es.search(
             index=self.index, doc_type='note', body=query

@@ -305,7 +305,13 @@ def get_notes(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    response = handler.get_notes(task.sample_id)
+    if ('ts' in request.args and 'uid' in request.args):
+        ts = request.args.get('ts', '')
+        uid = request.args.get('uid', '')
+        response = handler.get_notes(task.sample_id, [ts, uid])
+    else:
+        response = handler.get_notes(task.sample_id)
+
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)

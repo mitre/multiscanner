@@ -75,6 +75,32 @@
     $('#note-container').append(panel);
   }
 
+  function getNotes(empty, ts, uid) {
+    // Get all notes for this sample and display them
+    empty = typeof empty !== 'undefined' ? empty : false;
+    ts = typeof ts !== 'undefined' ? ts : false;
+    uid = typeof uid !== 'undefined' ? uid : false;
+    
+    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
+    if (ts && uid) {
+      url += "?ts=" + ts + "&uid=" + uid;
+    }
+    
+    var resp = $.get(url, function(data, status){
+      if (empty === true) {
+        $('#note-container').empty();
+      }
+      var notes_list = data.hits.hits;
+      notes_list.forEach(function (item) {
+        displayNote(item);
+      });
+      if (notes_list.length === 10) {
+        sort_params = notes_list[notes_list.length-1]["sort"];
+        getNotes(false, sort_params[0], sort_params[1]);
+      }
+    });
+  }
+
   $(document).ready(function($) {
     // Get list of tasks and populate the table
     tasks_data = $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
@@ -131,14 +157,8 @@
       })
     });
 
-    // Get notes
-    $.get("http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", function(data, status){
-      $('#note-container').empty();
-      var notes_list = data.hits.hits;
-      notes_list.forEach(function (item) {
-        displayNote(item);
-      });
-    });
+    // Add notes to the page
+    getNotes();
 
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
