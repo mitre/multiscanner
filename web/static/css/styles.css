@@ -21,6 +21,15 @@
     margin-bottom: 20px;
 }
 
+#report-container {
+    transition: .5s ease-out;
+}
+
+#report-container.pushed {
+    transition: .5s ease-out;
+    transform: translateX(300px);
+}
+
 #report-tags {
     display: table;
 }
@@ -131,6 +140,33 @@
   text-decoration: none;
   outline: 0;
   background-color: #428bca;
+}
+
+#report-notes {
+    position: fixed;
+    z-index: 1;
+    height: 100%;
+    width: 0;
+    top: 0;
+    left: 0;
+    overflow-x: hidden;
+    transition: 1s ease-out;
+    background-color: #a1b6cd;
+    color: #444;
+    box-shadow: 10px 0px 10px rgba(140, 140, 140, 0.66);
+}
+
+#report-notes.open {
+    width: 400px;
+    padding: 20px;
+}
+
+#notes-btn {
+    /*float: right;*/
+    position: fixed;
+    left: 0;
+    border-radius: 0 20px 20px 0;
+    padding-right: 20px;
 }
 
 #report-notes .panel {
