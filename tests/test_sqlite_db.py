@@ -11,13 +11,13 @@ import unittest
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Allow import of sqlite_driver
+# Allow import of sql_driver
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
 
-from sqlite_driver import Database, Task
+from sql_driver import Database, Task
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')

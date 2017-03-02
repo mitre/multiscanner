@@ -34,7 +34,7 @@ if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import multiscanner
-import sqlite_driver as database
+import sql_driver as database
 from storage import Storage
 import elasticsearch_storage
 
