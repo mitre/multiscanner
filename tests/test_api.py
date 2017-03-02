@@ -17,7 +17,7 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 sys.path.insert(0, os.path.dirname(CWD))
 
 import api
-from sqlite_driver import Database
+from sql_driver import Database
 from storage import Storage
 
 
