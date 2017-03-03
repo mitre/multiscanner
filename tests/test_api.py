@@ -2,7 +2,10 @@ import os
 import shutil
 import sys
 import json
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
 import unittest
 
 CWD = os.path.dirname(os.path.abspath(__file__))
