@@ -39,9 +39,9 @@ def post_to_vxstream(
                 return res.json()
             else:
                 print('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
-        except requests.exceptions.HTTPError, err:
-            print(err.read())
-            traceback.print_exc()
+        except requests.exceptions.HTTPError as err:
+            print(err)
+            #traceback.print_exc()
 
 
 def get_file_status(file_sha256, status_url, environment_id, apikey, secret, verify):
@@ -57,8 +57,8 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
         else:
             print('Error code: {}, returned when getting file status: {}'.format(res.status_code, file_sha256))
             return res
-    except requests.exceptions.HTTPError, err:
-        print(err.read())
+    except requests.exceptions.HTTPError as err:
+        print(err)
 
 
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
@@ -73,8 +73,8 @@ def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secr
         else:
             print('Error code: {}, returned when getting report: {}'.format(res.status_code, file_sha256))
             return res
-    except requests.exceptions.HTTPError, err:
-        print(err.read())
+    except requests.exceptions.HTTPError as err:
+        print(err)
 
 
 def check(conf=DEFAULTCONF):
