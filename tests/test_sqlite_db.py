@@ -52,7 +52,7 @@ class TestDBInit(unittest.TestCase):
         self.sql_db.init_sqlite_db()
 
     def test_db_init(self):
-        self.assertEqual('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
+        self.assertIn('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
 
     def tearDown(self):
         os.remove(TEST_DB_PATH)

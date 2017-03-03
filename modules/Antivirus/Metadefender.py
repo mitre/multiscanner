@@ -34,7 +34,8 @@ DEFAULTCONF = {
     "running timeout": 30,
     "fetch delay seconds": 5,
     "poll interval seconds": 5,
-    "user agent": "user_agent"
+    "user agent": "user_agent",
+    "API key": ""
 }
 
 PERCENT_SCAN_COMPLETE = 100
@@ -56,6 +57,8 @@ MD_HTTP_ERR_CODES = {400: 'Unsupported HTTP Method or invalid HTTP Request',
 UNKNOWN_ERROR = 'Unknown Error'
 STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Failure'
+STATUS_PENDING = 'Pending'
+STATUS_TIMEOUT = 'Timeout'
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
@@ -73,8 +76,9 @@ def _parse_scan_result(response):
             is_complete = boolean indicating if the scan has completed
             scan_output = dictionary in the form:
             {
-                overall_status: 'Success|Failure',
-                error_msg: 'Error Message if present'|''
+                overall_status: 'Success|Pending|Failure',
+                msg: '<Error message/status explanation
+                    if status is not 'Success'>'|''
                 engine_results: [
                     {
                         engine_name: '<Engine Name>',
@@ -94,16 +98,23 @@ def _parse_scan_result(response):
         prog_percent = process_info.get('progress_percentage', None)
 
         # Metadefender returns a 200 rather than a 404 if there's no scan
-        # result, so we have to check the output for a progress percentage...
+        # result, so we have to check the output for a progress percentage.
+        # No results could mean that MD simply hasn't begun processing so
+        # we don't want to mark the scan as failed
         if prog_percent == None:
-            overall_status = STATUS_FAIL
-            error_msg = 'Scan not found'
+            is_complete = False
+            overall_status = STATUS_PENDING
+            msg = 'Scan results not found; Metadefender has likely not started analysis yet'
             engine_results = []
-        elif prog_percent != PERCENT_SCAN_COMPLETE:
-            return(False, None)
+        elif prog_percent < PERCENT_SCAN_COMPLETE:
+            is_complete = False
+            overall_status = STATUS_PENDING
+            msg = 'Scan in progress, percent complete: %d' % prog_percent
+            engine_results = []
         else:
+            is_complete = True
             overall_status = STATUS_SUCCESS
-            error_msg = ''
+            msg = ''
             overall_results = response_json.get("scan_results", {})
             scan_details = overall_results.get("scan_details", {})
             engine_results = []
@@ -116,24 +127,25 @@ def _parse_scan_result(response):
                                  }
                 engine_results.append(engine_result)
     else:
+        is_complete = True
         overall_status = STATUS_FAIL
         try:
             response_json = response.json()
-            error_msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code,
+            msg = response_json.get('err', MD_HTTP_ERR_CODES.get(status_code,
                                                                        UNKNOWN_ERROR))
-        # It's possible (though highly unlikely) that no JSON response was returned
+        # It's possible (though unlikely) that no JSON response was returned
         except ValueError:
-            error_msg = 'No data received from Metadefender'
+            msg = 'No data received from Metadefender'
         engine_results = []
 
     scan_result = {'overall_status': overall_status,
-                   'error_msg': error_msg,
+                   'msg': msg,
                    'engine_results': engine_results
                   }
-    return (True, scan_result)
+    return (is_complete, scan_result)
 
 
-def _submit_sample(fname, scan_url, user_agent):
+def _submit_sample(fname, scan_url, user_agent, api_key=None):
     '''
     Submits the specified sample file to Metadefender and returns
     Metadefender's response.
@@ -156,6 +168,8 @@ def _submit_sample(fname, scan_url, user_agent):
             headers = {'content-type': 'application/json',
                        'user_agent': user_agent,
                        'filename': basename(fname)}
+            if api_key:
+                headers['apikey'] = api_key
             request = requests.post(scan_url, data=sample, headers=headers)
     resp_status_code = request.status_code
     resp_json = None
@@ -165,7 +179,13 @@ def _submit_sample(fname, scan_url, user_agent):
         error_msg = None
     else:
         scan_id = None
-        error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code))
+        try:
+            resp_json = request.json()
+            error_msg = resp_json.get('err', MD_HTTP_ERR_CODES.get(resp_status_code,
+                                                               UNKNOWN_ERROR))
+        except (ValueError, AttributeError):
+            error_msg = MD_HTTP_ERR_CODES.get(resp_status_code, UNKNOWN_ERROR)
+
 
     submission_response = {'status_code': resp_status_code,
                            'scan_id': scan_id,
@@ -173,7 +193,7 @@ def _submit_sample(fname, scan_url, user_agent):
                           }
     return submission_response
 
-def _retrieve_scan_results(results_url, scan_id):
+def _retrieve_scan_results(results_url, scan_id, api_key=None):
     '''
     Retrieves the results of a scan from Metadefender.
     Parameters:
@@ -182,7 +202,10 @@ def _retrieve_scan_results(results_url, scan_id):
     Returns:
         requests.Response object
     '''
-    scan_output = requests.get(results_url+scan_id)
+    headers = None
+    if api_key:
+        headers = {'apikey': api_key}
+    scan_output = requests.get(results_url+scan_id, headers=headers)
     return scan_output
 
 def scan(filelist, conf=DEFAULTCONF):
@@ -201,6 +224,9 @@ def scan(filelist, conf=DEFAULTCONF):
     '''
     fetch_delay_seconds = conf['fetch delay seconds']
     poll_interval_seconds = conf['poll interval seconds']
+    api_key = conf['API key']
+    if api_key.strip() == '':
+        api_key = None
 
     resultlist = []
     tasks = []
@@ -213,7 +239,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     user_agent = conf['user agent']
     for fname in filelist:
-        submission_resp = _submit_sample(fname, scan_url, user_agent)
+        submission_resp = _submit_sample(fname, scan_url, user_agent, api_key)
         resp_status_code = submission_resp['status_code']
         if resp_status_code == requests.codes.ok:
             task_id = submission_resp['scan_id']
@@ -232,7 +258,7 @@ def scan(filelist, conf=DEFAULTCONF):
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
-            scan_output = _retrieve_scan_results(results_url, task_id)
+            scan_output = _retrieve_scan_results(results_url, task_id, api_key)
             is_scan_complete, scan_result = _parse_scan_result(scan_output)
 
             # If we have a report
@@ -246,7 +272,10 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #TODO Log timeout
+                        #Log timeout
+                        if scan_result['overall_status'] == STATUS_PENDING:
+                            scan_result['overall_status'] = STATUS_TIMEOUT
+                        resultlist.append((fname, scan_result))
                         tasks.remove((fname, task_id))
 
         time.sleep(poll_interval_seconds)

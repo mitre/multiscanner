@@ -1,0 +1,66 @@
+{
+  "extracted_files": {
+        "data_id": "hh48urlns5w8vqa36o9cdjxwcwjyryym",
+        "scan_result_i": 0,
+        "detected_by": 0,
+        "files_in_archive": [
+            {
+                "display_name": "malicious.com",
+                "data_id": "nbabhkemxfpd3b14uue9za8c5sizapvm",
+                "file_type": "-",
+                "scan_result_i": 1,
+                "detected_by": 4,
+                "progress_percentage": 25,
+                "file_size": 54
+            },
+            {
+                "display_name": "payload_delivery.pdf",
+                "data_id": "yelwtfmnywj0jqe50htxk9f8oaw5xoe9",
+                "file_type": "PDF/AI",
+                "scan_result_i": 0,
+                "detected_by": 0,
+                "progress_percentage": 0,
+                "file_size": 32821
+            }
+        ]
+    },
+  "file_id": "",
+  "scan_results": {
+    "scan_details": {
+    },
+    "rescan_available": false,
+    "data_id": "hyayv9g1x4hmxahvkmyimh3j3tj3ivvk",
+    "scan_all_result_i": 1,
+    "start_time": "2016-09-20T13:36:21Z",
+    "total_time": 20,
+    "total_avs": 4,
+    "in_queue": 1,
+    "scan_all_result_a": ""
+  },
+  "file_info": {
+    "file_size": 3192,
+    "upload_timestamp": "2016-08-03T17:08:52.949Z",
+    "md5": "A5F8E7D9B5693CD62B3400DCE56649A1",
+    "sha1": "C15A672617F39080E6375CFC485BEF388E379879",
+    "sha256": "C3830268DC71776B730D37E1B919A2D35E6B45C7545736669255891398BE0F6C",
+    "file_type_category": "P",
+    "file_type_description": "Adobe Portable Document Format",
+    "file_type_extension": "pdf/ai",
+    "display_name": "suspicious_pdf.pdf",
+    "original_file_path": ""
+  },
+  "process_info": {
+		"post_processing": {
+		},
+        "progress_percentage": 10,
+        "user_agent": "multiscanner",
+        "profile": "default",
+        "result": "",
+        "blocked_reason": "",
+        "file_type_skipped_scan": false
+  },
+  "data_id": "hyayv9g1x4hmxahvkmyimh3j3tj3ivvk",
+  "rescan_count": 0,
+  "source": "10.2.13.37",
+  "scanned_on": "10.2.13.39"
+}
