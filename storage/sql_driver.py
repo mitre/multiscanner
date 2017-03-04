@@ -9,6 +9,8 @@ from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy_utils import database_exists, create_database
+
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "storage.ini")
@@ -86,6 +88,10 @@ class Database(object):
 
         print(self.db_connection_string)
         eng = self._get_db_engine()
+        # If db not present AND type is not SQLite, create the DB
+        if not self.config['db_type'] == 'sqlite':
+            if not database_exists(eng.url):
+                create_database(eng.url)
         Base.metadata.bind = eng
         Base.metadata.create_all()
 
