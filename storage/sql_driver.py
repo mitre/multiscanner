@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import json
 import ConfigParser
+import codecs
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
@@ -13,7 +14,7 @@ from sqlalchemy_utils import database_exists, create_database
 
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_FILE = os.path.join(MS_WD, "storage.ini")
+CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
 Base = declarative_base()
 
@@ -51,29 +52,72 @@ class Database(object):
         'password': 'changeme'
     }
 
-    def __init__(self, config=None):
-        self.config = config
+    def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
         self.db_connection_string = None
 
-    def _parse_config(self):
-        '''
-        Checks if a config was passed in. If no config was passed in,
-        attempts to read the config from the storage.ini file. If the config is
-        not defined there, uses the default config
-        '''
-        if not self.config:
-            config_parser = ConfigParser.SafeConfigParser()
-            config_parser.read(CONFIG_FILE)
-            try:
-                self.config = dict(config_parser.items(self.__class__.__name__))
-            except ConfigParser.NoSectionError:
-                self.config = self.DEFAULTCONF
+        # Configuration parsing
+        config_parser = ConfigParser.SafeConfigParser()
+        config_parser.optionxform = str
+
+        # (re)generate conf file if necessary
+        if regenconfig or not os.path.isfile(configfile):
+            self._rewrite_config(config_parser, configfile, config)
+        # now read in and parse the conf file
+        config_parser.read(configfile)
+        # If we didn't regen the config file in the above check, it's possible
+        # that the file is missing our DB settings...
+        if not config_parser.has_section(self.__class__.__name__):
+            self._rewrite_config(config_parser, configfile, config)
+            config_parser.read(configfile)
+
+        # If configuration was specified, use what was stored in the config file
+        # as a base and then override specific settings as contained in the user's
+        # config. This allows the user to specify ONLY the config settings they want to
+        # override
+        config_from_file = dict(config_parser.items(self.__class__.__name__))
+        if config:
+            for key_ in config:
+                config_from_file[key_] = config[key_]
+        self.config = config_from_file
+
+    def _rewrite_config(self, config_parser, configfile, usr_override_config):
+        """
+        Regenerates the Database-specific part of the API config file
+        """
+        # IF we have a config file:
+        #       PARSE FILE INTO PARSER
+        # IF parser does not have a DB config section:
+        #       ADD DB CONFIG SECTION
+        # IF config = None:
+        #   SET CONFIG = DEFAULTCONFIG
+        # ELSE IF config is NOT NONE:
+        #    -- DON'T NEED TO DO ANYTHING
+        # FOR ALL KEYS IN CONFIG, UPDATE KEY IN CONFIGPARSER
+        # WRITE PARSER CONTENTS TO FILE
+        if os.path.isfile(configfile):
+            # Read in the old config
+            config_parser.read(configfile)
+        if not config_parser.has_section(self.__class__.__name__):
+            config_parser.add_section(self.__class__.__name__)
+        if not usr_override_config:
+            usr_override_config = self.DEFAULTCONF
+        # Update config
+        for key_ in usr_override_config:
+            config_parser.set(self.__class__.__name__, key_, str(usr_override_config[key_]))
+
+        with codecs.open(configfile, 'w', 'utf-8') as conffile:
+            config_parser.write(conffile)
 
     def _get_db_engine(self):
+        """
+        Returns the database engine
+        """
         return create_engine(self.db_connection_string)
 
     def init_db(self):
-        self._parse_config()
+        """
+        Initializes the database connection based on the configuration parameters
+        """
         db_type = self.config['db_type']
         db_name = self.config['db_name']
         if db_type == 'sqlite':
