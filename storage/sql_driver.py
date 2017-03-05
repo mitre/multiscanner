@@ -54,6 +54,7 @@ class Database(object):
 
     def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
         self.db_connection_string = None
+        self.db_engine = None
 
         # Configuration parsing
         config_parser = ConfigParser.SafeConfigParser()
@@ -112,7 +113,8 @@ class Database(object):
         """
         Returns the database engine
         """
-        return create_engine(self.db_connection_string)
+        #return create_engine(self.db_connection_string)
+        return self.db_engine
 
     def init_db(self):
         """
@@ -131,12 +133,13 @@ class Database(object):
             self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
 
         print(self.db_connection_string)
-        eng = self._get_db_engine()
+        #eng = self._get_db_engine()
+        self.db_engine = create_engine(self.db_connection_string)
         # If db not present AND type is not SQLite, create the DB
         if not self.config['db_type'] == 'sqlite':
-            if not database_exists(eng.url):
-                create_database(eng.url)
-        Base.metadata.bind = eng
+            if not database_exists(self.db_engine.url):
+                create_database(self.db_engine.url)
+        Base.metadata.bind = self.db_engine
         Base.metadata.create_all()
 
     def init_sqlite_db(self):
@@ -186,6 +189,7 @@ class Database(object):
         ses = Session()
 
         task = ses.query(Task).get(task_id)
+        ses.close()
         if task:
             return task
 
@@ -195,6 +199,7 @@ class Database(object):
         ses = Session()
 
         task = ses.query(Task).get(task_id)
+        ses.close()
         if task:
             return task.report_id
 
@@ -203,11 +208,11 @@ class Database(object):
         Session = sessionmaker(bind=eng)
         ses = Session()
         rs = ses.query(Task).all()
-
         # For testing, do not use in production
         task_list = []
         for task in rs:
             task_list.append(task.to_dict())
+        ses.close()
         return task_list
 
     def delete_task(self, task_id):
