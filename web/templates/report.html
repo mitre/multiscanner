@@ -68,17 +68,21 @@
   function openNotes() {
     $('#report-notes').addClass('open');
     $('#report-container').addClass('pushed');
+    $('.navbar').addClass('pushed');
   }
 
   function closeNotes() {
     $('#report-notes').removeClass('open');
     $('#report-container').removeClass('pushed');
+    $('.navbar').removeClass('pushed');
   }
 
   function displayNote(data) {
     // Display the note passed in
     var text = data._source.text;
-    var ts = data._source.timestamp;
+    var tsRegEx = /\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+    var m = tsRegEx.exec(data._source.timestamp)
+    var ts = m[4]+":"+m[5]+" "+m[2]+"/"+m[3]+"/"+m[1];
     var panel = $('<div class="panel panel-default">')
       .append($('<div class="panel-heading"><span>' + ts + '</span></div>'))
       .append($('<div class="panel-body">' + text + '</div>'));
@@ -96,11 +100,10 @@
       url += "?ts=" + ts + "&uid=" + uid;
     }
     
-    var resp = $.get(url, function(data, status){
+    var resp = $.get(url, function(notes_list, status){
       if (empty === true) {
         $('#note-container').empty();
       }
-      var notes_list = data.hits.hits;
       notes_list.forEach(function (item) {
         displayNote(item);
       });
@@ -212,7 +215,7 @@
 </div>
 
 <div class="" id="report-notes">
-  <button class="close" aria-label="Close"><span class="glyphicon glyphicon-remove"></span></button>
+  <button class="close" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
   <div id="note-container"></div>
   <form id="note-form">
     <div class="form-group">
