@@ -314,6 +314,9 @@ def get_notes(task_id):
 
     if not response:
         abort(HTTP_BAD_REQUEST)
+
+    if 'hits' in response and 'hits' in response['hits']:
+        response = response['hits']['hits']
     return jsonify(response)
 
 
