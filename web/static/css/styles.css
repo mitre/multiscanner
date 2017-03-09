@@ -180,7 +180,8 @@
 }
 
 #report-notes .panel {
-    margin-bottom: 0;
+    margin-bottom: 5px;
+    clear: right;
 }
 
 #report-notes .panel-default > .panel-heading {
@@ -189,11 +190,25 @@
     text-align: right;
 }
 
+#report-notes .btn-edit-note,
+#report-notes .btn-del-note {
+    float: right;
+    margin: 0px 2px;
+}
+
 #report-notes .panel-heading span {
     font-size: 13px;
 }
 
 #note-container {
     margin-bottom: 20px;
+}
+
+.panel-body > span {
     clear: right;
+    display: block;
+}
+
+.panel-body {
+    padding-bottom: 5px;
 }

@@ -42,6 +42,7 @@ import multiscanner
 import sqlite_driver as database
 from storage import Storage
 import elasticsearch_storage
+from jinja2 import Markup
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -317,6 +318,11 @@ def get_notes(task_id):
 
     if 'hits' in response and 'hits' in response['hits']:
         response = response['hits']['hits']
+    try:
+        for hit in response:
+            hit['_source']['text'] = Markup.escape(hit['_source']['text'])
+    except:
+        pass
     return jsonify(response)
 
 
@@ -331,6 +337,23 @@ def add_note(task_id):
         abort(HTTP_NOT_FOUND)
 
     response = handler.add_note(task.sample_id, request.form.to_dict())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/edit', methods=['POST'])
+@cross_origin()
+def edit_note(task_id, note_id):
+    '''
+    Modify the specified analyst note/comment.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.edit_note(task.sample_id, note_id,
+                                 Markup(request.form['text']).striptags())
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)

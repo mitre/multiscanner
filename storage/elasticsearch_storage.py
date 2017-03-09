@@ -282,6 +282,20 @@ class ElasticSearchStorage(storage.Storage):
             return self.get_note(sample_id, result['_id'])
         return result
 
+    def edit_note(self, sample_id, note_id, text):
+        partial_doc = {
+            "doc": {
+                "text": text
+            }
+        }
+        result = self.es.update(
+            index=self.index, doc_type='note', id=note_id, body=partial_doc,
+            parent=sample_id
+        )
+        if result['result'] == 'created':
+            return self.get_note(sample_id, result['_id'])
+        return result
+
     def delete(self, report_id):
         try:
             self.es.delete(
