@@ -23,16 +23,28 @@ from sql_driver import Database, Task
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 DB_CONF = Database.DEFAULTCONF
-#DB_CONF['db_name'] = TEST_DB_PATH
-DB_CONF['db_name'] = 'testdb'
-DB_CONF['db_type'] = 'postgresql'
+DB_CONF['db_name'] = TEST_DB_PATH
+
+## If you want to test with an actual postgres DB server,
+## uncomment the following 5 lines and change values accordingly:
+#DB_CONF['db_name'] = 'testdb'
+#DB_CONF['db_type'] = 'postgresql'
+#DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
+#DB_CONF['username'] = 'dbusername'
+#DB_CONF['password'] = 'dbpassword'
+
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 def drop_db_table(db_eng):
-    pass #Task.__table__.drop(db_eng)
+    '''
+    Cleanup task. Drops the test DB table
+    :param db_eng: database engine
+    '''
+    Task.__table__.drop(db_eng)
+
 
 class TestTaskSerialization(unittest.TestCase):
     def setUp(self):
@@ -94,7 +106,6 @@ class TestTaskManipulation(unittest.TestCase):
         self.sql_db = Database(config=DB_CONF)
         self.sql_db.init_db()
         self.sql_db.add_task(
-            task_id=1,
             task_status='Pending',
             report_id=None
         )
@@ -158,12 +169,12 @@ class TestStressTest(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
         self.sql_db.init_db()
-        for i in range(0,5):
+        for i in range(0,1000):
             self.sql_db.add_task()
             i += 1
 
     def test_get_all_tasks(self):
-        for i in range(1,5):
+        for i in range(1,1000):
             self.sql_db.get_task(task_id=i)
 
     def tearDown(self):

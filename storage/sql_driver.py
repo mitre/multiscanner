@@ -50,7 +50,7 @@ class Database(object):
         'host_string': 'localhost',
         'db_name': 'task_db',
         'username': 'multiscanner',
-        'password': 'changeme'
+        'password': 'CHANGEME'
     }
 
     def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
@@ -86,16 +86,6 @@ class Database(object):
         """
         Regenerates the Database-specific part of the API config file
         """
-        # IF we have a config file:
-        #       PARSE FILE INTO PARSER
-        # IF parser does not have a DB config section:
-        #       ADD DB CONFIG SECTION
-        # IF config = None:
-        #   SET CONFIG = DEFAULTCONFIG
-        # ELSE IF config is NOT NONE:
-        #    -- DON'T NEED TO DO ANYTHING
-        # FOR ALL KEYS IN CONFIG, UPDATE KEY IN CONFIGPARSER
-        # WRITE PARSER CONTENTS TO FILE
         if os.path.isfile(configfile):
             # Read in the old config
             config_parser.read(configfile)
@@ -114,7 +104,6 @@ class Database(object):
         """
         Returns the database engine
         """
-        #return create_engine(self.db_connection_string)
         return self.db_engine
 
     def init_db(self):
@@ -134,7 +123,6 @@ class Database(object):
             self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
 
         print(self.db_connection_string)
-        #eng = self._get_db_engine()
         self.db_engine = create_engine(self.db_connection_string)
         # If db not present AND type is not SQLite, create the DB
         if not self.config['db_type'] == 'sqlite':
@@ -158,8 +146,6 @@ class Database(object):
         Taken from http://docs.sqlalchemy.org/en/latest/orm/session_basics.html.
         Provides a transactional scope around a series of operations.
         """
-        #eng = self._get_db_engine()
-        #Session = sessionmaker(bind=eng)
         ses = Session()
         try:
             yield ses
@@ -167,8 +153,8 @@ class Database(object):
         except:
             ses.rollback()
             raise
-        # finally:
-        #     ses.close()
+        finally:
+            ses.close()
 
     def add_task(self, task_id=None, task_status='Pending', report_id=None):
         with self.db_session_scope() as ses:
@@ -179,11 +165,14 @@ class Database(object):
             )
             try:
                 ses.add(task)
+                # Need to explicitly commit here in order to update the ID in the DAO
+                ses.commit()
+                print(task.to_dict())
             except IntegrityError as e:
                 print('PRIMARY KEY must be unique! %s' % e)
                 return -1
-            return task.task_id
-
+            created_task_id = task.task_id
+            return created_task_id
 
     def update_task(self, task_id, task_status, report_id=None):
         '''
@@ -200,6 +189,8 @@ class Database(object):
         with self.db_session_scope() as ses:
             task = ses.query(Task).get(task_id)
             if task:
+                # unbind Task from Session
+                ses.expunge(task)
                 return task
 
     def get_report_id_from_task(self, task_id):
@@ -214,6 +205,7 @@ class Database(object):
             # For testing, do not use in production
             task_list = []
             for task in rs:
+                ses.expunge(task)
                 task_list.append(task.to_dict())
             return task_list
 
