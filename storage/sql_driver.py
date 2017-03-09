@@ -2,7 +2,7 @@
 from __future__ import print_function
 import os
 import json
-import ConfigParser
+import configparser
 import codecs
 from contextlib import contextmanager
 
@@ -58,7 +58,7 @@ class Database(object):
         self.db_engine = None
 
         # Configuration parsing
-        config_parser = ConfigParser.SafeConfigParser()
+        config_parser = configparser.ConfigParser()
         config_parser.optionxform = str
 
         # (re)generate conf file if necessary

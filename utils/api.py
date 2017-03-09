@@ -51,11 +51,11 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
+#FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
 
 app = Flask(__name__)
-db = database.Database(FULL_DB_PATH)
+db = database.Database()
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
