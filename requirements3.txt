@@ -10,6 +10,8 @@ requests
 ssdeep
 #Required by API
 sqlalchemy
+sqlalchemy-utils
+Flask
 #Required by storage modules
 elasticsearch
 pymongo
