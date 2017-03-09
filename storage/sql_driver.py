@@ -4,6 +4,7 @@ import os
 import json
 import ConfigParser
 import codecs
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
@@ -17,7 +18,7 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
 Base = declarative_base()
-
+Session = sessionmaker()
 
 class Task(Base):
     __tablename__ = "Tasks"
@@ -141,6 +142,9 @@ class Database(object):
                 create_database(self.db_engine.url)
         Base.metadata.bind = self.db_engine
         Base.metadata.create_all()
+        # Bind the global Session to our DB engine
+        global Session
+        Session.configure(bind=self.db_engine)
 
     def init_sqlite_db(self):
         global Base
@@ -148,82 +152,76 @@ class Database(object):
         Base.metadata.bind = eng
         Base.metadata.create_all()
 
+    @contextmanager
+    def db_session_scope(self):
+        """
+        Taken from http://docs.sqlalchemy.org/en/latest/orm/session_basics.html.
+        Provides a transactional scope around a series of operations.
+        """
+        #eng = self._get_db_engine()
+        #Session = sessionmaker(bind=eng)
+        ses = Session()
+        try:
+            yield ses
+            ses.commit()
+        except:
+            ses.rollback()
+            raise
+        # finally:
+        #     ses.close()
 
     def add_task(self, task_id=None, task_status='Pending', report_id=None):
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-
-        task = Task(
-            task_id=task_id,
-            task_status='Pending',
-            report_id=None
-        )
-        try:
-            ses.add(task)
-            ses.commit()
-        except IntegrityError as e:
-            print('PRIMARY KEY must be unique! %s' % e)
-            return -1
-        return task.task_id
+        with self.db_session_scope() as ses:
+            task = Task(
+                task_id=task_id,
+                task_status='Pending',
+                report_id=None
+            )
+            try:
+                ses.add(task)
+            except IntegrityError as e:
+                print('PRIMARY KEY must be unique! %s' % e)
+                return -1
+            return task.task_id
 
 
     def update_task(self, task_id, task_status, report_id=None):
         '''
         report_id will be a list of sha values
         '''
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-
-        task = ses.query(Task).get(task_id)
-        if task:
-            task.task_status = task_status
-            task.report_id = report_id
-            ses.commit()
-            return task.to_dict()
+        with self.db_session_scope() as ses:
+            task = ses.query(Task).get(task_id)
+            if task:
+                task.task_status = task_status
+                task.report_id = report_id
+                return task.to_dict()
 
     def get_task(self, task_id):
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-
-        task = ses.query(Task).get(task_id)
-        ses.close()
-        if task:
-            return task
+        with self.db_session_scope() as ses:
+            task = ses.query(Task).get(task_id)
+            if task:
+                return task
 
     def get_report_id_from_task(self, task_id):
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-
-        task = ses.query(Task).get(task_id)
-        ses.close()
-        if task:
-            return task.report_id
+        with self.db_session_scope() as ses:
+            task = ses.query(Task).get(task_id)
+            if task:
+                return task.report_id
 
     def get_all_tasks(self):
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-        rs = ses.query(Task).all()
-        # For testing, do not use in production
-        task_list = []
-        for task in rs:
-            task_list.append(task.to_dict())
-        ses.close()
-        return task_list
+        with self.db_session_scope() as ses:
+            rs = ses.query(Task).all()
+            # For testing, do not use in production
+            task_list = []
+            for task in rs:
+                task_list.append(task.to_dict())
+            return task_list
 
     def delete_task(self, task_id):
-        eng = self._get_db_engine()
-        Session = sessionmaker(bind=eng)
-        ses = Session()
-
-        task = ses.query(Task).get(task_id)
-        if task:
-            ses.delete(task)
-            ses.commit()
-            return True
-        else:
-            return False
+        with self.db_session_scope() as ses:
+            task = ses.query(Task).get(task_id)
+            if task:
+                ses.delete(task)
+                return True
+            else:
+                return False

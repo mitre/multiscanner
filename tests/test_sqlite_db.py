@@ -7,6 +7,7 @@ import sys
 import json
 import magic
 import unittest
+import time
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,12 +23,16 @@ from sql_driver import Database, Task
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 DB_CONF = Database.DEFAULTCONF
-DB_CONF['db_name'] = TEST_DB_PATH
+#DB_CONF['db_name'] = TEST_DB_PATH
+DB_CONF['db_name'] = 'testdb'
+DB_CONF['db_type'] = 'postgresql'
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
+def drop_db_table(db_eng):
+    pass #Task.__table__.drop(db_eng)
 
 class TestTaskSerialization(unittest.TestCase):
     def setUp(self):
@@ -55,10 +60,12 @@ class TestDBInit(unittest.TestCase):
         self.sql_db.init_db()
 
     def test_db_init(self):
-        self.assertIn('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
+        if DB_CONF['db_type'] == 'sqlite':
+            self.assertIn('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
 
     def tearDown(self):
-        os.remove(TEST_DB_PATH)
+        if DB_CONF['db_type'] == 'sqlite':
+            os.remove(TEST_DB_PATH)
 
 
 class TestTaskAdd(unittest.TestCase):
@@ -76,7 +83,10 @@ class TestTaskAdd(unittest.TestCase):
         self.assertEqual(resp, task_id)
 
     def tearDown(self):
-        os.remove(TEST_DB_PATH)
+        if DB_CONF['db_type'] == 'sqlite':
+            os.remove(TEST_DB_PATH)
+        else:
+            drop_db_table(self.sql_db._get_db_engine())
 
 
 class TestTaskManipulation(unittest.TestCase):
@@ -115,7 +125,10 @@ class TestTaskManipulation(unittest.TestCase):
         self.assertEqual(resp, None)
 
     def tearDown(self):
-        os.remove(TEST_DB_PATH)
+        if DB_CONF['db_type'] == 'sqlite':
+            os.remove(TEST_DB_PATH)
+        else:
+            drop_db_table(self.sql_db._get_db_engine())
 
 
 class TestGetAllTasks(unittest.TestCase):
@@ -135,4 +148,26 @@ class TestGetAllTasks(unittest.TestCase):
             self.assertDictEqual(expected_response[i], resp[i])
 
     def tearDown(self):
-        os.remove(TEST_DB_PATH)
+        if DB_CONF['db_type'] == 'sqlite':
+            os.remove(TEST_DB_PATH)
+        else:
+            drop_db_table(self.sql_db._get_db_engine())
+
+
+class TestStressTest(unittest.TestCase):
+    def setUp(self):
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
+        for i in range(0,5):
+            self.sql_db.add_task()
+            i += 1
+
+    def test_get_all_tasks(self):
+        for i in range(1,5):
+            self.sql_db.get_task(task_id=i)
+
+    def tearDown(self):
+        if DB_CONF['db_type'] == 'sqlite':
+            os.remove(TEST_DB_PATH)
+        else:
+            drop_db_table(self.sql_db._get_db_engine())
