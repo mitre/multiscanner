@@ -2,7 +2,10 @@ import os
 import shutil
 import sys
 import json
-from io import BytesIO
+try:
+    from StringIO import StringIO
+except:
+    from io import BytesIO
 import unittest
 
 
@@ -121,7 +124,6 @@ class TestTaskCreateCase(unittest.TestCase):
         self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def test_get_task_list(self):
-        # expected_response = {'Tasks': [{'report_id': None, 'task_id': 1, 'task_status': 'Pending'}]}
         expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Pending', 'report_id': None}]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
