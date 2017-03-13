@@ -14,7 +14,7 @@ from celery import Celery
 RABBIT_USER = 'guest'
 RABBIT_HOST = 'localhost'
 
-app = Celery('celery_worker', broker='pyamqp://%s@%s//' % (RABBIT_USER, RABBIT_HOST))
+app = Celery(broker='pyamqp://%s@%s//' % (RABBIT_USER, RABBIT_HOST))
 db = database.Database()
 
 @app.task
