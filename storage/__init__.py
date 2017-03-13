@@ -1,1 +1,1 @@
-from . storage import Storage, StorageHandler
+from . storage import config_init, Storage, StorageHandler
