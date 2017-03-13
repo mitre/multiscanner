@@ -37,6 +37,7 @@ import multiscanner
 import sql_driver as database
 from storage import Storage
 import elasticsearch_storage
+from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -190,7 +191,8 @@ def create_task():
     # Add task to sqlite DB
     task_id = db.add_task()
 
-    work_queue.put((full_path, original_filename, task_id, f_name))
+    # work_queue.put((full_path, original_filename, task_id, f_name))
+    multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
 
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
