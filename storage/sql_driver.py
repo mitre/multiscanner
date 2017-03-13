@@ -122,7 +122,6 @@ class Database(object):
             host_string = self.config['host_string']
             self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
 
-        print(self.db_connection_string)
         self.db_engine = create_engine(self.db_connection_string)
         # If db not present AND type is not SQLite, create the DB
         if not self.config['db_type'] == 'sqlite':
