@@ -1,21 +1,43 @@
 import os
 import sys
+import configparser
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Add the storage dir to the sys.path. Allows import of sql_driver module
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+# Add the libs dir to the sys.path. Allows import of common module
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
 import multiscanner
+import common
 import sql_driver as database
 
 from celery import Celery
 
-RABBIT_USER = 'guest'
-RABBIT_HOST = 'localhost'
+DEFAULTCONF = {
+    'protocol': 'pyamqp',
+    'host': 'localhost',
+    'user': 'guest',
+    'password': '',
+}
 
-app = Celery(broker='pyamqp://%s@%s//' % (RABBIT_USER, RABBIT_HOST))
-db = database.Database()
+config_object = configparser.SafeConfigParser()
+config_object.optionxform = str
+configfile = common.get_api_config_path(multiscanner.CONFIG)
+config_object.read(configfile)
+config = common.parse_config(config_object)
+worker_config = config.get('celery')
+db_config = config.get('Database')
+
+app = Celery(broker='{0}://{1}:{2}@{3}//'.format(
+    worker_config.get('protocol'),
+    worker_config.get('user'),
+    worker_config.get('password'),
+    worker_config.get('host'),
+))
+db = database.Database(config=db_config)
 
 @app.task
 def multiscanner_celery(file_, original_filename, task_id, file_hash, config=multiscanner.CONFIG):
@@ -56,3 +78,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, config=mul
     )
 
     return results
+
+
+if __name__ == '__main__':
+    app.start()
