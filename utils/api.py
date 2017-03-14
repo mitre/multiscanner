@@ -51,7 +51,7 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-#FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
+# FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
 
 
 app = Flask(__name__)

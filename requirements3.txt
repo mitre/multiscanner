@@ -9,6 +9,7 @@ python-magic
 requests
 ssdeep
 #Required by API
+flask
 sqlalchemy
 sqlalchemy-utils
 Flask

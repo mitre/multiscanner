@@ -21,7 +21,7 @@ DEFAULTCONF = {
         "API URL":"https://fireeye/wsapis/v1.1.0",
         "fireeye images":["win7-sp1", "win7x64-sp1", "winxp-sp3"],
         "username":"api_analyst",
-        "password":"Pa$$word1",
+        "password":"Password123",
         "info level":"normal", # concise, normal, extended
         "timeout":500,
         "force":False, # rescan if it exactly matches a previous scan?
