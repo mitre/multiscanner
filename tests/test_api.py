@@ -2,8 +2,12 @@ import os
 import shutil
 import sys
 import json
-from io import BytesIO
+try:
+    from StringIO import StringIO
+except:
+    from io import BytesIO
 import unittest
+
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,19 +81,19 @@ class TestURLCase(unittest.TestCase):
         expected_response = {'Message': 'True'}
         resp = self.app.get('/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertEqual(json.loads(resp.get_data()), expected_response)
 
     def test_empty_db(self):
         expected_response = {'Tasks': []}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertEqual(json.loads(resp.get_data()), expected_response)
 
     def test_create_first_task(self):
         expected_response = {'Message': {'task_id': 1}}
         resp = post_file(self.app)
         self.assertEqual(resp.status_code, api.HTTP_CREATED)
-        self.assertEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertEqual(json.loads(resp.get_data()), expected_response)
 
     def tearDown(self):
         # Clean up Test DB and upload folder
@@ -122,20 +126,19 @@ class TestTaskCreateCase(unittest.TestCase):
         }
         resp = self.app.get('/api/v1/tasks/list/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def test_get_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
         resp = self.app.get('/api/v1/tasks/list/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def test_get_task_list(self):
-        # expected_response = {'Tasks': [{'report_id': None, 'task_id': 1, 'task_status': 'Pending'}]}
         expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Pending', 'report_id': None}]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def tearDown(self):
         # Clean up Test DB and upload folder
@@ -172,13 +175,13 @@ class TestTaskUpdateCase(unittest.TestCase):
         }
         resp = self.app.get('/api/v1/tasks/list/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def test_delete_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
         resp = self.app.get('/api/v1/tasks/delete/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def tearDown(self):
         # Clean up Test DB and upload folder
@@ -204,13 +207,13 @@ class TestTaskDeleteCase(unittest.TestCase):
         expected_response = {'Message': 'Deleted'}
         resp = self.app.get('/api/v1/tasks/delete/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def test_delete_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
         resp = self.app.get('/api/v1/tasks/delete/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def tearDown(self):
         # Clean up Test DB and upload folder
@@ -227,14 +230,14 @@ class TestReportCase(unittest.TestCase):
         expected_response = {'Report': TEST_REPORT}
         resp = self.app.get('/api/v1/reports/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
-        self.assertDictEqual(json.loads(resp.data), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
     '''
 
     def test_get_nonexistent_report(self):
         expected_response = api.TASK_NOT_FOUND
         resp = self.app.get('/api/v1/reports/42')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
-        self.assertDictEqual(json.loads(bytes_to_string(resp.data)), expected_response)
+        self.assertDictEqual(json.loads(resp.get_data()), expected_response)
 
     def tearDown(self):
         pass
