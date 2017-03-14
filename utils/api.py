@@ -23,6 +23,7 @@ import os
 import sys
 import time
 import hashlib
+import configparser
 import multiprocessing
 import queue
 from flask import Flask, jsonify, make_response, request, abort
@@ -41,7 +42,6 @@ from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
-UPLOAD_FOLDER = 'tmp/'
 
 BATCH_SIZE = 100
 WAIT_SECONDS = 60   # Number of seconds to wait for additional files
@@ -52,11 +52,21 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-# FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
-
+DEFAULTCONF = {
+    'host': 'localhost',
+    'port': 8080,
+    'upload_folder': 'tmp/',
+}
 
 app = Flask(__name__)
-db = database.Database()
+api_config_object = configparser.SafeConfigParser()
+api_config_object.optionxform = str
+api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
+api_config_object.read(api_config_file)
+api_config = multiscanner.common.parse_config(api_config_object)
+
+db = database.Database(config=api_config.get('Database'))
+
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
@@ -182,7 +192,7 @@ def create_task():
     # to allow us to save it
     file_.seek(0)
 
-    file_path = os.path.join(UPLOAD_FOLDER, f_name)
+    file_path = os.path.join(api_config['api']['upload_folder'], f_name)
     file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
 
@@ -239,9 +249,9 @@ if __name__ == '__main__':
 
     db.init_db()
 
-    if not os.path.isdir(UPLOAD_FOLDER):
+    if not os.path.isdir(api_config['api']['upload_folder']):
         print('Creating upload dir')
-        os.makedirs(UPLOAD_FOLDER)
+        os.makedirs(api_config['api']['upload_folder'])
 
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
@@ -251,6 +261,6 @@ if __name__ == '__main__':
     )
     ms_process.start()
 
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host=api_config['api']['host'], port=api_config['api']['port'])
 
     ms_process.join()
