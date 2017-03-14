@@ -17,6 +17,10 @@ from sqlalchemy_utils import database_exists, create_database
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.append(os.path.join(MS_WD, 'libs'))
+import common
+
 Base = declarative_base()
 Session = sessionmaker()
 
@@ -100,12 +104,6 @@ class Database(object):
         with codecs.open(configfile, 'w', 'utf-8') as conffile:
             config_parser.write(conffile)
 
-    def _get_db_engine(self):
-        """
-        Returns the database engine
-        """
-        return self.db_engine
-
     def init_db(self):
         """
         Initializes the database connection based on the configuration parameters
@@ -132,12 +130,6 @@ class Database(object):
         # Bind the global Session to our DB engine
         global Session
         Session.configure(bind=self.db_engine)
-
-    def init_sqlite_db(self):
-        global Base
-        eng = self._get_db_engine()
-        Base.metadata.bind = eng
-        Base.metadata.create_all()
 
     @contextmanager
     def db_session_scope(self):
