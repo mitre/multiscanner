@@ -42,8 +42,9 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'),})
 
 
-def fake_multiscanner_process(file_, original_filename, task_id, report_id):
-    pass
+class MockMultiscannerCelery(object):
+    def delay(file_, original_filename, task_id, report_id):
+        pass
 
 
 class MockStorage(object):
@@ -75,7 +76,7 @@ class TestURLCase(unittest.TestCase):
         api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
         if not os.path.isdir(api.UPLOAD_FOLDER):
             os.makedirs(api.UPLOAD_FOLDER)
-        api.multiscanner_process = fake_multiscanner_process
+        api.multiscanner_celery = MockMultiscannerCelery
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -111,7 +112,7 @@ class TestTaskCreateCase(unittest.TestCase):
         api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
         if not os.path.isdir(api.UPLOAD_FOLDER):
             os.makedirs(api.UPLOAD_FOLDER)
-        api.multiscanner_process = fake_multiscanner_process
+        api.multiscanner_celery = MockMultiscannerCelery
 
         # populate the DB w/ a task
         post_file(self.app)

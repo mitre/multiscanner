@@ -2,7 +2,7 @@
 Storage module that will interact with elasticsearch.
 '''
 from uuid import uuid4
-from elasticsearch import Elasticsearch, helpers
+from elasticsearch import Elasticsearch, helpers, exceptions
 
 import storage
 
@@ -27,6 +27,11 @@ class ElasticSearchStorage(storage.Storage):
             host=self.host,
             port=self.port
         )
+        # Create the index if it doesn't exist
+        try:
+            self.es.indices.create(index=self.index)
+        except exceptions.RequestError:
+            pass 
         return True
 
     def store(self, report):
