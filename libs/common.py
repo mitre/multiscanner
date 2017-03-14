@@ -83,6 +83,13 @@ def get_storage_config_path(config_file):
     conf = parse_config(conf)
     return conf['main']['storage-config']
 
+def get_api_config_path(config_file):
+    """Gets the location of the storage config file from the multiscanner config file"""
+    conf = configparser.SafeConfigParser()
+    conf.read(config_file)
+    conf = parse_config(conf)
+    return conf['main']['api-config']
+
 def dirname(path):
     """OS independent version of os.path.dirname"""
     split = path.split('/')
