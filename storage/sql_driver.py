@@ -4,6 +4,7 @@ import os
 import json
 import configparser
 import codecs
+import sys
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
