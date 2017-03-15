@@ -55,7 +55,7 @@ HTTP_NOT_FOUND = 404
 DEFAULTCONF = {
     'host': 'localhost',
     'port': 8080,
-    'upload_folder': 'tmp/',
+    'upload_folder': '/mnt/samples/',
 }
 
 app = Flask(__name__)
@@ -66,62 +66,11 @@ api_config_object.read(api_config_file)
 api_config = multiscanner.common.parse_config(api_config_object)
 
 db = database.Database(config=api_config.get('Database'))
-
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
-work_queue = multiprocessing.Queue()
-
-
-def multiscanner_process(work_queue, exit_signal):
-    metadata_list = []
-    time_stamp = None
-    while True:
-        time.sleep(1)
-        try:
-            metadata_list.append(work_queue.get_nowait())
-            if not time_stamp:
-                time_stamp = time.time()
-            while len(metadata_list) < BATCH_SIZE:
-                metadata_list.append(work_queue.get_nowait())
-        except queue.Empty:
-            if metadata_list and time_stamp:
-                if len(metadata_list) >= BATCH_SIZE:
-                    pass
-                elif time.time() - time_stamp > WAIT_SECONDS:
-                    pass
-                else:
-                    continue
-            else:
-                continue
-
-        filelist = [item[0] for item in metadata_list]
-        resultlist = multiscanner.multiscan(
-            filelist, configfile=multiscanner.CONFIG
-        )
-        results = multiscanner.parse_reports(resultlist, python=True)
-
-        for file_name in results:
-            os.remove(file_name)
-
-        for item in metadata_list:
-
-            results[item[1]] = results[item[0]]
-            del results[item[0]]
-
-            db.update_task(
-                task_id=item[2],
-                task_status='Complete',
-                report_id=item[3]
-            )
-
-        storage_handler.store(results, wait=False)
-
-        filelist = []
-        time_stamp = None
-    storage_handler.close()
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -253,14 +202,4 @@ if __name__ == '__main__':
         print('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
-    exit_signal = multiprocessing.Value('b')
-    exit_signal.value = False
-    ms_process = multiprocessing.Process(
-        target=multiscanner_process,
-        args=(work_queue, exit_signal)
-    )
-    ms_process.start()
-
     app.run(host=api_config['api']['host'], port=api_config['api']['port'])
-
-    ms_process.join()
