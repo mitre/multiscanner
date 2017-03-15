@@ -66,6 +66,11 @@ api_config_object.read(api_config_file)
 api_config = multiscanner.common.parse_config(api_config_object)
 
 db = database.Database(config=api_config.get('Database'))
+storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+for handler in storage_handler.loaded_storage:
+    if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+        break
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
