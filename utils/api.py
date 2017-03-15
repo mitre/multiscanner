@@ -55,7 +55,7 @@ HTTP_NOT_FOUND = 404
 DEFAULTCONF = {
     'host': 'localhost',
     'port': 8080,
-    'upload_folder': 'tmp/',
+    'upload_folder': '/mnt/samples/',
 }
 
 app = Flask(__name__)
