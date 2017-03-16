@@ -36,6 +36,10 @@
     transform: translateX(300px);
 }
 
+.navbar.pushed {
+    z-index: 1;
+}
+
 #report-tags {
     display: table;
 }
@@ -156,7 +160,7 @@
     top: 0;
     left: 0;
     overflow-x: hidden;
-    transition: 1s ease-out;
+    transition: .5s ease-out;
     background-color: #f5f5f5;
     color: #444;
     box-shadow: 10px 0px 10px rgba(140, 140, 140, 0.66);
@@ -167,11 +171,21 @@
     padding: 10px 20px;
 }
 
-#report-notes .close {
+#notes-close {
     padding-bottom: 10px;
+    position: fixed;
+    top: 55px;
+    left: -50px;
+    border-radius: 0 20px 20px 0;
+    padding-right: 20px;
 }
 
-#notes-btn {
+#notes-close.open {
+    transition: .5s ease-out;
+    transform: translateX(450px);
+}
+
+#notes-open {
     position: fixed;
     top: 55px;
     left: 0;
