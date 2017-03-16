@@ -359,6 +359,22 @@ def edit_note(task_id, note_id):
     return jsonify(response)
 
 
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/delete', methods=['GET'])
+@cross_origin()
+def del_note(task_id, note_id):
+    '''
+    Delete an analyst note/comment from the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.delete_note(task.sample_id, note_id)
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
 if __name__ == '__main__':
 
     db.init_sqlite_db()
