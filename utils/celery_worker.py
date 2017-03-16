@@ -21,6 +21,7 @@ DEFAULTCONF = {
     'host': 'localhost',
     'user': 'guest',
     'password': '',
+    'vhost': '/',
 }
 
 config_object = configparser.SafeConfigParser()
@@ -31,11 +32,12 @@ config = common.parse_config(config_object)
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-app = Celery(broker='{0}://{1}:{2}@{3}//'.format(
+app = Celery(broker='{0}://{1}:{2}@{3}/{}'.format(
     worker_config.get('protocol'),
     worker_config.get('user'),
     worker_config.get('password'),
     worker_config.get('host'),
+    worker_config.get('vhost'),
 ))
 db = database.Database(config=db_config)
 
