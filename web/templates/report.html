@@ -66,12 +66,16 @@
   }
 
   function openNotes() {
+    // $('#notes-close').show();
+    $('#notes-close').addClass('open');
     $('#report-notes').addClass('open');
     $('#report-container').addClass('pushed');
     $('.navbar').addClass('pushed');
   }
 
   function closeNotes() {
+    // $('#notes-close').hide();
+    $('#notes-close').removeClass('open');
     $('#report-notes').removeClass('open');
     $('#report-container').removeClass('pushed');
     $('.navbar').removeClass('pushed');
@@ -210,8 +214,8 @@
       event.preventDefault();
     });
 
-    $('#notes-btn').click(openNotes);
-    $('#report-notes .close').click(closeNotes);
+    $('#notes-open').click(openNotes);
+    $('#notes-close').click(closeNotes);
 
     // Handle editing notes
     $('#report-notes').on('click', '.btn-edit-note', (function(event) {
@@ -252,7 +256,7 @@
 {% block title %}Report{% endblock %}
 
 {% block content %}
-<button class="btn btn-warning" id="notes-btn">Notes</button>
+<button class="btn btn-warning" id="notes-open">Notes</button>
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
@@ -274,7 +278,7 @@
 </div>
 
 <div class="" id="report-notes">
-  <button class="close" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  <button id="notes-close" class="btn btn-warning" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
   <div id="note-container"></div>
   <form id="note-form">
     <div class="form-group">
