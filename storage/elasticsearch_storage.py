@@ -244,7 +244,7 @@ class ElasticSearchStorage(storage.Storage):
             "sort": [
                 {
                     "timestamp": {
-                        "order": "desc"
+                        "order": "asc"
                     }
                 },
                 {
@@ -289,11 +289,18 @@ class ElasticSearchStorage(storage.Storage):
             }
         }
         result = self.es.update(
-            index=self.index, doc_type='note', id=note_id, body=partial_doc,
-            parent=sample_id
+            index=self.index, doc_type='note', id=note_id,
+            body=partial_doc, parent=sample_id
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])
+        return result
+
+    def delete_note(self, sample_id, note_id):
+        result = self.es.delete(
+            index=self.index, doc_type='note', id=note_id,
+            parent=sample_id
+        )
         return result
 
     def delete(self, report_id):

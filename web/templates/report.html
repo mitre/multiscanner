@@ -81,9 +81,19 @@
     var text = {"text": $('#note-input').val()}
     var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/edit"
     return $.post(url, text, function(data, status){
-        
         return status;
       });
+  }
+
+  function deleteNote(id) {
+    var text = {"text": $('#note-input').val()}
+    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
+    $.get(url, function(data, status){
+      if (status == 'success') {
+        $('#' + id).remove();
+      }
+      return status;
+    });
   }
 
   function displayNote(data) {
@@ -203,7 +213,6 @@
     $('#notes-btn').click(openNotes);
     $('#report-notes .close').click(closeNotes);
 
-
     // Handle editing notes
     $('#report-notes').on('click', '.btn-edit-note', (function(event) {
       var span = $(this).siblings('span');
@@ -229,6 +238,12 @@
         span.val(textarea.val()).show();
         return status;
       });
+    }));
+
+    // Handle deleting notes
+    $('#report-notes').on('click', '.btn-del-note', (function(event) {
+      var noteId = $(this).parents('.panel').attr('id');
+      var response = deleteNote(noteId);
     }));
   });
 </script>
