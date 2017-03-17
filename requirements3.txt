@@ -12,7 +12,6 @@ ssdeep
 flask
 sqlalchemy
 sqlalchemy-utils
-Flask
 #Required by distributed feature
 celery
 #Required by storage modules
