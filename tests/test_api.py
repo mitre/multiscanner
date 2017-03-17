@@ -55,17 +55,6 @@ class MockStorage(object):
         return True
 
 
-def bytes_to_string(response_bytes):
-    '''
-    Helper method to convert a byte string to a normal string.
-    Used on the return data from app.get().
-    :param response_bytes: btye string
-    :return: string
-    '''
-    converted_string = response_bytes.decode(encoding='UTF-8')
-    return converted_string
-
-
 class TestURLCase(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
