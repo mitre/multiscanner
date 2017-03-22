@@ -11,6 +11,7 @@ ssdeep
 #Required by API
 flask
 sqlalchemy
+sqlalchemy-utils
 flask_cors
 #Required by storage modules
 elasticsearch
