@@ -17,6 +17,18 @@
     z-index: 1;
 }
 
+#scan-form {
+    padding: 0;
+}
+
+#scan-form .btn-lg {
+    font-weight: bold;
+}
+
+.form-control {
+    border-radius: 4px !important;
+}
+
 .container {
     margin-bottom: 20px;
 }
