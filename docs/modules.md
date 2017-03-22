@@ -18,13 +18,22 @@ This module scans a file with AVG 2014 anti-virus.
 ### [ClamAVScan] ###
 This module scans a file with ClamAV.
 
-### [Cuckcoo] ###
+### [Cuckoo] ###
 This module submits a file to a Cuckoo Sandbox cluster for analysis
 
 - **API URL** - This is the URL to the API server
 - **timeout** - This is max time a sample with run for
 - **running timeout** - This is an additional timeout, if a task is in the running state this many seconds past **timeout** we will consider the task failed.
 - **delete tasks** - When set to True, tasks will be deleted from cuckoo after detonation. This is to prevent filling up the Cuckoo machine's disk with reports.
+
+### [VxStream] ###
+This module submits a file to a VxStream Sandbox cluster for analysis
+
+- **API URL** - This is the URL to the API server (include the /api/ in this URL)
+- **API Key** - This is the user's API key to the API server
+- **API Secret** - This is the user's secret to the API server
+- **timeout** - This is max time a sample with run for
+- **running timeout** - This is an additional timeout, if a task is in the running state this many seconds past **timeout** we will consider the task failed.
 
 ### [ExifToolsScan] ###
 This module scans the file with Exif tools and returns the results.
