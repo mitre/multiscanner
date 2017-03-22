@@ -45,29 +45,35 @@
   <div class="col-md-6 col-md-offset-3">
     <h1 class="text-center">Multiscanner</h1>
     <br />
-      <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
+    <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
       <fieldset>
         <legend>Submit Files For Analysis</legend>
 
         <div class="form-group">
           <label for="uploadFileInfo" class="col-md-2 control-label">File(s)</label>
-          <div class="col-md-10">
-            <div class="input-group">
-              <input type="text" class='form-control' id="uploadFileInfo"></input>
-              <span class="input-group-btn">
-                <label class="btn btn-primary" for="fileSelector">
-                  <input id="fileSelector" name="file" type="file" multiple="multiple" style="display:none;" onchange="$('#uploadFileInfo').val(getFilenames(this.files));">
-                  Select File(s)
-                </label>
-              </span>
-            </div>
+          <div class="input-group">
+            <input type="text" class='form-control' id="uploadFileInfo"></input>
+            <span class="input-group-btn">
+              <label class="btn btn-primary" for="fileSelector">
+                <input id="fileSelector" name="file" type="file" multiple="multiple" style="display:none;" onchange="$('#uploadFileInfo').val(getFilenames(this.files));">
+                Select File(s)
+              </label>
+            </span>
           </div>
         </div>
 
-        <div class="form-group">
-          <div class="col-md-10 col-md-offset-2">
-            <button type="submit" class="btn btn-primary">Scan it!</button>
+        <div class="form-group text-center">
+          <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
+        </div>
+        <div  id="adv-options" class="collapse form-group text-center">
+          <label for="metadata" class="col-md-2 control-label">Metadata</label>
+          <div class="input-group col-md-10">
+            <input type="text" class='form-control' id="metadata" name="metadata"></input>
           </div>
+        </div>
+
+        <div class="form-group text-center">
+          <button type="submit" class="btn-lg btn-success">Scan it!</button>
         </div>
       </fieldset>
     </form>
