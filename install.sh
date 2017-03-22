@@ -43,9 +43,14 @@ if [[ $prompt == "y" ]]; then
   cd "$CWD"
 fi
 
-
 read -p "Download yararules.com signatures? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules
   echo You can update these signatures by running cd $DIR/etc/yarasigs/Yara-Rules \&\& git pull
+fi
+
+read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  pip install -e $DIR
+  echo "Make sure users have access to $DIR"
 fi
