@@ -1,3 +1,9 @@
+'''
+This is the multiscanner celery worker. To initialize a worker node run:
+$ celery -A celery_worker worker
+from the utils/ directory.
+'''
+
 import os
 import sys
 import configparser
