@@ -17,10 +17,10 @@
 
     if (typeof content === 'string' && content.startsWith('<table')) {
       th = '<th class="expander">';
-      td = '<td class="expander" style="display: none;">' + 
+      td = '<td class="expander">' + 
            'Expand ' +
            '<span class="glyphicon glyphicon-plus"></span>' +
-           '</td><td class="cell-table">';
+           '</td><td class="cell-table" style="display: none;">';
     }
     else {
       th = '<th>';
