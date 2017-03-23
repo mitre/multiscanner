@@ -37,13 +37,13 @@ class ElasticSearchStorage(storage.Storage):
         # Create parent-child mappings if don't exist yet
         mappings = es_indices.get_mapping(index=self.index)
         if self.doc_type not in mappings[self.index]['mappings'].keys():
-            es_indices.put_mapping(doc_type=self.doc_type, body={
+            es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
                 '_parent': {
                     'type': 'sample'
                 }
             })
         if 'note' not in mappings[self.index]['mappings'].keys():
-            es_indices.put_mapping(doc_type='note', body={
+            es_indices.put_mapping(index=self.index, doc_type='note', body={
                 '_parent': {
                     'type': 'sample'
                 },
