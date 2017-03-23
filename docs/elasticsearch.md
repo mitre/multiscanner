@@ -5,7 +5,7 @@ Starting with ElasticSearch 2.X, field names may no longer contain '.' (dot) cha
 Add the following to your elasticsearch.yml config for the dedot processor to work:
 
 ```
-script.painless.regex.enabled = true
+script.painless.regex.enabled: true
 ```
 
 If planning to use the Multiscanner web UI, also add the following:
