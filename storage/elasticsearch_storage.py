@@ -5,6 +5,7 @@ from datetime import datetime
 from time import sleep
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
+from elasticsearch.exceptions import TransportError
 
 import storage
 
@@ -55,10 +56,13 @@ class ElasticSearchStorage(storage.Storage):
             })
 
         # Create de-dot preprocessor if doesn't exist yet
-        dedot = self.es.ingest.get_pipeline('dedot')
+        try:
+            dedot = self.es.ingest.get_pipeline('dedot')
+        except TransportError:
+            dedot = False
         if not dedot:
-            script = """
-                "inline": "void dedot(def field) {
+            script = {
+                "inline": """void dedot(def field) {
                         if (field != null && field instanceof HashMap) {
                             ArrayList replacelist = new ArrayList();
                             for (String key : field.keySet()) {
@@ -76,9 +80,9 @@ class ElasticSearchStorage(storage.Storage):
                             }
                         }
                     }
-                    dedot(ctx);"
-                """
-            es_indices.ingest.put_pipeline(id='dedot', body={
+                    dedot(ctx);"""
+                }
+            self.es.ingest.put_pipeline(id='dedot', body={
                 'description': 'Replace dots in field names with underscores.',
                 'processors': [
                     {
