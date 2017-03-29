@@ -60,6 +60,18 @@
     width: auto;
 }
 
+.krajee-default .file-thumb-progress {
+    margin: 7px 15%;
+}
+
+.file-preview-thumbnails .metadata-group {
+    padding: 6px;
+    margin: -8px 20px 16px;
+    position: relative;
+    background: #fff;
+    border: 1px solid rgb(221, 221, 221);
+    box-shadow: 1px 3px 5px 0 #a2958a;
+}
 
 .container {
     margin-bottom: 20px;

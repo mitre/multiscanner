@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/static/css/fileinput.min.css">
 <script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
-  $(document).ready(function($) {
+  $(document).ready(function() {
     $("#filesUpload").fileinput({
       uploadUrl: "http://{{ api_loc }}/api/v1/tasks/create/",
       browseOnZoneClick: true,
@@ -13,6 +13,22 @@
       browseLabel: "Select File(s) …",
       removeLabel: "Clear",
       removeClass: "btn btn-danger",
+      previewTemplates: {
+          other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
+          '   <div class="file-thumbnail-footer">\n' +
+          '    <div class="file-preview-other">' +
+          '    <span class="file-other-icon"><i class="glyphicon glyphicon-file"></i></span>' +
+          '    </div>' +
+          '        {footer}\n' +
+          '    </div>\n' +
+          '</div>\n'+ 
+          '<div class="collapse form-group-sm text-center metadata-group">\n' +
+          '    <label for="{previewId}-metadata" class="col-md-2 control-label">Thingy</label>\n' +
+          '    <div class="input-group col-md-10">\n' +
+                  '<input type="text" class="form-control" id="{previewId}-metadata" name="{previewId}-metadata"></input>\n' +
+          '    </div>\n' +
+          '</div>\n',
+      },
       layoutTemplates: {
         main1: '{preview}\n' +
           '<div class="kv-upload-progress hide"></div>\n' +
@@ -28,18 +44,16 @@
         actions: '<div class="file-actions">\n' +
           '    <div class="file-footer-buttons">\n' +
           '        {upload} {delete} {other}' +
+          '        <button type="button" class="add-metadata btn btn-xs btn-default" title="Add metadata">\n' +
+          '            <i class="glyphicon glyphicon-th-list"></i>\n' +
+          '        </button>\n' + 
           '    </div>\n' +
           '    {drag}\n' +
           '    <div class="file-upload-indicator" title="{indicatorTitle}">{indicator}</div>\n' +
           '    <div class="clearfix"></div>\n' +
           '</div>',
-        footer: '<div class="file-thumbnail-footer">\n' +
-            '<div class="file-preview-other">' +
-            '<span class="file-other-icon"><i class="glyphicon glyphicon-file"></i></span>' +
-            '</div>' +
-            '    <div class="file-footer-caption" title="{caption}">{caption}<br>{size}</div>\n' +
-            '    {progress} {actions}\n' +
-            '</div>',
+        footer: '<div class="file-footer-caption" title="{caption}">{caption}<br>{size}</div>\n' +
+          '        {progress} {actions}',
       },
       previewFileIcon: '',
       fileActionSettings: {
@@ -48,6 +62,17 @@
         uploadIcon: '<i class="glyphicon glyphicon-upload"></i>',
         uploadClass: 'btn btn-xs btn-primary',
       }
+    });
+
+    $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
+      $('#' + previewId + ' .btn-default').hide();
+    });
+
+    // Show/hide per file metadata input
+    $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
+      $('#' + previewId + ' .add-metadata').click(function() {
+        $('#' + previewId + '-metadata').closest('.form-group-sm').collapse('toggle');
+      });
     });
   });
 </script>
@@ -78,7 +103,7 @@
         <div class="form-group text-center">
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
-        <div  id="adv-options" class="collapse form-group text-center">
+        <div id="adv-options" class="collapse form-group text-center">
           <label for="metadata" class="col-md-2 control-label">Metadata</label>
           <div class="input-group col-md-10">
             <input type="text" class='form-control' id="metadata" name="metadata"></input>
