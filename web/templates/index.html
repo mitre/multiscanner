@@ -21,12 +21,17 @@
           '    </div>' +
           '        {footer}\n' +
           '    </div>\n' +
-          '</div>\n'+ 
-          '<div class="collapse form-group-sm text-center metadata-group">\n' +
-          '    <label for="{previewId}-metadata" class="col-md-2 control-label">Thingy</label>\n' +
+          '</div>\n' + 
+          '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
+          {% for metadata in metadata_fields %}
+          '<div class="form-group-sm">\n' +
+          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+          '    <label for="{previewId}-{{field}}" class="col-md-2 control-label">{{metadata}}</label>\n' +
           '    <div class="input-group col-md-10">\n' +
-                  '<input type="text" class="form-control" id="{previewId}-metadata" name="{previewId}-metadata"></input>\n' +
+                  '<input type="text" class="form-control" id="{previewId}-{{field}}" name="{previewId}-{{field}}"></input>\n' +
           '    </div>\n' +
+          '    </div>\n' +
+          {% endfor %}
           '</div>\n',
       },
       layoutTemplates: {
@@ -71,7 +76,17 @@
     // Show/hide per file metadata input
     $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
       $('#' + previewId + ' .add-metadata').click(function() {
-        $('#' + previewId + '-metadata').closest('.form-group-sm').collapse('toggle');
+        $('.metadata-group[data-target=' + previewId + ']').closest('.metadata-group').collapse('toggle');
+      });
+    });
+
+    // Set metadata field values for all files
+    $('#adv-options .metadata-group input').change(function() {
+      var field = $(this).attr('id').substring(9);
+      var value = $(this).val();
+      $('.file-preview-thumbnails .metadata-group').each(function( index, element ) {
+        childId = $(element).attr('data-target') + '-' + field;
+        $(element).find('input[id=' + childId + ']').val(value);
       });
     });
   });
@@ -104,10 +119,16 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
-          <label for="metadata" class="col-md-2 control-label">Metadata</label>
+          <div><p><i>(These apply to all files.)</i></p></div>
+          {% for metadata in metadata_fields %}
+          <div class="form-group metadata-group">
+          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+          <label for="metadata-{field}" class="col-md-2 control-label">{{metadata}}</label>
           <div class="input-group col-md-10">
-            <input type="text" class='form-control' id="metadata" name="metadata"></input>
+            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{field}"></input>
           </div>
+          </div>
+          {% endfor %}
         </div>
 
         <div class="form-group text-center">
