@@ -76,7 +76,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, config=mul
     db.update_task(
         task_id=task_id,
         task_status='Complete',
-        report_id=file_hash
+        report_id=file_hash,
     )
 
     return results
