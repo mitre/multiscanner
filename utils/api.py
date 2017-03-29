@@ -141,6 +141,8 @@ def create_task():
     # to allow us to save it
     file_.seek(0)
 
+    # TODO: should we check if the file is already there
+    # and skip this step if it it?
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
     file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
