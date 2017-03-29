@@ -1,36 +1,80 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/fileinput.min.css">
+<script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
+  $(document).ready(function() {
+    $("#filesUpload").fileinput({
+      uploadUrl: "http://{{ api_loc }}/api/v1/tasks/create/",
+      browseOnZoneClick: true,
+      allowedPreviewTypes: [],
+      showUpload: false,
+      browseLabel: "Select File(s) …",
+      removeLabel: "Clear",
+      removeClass: "btn btn-danger",
+      previewTemplates: {
+          other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
+          '   <div class="file-thumbnail-footer">\n' +
+          '    <div class="file-preview-other">' +
+          '    <span class="file-other-icon"><i class="glyphicon glyphicon-file"></i></span>' +
+          '    </div>' +
+          '        {footer}\n' +
+          '    </div>\n' +
+          '</div>\n'+ 
+          '<div class="collapse form-group-sm text-center metadata-group">\n' +
+          '    <label for="{previewId}-metadata" class="col-md-2 control-label">Thingy</label>\n' +
+          '    <div class="input-group col-md-10">\n' +
+                  '<input type="text" class="form-control" id="{previewId}-metadata" name="{previewId}-metadata"></input>\n' +
+          '    </div>\n' +
+          '</div>\n',
+      },
+      layoutTemplates: {
+        main1: '{preview}\n' +
+          '<div class="kv-upload-progress hide"></div>\n' +
+          '<div class="input-group {class}">\n' +
+          '    {caption}\n' +
+          '    <div class="input-group-btn">\n' +
+          '        {remove}\n' +
+          '        {cancel}\n' +
+          '        {upload}\n' +
+          '        {browse}\n' +
+          '    </div>\n' +
+          '</div>',
+        actions: '<div class="file-actions">\n' +
+          '    <div class="file-footer-buttons">\n' +
+          '        {upload} {delete} {other}' +
+          '        <button type="button" class="add-metadata btn btn-xs btn-default" title="Add metadata">\n' +
+          '            <i class="glyphicon glyphicon-th-list"></i>\n' +
+          '        </button>\n' + 
+          '    </div>\n' +
+          '    {drag}\n' +
+          '    <div class="file-upload-indicator" title="{indicatorTitle}">{indicator}</div>\n' +
+          '    <div class="clearfix"></div>\n' +
+          '</div>',
+        footer: '<div class="file-footer-caption" title="{caption}">{caption}<br>{size}</div>\n' +
+          '        {progress} {actions}',
+      },
+      previewFileIcon: '',
+      fileActionSettings: {
+        removeIcon: '<i class="glyphicon glyphicon-trash"></i>',
+        removeClass: 'btn btn-xs btn-danger',
+        uploadIcon: '<i class="glyphicon glyphicon-upload"></i>',
+        uploadClass: 'btn btn-xs btn-primary',
+      }
+    });
 
-  $(document).ready(function($) {
-    $('#scan-form').submit(function (e) {
-      e.preventDefault();
-      var formData = new FormData($('#scan-form')[0]);
-      $.ajax({
-          url: 'http://{{ api_loc }}/api/v1/tasks/create/',
-          type: 'POST',
-          data: formData,
-          //Options to tell jQuery not to process data or worry about content-type.
-          contentType: false,
-          processData: false,
-      }).done(function(data, textStatus, jqXHR){
-            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> Your file is being analyzed.</div>');
-      }).fail(function(data, textStatus, jqXHR){
-            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> There was a problem with your request.</div>');
-            console.log( data.statusText );
-            console.log( jqXHR );
+    $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
+      $('#' + previewId + ' .btn-default').hide();
+    });
+
+    // Show/hide per file metadata input
+    $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
+      $('#' + previewId + ' .add-metadata').click(function() {
+        $('#' + previewId + '-metadata').closest('.form-group-sm').collapse('toggle');
       });
     });
   });
-
-  function getFilenames(fileList) {
-    var str = fileList[0].name
-    for (var i = 0; i < fileList.length-1; i++) {
-      str += ', ' + fileList[i].name;
-    }
-    return str
-  }
 </script>
 {% endblock %}
 
@@ -42,32 +86,32 @@
 </div>
 
 <div class="row">
-  <div class="col-md-6 col-md-offset-3">
+  <div class="col-md-8 col-md-offset-2">
     <h1 class="text-center">Multiscanner</h1>
     <br />
-      <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
+
+    <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
       <fieldset>
         <legend>Submit Files For Analysis</legend>
 
         <div class="form-group">
-          <label for="uploadFileInfo" class="col-md-2 control-label">File(s)</label>
-          <div class="col-md-10">
-            <div class="input-group">
-              <input type="text" class='form-control' id="uploadFileInfo"></input>
-              <span class="input-group-btn">
-                <label class="btn btn-primary" for="fileSelector">
-                  <input id="fileSelector" name="file" type="file" multiple="multiple" style="display:none;" onchange="$('#uploadFileInfo').val(getFilenames(this.files));">
-                  Select File(s)
-                </label>
-              </span>
-            </div>
+          <div class="input-group col-md-12" id="file-group">
+            <input type="file" class='file-loading' id="filesUpload" name="filesUpload" multiple></input>
           </div>
         </div>
 
-        <div class="form-group">
-          <div class="col-md-10 col-md-offset-2">
-            <button type="submit" class="btn btn-primary">Scan it!</button>
+        <div class="form-group text-center">
+          <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
+        </div>
+        <div id="adv-options" class="collapse form-group text-center">
+          <label for="metadata" class="col-md-2 control-label">Metadata</label>
+          <div class="input-group col-md-10">
+            <input type="text" class='form-control' id="metadata" name="metadata"></input>
           </div>
+        </div>
+
+        <div class="form-group text-center">
+          <button type="submit" class="btn-lg btn-success">Scan it!</button>
         </div>
       </fieldset>
     </form>
