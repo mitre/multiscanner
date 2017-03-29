@@ -168,7 +168,7 @@ class Database(object):
             created_task_id = task.task_id
             return created_task_id
 
-    def update_task(self, task_id, task_status, sample_id=None, report_id=None):
+    def update_task(self, task_id, task_status, report_id=None):
         '''
         report_id will be a list of sha values
         '''
@@ -176,7 +176,6 @@ class Database(object):
             task = ses.query(Task).get(task_id)
             if task:
                 task.task_status = task_status
-                task.sample_id = sample_id
                 task.report_id = report_id
                 return task.to_dict()
 
