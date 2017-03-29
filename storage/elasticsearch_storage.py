@@ -1,10 +1,14 @@
 '''
 Storage module that will interact with elasticsearch.
 '''
+from datetime import datetime
+from time import sleep
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers, exceptions
+from elasticsearch.exceptions import TransportError
 
 import storage
+
 
 class ElasticSearchStorage(storage.Storage):
     '''
@@ -15,7 +19,7 @@ class ElasticSearchStorage(storage.Storage):
         'host': 'localhost',
         'port': 9200,
         'index': 'multiscanner_reports',
-        'doc_type': 'reports',
+        'doc_type': 'report',
     }
 
     def setup(self):
@@ -28,44 +32,281 @@ class ElasticSearchStorage(storage.Storage):
             port=self.port
         )
         # Create the index if it doesn't exist
+        es_indices = self.es.indices
+        if not es_indices.exists(self.index):
+            es_indices.create(self.index)
+
+        # Create parent-child mappings if don't exist yet
+        mappings = es_indices.get_mapping(index=self.index)
+        if self.doc_type not in mappings[self.index]['mappings'].keys():
+            es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
+                '_parent': {
+                    'type': 'sample'
+                }
+            })
+        if 'note' not in mappings[self.index]['mappings'].keys():
+            es_indices.put_mapping(index=self.index, doc_type='note', body={
+                '_parent': {
+                    'type': 'sample'
+                },
+                'properties': {
+                    'timestamp': {
+                        'type': 'date'
+                    }
+                }
+            })
+
+        # Create de-dot preprocessor if doesn't exist yet
         try:
-            self.es.indices.create(index=self.index)
-        except exceptions.RequestError:
-            pass 
+            dedot = self.es.ingest.get_pipeline('dedot')
+        except TransportError:
+            dedot = False
+        if not dedot:
+            script = {
+                "inline": """void dedot(def field) {
+                        if (field != null && field instanceof HashMap) {
+                            ArrayList replacelist = new ArrayList();
+                            for (String key : field.keySet()) {
+                                if (key.contains('.')) {
+                                    replacelist.add(key)
+                                }
+                            }
+                            for (String oldkey : replacelist) {
+                                String newkey = /\\./.matcher(oldkey).replaceAll(\"_\");
+                                field.put(newkey, field.get(oldkey));
+                                field.remove(oldkey);
+                            }
+                            for (String k : field.keySet()) {
+                                dedot(field.get(k));
+                            }
+                        }
+                    }
+                    dedot(ctx);"""
+                }
+            self.es.ingest.put_pipeline(id='dedot', body={
+                'description': 'Replace dots in field names with underscores.',
+                'processors': [
+                    {
+                        "script": script
+                    }
+                ]
+            })
+
         return True
 
     def store(self, report):
-        report_id_list = []
+        sample_id_list = []
+        sample_list = []
         report_list = []
 
         for filename in report:
             report[filename]['filename'] = filename
             try:
-                report_id = report[filename]['SHA256']
+                sample_id = report[filename]['SHA256']
             except KeyError:
+                sample_id = uuid4()
+            sample_id_list.append(sample_id)
+
+            if 'report_id' in report[filename]:
+                report_id = report[filename]['report_id']
+                del report[filename]['report_id']
+            else:
                 report_id = uuid4()
-            report_id_list.append(report_id)
+
+            # Extract metadata about the sample
+            sample = {'filename': filename}
+            if 'MD5' in report[filename]:
+                sample['md5'] = report[filename]['MD5']
+                del report[filename]['MD5']
+            if 'SHA1' in report[filename]:
+                sample['sha1'] = report[filename]['SHA1']
+                del report[filename]['SHA1']
+            if 'SHA256' in report[filename]:
+                sample['sha256'] = report[filename]['SHA256']
+                del report[filename]['SHA256']
+            if 'ssdeep' in report[filename]:
+                sample['ssdeep'] = report[filename]['ssdeep']
+                del report[filename]['ssdeep']
+            if 'tags' in report[filename]:
+                sample['tags'] = report[filename]['tags']
+                del report[filename]['tags']
+            else:
+                sample['tags'] = []
+
+            # TODO: Use ES's autogenerated IDs instead of UUID; better tailored for parallelization
+            sample_list.append(
+                {
+                    '_index': self.index,
+                    '_type': 'sample',
+                    '_id': sample_id,
+                    '_source': sample,
+                    'pipeline': 'dedot'
+                }
+            )
             report_list.append(
                 {
                     '_index': self.index,
                     '_type': self.doc_type,
                     '_id': report_id,
-                    '_source': report[filename]
+                    '_parent': sample_id,
+                    '_source': report[filename],
+                    'pipeline': 'dedot'
                 }
             )
 
-        result = helpers.bulk(self.es, report_list)
-        return report_id_list
+        result = helpers.bulk(self.es, sample_list)
+        result2 = helpers.bulk(self.es, report_list)
+        return sample_id_list
 
-    def get_report(self, report_id):
+    def get_report(self, sample_id, report_id):
         try:
-            result = self.es.get(
-                index=self.index, doc_type=self.doc_type,
-                id=report_id
+            result_sample = self.es.get(
+                index=self.index, doc_type='sample',
+                id=sample_id
             )
-            return result['_source']
+            result_report = self.es.get(
+                index=self.index, doc_type=self.doc_type,
+                id=report_id, parent=sample_id
+            )
+            result = result_report['_source'].copy()
+            result.update(result_sample['_source'])
+            return result
         except:
             return None
+
+    def add_tag(self, sample_id, tag):
+        script = {
+            "script": {
+                "inline": "ctx._source.tags.add(params.tag)",
+                "lang": "painless",
+                "params": {
+                    "tag": tag
+                }
+            }
+        }
+
+        try:
+            result = self.es.update(
+                index=self.index, doc_type='sample',
+                id=sample_id, body=script
+            )
+            return result
+        except:
+            return None
+
+    def remove_tag(self, sample_id, tag):
+        script = {
+            "script": {
+                "inline": """def i = ctx._source.tags.indexOf(params.tag);
+                    if (i > -1) { ctx._source.tags.remove(i); }""",
+                "lang": "painless",
+                "params": {
+                    "tag": tag
+                }
+            }
+        }
+
+        try:
+            result = self.es.update(
+                index=self.index, doc_type='sample',
+                id=sample_id, body=script
+            )
+            return result
+        except:
+            return None
+
+    def get_tags(self):
+        script = {
+            "query": {
+                "match_all": {}
+            },
+            "aggs": {
+                "tags_agg": {
+                    "terms": {
+                        "field": "tags.keyword"
+                    }
+                }
+            }
+        }
+
+        result = self.es.search(
+            index=self.index, doc_type='sample', body=script
+        )
+        return result
+
+    def get_notes(self, sample_id, search_after=None):
+        query = {
+            "query": {
+                "has_parent": {
+                    "type": "sample",
+                    "query": {
+                        "match": {
+                            "_id": sample_id
+                        }
+                    }
+                }
+            },
+            "sort": [
+                {
+                    "timestamp": {
+                        "order": "asc"
+                    }
+                },
+                {
+                    "_uid": {
+                        "order": "desc"
+                    }
+                }
+            ]
+        }
+        if search_after:
+            query['search_after'] = search_after
+
+        result = self.es.search(
+            index=self.index, doc_type='note', body=query
+        )
+        return result
+
+    def get_note(self, sample_id, note_id):
+        try:
+            result = self.es.get(
+                index=self.index, doc_type='note',
+                id=note_id, parent=sample_id
+            )
+            return result
+        except:
+            return None
+
+    def add_note(self, sample_id, data):
+        data['timestamp'] = datetime.now().isoformat()
+        result = self.es.create(
+            index=self.index, doc_type='note', id=uuid4(), body=data,
+            parent=sample_id
+        )
+        if result['result'] == 'created':
+            return self.get_note(sample_id, result['_id'])
+        return result
+
+    def edit_note(self, sample_id, note_id, text):
+        partial_doc = {
+            "doc": {
+                "text": text
+            }
+        }
+        result = self.es.update(
+            index=self.index, doc_type='note', id=note_id,
+            body=partial_doc, parent=sample_id
+        )
+        if result['result'] == 'created':
+            return self.get_note(sample_id, result['_id'])
+        return result
+
+    def delete_note(self, sample_id, note_id):
+        result = self.es.delete(
+            index=self.index, doc_type='note', id=note_id,
+            parent=sample_id
+        )
+        return result
 
     def delete(self, report_id):
         try:

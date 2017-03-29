@@ -59,5 +59,6 @@ docs/_build/
 target/
 # Sqlite DB
 sqlite.db
+task_db
 # Tmp Upload Dir
 utils/tmp/
