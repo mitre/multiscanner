@@ -15,6 +15,9 @@ POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
+The API endpoints all have Cross Origin Resource Sharing (CORS) enabled and set
+to allow ALL origins.
+
 TODO:
 * Add doc strings to functions
 '''
@@ -26,7 +29,10 @@ import hashlib
 import configparser
 import multiprocessing
 import queue
+from uuid import uuid4
+from flask_cors import cross_origin
 from flask import Flask, jsonify, make_response, request, abort
+from jinja2 import Markup
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -95,6 +101,7 @@ def index():
 
 
 @app.route('/api/v1/tasks/list/', methods=['GET'])
+@cross_origin()
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
@@ -105,6 +112,7 @@ def task_list():
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
+@cross_origin()
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -118,6 +126,7 @@ def get_task(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
+@cross_origin()
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -129,37 +138,46 @@ def delete_task(task_id):
 
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
+@cross_origin()
 def create_task():
     '''
     Create a new task. Save the submitted file
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
-    file_ = request.files['file']
-    original_filename = file_.filename
-    f_name = hashlib.sha256(file_.read()).hexdigest()
-    # Reset the file pointer to the beginning
-    # to allow us to save it
-    file_.seek(0)
+    task_ids = []
+    for file_ in request.files.getlist('file'):
+        original_filename = file_.filename
+        f_name = hashlib.sha256(file_.read()).hexdigest()
+        # Reset the file pointer to the beginning
+        # to allow us to save it
+        file_.seek(0)
 
-    # TODO: should we check if the file is already there
-    # and skip this step if it it?
-    file_path = os.path.join(api_config['api']['upload_folder'], f_name)
-    file_.save(file_path)
-    full_path = os.path.join(MS_WD, file_path)
+        # TODO: should we check if the file is already there
+        # and skip this step if it it?
+        file_path = os.path.join(UPLOAD_FOLDER, f_name)
+        file_.save(file_path)
+        full_path = os.path.join(MS_WD, file_path)
 
-    # Add task to SQL task DB
-    task_id = db.add_task()
+        # Add task to sqlite DB
+        task_id = db.add_task()
 
-    # Publish the task to Celery
-    multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
+        # Publish the task to Celery
+        multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
+        task_ids.append(str(task_id))
+
+    if len(task_ids) == 1:
+        msg = {'task_id': task_id}
+    else:
+        msg = {'task_ids': ", ".join(task_ids)}
 
     return make_response(
-        jsonify({'Message': {'task_id': task_id}}),
+        jsonify({'Message': msg}),
         HTTP_CREATED
     )
 
 
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
+@cross_origin()
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -170,7 +188,7 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        report = handler.get_report(task.report_id)
+        report = handler.get_report(task.sample_id, task.report_id)
 
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}
@@ -182,6 +200,7 @@ def get_report(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
+@cross_origin()
 def delete_report(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -194,6 +213,122 @@ def delete_report(task_id):
         return jsonify({'Message': 'Deleted'})
     else:
         abort(HTTP_NOT_FOUND)
+
+
+@app.route('/api/v1/tags/', methods=['GET'])
+@cross_origin()
+def taglist():
+    '''
+    Return a list of all tags currently in use.
+    '''
+    response = handler.get_tags()
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify({'Tags': response})
+
+
+@app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
+@cross_origin()
+def tags(task_id):
+    '''
+    Add/Remove the specified tag to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    add = request.args.get('add', '')
+    if add:
+        response = handler.add_tag(task.sample_id, add)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Added'})
+
+    remove = request.args.get('remove', '')
+    if remove:
+        response = handler.remove_tag(task.sample_id, remove)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Removed'})
+
+
+@app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
+@cross_origin()
+def get_notes(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    if ('ts' in request.args and 'uid' in request.args):
+        ts = request.args.get('ts', '')
+        uid = request.args.get('uid', '')
+        response = handler.get_notes(task.sample_id, [ts, uid])
+    else:
+        response = handler.get_notes(task.sample_id)
+
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+
+    if 'hits' in response and 'hits' in response['hits']:
+        response = response['hits']['hits']
+    try:
+        for hit in response:
+            hit['_source']['text'] = Markup.escape(hit['_source']['text'])
+    except:
+        pass
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note', methods=['POST'])
+@cross_origin()
+def add_note(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.add_note(task.sample_id, request.form.to_dict())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/edit', methods=['POST'])
+@cross_origin()
+def edit_note(task_id, note_id):
+    '''
+    Modify the specified analyst note/comment.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.edit_note(task.sample_id, note_id,
+                                 Markup(request.form['text']).striptags())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/delete', methods=['GET'])
+@cross_origin()
+def del_note(task_id, note_id):
+    '''
+    Delete an analyst note/comment from the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.delete_note(task.sample_id, note_id)
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
 
 
 if __name__ == '__main__':
