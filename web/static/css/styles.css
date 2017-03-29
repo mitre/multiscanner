@@ -17,6 +17,62 @@
     z-index: 1;
 }
 
+#scan-form {
+    padding: 0;
+}
+
+#scan-form .btn-lg {
+    font-weight: bold;
+}
+
+.form-control {
+    border-radius: 4px !important;
+}
+
+.krajee-default .file-other-icon {
+    font-size: 1.5em;
+}
+
+.krajee-default.file-preview-frame {
+    float: none;
+    display: block;
+}
+
+.krajee-default.file-preview-frame .kv-file-content {
+    display: none;
+}
+
+.krajee-default .file-thumbnail-footer .file-preview-other {
+    padding: 0px 10px;
+    float: left;
+}
+
+.krajee-default.file-preview-frame .file-thumbnail-footer {
+    height: auto;
+}
+
+.krajee-default .file-actions {
+    margin-top: 0;
+}
+
+.krajee-default .file-footer-caption {
+    padding: 0;
+    width: auto;
+}
+
+.krajee-default .file-thumb-progress {
+    margin: 7px 15%;
+}
+
+.file-preview-thumbnails .metadata-group {
+    padding: 6px;
+    margin: -8px 20px 16px;
+    position: relative;
+    background: #fff;
+    border: 1px solid rgb(221, 221, 221);
+    box-shadow: 1px 3px 5px 0 #a2958a;
+}
+
 .container {
     margin-bottom: 20px;
 }
