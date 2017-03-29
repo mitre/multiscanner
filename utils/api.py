@@ -159,7 +159,8 @@ def create_task():
         full_path = os.path.join(MS_WD, file_path)
 
         # Add task to sqlite DB
-        task_id = db.add_task()
+        # Make the sample_id equal the sha256 hash
+        task_id = db.add_task(sample_id=f_name)
 
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
