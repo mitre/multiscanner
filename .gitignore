@@ -1,6 +1,7 @@
 #Local config
 config.ini
 storage.ini
+api_config.ini
 
 #Default report location
 report.json
@@ -11,6 +12,7 @@ __pycache__/
 *.swp
 # C extensions
 *.so
+*.dll
 #PyCharm
 .idea
 #Keys dir
@@ -57,5 +59,6 @@ docs/_build/
 target/
 # Sqlite DB
 sqlite.db
+task_db
 # Tmp Upload Dir
 utils/tmp/

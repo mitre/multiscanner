@@ -9,9 +9,12 @@ python-magic
 requests
 ssdeep
 #Required by API
+flask
 sqlalchemy
+sqlalchemy-utils
+#Required by distributed feature
+celery
+flask_cors
 #Required by storage modules
 elasticsearch
 pymongo
-#Required for distributed
-celery[librabbitmq,redis]
