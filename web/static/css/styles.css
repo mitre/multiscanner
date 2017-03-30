@@ -29,6 +29,10 @@
     border-radius: 4px !important;
 }
 
+.file-preview {
+    border: 0;
+}
+
 .krajee-default .file-other-icon {
     font-size: 1.5em;
 }
@@ -65,12 +69,17 @@
 }
 
 .file-preview-thumbnails .metadata-group {
-    padding: 6px;
+    padding: 6px 6px 12px 6px;
     margin: -8px 20px 16px;
     position: relative;
     background: #fff;
     border: 1px solid rgb(221, 221, 221);
     box-shadow: 1px 3px 5px 0 #a2958a;
+}
+
+.file-preview-thumbnails .metadata-group > .form-group-sm {
+    clear: left;
+    padding-bottom: 6px;
 }
 
 .container {
