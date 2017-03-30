@@ -81,7 +81,12 @@ def get_storage_config_path(config_file):
     conf = configparser.SafeConfigParser()
     conf.read(config_file)
     conf = parse_config(conf)
-    return conf['main']['storage-config']
+    try:
+        return conf['main']['storage-config']
+    except KeyError:
+        print("ERROR: Couldn't find 'storage-config' value in 'main' section "\
+              "of config file. Have you run 'python multiscanner.py init'?")
+        sys.exit()
 
 def dirname(path):
     """OS independent version of os.path.dirname"""
