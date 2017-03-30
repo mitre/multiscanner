@@ -21,12 +21,17 @@
           '    </div>' +
           '        {footer}\n' +
           '    </div>\n' +
-          '</div>\n'+ 
-          '<div class="collapse form-group-sm text-center metadata-group">\n' +
-          '    <label for="{previewId}-metadata" class="col-md-2 control-label">Thingy</label>\n' +
+          '</div>\n' + 
+          '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
+          {% for metadata in metadata_fields %}
+          '<div class="form-group-sm">\n' +
+          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+          '    <label for="{previewId}-{{field}}" class="col-md-2 control-label">{{metadata}}</label>\n' +
           '    <div class="input-group col-md-10">\n' +
-                  '<input type="text" class="form-control" id="{previewId}-metadata" name="{previewId}-metadata"></input>\n' +
+                  '<input type="text" class="form-control" id="{previewId}-{{field}}" name="{previewId}-{{field}}"></input>\n' +
           '    </div>\n' +
+          '    </div>\n' +
+          {% endfor %}
           '</div>\n',
       },
       layoutTemplates: {
@@ -61,19 +66,56 @@
         removeClass: 'btn btn-xs btn-danger',
         uploadIcon: '<i class="glyphicon glyphicon-upload"></i>',
         uploadClass: 'btn btn-xs btn-primary',
+      },
+      uploadExtraData: function (previewId, index) {
+        var obj = {};
+        $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
+          var key = $(this).children('label').first().html();
+          var val = $(this).find('input').first().val();
+          obj[key] = val;
+        });
+        return obj;
       }
     });
 
     $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
-      $('#' + previewId + ' .btn-default').hide();
+      // Hide delete buttons after upload
+      $('#' + previewId + ' .btn-danger').css('visibility', 'hidden');
+
+      // Disable metadata fields after upload
+      $('.metadata-group[data-target=' + previewId + '] input').each(function (index, element) {
+        $(element).attr('readonly', true);
+      })
     });
 
-    // Show/hide per file metadata input
     $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
+      // Singularize/pluralize submit button text
+      if ($("#filesUpload").fileinput('getFilesCount') > 1) {
+        $('#btn-scan').html('Scan them!');
+      } else {
+        $('#btn-scan').html('Scan it!');
+      }
+
+      // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
-        $('#' + previewId + '-metadata').closest('.form-group-sm').collapse('toggle');
+        $('.metadata-group[data-target=' + previewId + ']').closest('.metadata-group').collapse('toggle');
       });
     });
+
+    // Set metadata field values for all files
+    $('#adv-options .metadata-group input').change(function() {
+      var field = $(this).attr('id').substring(9);
+      var value = $(this).val();
+      $('.file-preview-thumbnails .metadata-group').each(function( index, element ) {
+        childId = $(element).attr('data-target') + '-' + field;
+        $(element).find('input[id=' + childId + ']').val(value);
+      });
+    });
+
+    // Submit all files
+    $('#btn-scan').click(function () {
+      $("#filesUpload").fileinput('upload');
+    })
   });
 </script>
 {% endblock %}
@@ -96,7 +138,7 @@
 
         <div class="form-group">
           <div class="input-group col-md-12" id="file-group">
-            <input type="file" class='file-loading' id="filesUpload" name="filesUpload" multiple></input>
+            <input type="file" class='file-loading' id="filesUpload" name="file" multiple></input>
           </div>
         </div>
 
@@ -104,14 +146,20 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
-          <label for="metadata" class="col-md-2 control-label">Metadata</label>
+          <div><p><i>(These apply to all files.)</i></p></div>
+          {% for metadata in metadata_fields %}
+          <div class="form-group metadata-group">
+          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+          <label for="metadata-{field}" class="col-md-2 control-label">{{metadata}}</label>
           <div class="input-group col-md-10">
-            <input type="text" class='form-control' id="metadata" name="metadata"></input>
+            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{field}"></input>
           </div>
+          </div>
+          {% endfor %}
         </div>
 
         <div class="form-group text-center">
-          <button type="submit" class="btn-lg btn-success">Scan it!</button>
+          <button type="button" class="btn-lg btn-success" id="btn-scan">Scan it!</button>
         </div>
       </fieldset>
     </form>

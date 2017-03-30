@@ -6,3 +6,11 @@ PORT = 8000
 API_LOC = "localhost:8080"
 # Set to True to enable debug mode, but DO NOT USE in production
 DEBUG = False
+# List of metadata fields that can be set when submitting a file for scanning
+METADATA_FIELDS = [
+    "Submitter Name",
+    "Submission Description",
+    "Submitter Email",
+    "Submitter Organization",
+    "Submitter Phone",
+]
