@@ -161,7 +161,6 @@ class Database(object):
                 ses.add(task)
                 # Need to explicitly commit here in order to update the ID in the DAO
                 ses.commit()
-                print(task.to_dict())
             except IntegrityError as e:
                 print('PRIMARY KEY must be unique! %s' % e)
                 return -1
