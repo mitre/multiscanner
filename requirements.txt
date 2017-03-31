@@ -1,5 +1,6 @@
 #Required
 future
+configparser
 #Required by modules
 bitstring
 paramiko
@@ -11,6 +12,7 @@ ssdeep
 #Required by API
 flask
 sqlalchemy
+sqlalchemy-utils
 #Required by storage modules
 elasticsearch
 pymongo
