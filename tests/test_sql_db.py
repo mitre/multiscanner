@@ -98,7 +98,7 @@ class TestTaskAdd(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestTaskManipulation(unittest.TestCase):
@@ -139,7 +139,7 @@ class TestTaskManipulation(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestGetAllTasks(unittest.TestCase):
@@ -162,7 +162,7 @@ class TestGetAllTasks(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestStressTest(unittest.TestCase):
@@ -181,4 +181,4 @@ class TestStressTest(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)

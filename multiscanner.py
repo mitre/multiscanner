@@ -315,12 +315,16 @@ def _copy_to_share(filelist, filedic, sharedir):
     tmpfilelist = filelist[:]
     filelist = []
     for fname in tmpfilelist:
-        uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-        newfile = uid + os.path.basename(fname)
+        # Build new path
+        newfile = os.path.basename(fname)
         newfile = newfile.replace(' ', '_')
-        filedic[newfile] = fname
         newfile = os.path.join(sharedir, newfile)
+        # If the new file exists we add in a random ID
+        if os.path.exists(newfile):
+            uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+            newfile = os.path.join(sharedir, uid + '_' + os.path.basename(newfile))
         shutil.copyfile(fname, newfile)
+        filedic[newfile] = fname
         filelist.append(newfile)
     del tmpfilelist
     # Prevents file shares from making modules crash, this might not be the best but meh

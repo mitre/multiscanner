@@ -4,6 +4,7 @@ import os
 import json
 import configparser
 import codecs
+import sys
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
@@ -16,6 +17,10 @@ from sqlalchemy_utils import database_exists, create_database
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
+
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.append(os.path.join(MS_WD, 'libs'))
+import common
 
 Base = declarative_base()
 Session = sessionmaker()
@@ -101,12 +106,6 @@ class Database(object):
         with codecs.open(configfile, 'w', 'utf-8') as conffile:
             config_parser.write(conffile)
 
-    def _get_db_engine(self):
-        """
-        Returns the database engine
-        """
-        return self.db_engine
-
     def init_db(self):
         """
         Initializes the database connection based on the configuration parameters
@@ -123,7 +122,6 @@ class Database(object):
             host_string = self.config['host_string']
             self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
 
-        print(self.db_connection_string)
         self.db_engine = create_engine(self.db_connection_string)
         # If db not present AND type is not SQLite, create the DB
         if not self.config['db_type'] == 'sqlite':
@@ -134,12 +132,6 @@ class Database(object):
         # Bind the global Session to our DB engine
         global Session
         Session.configure(bind=self.db_engine)
-
-    def init_sqlite_db(self):
-        global Base
-        eng = self._get_db_engine()
-        Base.metadata.bind = eng
-        Base.metadata.create_all()
 
     @contextmanager
     def db_session_scope(self):
@@ -176,7 +168,7 @@ class Database(object):
             created_task_id = task.task_id
             return created_task_id
 
-    def update_task(self, task_id, task_status, sample_id=None, report_id=None):
+    def update_task(self, task_id, task_status, report_id=None):
         '''
         report_id will be a list of sha values
         '''
@@ -184,7 +176,6 @@ class Database(object):
             task = ses.query(Task).get(task_id)
             if task:
                 task.task_status = task_status
-                task.sample_id = sample_id
                 task.report_id = report_id
                 return task.to_dict()
 

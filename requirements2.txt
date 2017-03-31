@@ -16,3 +16,5 @@ flask_cors
 #Required by storage modules
 elasticsearch
 pymongo
+#Required for distributed
+celery[librabbitmq,redis]

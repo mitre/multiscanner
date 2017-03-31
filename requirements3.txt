@@ -12,6 +12,8 @@ ssdeep
 flask
 sqlalchemy
 sqlalchemy-utils
+#Required by distributed feature
+celery
 flask_cors
 #Required by storage modules
 elasticsearch
