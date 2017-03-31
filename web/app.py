@@ -5,7 +5,8 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', api_loc=app.config['API_LOC'])
+    return render_template('index.html', api_loc=app.config['API_LOC'],
+                           metadata_fields=app.config['METADATA_FIELDS'])
 
 
 @app.route('/tasks', methods=['GET'])

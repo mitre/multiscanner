@@ -4,7 +4,7 @@ Storage module that will interact with elasticsearch.
 from datetime import datetime
 from time import sleep
 from uuid import uuid4
-from elasticsearch import Elasticsearch, helpers
+from elasticsearch import Elasticsearch, helpers, exceptions
 from elasticsearch.exceptions import TransportError
 
 import storage
@@ -31,6 +31,7 @@ class ElasticSearchStorage(storage.Storage):
             host=self.host,
             port=self.port
         )
+        # Create the index if it doesn't exist
         es_indices = self.es.indices
         if not es_indices.exists(self.index):
             es_indices.create(self.index)
@@ -106,9 +107,8 @@ class ElasticSearchStorage(storage.Storage):
                 sample_id = uuid4()
             sample_id_list.append(sample_id)
 
-            if 'report_id' in report[filename]:
-                report_id = report[filename]['report_id']
-                del report[filename]['report_id']
+            if 'SHA256' in report[filename]:
+                report_id = report[filename]['SHA256']
             else:
                 report_id = uuid4()
 
@@ -170,7 +170,8 @@ class ElasticSearchStorage(storage.Storage):
             result = result_report['_source'].copy()
             result.update(result_sample['_source'])
             return result
-        except:
+        except Exception as e:
+            print(e)
             return None
 
     def add_tag(self, sample_id, tag):
