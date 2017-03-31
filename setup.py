@@ -1,17 +1,40 @@
 from __future__ import print_function
-import sys
+import os
 from distutils.core import setup
 
-if ['-c', 'egg_info'] != sys.argv and ['-c', 'develop', '--no-deps'] != sys.argv[:3]:
-    print("ERROR: This only works in development mode", file=sys.stderr)
-    exit(-1)
+
+def recursive_dir_list(path, exclude=['.pyc', '__pycache__']):
+    ret = []
+    for item in os.listdir(path):
+        fail = False
+        for test in exclude:
+            if item.endswith(test):
+                fail = True
+                continue
+        if fail:
+            continue
+
+        item = os.path.join(path, item)
+        if os.path.isdir(item):
+            ret.extend(recursive_dir_list(item))
+        else:
+            ret.append(item)
+    return ret
+
+to_walk = ['docs', 'etc', 'libs', 'modules', 'storage', 'utils']
+data_files = []
+for directory in to_walk:
+    data_files.extend(recursive_dir_list(directory))
 
 setup(
     name='multiscanner',
-    version='0.9.1',
+    version='0.9.2',
     url='https://github.com/MITRECND/multiscanner',
     license='MPL 2.0',
     author='Drew Bonasera',
     author_email='',
+    packages=['multiscanner'],
+    package_dir={'multiscanner': '.'},
+    package_data={'multiscanner': data_files},
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
 )
