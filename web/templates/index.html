@@ -68,6 +68,7 @@
         uploadClass: 'btn btn-xs btn-primary',
       },
       uploadExtraData: function (previewId, index) {
+        // Send metadata along with the file
         var obj = {};
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
@@ -98,7 +99,14 @@
 
       // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
-        $('.metadata-group[data-target=' + previewId + ']').closest('.metadata-group').collapse('toggle');
+        $('.metadata-group[data-target=' + previewId + ']').collapse('toggle');
+      });
+
+      // Populate metadata fields if need be
+      $('#adv-options .metadata-group input').each(function( index, element ) {
+        var field = $(element).attr('id').substring(9);
+        var value = $(element).val();
+        $('#' + previewId + '-' + field).val(value);
       });
     });
 
@@ -115,7 +123,7 @@
     // Submit all files
     $('#btn-scan').click(function () {
       $("#filesUpload").fileinput('upload');
-    })
+    });
   });
 </script>
 {% endblock %}
@@ -146,13 +154,13 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
-          <div><p><i>(These apply to all files.)</i></p></div>
+          <div><p><i>(These apply to all files in this submission.)</i></p></div>
           {% for metadata in metadata_fields %}
           <div class="form-group metadata-group">
           {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
-          <label for="metadata-{field}" class="col-md-2 control-label">{{metadata}}</label>
+          <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
           <div class="input-group col-md-10">
-            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{field}"></input>
+            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
           </div>
           </div>
           {% endfor %}
