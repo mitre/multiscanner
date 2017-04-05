@@ -26,6 +26,7 @@ import os
 import sys
 import time
 import hashlib
+import codecs
 import configparser
 import multiprocessing
 import queue
@@ -62,6 +63,7 @@ DEFAULTCONF = {
     'host': 'localhost',
     'port': 8080,
     'upload_folder': '/mnt/samples/',
+    'distributed': True
 }
 
 app = Flask(__name__)
@@ -69,6 +71,14 @@ api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
 api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
 api_config_object.read(api_config_file)
+if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
+    # Write default config
+    api_config_object.add_section('api')
+    for key in DEFAULTCONF:
+        api_config_object.set('api', key, str(DEFAULTCONF[key]))
+    conffile = codecs.open(api_config_file, 'w', 'utf-8')
+    api_config_object.write(conffile)
+    conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
 
 db = database.Database(config=api_config.get('Database'))
@@ -77,6 +87,65 @@ storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
+
+if not api_config['api']['distributed']:
+    work_queue = multiprocessing.Queue()
+
+
+def multiscanner_process(work_queue, exit_signal):
+    '''Not used in distributed mode.
+    '''
+    metadata_list = []
+    time_stamp = None
+    while True:
+        time.sleep(1)
+        try:
+            metadata_list.append(work_queue.get_nowait())
+            if not time_stamp:
+                time_stamp = time.time()
+            while len(metadata_list) < BATCH_SIZE:
+                metadata_list.append(work_queue.get_nowait())
+        except queue.Empty:
+            if metadata_list and time_stamp:
+                if len(metadata_list) >= BATCH_SIZE:
+                    pass
+                elif time.time() - time_stamp > WAIT_SECONDS:
+                    pass
+                else:
+                    continue
+            else:
+                continue
+
+        filelist = [item[0] for item in metadata_list]
+        resultlist = multiscanner.multiscan(
+            filelist, configfile=multiscanner.CONFIG
+        )
+        results = multiscanner.parse_reports(resultlist, python=True)
+
+        for file_name in results:
+            os.remove(file_name)
+
+        for item in metadata_list:
+
+            # Use the filename as the index instead of the full path
+            results[item[1]] = results[item[0]]
+            del results[item[0]]
+
+            r_id = str(uuid4())
+            results[item[1]]['report_id'] = r_id
+
+            db.update_task(
+                task_id=item[2],
+                task_status='Complete',
+                sample_id=item[3],
+                report_id=r_id
+            )
+
+        storage_handler.store(results, wait=False)
+
+        filelist = []
+        time_stamp = None
+    storage_handler.close()
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -162,8 +231,14 @@ def create_task():
         # Make the sample_id equal the sha256 hash
         task_id = db.add_task(sample_id=f_name)
 
-        # Publish the task to Celery
-        multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
+        if api_config['api']['distributed']:
+            # Publish the task to Celery
+            multiscanner_celery.delay(full_path, original_filename,
+                                      task_id, f_name)
+        else:
+            # Put the task on the queue
+            work_queue.put((full_path, original_filename, task_id, f_name))
+
         task_ids.append(str(task_id))
 
     if len(task_ids) == 1:
@@ -340,4 +415,16 @@ if __name__ == '__main__':
         print('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
+    if not api_config['api']['distributed']:
+        exit_signal = multiprocessing.Value('b')
+        exit_signal.value = False
+        ms_process = multiprocessing.Process(
+            target=multiscanner_process,
+            args=(work_queue, exit_signal)
+        )
+        ms_process.start()
+
     app.run(host=api_config['api']['host'], port=api_config['api']['port'])
+
+    if not api_config['api']['distributed']:
+        ms_process.join()
