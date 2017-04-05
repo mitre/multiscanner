@@ -37,4 +37,26 @@ setup(
     package_dir={'multiscanner': '.'},
     package_data={'multiscanner': data_files},
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
+    install_requires=[
+        'future',
+        'configparser',
+        # Required by modules
+        'bitstring',
+        'paramiko',
+        'pefile',
+        'pyclamd',
+        'python-magic',
+        'requests',
+        'ssdeep',
+        # Required by API
+        'flask',
+        'sqlalchemy',
+        'sqlalchemy-utils',
+        # Required by storage modules
+        'elasticsearch',
+        'pymongo',
+    ],
+    entry_points={
+        'console_scripts': ['multiscanner=multiscanner.multiscanner:_main']
+    }
 )
