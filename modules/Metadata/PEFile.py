@@ -8,7 +8,6 @@ except:
     print("pefile module not installed...")
     pefile = False
 
-#No pefile for python 3 yet =(
 try:
     xrange(0,1)
 except:
@@ -24,7 +23,13 @@ import bz2
 import hashlib
 import binascii
 import struct
+import sys
 from time import strftime, localtime
+from common import convert_encoding
+
+PY3 = False
+if sys.version_info > (3,):
+    PY3 = True
 
 TYPE = "Metadata"
 NAME = "pefile"
@@ -32,6 +37,7 @@ REQUIRES = ["libmagic"]
 DEFAULTCONF = {
     'ENABLED': True
     }
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
@@ -41,6 +47,7 @@ def check(conf=DEFAULTCONF):
     if None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
@@ -60,7 +67,10 @@ def scan(filelist, conf=DEFAULTCONF):
         if sha:
             result['rich_header_sha256'] = sha
         if callable(getattr(pe, 'get_imphash', None)):
-            result['import_hash'] = pe.get_imphash()
+            try:
+                result['import_hash'] = pe.get_imphash()
+            except:
+                pass
         if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
             result['resource_data'] = _dump_resource_data("ROOT",
             pe.DIRECTORY_ENTRY_RESOURCE,
@@ -84,7 +94,7 @@ def scan(filelist, conf=DEFAULTCONF):
             ret = _get_tls_info(pe)
             if ret:
                 result['tls_callback_info'] = ret
-            
+        result = convert_encoding(result)
         results.append((fname, result))
     metadata = {}
     metadata["Name"] = NAME
@@ -92,6 +102,7 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Version"] = pefile.__version__
     metadata["Include"] = False
     return (results, metadata)
+
 
 #This section is an adaption from the CRITS pefile service
 #https://github.com/MITRECND/crits_services/blob/master/peinfo_service/__init__.py
@@ -119,7 +130,10 @@ def _get_pehash(exe):
 
     #Stack Commit Size
     stk_size = bitstring.BitArray(hex(exe.OPTIONAL_HEADER.SizeOfStackCommit))
-    stk_size_bits = string.zfill(stk_size.bin, 32)
+    if PY3:
+        stk_size_bits = stk_size.bin.zfill(32)
+    else:
+        stk_size_bits = string.zfill(stk_size.bin, 32)
     #now xor the bits
     stk_size = bitstring.BitArray(bin=stk_size_bits)
     stk_size_xor = stk_size[8:16] ^ stk_size[16:24] ^ stk_size[24:32]
@@ -129,7 +143,10 @@ def _get_pehash(exe):
 
     #Heap Commit Size
     hp_size = bitstring.BitArray(hex(exe.OPTIONAL_HEADER.SizeOfHeapCommit))
-    hp_size_bits = string.zfill(hp_size.bin, 32)
+    if PY3:
+        hp_size_bits = hp_size.bin.zfill(hp_size.bin, 32)
+    else:
+        hp_size_bits = string.zfill(hp_size.bin, 32)
     #now xor the bits
     hp_size = bitstring.BitArray(bin=hp_size_bits)
     hp_size_xor = hp_size[8:16] ^ hp_size[16:24] ^ hp_size[24:32]
@@ -148,7 +165,10 @@ def _get_pehash(exe):
         #rawsize
         sect_rs =  bitstring.BitArray(hex(section.SizeOfRawData))
         sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
-        sect_rs_bits = string.zfill(sect_rs.bin, 32)
+        if PY3:
+            sect_rs_bits = sect_rs.bin.zfill(sect_rs.bin, 32)
+        else:
+            sect_rs_bits = string.zfill(sect_rs.bin, 32)
         sect_rs = bitstring.BitArray(bin=sect_rs_bits)
         sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
         sect_rs_bits = sect_rs[8:32]
@@ -281,18 +301,23 @@ def _get_imports(pe):
     try:
         for entry in pe.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
+                if isinstance(entry.dll, bytes):
+                    entry.dll = entry.dll.decode('utf-8')
+                if isinstance(imp.ordinal, bytes):
+                    entry.dll = imp.ordinal.decode('utf-8')
                 if imp.name:
                     name = imp.name
                 else:
                     name = "%s#%s" % (entry.dll, imp.ordinal)
                 data = {
-                        "dll": "%s" % entry.dll,
-                        "ordinal": "%s" % imp.ordinal,
+                        "dll": entry.dll,
+                        "ordinal": imp.ordinal,
                 }
                 #self._add_result('pe_import', name, data)
                 result[name] = data
     except Exception as e:
         #self._parse_error("imports", e)
+        print(e)
         pass
     return result
         
