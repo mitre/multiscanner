@@ -57,9 +57,11 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
     elif isinstance(data, str):
         if PY3:
             # I think this works?
-            return str(data.encode(encoding=encoding, errors=errors), encoding)
+            return data.encode(encoding=encoding, errors=errors).decode(encoding=encoding, errors=errors)
         else:
             return data.decode(encoding, errors)
+    elif isinstance(data, bytes):
+        return data.decode(encoding=encoding, errors=errors)
     else:
         return data
 
@@ -81,7 +83,12 @@ def get_storage_config_path(config_file):
     conf = configparser.SafeConfigParser()
     conf.read(config_file)
     conf = parse_config(conf)
-    return conf['main']['storage-config']
+    try:
+        return conf['main']['storage-config']
+    except KeyError:
+        print("ERROR: Couldn't find 'storage-config' value in 'main' section "\
+              "of config file. Have you run 'python multiscanner.py init'?")
+        sys.exit()
 
 def get_api_config_path(config_file):
     """Gets the location of the storage config file from the multiscanner config file"""
