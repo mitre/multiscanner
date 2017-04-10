@@ -57,9 +57,11 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
     elif isinstance(data, str):
         if PY3:
             # I think this works?
-            return str(data.encode(encoding=encoding, errors=errors), encoding)
+            return data.encode(encoding=encoding, errors=errors).decode(encoding=encoding, errors=errors)
         else:
             return data.decode(encoding, errors)
+    elif isinstance(data, bytes):
+        return data.decode(encoding=encoding, errors=errors)
     else:
         return data
 

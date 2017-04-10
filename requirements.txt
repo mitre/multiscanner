@@ -1,5 +1,6 @@
 #Required
 future
+configparser
 #Required by modules
 bitstring
 paramiko
@@ -10,11 +11,8 @@ requests
 ssdeep
 #Required by API
 flask
-psycopg2
 sqlalchemy
 sqlalchemy-utils
-#Required by distributed feature
-celery
 flask_cors
 #Required by storage modules
 elasticsearch
