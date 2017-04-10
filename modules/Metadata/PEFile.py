@@ -144,7 +144,7 @@ def _get_pehash(exe):
     #Heap Commit Size
     hp_size = bitstring.BitArray(hex(exe.OPTIONAL_HEADER.SizeOfHeapCommit))
     if PY3:
-        hp_size_bits = hp_size.bin.zfill(hp_size.bin, 32)
+        hp_size_bits = hp_size.bin.zfill(32)
     else:
         hp_size_bits = string.zfill(hp_size.bin, 32)
     #now xor the bits
@@ -166,7 +166,7 @@ def _get_pehash(exe):
         sect_rs =  bitstring.BitArray(hex(section.SizeOfRawData))
         sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
         if PY3:
-            sect_rs_bits = sect_rs.bin.zfill(sect_rs.bin, 32)
+            sect_rs_bits = sect_rs.bin.zfill(32)
         else:
             sect_rs_bits = string.zfill(sect_rs.bin, 32)
         sect_rs = bitstring.BitArray(bin=sect_rs_bits)
