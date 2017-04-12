@@ -633,7 +633,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Delete copied files
     if main_config["copyfilesto"]:
         for item in filelist:
-            os.remove(item)
+            try:
+                os.remove(item)
+            except OSError:
+                pass
 
     # Get Result list
     results = []
