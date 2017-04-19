@@ -204,6 +204,20 @@
     // Add notes to the page
     getNotes();
 
+    // Update notes button based on number of notes
+    $( document ).ajaxStop(function() {
+      numNotes = $('#note-container > div').length;
+      if (numNotes > 0) {
+        if (numNotes === 1) {
+          $('#notes-open').html('1 Note');
+        } else {
+          $('#notes-open').html(numNotes + ' Notes');
+        }
+        $('#notes-open').addClass('btn-warning').removeClass('btn-primary');
+        $('#notes-close').addClass('btn-warning').removeClass('btn-primary');
+      }
+    });
+
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()}
@@ -256,7 +270,7 @@
 {% block title %}Report{% endblock %}
 
 {% block content %}
-<button class="btn btn-warning" id="notes-open">Notes</button>
+<button class="btn btn-primary" id="notes-open">Notes</button>
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
@@ -278,7 +292,7 @@
 </div>
 
 <div class="" id="report-notes">
-  <button id="notes-close" class="btn btn-warning" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  <button id="notes-close" class="btn btn-primary" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
   <div id="note-container"></div>
   <form id="note-form">
     <div class="form-group">
