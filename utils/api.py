@@ -15,6 +15,9 @@ POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
+The API endpoints all have Cross Origin Resource Sharing (CORS) enabled and set
+to allow ALL origins.
+
 TODO:
 * Add doc strings to functions
 '''
@@ -23,9 +26,14 @@ import os
 import sys
 import time
 import hashlib
+import codecs
+import configparser
 import multiprocessing
 import queue
+from uuid import uuid4
+from flask_cors import cross_origin
 from flask import Flask, jsonify, make_response, request, abort
+from jinja2 import Markup
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -37,10 +45,10 @@ import multiscanner
 import sql_driver as database
 from storage import Storage
 import elasticsearch_storage
+from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
-UPLOAD_FOLDER = 'tmp/'
 
 BATCH_SIZE = 100
 WAIT_SECONDS = 60   # Number of seconds to wait for additional files
@@ -51,20 +59,42 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-# FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
-
+DEFAULTCONF = {
+    'host': 'localhost',
+    'port': 8080,
+    'upload_folder': '/mnt/samples/',
+    'distributed': True
+}
 
 app = Flask(__name__)
-db = database.Database()
+api_config_object = configparser.SafeConfigParser()
+api_config_object.optionxform = str
+api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
+api_config_object.read(api_config_file)
+if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
+    # Write default config
+    api_config_object.add_section('api')
+    for key in DEFAULTCONF:
+        api_config_object.set('api', key, str(DEFAULTCONF[key]))
+    conffile = codecs.open(api_config_file, 'w', 'utf-8')
+    api_config_object.write(conffile)
+    conffile.close()
+api_config = multiscanner.common.parse_config(api_config_object)
+
+db = database.Database(config=api_config.get('Database'))
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
-work_queue = multiprocessing.Queue()
+
+if not api_config['api']['distributed']:
+    work_queue = multiprocessing.Queue()
 
 
 def multiscanner_process(work_queue, exit_signal):
+    '''Not used in distributed mode.
+    '''
     metadata_list = []
     time_stamp = None
     while True:
@@ -97,8 +127,11 @@ def multiscanner_process(work_queue, exit_signal):
 
         for item in metadata_list:
 
+            # Use the filename as the index instead of the full path
             results[item[1]] = results[item[0]]
             del results[item[0]]
+
+            results[item[1]]['Metadata'] = item[4]
 
             db.update_task(
                 task_id=item[2],
@@ -135,6 +168,7 @@ def index():
 
 
 @app.route('/api/v1/tasks/list/', methods=['GET'])
+@cross_origin()
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
@@ -145,6 +179,7 @@ def task_list():
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
+@cross_origin()
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -158,6 +193,7 @@ def get_task(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
+@cross_origin()
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -169,36 +205,51 @@ def delete_task(task_id):
 
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
+@cross_origin()
 def create_task():
     '''
-    Create a new task. Save the submitted file
+    Create a single new task. Save the submitted file
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
     file_ = request.files['file']
-    # TODO: Figure out how to get multiscanner to report
-    # the original filename
     original_filename = file_.filename
     f_name = hashlib.sha256(file_.read()).hexdigest()
     # Reset the file pointer to the beginning
     # to allow us to save it
     file_.seek(0)
 
-    file_path = os.path.join(UPLOAD_FOLDER, f_name)
+    metadata = {}
+    for key in request.form.keys():
+        if key != 'file_id' and request.form[key] != '':
+            metadata[key] = request.form[key]
+
+    # TODO: should we check if the file is already there
+    # and skip this step if it it?
+    file_path = os.path.join(api_config['api']['upload_folder'], f_name)
     file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
 
     # Add task to sqlite DB
-    task_id = db.add_task()
+    # Make the sample_id equal the sha256 hash
+    task_id = db.add_task(sample_id=f_name)
 
-    work_queue.put((full_path, original_filename, task_id, f_name))
+    if api_config['api']['distributed']:
+        # Publish the task to Celery
+        multiscanner_celery.delay(full_path, original_filename,
+                                  task_id, f_name, metadata)
+    else:
+        # Put the task on the queue
+        work_queue.put((full_path, original_filename, task_id, f_name, metadata))
 
+    msg = {'task_id': task_id}
     return make_response(
-        jsonify({'Message': {'task_id': task_id}}),
+        jsonify({'Message': msg}),
         HTTP_CREATED
     )
 
 
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
+@cross_origin()
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -209,7 +260,7 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        report = handler.get_report(task.report_id)
+        report = handler.get_report(task.sample_id, task.report_id)
 
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}
@@ -221,6 +272,7 @@ def get_report(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
+@cross_origin()
 def delete_report(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -235,22 +287,140 @@ def delete_report(task_id):
         abort(HTTP_NOT_FOUND)
 
 
+@app.route('/api/v1/tags/', methods=['GET'])
+@cross_origin()
+def taglist():
+    '''
+    Return a list of all tags currently in use.
+    '''
+    response = handler.get_tags()
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify({'Tags': response})
+
+
+@app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
+@cross_origin()
+def tags(task_id):
+    '''
+    Add/Remove the specified tag to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    add = request.args.get('add', '')
+    if add:
+        response = handler.add_tag(task.sample_id, add)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Added'})
+
+    remove = request.args.get('remove', '')
+    if remove:
+        response = handler.remove_tag(task.sample_id, remove)
+        if not response:
+            abort(HTTP_BAD_REQUEST)
+        return jsonify({'Message': 'Tag Removed'})
+
+
+@app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
+@cross_origin()
+def get_notes(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    if ('ts' in request.args and 'uid' in request.args):
+        ts = request.args.get('ts', '')
+        uid = request.args.get('uid', '')
+        response = handler.get_notes(task.sample_id, [ts, uid])
+    else:
+        response = handler.get_notes(task.sample_id)
+
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+
+    if 'hits' in response and 'hits' in response['hits']:
+        response = response['hits']['hits']
+    try:
+        for hit in response:
+            hit['_source']['text'] = Markup.escape(hit['_source']['text'])
+    except:
+        pass
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note', methods=['POST'])
+@cross_origin()
+def add_note(task_id):
+    '''
+    Add an analyst note/comment to the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.add_note(task.sample_id, request.form.to_dict())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/edit', methods=['POST'])
+@cross_origin()
+def edit_note(task_id, note_id):
+    '''
+    Modify the specified analyst note/comment.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.edit_note(task.sample_id, note_id,
+                                 Markup(request.form['text']).striptags())
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
+@app.route('/api/v1/tasks/<task_id>/note/<note_id>/delete', methods=['GET'])
+@cross_origin()
+def del_note(task_id, note_id):
+    '''
+    Delete an analyst note/comment from the specified task.
+    '''
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    response = handler.delete_note(task.sample_id, note_id)
+    if not response:
+        abort(HTTP_BAD_REQUEST)
+    return jsonify(response)
+
+
 if __name__ == '__main__':
 
     db.init_db()
 
-    if not os.path.isdir(UPLOAD_FOLDER):
+    if not os.path.isdir(api_config['api']['upload_folder']):
         print('Creating upload dir')
-        os.makedirs(UPLOAD_FOLDER)
+        os.makedirs(api_config['api']['upload_folder'])
 
-    exit_signal = multiprocessing.Value('b')
-    exit_signal.value = False
-    ms_process = multiprocessing.Process(
-        target=multiscanner_process,
-        args=(work_queue, exit_signal)
-    )
-    ms_process.start()
+    if not api_config['api']['distributed']:
+        exit_signal = multiprocessing.Value('b')
+        exit_signal.value = False
+        ms_process = multiprocessing.Process(
+            target=multiscanner_process,
+            args=(work_queue, exit_signal)
+        )
+        ms_process.start()
 
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host=api_config['api']['host'], port=api_config['api']['port'])
 
-    ms_process.join()
+    if not api_config['api']['distributed']:
+        ms_process.join()

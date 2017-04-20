@@ -195,7 +195,7 @@ def config_init(filepath, overwrite=False, storage_classes=None):
 
 
 def _rewite_config(storage_classes, config_object, filepath):
-    for class_name in storage_classes:
+    for class_name in sorted(storage_classes):
         conf = storage_classes[class_name].DEFAULTCONF
         config_object.add_section(class_name)
         for key in conf:
@@ -217,8 +217,7 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
     if storage_classes is None:
         storage_classes = _get_storage_classes()
     ConfNeedsWrite = False
-    storage_classes.sort()
-    for module in storage_classes:
+    for module in sorted(storage_classes):
         try:
             conf = module.DEFAULTCONF
         except:

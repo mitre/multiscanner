@@ -82,6 +82,10 @@
     padding-bottom: 6px;
 }
 
+.file-drop-zone {
+    border: 2px dashed #ddd;
+}
+
 .container {
     margin-bottom: 20px;
 }
