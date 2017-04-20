@@ -131,14 +131,12 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]] = results[item[0]]
             del results[item[0]]
 
-            r_id = str(uuid4())
-            results[item[1]]['report_id'] = r_id
+            results[item[1]]['Metadata'] = item[4]
 
             db.update_task(
                 task_id=item[2],
                 task_status='Complete',
-                sample_id=item[3],
-                report_id=r_id
+                report_id=item[3]
             )
 
         storage_handler.store(results, wait=False)
@@ -210,42 +208,40 @@ def delete_task(task_id):
 @cross_origin()
 def create_task():
     '''
-    Create a new task. Save the submitted file
+    Create a single new task. Save the submitted file
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
-    task_ids = []
-    for file_ in request.files.getlist('file'):
-        original_filename = file_.filename
-        f_name = hashlib.sha256(file_.read()).hexdigest()
-        # Reset the file pointer to the beginning
-        # to allow us to save it
-        file_.seek(0)
+    file_ = request.files['file']
+    original_filename = file_.filename
+    f_name = hashlib.sha256(file_.read()).hexdigest()
+    # Reset the file pointer to the beginning
+    # to allow us to save it
+    file_.seek(0)
 
-        # TODO: should we check if the file is already there
-        # and skip this step if it it?
-        file_path = os.path.join(api_config['api']['upload_folder'], f_name)
-        file_.save(file_path)
-        full_path = os.path.join(MS_WD, file_path)
+    metadata = {}
+    for key in request.form.keys():
+        if key != 'file_id' and request.form[key] != '':
+            metadata[key] = request.form[key]
 
-        # Add task to sqlite DB
-        # Make the sample_id equal the sha256 hash
-        task_id = db.add_task(sample_id=f_name)
+    # TODO: should we check if the file is already there
+    # and skip this step if it it?
+    file_path = os.path.join(api_config['api']['upload_folder'], f_name)
+    file_.save(file_path)
+    full_path = os.path.join(MS_WD, file_path)
 
-        if api_config['api']['distributed']:
-            # Publish the task to Celery
-            multiscanner_celery.delay(full_path, original_filename,
-                                      task_id, f_name)
-        else:
-            # Put the task on the queue
-            work_queue.put((full_path, original_filename, task_id, f_name))
+    # Add task to sqlite DB
+    # Make the sample_id equal the sha256 hash
+    task_id = db.add_task(sample_id=f_name)
 
-        task_ids.append(str(task_id))
-
-    if len(task_ids) == 1:
-        msg = {'task_id': task_id}
+    if api_config['api']['distributed']:
+        # Publish the task to Celery
+        multiscanner_celery.delay(full_path, original_filename,
+                                  task_id, f_name, metadata)
     else:
-        msg = {'task_ids': ", ".join(task_ids)}
+        # Put the task on the queue
+        work_queue.put((full_path, original_filename, task_id, f_name, metadata))
 
+    msg = {'task_id': task_id}
     return make_response(
         jsonify({'Message': msg}),
         HTTP_CREATED
