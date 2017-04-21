@@ -81,14 +81,6 @@
     $('.navbar').removeClass('pushed');
   }
 
-  function editNote(id, text) {
-    var text = {"text": $('#note-input').val()}
-    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/edit"
-    return $.post(url, text, function(data, status){
-        return status;
-      });
-  }
-
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
     var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
@@ -266,7 +258,7 @@
       $.post(url, text, function(data, status){
         textarea.hide();
         submit.hide();
-        span.val(textarea.val()).show();
+        span.html(textarea.val()).show();
         return status;
       });
     }));
