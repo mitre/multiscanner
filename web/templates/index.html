@@ -81,12 +81,18 @@
     });
 
     $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
-      // Hide delete buttons after upload
-      $('#' + previewId + ' .btn-danger').css('visibility', 'hidden');
+      // Hide buttons after upload
+      $('#' + previewId + ' .file-footer-buttons').css('visibility', 'hidden');
 
       // Disable metadata fields after upload
       $('.metadata-group[data-target=' + previewId + '] input').each(function (index, element) {
         $(element).attr('readonly', true);
+      })
+
+      // Click on preview box to go straight to the task/report
+      $('#' + previewId).css('cursor', 'pointer');
+      $('#' + previewId).click(function() {
+        window.location = "report/" + data.response.Message.task_id;
       })
     });
 
