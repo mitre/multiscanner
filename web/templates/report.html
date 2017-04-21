@@ -144,9 +144,17 @@
     });
   }
 
-  $(document).ready(function($) {
-    // Get list of tasks and populate the table
-    tasks_data = $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+  function getReport() {
+    // Get report and populate the table
+    $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+      if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
+        // Check again in 5 seconds
+        console.log("Check again in 5 seconds");
+        setTimeout(getReport, 5000);
+        return;
+      }
+      $('#pending').hide();
+      $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
@@ -200,8 +208,13 @@
           .tooltip();
       })
     });
+  }
 
-    // Add notes to the page
+  $(document).ready(function($) {
+    $('#report-tags').hide();
+
+    // Add report data and notes to the page
+    getReport();
     getNotes();
 
     // Update notes button based on number of notes
@@ -280,6 +293,15 @@
       <span>
         <input type="text" id="tags" class="form-control">
       </span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1" id="pending">
+      <div class="spin-outer"></div>
+      <div class="spin-inner"></div>
+      <div class="text-center">
+        <h3>Scan results pending...</h3>
+      </div>
     </div>
   </div>
   <div class="row">
