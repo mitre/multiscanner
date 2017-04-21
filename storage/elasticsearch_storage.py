@@ -126,7 +126,8 @@ class ElasticSearchStorage(storage.Storage):
             sample = {'filename': filename, 'tags': []}
             for field in METADATA_FIELDS:
                 if field in report[filename]:
-                    sample[field] = report[filename][field]
+                    if len(report[filename][field]) != 0:
+                        sample[field] = report[filename][field]
                     del report[filename][field]
 
 
