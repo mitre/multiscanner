@@ -14,6 +14,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils import database_exists, create_database
 
+from datatables import ColumnDT, DataTables
+
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
@@ -24,6 +26,7 @@ import common
 
 Base = declarative_base()
 Session = sessionmaker()
+
 
 class Task(Base):
     __tablename__ = "Tasks"
@@ -43,6 +46,7 @@ class Task(Base):
 
     def to_json(self):
         return json.dumps(self.to_dict())
+
 
 class Database(object):
     '''
@@ -201,6 +205,20 @@ class Database(object):
                 ses.expunge(task)
                 task_list.append(task.to_dict())
             return task_list
+
+    def search(self, params):
+        with self.db_session_scope() as ses:
+            columns = [
+                ColumnDT(Task.task_id),
+                ColumnDT(Task.sample_id),
+                ColumnDT(Task.task_status),
+            ]
+            query = ses.query()
+            rowTable = DataTables(params, query, columns)
+            output = rowTable.output_result()
+            ses.expunge_all()
+
+            return output
 
     def delete_task(self, task_id):
         with self.db_session_scope() as ses:

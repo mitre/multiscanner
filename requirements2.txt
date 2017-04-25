@@ -12,6 +12,7 @@ ssdeep
 flask
 sqlalchemy
 sqlalchemy-utils
+sqlalchemy-datatables
 flask_cors
 #Required by storage modules
 elasticsearch

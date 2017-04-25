@@ -12,6 +12,7 @@ ssdeep
 flask
 sqlalchemy
 sqlalchemy-utils
+sqlalchemy-datatables
 #Required by distributed feature
 celery
 flask_cors

@@ -21,44 +21,55 @@
   }
 
   function tasksSetup(apiLoc) {
-    // Get list of tasks and populate the table
-    tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/list/", function(data, status){
-      // Add rows to the table
-      $.each(data.Tasks, function(index, item) {
-        $("tbody").append(createTaskRow(item));
-      });
+    // // Get list of tasks and populate the table
+    // tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/list/", function(data, status){
+    //   // Add rows to the table
+    //   $.each(data.Tasks, function(index, item) {
+    //     $("tbody").append(createTaskRow(item));
+    //   });
 
-      // Make table rows clickable
-      $("td").click(function() {
-        // But not cells with a Delete button
-        if ($(this).hasClass('delete')) {
-          return;
-        }
-        window.document.location = $(this).parent().data("href");
-      });
+    //   // Make table rows clickable
+    //   $("td").click(function() {
+    //     // But not cells with a Delete button
+    //     if ($(this).hasClass('delete')) {
+    //       return;
+    //     }
+    //     window.document.location = $(this).parent().data("href");
+    //   });
 
-      // Add tooltip to Delete buttons
-      $(function () {
-        $('[data-toggle="tooltip"]').tooltip();
-      });
+    //   // Add tooltip to Delete buttons
+    //   $(function () {
+    //     $('[data-toggle="tooltip"]').tooltip();
+    //   });
 
-      // Add delete functionality
-      $('.btn-danger').click(function() {
-        var t_id = this.dataset.id;
-        $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
-          .done(function (data, status, jqXHR) {
-            $('td').filter(function() {
-              return this.innerHTML === t_id;
-            }).parent().remove();
-            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
-          })
-          .fail(function (data, status, jqXHR) {
-            $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
-          });
-      });
+    //   // Add delete functionality
+    //   $('.btn-danger').click(function() {
+    //     var t_id = this.dataset.id;
+    //     $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
+    //       .done(function (data, status, jqXHR) {
+    //         $('td').filter(function() {
+    //           return this.innerHTML === t_id;
+    //         }).parent().remove();
+    //         $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+    //       })
+    //       .fail(function (data, status, jqXHR) {
+    //         $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+    //       });
+    //   });
 
-      // Spruce up the table
-      $('.table').DataTable();
+    //   // Spruce up the table
+    //   $('.table').DataTable();
+    // });
+
+    $('.table').DataTable( {
+      processing: true,
+      serverSide: true,
+      ajax: "http://" + apiLoc + "/api/v1/tasks/search",
+      // columns: [
+      //   { "data": "task_id" },
+      //   { "data": "sample_id" },
+      //   { "data": "task_status" }
+      // ]
     });
   }
 
@@ -80,13 +91,13 @@
     <h1 class="text-center">Tasks</h1>
     <br />
 
-    <table class="table table-striped table-hover ">
+    <table class="table table-striped table-hover">
       <thead>
         <tr>
           <th>Task ID</th>
           <th>Sample</th>
           <th>Task Status</th>
-          <th class="text-center">Delete</th>
+          <!-- <th class="text-center">Delete</th> -->
         </tr>
       </thead>
       <tbody>

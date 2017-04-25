@@ -172,10 +172,20 @@ def index():
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
-    in the DB.
+    in the tasks DB.
     '''
 
     return jsonify({'Tasks': db.get_all_tasks()})
+
+
+@app.route('/api/v1/tasks/search', methods=['GET'])
+@cross_origin()
+def task_search():
+    '''
+    Handle query between jQuery Datatables and Elasticsearch
+    '''
+    resp = db.search(request.args.to_dict())
+    return jsonify(resp)
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
