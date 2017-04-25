@@ -30,11 +30,12 @@ class Task(Base):
 
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
+    sample_id = Column(String, unique=False)
     report_id = Column(String, unique=False)
 
     def __repr__(self):
-        return '<Task("{0}","{1}","{2}")>'.format(
-            self.task_id, self.task_status, self.report_id
+        return '<Task("{0}","{1}","{2}","{3}")>'.format(
+            self.task_id, self.task_status, self.sample_id, self.report_id
         )
 
     def to_dict(self):
@@ -148,18 +149,18 @@ class Database(object):
         finally:
             ses.close()
 
-    def add_task(self, task_id=None, task_status='Pending', report_id=None):
+    def add_task(self, task_id=None, task_status='Pending', sample_id=None, report_id=None):
         with self.db_session_scope() as ses:
             task = Task(
                 task_id=task_id,
-                task_status='Pending',
-                report_id=None
+                task_status=task_status,
+                sample_id=sample_id,
+                report_id=report_id
             )
             try:
                 ses.add(task)
                 # Need to explicitly commit here in order to update the ID in the DAO
                 ses.commit()
-                print(task.to_dict())
             except IntegrityError as e:
                 print('PRIMARY KEY must be unique! %s' % e)
                 return -1
@@ -194,7 +195,7 @@ class Database(object):
     def get_all_tasks(self):
         with self.db_session_scope() as ses:
             rs = ses.query(Task).all()
-            # For testing, do not use in production
+            # TODO: For testing, do not use in production
             task_list = []
             for task in rs:
                 ses.expunge(task)

@@ -23,7 +23,6 @@ import os
 import sys
 import time
 import hashlib
-import configparser
 import multiprocessing
 import queue
 from flask import Flask, jsonify, make_response, request, abort
@@ -38,10 +37,10 @@ import multiscanner
 import sql_driver as database
 from storage import Storage
 import elasticsearch_storage
-from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
+UPLOAD_FOLDER = 'tmp/'
 
 BATCH_SIZE = 100
 WAIT_SECONDS = 60   # Number of seconds to wait for additional files
@@ -52,25 +51,66 @@ HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
 
-DEFAULTCONF = {
-    'host': 'localhost',
-    'port': 8080,
-    'upload_folder': '/mnt/samples/',
-}
+# FULL_DB_PATH = os.path.join(MS_WD, 'sqlite.db')
+
 
 app = Flask(__name__)
-api_config_object = configparser.SafeConfigParser()
-api_config_object.optionxform = str
-api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
-api_config_object.read(api_config_file)
-api_config = multiscanner.common.parse_config(api_config_object)
-
-db = database.Database(config=api_config.get('Database'))
+db = database.Database()
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
+work_queue = multiprocessing.Queue()
+
+
+def multiscanner_process(work_queue, exit_signal):
+    metadata_list = []
+    time_stamp = None
+    while True:
+        time.sleep(1)
+        try:
+            metadata_list.append(work_queue.get_nowait())
+            if not time_stamp:
+                time_stamp = time.time()
+            while len(metadata_list) < BATCH_SIZE:
+                metadata_list.append(work_queue.get_nowait())
+        except queue.Empty:
+            if metadata_list and time_stamp:
+                if len(metadata_list) >= BATCH_SIZE:
+                    pass
+                elif time.time() - time_stamp > WAIT_SECONDS:
+                    pass
+                else:
+                    continue
+            else:
+                continue
+
+        filelist = [item[0] for item in metadata_list]
+        resultlist = multiscanner.multiscan(
+            filelist, configfile=multiscanner.CONFIG
+        )
+        results = multiscanner.parse_reports(resultlist, python=True)
+
+        for file_name in results:
+            os.remove(file_name)
+
+        for item in metadata_list:
+
+            results[item[1]] = results[item[0]]
+            del results[item[0]]
+
+            db.update_task(
+                task_id=item[2],
+                task_status='Complete',
+                report_id=item[3]
+            )
+
+        storage_handler.store(results, wait=False)
+
+        filelist = []
+        time_stamp = None
+    storage_handler.close()
 
 
 @app.errorhandler(HTTP_BAD_REQUEST)
@@ -135,21 +175,22 @@ def create_task():
     to UPLOAD_FOLDER. Return task id and 201 status.
     '''
     file_ = request.files['file']
+    # TODO: Figure out how to get multiscanner to report
+    # the original filename
     original_filename = file_.filename
     f_name = hashlib.sha256(file_.read()).hexdigest()
     # Reset the file pointer to the beginning
     # to allow us to save it
     file_.seek(0)
 
-    file_path = os.path.join(api_config['api']['upload_folder'], f_name)
+    file_path = os.path.join(UPLOAD_FOLDER, f_name)
     file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
 
-    # Add task to SQL task DB
+    # Add task to sqlite DB
     task_id = db.add_task()
 
-    # Publish the task to Celery
-    multiscanner_celery.delay(full_path, original_filename, task_id, f_name)
+    work_queue.put((full_path, original_filename, task_id, f_name))
 
     return make_response(
         jsonify({'Message': {'task_id': task_id}}),
@@ -198,8 +239,18 @@ if __name__ == '__main__':
 
     db.init_db()
 
-    if not os.path.isdir(api_config['api']['upload_folder']):
+    if not os.path.isdir(UPLOAD_FOLDER):
         print('Creating upload dir')
-        os.makedirs(api_config['api']['upload_folder'])
+        os.makedirs(UPLOAD_FOLDER)
 
-    app.run(host=api_config['api']['host'], port=api_config['api']['port'])
+    exit_signal = multiprocessing.Value('b')
+    exit_signal.value = False
+    ms_process = multiprocessing.Process(
+        target=multiscanner_process,
+        args=(work_queue, exit_signal)
+    )
+    ms_process.start()
+
+    app.run(host='0.0.0.0', port=8080)
+
+    ms_process.join()

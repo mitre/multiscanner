@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{% endblock %} | Multiscanner</title>
+    <link rel="stylesheet" href="/static/css/bootstrap-spacelab.min.css">
+    <link rel="stylesheet" href="/static/css/datatables.min.css">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/datatables.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+  </head>
+
+  <body>
+    {% block header %}
+    <nav class="navbar navbar-inverse col-md-8 col-md-offset-2">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">Multiscanner</a>
+        </div>
+
+        <!-- NAVBAR ITEMS -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+          <ul class="nav navbar-nav">
+            <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
+            <li {% if request.path == '/tasks' %} class="active" {% endif %}><a href="/tasks">Tasks</a></li>
+            <!-- <li {% if request.path == '/reports' %} class="active" {% endif %}><a href="/reports">Reports</a></li> -->
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endblock %}
+
+    <div class="container">
+      {% block content %}{% endblock %}
+
+      <div class="row">
+        <div class="col-md-12">
+        {% block footer %}
+        {% endblock %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
