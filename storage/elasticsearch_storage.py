@@ -173,6 +173,31 @@ class ElasticSearchStorage(storage.Storage):
             print(e)
             return None
 
+    def search(self, query_string):
+        '''Run a Query String query and return a list of sample_ids associated
+        with the matches. Run the query against all document types.
+        '''
+        query = """{ "type": "note" }
+        { "_source": ["_parent"], "query": { "query_string": { "query": "%s" } } }
+        { "type": "report" }
+        { "_source": ["_parent"], "query": { "query_string": { "query": "%s" } } }
+        { "type": "sample" }
+        { "_source": ["_id"], "query": { "query_string": { "query": "%s" } } }
+        """ % ((query_string,) * 3)
+
+        result = self.es.msearch(
+            index=self.index, body=query
+        )
+        matches = []
+        for r in result['responses']:
+            for h in r['hits']['hits']:
+                if h['_type'] == 'sample':
+                    field = '_id'
+                else:
+                    field = '_parent'
+                matches.append(h[field])
+        return tuple(set(matches))
+
     def add_tag(self, sample_id, tag):
         script = {
             "script": {

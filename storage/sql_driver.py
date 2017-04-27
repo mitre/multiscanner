@@ -206,15 +206,23 @@ class Database(object):
                 task_list.append(task.to_dict())
             return task_list
 
-    def search(self, params):
+    def search(self, params, id_list=None, search_by_value=False):
+        '''Search according to Datatables-supplied parameters.
+        Returns results in format expected by Datatables.
+        '''
         with self.db_session_scope() as ses:
-            columns = [
-                ColumnDT(Task.task_id),
-                ColumnDT(Task.sample_id),
-                ColumnDT(Task.task_status),
-            ]
-            query = ses.query()
+            fields = [Task.task_id, Task.sample_id, Task.task_status]
+            columns = [ColumnDT(f) for f in fields]
+            if not id_list:
+                query = ses.query()
+            else:
+                query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
+            if not search_by_value:
+                # Don't limit search by search term or it won't return anything
+                # (search term already handled by Elasticsearch)
+                del params['search[value]']
             rowTable = DataTables(params, query, columns)
+
             output = rowTable.output_result()
             ses.expunge_all()
 

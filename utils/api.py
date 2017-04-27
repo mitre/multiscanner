@@ -182,9 +182,17 @@ def task_list():
 @cross_origin()
 def task_search():
     '''
-    Handle query between jQuery Datatables and Elasticsearch
+    Handle query between jQuery Datatables, the task DB, and Elasticsearch
     '''
-    resp = db.search(request.args.to_dict())
+    params = request.args.to_dict()
+
+    # Pass search term to Elasticsearch, get back list of sample_ids
+    search_term = params['search[value]']
+    es_result = handler.search(search_term)
+
+    # Search the task db for the ids we got from Elasticsearch
+    # TODO: test that this works for ES results of more than 999
+    resp = db.search(params, es_result)
     return jsonify(resp)
 
 
