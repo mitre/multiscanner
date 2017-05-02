@@ -191,7 +191,6 @@ def task_search():
     es_result = handler.search(search_term)
 
     # Search the task db for the ids we got from Elasticsearch
-    # TODO: test that this works for ES results of more than 999
     resp = db.search(params, es_result)
     return jsonify(resp)
 
