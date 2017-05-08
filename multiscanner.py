@@ -49,8 +49,9 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": os.path.join(MS_WD, 'storage.ini')
-    }
+    "storage-config": os.path.join(MS_WD, 'storage.ini'),
+    "api-config": os.path.join(MS_WD, 'api_config.ini'),
+}
 
 VERBOSE = False
 

@@ -13,9 +13,9 @@ ssdeep
 flask
 sqlalchemy
 sqlalchemy-utils
-flask_cors
 #Required by storage modules
 elasticsearch
 pymongo
 #Required for distributed
 celery[librabbitmq,redis]
+flask_cors

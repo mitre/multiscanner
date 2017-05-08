@@ -6,6 +6,7 @@ from the utils/ directory.
 
 import os
 import sys
+import codecs
 import configparser
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
@@ -34,6 +35,14 @@ config_object = configparser.SafeConfigParser()
 config_object.optionxform = str
 configfile = common.get_api_config_path(multiscanner.CONFIG)
 config_object.read(configfile)
+if not config_object.has_section('celery') or not os.path.isfile(configfile):
+    # Write default config
+    config_object.add_section('celery')
+    for key in DEFAULTCONF:
+        config_object.set('celery', key, str(DEFAULTCONF[key]))
+    conffile = codecs.open(configfile, 'w', 'utf-8')
+    config_object.write(conffile)
+    conffile.close()
 config = common.parse_config(config_object)
 worker_config = config.get('celery')
 db_config = config.get('Database')

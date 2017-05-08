@@ -81,14 +81,6 @@
     $('.navbar').removeClass('pushed');
   }
 
-  function editNote(id, text) {
-    var text = {"text": $('#note-input').val()}
-    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/edit"
-    return $.post(url, text, function(data, status){
-        return status;
-      });
-  }
-
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
     var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
@@ -144,9 +136,17 @@
     });
   }
 
-  $(document).ready(function($) {
-    // Get list of tasks and populate the table
-    tasks_data = $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+  function getReport() {
+    // Get report and populate the table
+    $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+      if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
+        // Check again in 5 seconds
+        console.log("Check again in 5 seconds");
+        setTimeout(getReport, 5000);
+        return;
+      }
+      $('#pending').hide();
+      $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
@@ -200,9 +200,28 @@
           .tooltip();
       })
     });
+  }
 
-    // Add notes to the page
+  $(document).ready(function($) {
+    $('#report-tags').hide();
+
+    // Add report data and notes to the page
+    getReport();
     getNotes();
+
+    // Update notes button based on number of notes
+    $( document ).ajaxStop(function() {
+      numNotes = $('#note-container > div').length;
+      if (numNotes > 0) {
+        if (numNotes === 1) {
+          $('#notes-open').html('1 Note');
+        } else {
+          $('#notes-open').html(numNotes + ' Notes');
+        }
+        $('#notes-open').addClass('btn-warning').removeClass('btn-primary');
+        $('#notes-close').addClass('btn-warning').removeClass('btn-primary');
+      }
+    });
 
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
@@ -239,7 +258,7 @@
       $.post(url, text, function(data, status){
         textarea.hide();
         submit.hide();
-        span.val(textarea.val()).show();
+        span.html(textarea.val()).show();
         return status;
       });
     }));
@@ -256,7 +275,7 @@
 {% block title %}Report{% endblock %}
 
 {% block content %}
-<button class="btn btn-warning" id="notes-open">Notes</button>
+<button class="btn btn-primary" id="notes-open">Notes</button>
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
@@ -269,6 +288,15 @@
     </div>
   </div>
   <div class="row">
+    <div class="col-md-10 col-md-offset-1" id="pending">
+      <div class="spin-outer"></div>
+      <div class="spin-inner"></div>
+      <div class="text-center">
+        <h3>Scan results pending...</h3>
+      </div>
+    </div>
+  </div>
+  <div class="row">
     <div class="col-md-10 col-md-offset-1" id="report">
       <table class="table table-hover ">
         <tbody></tbody>
@@ -278,7 +306,7 @@
 </div>
 
 <div class="" id="report-notes">
-  <button id="notes-close" class="btn btn-warning" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  <button id="notes-close" class="btn btn-primary" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
   <div id="note-container"></div>
   <form id="note-form">
     <div class="form-group">
