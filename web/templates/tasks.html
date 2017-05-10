@@ -1,9 +1,12 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
+<script src="/static/js/dataTables.buttons.min.js"></script>
+<script src="/static/js/buttons.bootstrap.min.js"></script>
 <script type="text/javascript">
   function tasksSetup(apiLoc) {
-    $('.table').DataTable( {
+    var table = $('.table').DataTable( {
       processing: true,
       serverSide: true,
       ajax: "http://" + apiLoc + "/api/v1/tasks/search",
@@ -20,7 +23,7 @@
           },
         }
       ],
-      "rowCallback": function( row, data, index ) {
+      rowCallback: function( row, data, index ) {
         if (data[2] == "Complete") {
           tr_class = ""
         } else {
@@ -29,7 +32,7 @@
         $(row).addClass("task-row" + tr_class);
         $(row).attr('data-href', '/report/' + data[0]);
       },
-      "drawCallback": function( settings ) {
+      drawCallback: function( settings ) {
         // Every time the table is loaded with new data...
         // ...make table rows clickable
         $("td").click(function() {
@@ -59,6 +62,18 @@
               $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
             });
         });
+      },
+      buttons: [
+        {
+          text: '<i class="glyphicon glyphicon-refresh"></i>',
+          titleAttr: 'Refresh',
+          action: function ( e, dt, node, config ) {
+            table.ajax.reload();
+          }
+        }
+      ],
+      "initComplete": function( settings, json ) {
+        table.buttons().containers().appendTo('#DataTables_Table_0_length');
       }
     });
   }

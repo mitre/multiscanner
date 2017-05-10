@@ -367,3 +367,7 @@
     -webkit-animation: spin-rev 1s infinite linear;
           animation: spin-rev 1s infinite linear;
 }
+
+#DataTables_Table_0_length .dt-buttons {
+    float: right;
+}
