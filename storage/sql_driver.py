@@ -217,10 +217,10 @@ class Database(object):
                 query = ses.query()
             else:
                 query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
-            if not search_by_value:
-                # Don't limit search by search term or it won't return anything
-                # (search term already handled by Elasticsearch)
-                del params['search[value]']
+                if not search_by_value:
+                    # Don't limit search by search term or it won't return anything
+                    # (search term already handled by Elasticsearch)
+                    del params['search[value]']
             rowTable = DataTables(params, query, columns)
 
             output = rowTable.output_result()
