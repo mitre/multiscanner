@@ -15,8 +15,9 @@ POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
 
-The API endpoints all have Cross Origin Resource Sharing (CORS) enabled and set
-to allow ALL origins.
+The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
+default it will allow requests from any port on localhost. Change this setting
+by modifying the 'cors' setting in the 'api' section of the api config file.
 
 TODO:
 * Add doc strings to functions
@@ -31,7 +32,7 @@ import configparser
 import multiprocessing
 import queue
 from uuid import uuid4
-from flask_cors import cross_origin
+from flask_cors import CORS
 from flask import Flask, jsonify, make_response, request, abort
 from jinja2 import Markup
 
@@ -63,7 +64,8 @@ DEFAULTCONF = {
     'host': 'localhost',
     'port': 8080,
     'upload_folder': '/mnt/samples/',
-    'distributed': True
+    'distributed': True,
+    'cors': 'https?://localhost(:\d+)?',
 }
 
 app = Flask(__name__)
@@ -88,8 +90,19 @@ for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
 
-if not api_config['api']['distributed']:
+try:
+    DISTRIBUTED = api_config['api']['distributed']
+except KeyError:
+    DISTRIBUTED = False
+
+if not DISTRIBUTED:
     work_queue = multiprocessing.Queue()
+
+try:
+    cors_origins = api_config['api']['cors']
+except KeyError:
+    cors_origins = DEFAULTCONF['cors']
+CORS(app, origins=cors_origins)
 
 
 def multiscanner_process(work_queue, exit_signal):
@@ -168,7 +181,6 @@ def index():
 
 
 @app.route('/api/v1/tasks/list/', methods=['GET'])
-@cross_origin()
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
@@ -179,7 +191,6 @@ def task_list():
 
 
 @app.route('/api/v1/tasks/search', methods=['GET'])
-@cross_origin()
 def task_search():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch
@@ -196,7 +207,6 @@ def task_search():
 
 
 @app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
-@cross_origin()
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -210,7 +220,6 @@ def get_task(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
-@cross_origin()
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -222,7 +231,6 @@ def delete_task(task_id):
 
 
 @app.route('/api/v1/tasks/create/', methods=['POST'])
-@cross_origin()
 def create_task():
     '''
     Create a single new task. Save the submitted file
@@ -250,7 +258,7 @@ def create_task():
     # Make the sample_id equal the sha256 hash
     task_id = db.add_task(sample_id=f_name)
 
-    if api_config['api']['distributed']:
+    if DISTRIBUTED:
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
                                   task_id, f_name, metadata)
@@ -266,7 +274,6 @@ def create_task():
 
 
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
-@cross_origin()
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -289,7 +296,6 @@ def get_report(task_id):
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
-@cross_origin()
 def delete_report(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -305,7 +311,6 @@ def delete_report(task_id):
 
 
 @app.route('/api/v1/tags/', methods=['GET'])
-@cross_origin()
 def taglist():
     '''
     Return a list of all tags currently in use.
@@ -317,7 +322,6 @@ def taglist():
 
 
 @app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
-@cross_origin()
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
@@ -342,7 +346,6 @@ def tags(task_id):
 
 
 @app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
-@cross_origin()
 def get_notes(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -372,7 +375,6 @@ def get_notes(task_id):
 
 
 @app.route('/api/v1/tasks/<task_id>/note', methods=['POST'])
-@cross_origin()
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -388,7 +390,6 @@ def add_note(task_id):
 
 
 @app.route('/api/v1/tasks/<task_id>/note/<note_id>/edit', methods=['POST'])
-@cross_origin()
 def edit_note(task_id, note_id):
     '''
     Modify the specified analyst note/comment.
@@ -405,7 +406,6 @@ def edit_note(task_id, note_id):
 
 
 @app.route('/api/v1/tasks/<task_id>/note/<note_id>/delete', methods=['GET'])
-@cross_origin()
 def del_note(task_id, note_id):
     '''
     Delete an analyst note/comment from the specified task.
@@ -428,7 +428,7 @@ if __name__ == '__main__':
         print('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
-    if not api_config['api']['distributed']:
+    if not DISTRIBUTED:
         exit_signal = multiprocessing.Value('b')
         exit_signal.value = False
         ms_process = multiprocessing.Process(
@@ -439,5 +439,5 @@ if __name__ == '__main__':
 
     app.run(host=api_config['api']['host'], port=api_config['api']['port'])
 
-    if not api_config['api']['distributed']:
+    if not DISTRIBUTED:
         ms_process.join()
