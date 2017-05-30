@@ -9,6 +9,8 @@ import mock
 import unittest
 import time
 
+from elasticsearch import Elasticsearch
+
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,47 +23,9 @@ sys.path.insert(0, os.path.dirname(CWD))
 # import elasticsearch_storage
 from elasticsearch_storage import ElasticSearchStorage
 
-
-
-#TEST_DB_PATH = os.path.join(CWD, 'testing.db')
-#DB_CONF = Database.DEFAULTCONF
-#DB_CONF['db_name'] = TEST_DB_PATH
-
-## If you want to test with an actual postgres DB server,
-## uncomment the following 5 lines and change values accordingly:
-#DB_CONF['db_name'] = 'testdb'
-#DB_CONF['db_type'] = 'postgresql'
-#DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
-#DB_CONF['username'] = 'dbusername'
-#DB_CONF['password'] = 'dbpassword'
-
-#TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
-#TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None, 'sample_id': None}
-#TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
-
-#class ESTest(unittest.TestCase):
-#class TestES(unittest.TestCase):
-#    def setUp(self):
-#        # Start ES test server
-#        self.es = ElasticSearchServer(cmd="/usr/share/elasticsearch/bin/elasticsearch")
-#        print(self.es.arguments)
-#        self.es.start()
-#        es_test_config = {
-#            'host': self.es._bind_host,
-#            'port': self.es._bind_port,
-#        }
-#        self.handler = ElasticSearchStorage(config=es_test_config)
-#
-#    def test_store(self):
-#        resp = self.handler.store(TEST_REPORT)
-#        assertEqual(resp, ['26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'])
-#
-#    def tearDown(self):
-#        # Close ES test server between tests
-#        self.es.stop()
-
 TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}}}
 TEST_ID = '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6'
+TEST_NOTE_ID = 'eba3d3de-1a7e-4018-8fb3-a4635b4b7ab1'
 
 
 class TestES(unittest.TestCase):
@@ -89,162 +53,172 @@ class TestES(unittest.TestCase):
         self.assertEqual(resp, [TEST_ID])
         self.assertEqual(mock_helpers.bulk.call_count, 2)
 
-    @mock.patch('elasticsearch_storage.Elasticsearch')
-    def test_get_report(self, mock_es):
-        resp = self.handler.get_report(TEST_ID, TEST_ID)
+    @mock.patch.object(Elasticsearch, 'get')
+    def test_get_report(self, mock_get):
+        self.handler.get_report(TEST_ID, TEST_ID)
 
-        self.assertEqual(mock_es.get.call_count, 2)
+        mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='sample')
+        mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, parent=TEST_ID, doc_type=ElasticSearchStorage.DEFAULTCONF['doc_type'])
+
+    @mock.patch('elasticsearch_storage.helpers')
+    def test_search(self, mock_helpers):
+        mock_helpers.scan.return_value = [{'sort': [417], '_type': 'report', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt'}, '_parent': TEST_ID, '_id': TEST_ID}]
+        resp = self.handler.search('test')
+
+        args, kwargs = mock_helpers.scan.call_args_list[0]
+        query = kwargs['query']
+        self.assertEqual(query['query']['query_string']['query'], 'test')
+
+        self.assertEqual(resp, (TEST_ID,))
+
+    @mock.patch.object(Elasticsearch, 'update')
+    def test_add_tag(self, mock_update):
+        self.handler.add_tag(TEST_ID, 'foo')
+
+        args, kwargs = mock_update.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        sample_id = kwargs['id']
+        body = str(kwargs['body'])
+
+        self.assertEqual(mock_update.call_count, 1)
+        self.assertEqual(doc_type, 'sample')
+        self.assertEqual(sample_id, TEST_ID)
+        assert 'ctx._source.tags.add(params.tag)' in body
+        assert "'tag': 'foo'" in body
+
+    @mock.patch.object(Elasticsearch, 'update')
+    def test_remove_tag(self, mock_update):
+        self.handler.remove_tag(TEST_ID, 'foo')
+
+        args, kwargs = mock_update.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        sample_id = kwargs['id']
+        body = str(kwargs['body'])
+
+        self.assertEqual(mock_update.call_count, 1)
+        self.assertEqual(doc_type, 'sample')
+        self.assertEqual(sample_id, TEST_ID)
+        assert 'ctx._source.tags.remove(' in body
+        assert "'tag': 'foo'" in body
+
+    @mock.patch.object(Elasticsearch, 'search')
+    def test_get_tags(self, mock_search):
+        mock_search.return_value = {"aggregations": {
+            "tags_agg": {
+                "doc_count_error_upper_bound": 0,
+                "sum_other_doc_count": 0,
+                "buckets": [
+                    {
+                        "key": "Malicious",
+                        "doc_count": 1
+                    },
+                    {
+                        "key": "Benign",
+                        "doc_count": 1
+                    }
+                ]
+            }
+        }}
+        tag_1 = mock_search.return_value['aggregations']['tags_agg']['buckets'][0]
+        tag_2 = mock_search.return_value['aggregations']['tags_agg']['buckets'][1]
+        resp = self.handler.get_tags()
+
+        self.assertEqual(mock_search.call_count, 1)
+        args, kwargs = mock_search.call_args_list[0]
+        query = kwargs['body']
+        doc_type = kwargs['doc_type']
+
+        self.assertEqual(doc_type, 'sample')
+        self.assertEqual(query['aggs']['tags_agg']['terms']['field'], 'tags.keyword')
+        self.assertEqual(resp['buckets'][0], tag_1)
+        self.assertEqual(resp['buckets'][1], tag_2)
+
+    @mock.patch.object(Elasticsearch, 'search')
+    def test_get_notes(self, mock_search):
+        resp = self.handler.get_notes(TEST_ID)
+
+        self.assertEqual(mock_search.call_count, 1)
+        args, kwargs = mock_search.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        query = kwargs['body']
+
+        self.assertEqual(doc_type, 'note')
+        self.assertEqual(query['query']['has_parent']['query']['match']['_id'], TEST_ID)
+
+    @mock.patch.object(Elasticsearch, 'get')
+    def test_get_note(self, mock_get):
+        resp = self.handler.get_note(TEST_ID, TEST_ID)
+
+        self.assertEqual(mock_get.call_count, 1)
+        args, kwargs = mock_get.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        sample_id = kwargs['parent']
+        note_id = kwargs['id']
+
+        self.assertEqual(doc_type, 'note')
+        self.assertEqual(sample_id, TEST_ID)
+        self.assertEqual(note_id, TEST_ID)
+
+    @mock.patch.object(Elasticsearch, 'get')
+    @mock.patch.object(Elasticsearch, 'create')
+    def test_add_note(self, mock_create, mock_get):
+        mock_create.return_value = {'result': 'created', '_id': TEST_ID}
+        self.handler.add_note(TEST_ID, {'text': 'foo'})
+
+        self.assertEqual(mock_create.call_count, 1)
+        args, kwargs = mock_create.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        parent = kwargs['parent']
+        body = kwargs['body']
+
+        self.assertEqual(doc_type, 'note')
+        self.assertEqual(parent, TEST_ID)
+        self.assertEqual(body['text'], 'foo')
+        self.assertEqual(mock_get.call_count, 1)
+
+    @mock.patch.object(Elasticsearch, 'update')
+    def test_edit_note(self, mock_update):
+        mock_update.return_value = {'result': 'success', '_id': TEST_ID}
+        self.handler.edit_note(TEST_ID, TEST_NOTE_ID, 'foo')
+
+        self.assertEqual(mock_update.call_count, 1)
+        args, kwargs = mock_update.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        note_id = kwargs['id']
+        parent = kwargs['parent']
+        body = kwargs['body']
+        print(body)
+
+        self.assertEqual(doc_type, 'note')
+        self.assertEqual(parent, TEST_ID)
+        self.assertEqual(note_id, TEST_NOTE_ID)
+        self.assertEqual(body['doc']['text'], 'foo')
+
+    @mock.patch.object(Elasticsearch, 'delete')
+    def test_delete_note(self, mock_delete):
+        self.handler.delete_note(TEST_ID, TEST_NOTE_ID)
+
+        self.assertEqual(mock_delete.call_count, 1)
+        args, kwargs = mock_delete.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        parent = kwargs['parent']
+        note_id = kwargs['id']
+
+        self.assertEqual(doc_type, 'note')
+        self.assertEqual(parent, TEST_ID)
+        self.assertEqual(note_id, TEST_NOTE_ID)
+
+    @mock.patch.object(Elasticsearch, 'delete')
+    def test_delete(self, mock_delete):
+        self.handler.delete(TEST_ID)
+
+        self.assertEqual(mock_delete.call_count, 1)
+        args, kwargs = mock_delete.call_args_list[0]
+        doc_type = kwargs['doc_type']
+        report_id = kwargs['id']
+
+        self.assertEqual(doc_type, 'report')
+        self.assertEqual(report_id, TEST_ID)
 
     def tearDown(self):
         self.handler.teardown()
-
-
-#def drop_db_table(db_eng):
-#    '''
-#    Cleanup task. Drops the test DB table
-#    :param db_eng: database engine
-#    '''
-#    Task.__table__.drop(db_eng)
-#
-#
-#class TestTaskSerialization(unittest.TestCase):
-#    def setUp(self):
-#        self.task = Task(
-#            task_id = 1,
-#            task_status = 'Pending',
-#            report_id = None,
-#            sample_id = None
-#        )
-#
-#    def test_task_dict_serialization(self):
-#        self.assertDictEqual(TEST_TASK, self.task.to_dict())
-#
-#    def test_task_json_serialization(self):
-#        task_serialized = json.dumps(TEST_TASK)
-#        self.assertIn('"task_id": 1', task_serialized)
-#        self.assertIn('"task_status": "Pending"', task_serialized)
-#        self.assertIn('"report_id": null', task_serialized)
-#        self.assertIn('"sample_id": null', task_serialized)
-#
-#    def tearDown(self):
-#        pass
-#
-#
-#class TestDBInit(unittest.TestCase):
-#    def setUp(self):
-#        self.sql_db = Database(config=DB_CONF)
-#        self.sql_db.init_db()
-#
-#    def test_db_init(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            self.assertIn('SQLite 3.x database', magic.from_file(TEST_DB_PATH))
-#
-#    def tearDown(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            os.remove(TEST_DB_PATH)
-#
-#
-#class TestTaskAdd(unittest.TestCase):
-#    def setUp(self):
-#        self.sql_db = Database(config=DB_CONF)
-#        self.sql_db.init_db()
-#
-#    def test_add_task(self):
-#        task_id = 1
-#        resp = self.sql_db.add_task(
-#            task_id=task_id,
-#            task_status='Pending',
-#            sample_id=None,
-#            report_id=None
-#        )
-#        self.assertEqual(resp, task_id)
-#
-#    def tearDown(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            os.remove(TEST_DB_PATH)
-#        else:
-#            drop_db_table(self.sql_db.db_engine)
-#
-#
-#class TestTaskManipulation(unittest.TestCase):
-#    def setUp(self):
-#        self.sql_db = Database(config=DB_CONF)
-#        self.sql_db.init_db()
-#        self.sql_db.add_task(
-#            task_status='Pending',
-#            report_id=None
-#        )
-#
-#    def test_add_second_task(self):
-#        resp = self.sql_db.add_task()
-#        self.assertEqual(resp, 2)
-#
-#    def test_get_task(self):
-#        resp = self.sql_db.get_task(task_id=1)
-#        self.assertEqual(resp.task_id, 1)
-#        self.assertEqual(resp.task_status, 'Pending')
-#        self.assertEqual(resp.sample_id, None)
-#        self.assertEqual(resp.report_id, None)
-#
-#    def test_update_task(self):
-#        resp = self.sql_db.update_task(
-#            task_id=1,
-#            task_status='Complete',
-#            report_id =  '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'
-#        )
-#        self.assertDictEqual(resp, self.sql_db.get_task(1).to_dict())
-#        self.assertDictEqual(resp, {'task_id': 1, 'sample_id': None, 'task_status': 'Complete', 'report_id': '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'})
-#
-#    def test_delete_task(self):
-#        deleted = self.sql_db.delete_task(task_id=1)
-#        self.assertTrue(deleted)
-#        resp = self.sql_db.get_task(task_id=1)
-#        self.assertEqual(resp, None)
-#
-#    def tearDown(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            os.remove(TEST_DB_PATH)
-#        else:
-#            drop_db_table(self.sql_db.db_engine)
-#
-#
-#class TestGetAllTasks(unittest.TestCase):
-#    def setUp(self):
-#        self.sql_db = Database(config=DB_CONF)
-#        self.sql_db.init_db()
-#        for i in range(0,3):
-#            self.sql_db.add_task()
-#            i += 1
-#
-#    def test_get_all_tasks(self):
-#        expected_response = [
-#            {'task_id': i, 'sample_id': None, 'task_status': 'Pending', 'report_id': None} for i in range(1,4)
-#        ]
-#        resp = self.sql_db.get_all_tasks()
-#        for i in range(0,3):
-#            self.assertDictEqual(expected_response[i], resp[i])
-#
-#    def tearDown(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            os.remove(TEST_DB_PATH)
-#        else:
-#            drop_db_table(self.sql_db.db_engine)
-#
-#
-#class TestStressTest(unittest.TestCase):
-#    def setUp(self):
-#        self.sql_db = Database(config=DB_CONF)
-#        self.sql_db.init_db()
-#        for i in range(0,1000):
-#            self.sql_db.add_task()
-#            i += 1
-#
-#    def test_get_all_tasks(self):
-#        for i in range(1,1000):
-#            self.sql_db.get_task(task_id=i)
-#
-#    def tearDown(self):
-#        if DB_CONF['db_type'] == 'sqlite':
-#            os.remove(TEST_DB_PATH)
-#        else:
-#            drop_db_table(self.sql_db.db_engine)
