@@ -261,7 +261,8 @@ def create_task():
     if DISTRIBUTED:
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
-                                  task_id, f_name, metadata)
+                                  task_id, f_name,
+                                  config=multiscanner.CONFIG)
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))

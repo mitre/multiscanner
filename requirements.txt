@@ -1,5 +1,6 @@
 #Required
 future
+configparser
 #Required by modules
 bitstring
 paramiko
@@ -13,9 +14,9 @@ flask
 sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
-#Required by distributed feature
-celery
-flask_cors
 #Required by storage modules
 elasticsearch
 pymongo
+#Required for distributed
+celery[librabbitmq,redis]
+flask_cors

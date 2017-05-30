@@ -3,18 +3,19 @@ MultiScanner
 
 Introduction
 ------------
-MultiScanner is a file analysis framework that allows the user to evaluate a set
-of files with a set of tools. Tools can be custom built python scripts, web
-APIs, software running on another machine, etc. Tools are incorporated by creating
-modules that run in the MultiScanner framework. Modules are designed to be quickly
-written and easily incorporated into the framework. Currently written and maintained
-modules are related to malware analytics, but the framework is not limited to that
+MultiScanner is a file analysis framework that assists the user in evaluating a set
+of files by automatically running a suite of tools for the user and aggregating the output.
+Tools can be custom built python scripts, web APIs, software running on another machine, etc.
+Tools are incorporated by creating modules that run in the MultiScanner framework.
+
+Modules are designed to be quickly written and easily incorporated into the framework.
+Currently written and maintained modules are related to malware analytics, but the framework is not limited to that
 scope. For a list of modules you can look in [modules](modules), descriptions and config
 options can be found in [docs/modules.md](docs/modules.md)
 
 Requirements
 ------------
-Python 2.7 is recommended. Compatibility with 2.6+ and
+Python 2.7 is recommended. Compatibility with 2.7+ and
 3.3+ is supported but not thoroughly maintained and tested. Please submit an issue
 or a pull request fixing any issues found with other versions of Python.
 
@@ -27,7 +28,7 @@ Installation
 ### MultiScanner ###
 If you're running on a RedHat or Debian based linux distribution you should try and run
 [install.sh](<install.sh>). Otherwise the required python packages are defined in
-[requirements2.txt](<requirements2.txt>) and [requirements3.txt](<requirements3.txt>).
+[requirements.txt](<requirements.txt>).
 
 MultiScanner must have a configuration file to run. Generate the MultiScanner default
 configuration by running `python multiscanner.py init` after cloning the repository.
@@ -60,8 +61,8 @@ Module Configuration
 Modules are configured within the configuration file, config.ini. See
 [docs/modules.md](<docs/modules.md>) for more information.
 
-Use in other projects
----------------------
+Python API
+----------
 MultiScanner can be incorporated as a module in another projects. Below is a simple
 example of how to import MultiScanner into a Python script.
 

@@ -161,7 +161,7 @@ class _ModuleInterface(object):
         shutil.rmtree(self.write_dir, ignore_errors=True)
 
 
-def _runModule(modname, mod, filelist, threadDict, global_module_interface, conf=None):
+def _run_module(modname, mod, filelist, threadDict, global_module_interface, conf=None):
     """
     Runs a module on a file list.
 
@@ -376,7 +376,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                     conf = mod.DEFAULTCONF
                 except:
                     pass
-            thread = _Thread(target=_runModule, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
+            thread = _Thread(target=_run_module, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
             thread.name = modname
             thread.setDaemon(True)
             ThreadList.append(thread)
@@ -516,9 +516,6 @@ def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, pytho
         return json.dumps(finaldata, sort_keys=True, indent=3, ensure_ascii=False)
     else:
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
-
-# Keep old API compatibility
-parseReports = parse_reports
 
 
 def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, config=None, module_list=None):
@@ -1008,6 +1005,7 @@ def _main():
     # Cleanup zip extracted files
     if args.extractzips:
         shutil.rmtree('_tmp')
+
 
 if __name__ == "__main__":
     _main()

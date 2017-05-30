@@ -18,12 +18,12 @@ fi
 
 #Install requirements for Python 2.x
 if [[ $(python -V 2>&1) == Python\ 2* ]]; then
-  pip install -r $DIR/requirements2.txt
+  pip install -r $DIR/requirements.txt
 fi
 
 #Install requirements for Python 3.x
 if [[ $(python -V 2>&1) == Python\ 3* ]]; then
-  pip install -r $DIR/requirements3.txt
+  pip install -r $DIR/requirements.txt
 fi
 
 #Code to compile and install yara

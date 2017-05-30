@@ -71,6 +71,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, config=mul
     # Initialize the connection to the task DB
     db.init_db()
 
+    print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+
     # Get the storage config
     storage_conf = multiscanner.common.get_storage_config_path(config)
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
@@ -93,6 +95,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, config=mul
         task_status='Complete',
         report_id=file_hash,
     )
+
+    print('Results of the scan:\n{}'.format(results)) 
 
     return results
 

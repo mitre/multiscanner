@@ -37,11 +37,13 @@ def scan(filelist, conf=DEFAULTCONF):
         maaagic = magic.Magic()
     results = []
     for fname in filelist:
-        results.append((fname, maaagic.from_file(fname).decode('UTF-8', 'replace')))
+        result = maaagic.from_file(fname)
+        if not isinstance(result, str):
+            result = result.decode('UTF-8', 'replace')
+        results.append((fname, result))
 
     metadata = {}
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-
