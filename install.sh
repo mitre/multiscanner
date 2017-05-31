@@ -7,40 +7,47 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #Install requirements for Redhat derivatives
 if [ -e /etc/redhat-release ]; then
   yum install -y epel-release
-  yum install -y autoconf automake curl gcc libffi-devel libtool make python-devel python-pip ssdeep-devel tar git
+  yum install -y autoconf automake curl gcc libffi-devel libtool make python-devel ssdeep-devel tar git unzip openssl-devel file-devel
 fi
 
 #Install requirements for Debian derivatives
 if [ -e /etc/debian_version ]; then
   apt-get update
-  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev python-pip git libssl-dev
+  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev
 fi
 
-#Install requirements for Python 2.x
-if [[ $(python -V 2>&1) == Python\ 2* ]]; then
-  pip install -r $DIR/requirements.txt
-fi
+#Install requirements for Python
+curl -k https://bootstrap.pypa.io/get-pip.py | python
+pip install --upgrade -r $DIR/requirements.txt
 
-#Install requirements for Python 3.x
-if [[ $(python -V 2>&1) == Python\ 3* ]]; then
-  pip install -r $DIR/requirements.txt
-fi
 
 #Code to compile and install yara
-read -p "Compile yara 3.5.0? <y/N> " prompt
+YARA_VER=3.5.0
+read -p "Compile yara $YARA_VER? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
-  cd /tmp
-  curl -L https://github.com/VirusTotal/yara/archive/v3.5.0.tar.gz | tar -xz
-  cd yara-3.5.0
-  ./bootstrap.sh
+  #Because apparently the one in the repos does not work...
+  curl -L https://github.com/akheron/jansson/archive/v2.10.tar.gz | tar -xz
+  cd jansson-2.10
+  autoreconf -fi
   ./configure --prefix=/usr
-  make && make install
+  make install
+  cd ..
+  rm -rf jansson-2.10
+  ln -s /usr/lib/libjansson.so.4 /lib64/libjansson.so.4
+  #We get yara-python as well
+  git clone -b v$YARA_VER https://github.com/VirusTotal/yara-python.git
   cd yara-python
+  git clone -b v$YARA_VER https://github.com/VirusTotal/yara.git
+  cd yara
+  ./bootstrap.sh
+  ./configure --prefix=/usr --enable-magic --enable-cuckoo --with-crypto
+  make && make install
+  cd ../
+  python setup.py build --dynamic-linking
   python setup.py install
-  cd ../../
-  rm -rf yara-3.5.0
+  cd ../
+  rm -rf yara-python
   ln -s /usr/lib/libyara.so.3 /lib64/libyara.so.3
-  cd "$CWD"
 fi
 
 read -p "Download yararules.com signatures? <y/N> " prompt
