@@ -351,8 +351,8 @@ def _get_debug_info(pe):
     results = {}
     try:
         for dbg in pe.DIRECTORY_ENTRY_DEBUG:
-            dbg_path = ""
             if hasattr(dbg.struct, "Type"):
+                dbg_path = "debug"
                 result = {
                      'MajorVersion': dbg.struct.MajorVersion,
                      'MinorVersion': dbg.struct.MinorVersion,
@@ -401,8 +401,8 @@ def _get_debug_info(pe):
                                     'DebugPath': "%s" % dbg_path,
                                     'result': "%s" % dbg_path,
                                 })
-            #self._add_result('pe_debug', dbg_path, result)
-            results[dbg_path] = result
+                #self._add_result('pe_debug', dbg_path, result)
+                results[dbg_path] = result
     except Exception as e:
         #self._parse_error("could not extract debug info", e)
         print(e)
