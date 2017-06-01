@@ -52,8 +52,8 @@ def scan(filelist, conf=DEFAULTCONF):
     #Generate scan option
     scan = ''
     for item in filelist:
-        scan += '"' + item + '" '
-    
+        scan += '"' + item + '"'
+
     #Create full command line
     cmdline.insert(0, conf["path"])
     cmdline.append(scan)
