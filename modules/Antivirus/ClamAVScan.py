@@ -38,8 +38,10 @@ def _connect_clam():
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
-
-    clamScanner = _connect_clam()
+    try:
+        clamScanner = _connect_clam()
+    except:
+        return None
 
     # Scan each file from filelist for virus
     for f in filelist:
