@@ -50,6 +50,20 @@ if [[ $prompt == "y" ]]; then
   ln -s /usr/lib/libyara.so.3 /lib64/libyara.so.3
 fi
 
+read -p "Download TrID? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  mkdir -p /opt/trid
+  cd /opt/trid
+  curl http://mark0.net/download/trid_linux_64.zip > trid.zip
+  unzip trid.zip
+  rm -f trid.zip
+  curl http://mark0.net/download/triddefs.zip > triddefs.zip
+  unzip triddefs.zip
+  rm -f triddefs.zip
+  chmod 755 trid
+  cd $CWD
+fi
+
 read -p "Download yararules.com signatures? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules

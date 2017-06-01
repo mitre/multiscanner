@@ -23,7 +23,7 @@ HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path":'C:\\TrID\\trid.exe',
+DEFAULTCONF = {"path":'/opt/trid/trid',
     'ENABLED': True, 
     "key":KEY, 
     "cmdline":['-r:3'], 
@@ -47,7 +47,7 @@ def scan(filelist, conf=DEFAULTCONF):
         local = True
     elif SSH:
         local = False
-    
+
     cmdline = conf["cmdline"]
     #Generate scan option
     scan = ''
