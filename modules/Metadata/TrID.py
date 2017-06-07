@@ -48,15 +48,12 @@ def scan(filelist, conf=DEFAULTCONF):
     elif SSH:
         local = False
 
-    cmdline = conf["cmdline"]
+    cmdline = [conf["path"]]
+    cmdline.extend(conf["cmdline"])
     #Generate scan option
-    scan = ''
     for item in filelist:
-        scan += '"' + item + '"'
+        cmdline.append('"' + item + '"')
 
-    #Create full command line
-    cmdline.insert(0, conf["path"])
-    cmdline.append(scan)
     output = ""
     if local:
         try:
