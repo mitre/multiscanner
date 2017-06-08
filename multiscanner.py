@@ -887,7 +887,7 @@ def _main():
         VERBOSE = args.verbose
 
     # Checks if user is trying to initialize
-    if args.Files == ['init'] and not os.path.isfile('init'):
+    if str(args.Files) == "['init']" and not os.path.isfile('init'):
         _init(args)
 
     if not os.path.isfile(args.config):
