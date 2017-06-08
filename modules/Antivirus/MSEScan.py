@@ -55,7 +55,11 @@ def scan(filelist, conf=DEFAULTCONF):
     cmdline.insert(0, path)
 
     resultlist = []
-    client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
+    try:
+        client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
+    except:
+        return None
+
     #Generate scan option
     for item in filelist:
         cmd = cmdline[:]

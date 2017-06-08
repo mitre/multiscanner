@@ -319,14 +319,15 @@ def _copy_to_share(filelist, filedic, sharedir):
         # Build new path
         newfile = os.path.basename(fname)
         newfile = newfile.replace(' ', '_')
-        newfile = os.path.join(sharedir, newfile)
+        newfile_path = os.path.join(sharedir, newfile)
         # If the new file exists we add in a random ID
         if os.path.exists(newfile):
             uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-            newfile = os.path.join(sharedir, uid + '_' + os.path.basename(newfile))
-        shutil.copyfile(fname, newfile)
+            newfile = uid + '_' + newfile
+            newfile_path = os.path.join(sharedir, newfile)
+        shutil.copyfile(fname, newfile_path)
         filedic[newfile] = fname
-        filelist.append(newfile)
+        filelist.append(newfile_path)
     del tmpfilelist
     # Prevents file shares from making modules crash, this might not be the best but meh
     time.sleep(3)
@@ -633,7 +634,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Delete copied files
     if main_config["copyfilesto"]:
         for item in filelist:
-            os.remove(item)
+            try:
+                os.remove(item)
+            except OSError:
+                pass
 
     # Get Result list
     results = []
@@ -884,7 +888,7 @@ def _main():
         VERBOSE = args.verbose
 
     # Checks if user is trying to initialize
-    if args.Files == ['init'] and not os.path.isfile('init'):
+    if str(args.Files) == "['init']" and not os.path.isfile('init'):
         _init(args)
 
     if not os.path.isfile(args.config):

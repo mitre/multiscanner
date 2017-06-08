@@ -133,7 +133,10 @@ def parseDir(directory, recursive=False):
             else:
                 continue
         else:
-            filelist.append(item)
+            if not PY3:
+                filelist.append(item.decode('utf8'))
+            else:
+                filelist.append(item)
     return filelist
     
 def parseFileList(FileList, recursive=False):
@@ -148,7 +151,10 @@ def parseFileList(FileList, recursive=False):
         if os.path.isdir(item):
             filelist.extend(parseDir(item, recursive))
         elif os.path.isfile(item):
-            filelist.append(item)
+            if not PY3:
+                filelist.append(item.decode('utf8'))
+            else:
+                filelist.append(item)
         else:
             pass
     return filelist
