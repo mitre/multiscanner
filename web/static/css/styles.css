@@ -29,6 +29,18 @@
     border-radius: 4px !important;
 }
 
+#adv-options .checkbox {
+    padding-top: 0;
+}
+
+#adv-options .checkbox input[type="checkbox"] {
+    margin-left: -30px;
+}
+
+#adv-options .control-label {
+    padding-top: 0;
+}
+
 .file-preview {
     border: 0;
 }

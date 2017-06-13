@@ -31,10 +31,12 @@ import codecs
 import configparser
 import multiprocessing
 import queue
-from uuid import uuid4
+import shutil
 from flask_cors import CORS
 from flask import Flask, jsonify, make_response, request, abort
 from jinja2 import Markup
+from six import PY3
+import zipfile
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -44,7 +46,6 @@ if MS_WD not in sys.path:
 
 import multiscanner
 import sql_driver as database
-from storage import Storage
 import elasticsearch_storage
 from celery_worker import multiscanner_celery
 
@@ -230,29 +231,26 @@ def delete_task(task_id):
     return jsonify({'Message': 'Deleted'})
 
 
-@app.route('/api/v1/tasks/create/', methods=['POST'])
-def create_task():
+def save_hashed_filename(f):
     '''
-    Create a single new task. Save the submitted file
-    to UPLOAD_FOLDER. Return task id and 201 status.
+    Save given file to the upload folder, with its SHA256 hash as its filename.
     '''
-    file_ = request.files['file']
-    original_filename = file_.filename
-    f_name = hashlib.sha256(file_.read()).hexdigest()
-    # Reset the file pointer to the beginning
-    # to allow us to save it
-    file_.seek(0)
-
-    metadata = {}
-    for key in request.form.keys():
-        if key != 'file_id' and request.form[key] != '':
-            metadata[key] = request.form[key]
+    f_name = hashlib.sha256(f.read()).hexdigest()
+    # Reset the file pointer to the beginning to allow us to save it
+    f.seek(0)
 
     # TODO: should we check if the file is already there
-    # and skip this step if it it?
+    # and skip this step if it is?
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
-    file_.save(file_path)
     full_path = os.path.join(MS_WD, file_path)
+    shutil.copy2(f.name, full_path)
+    return (f_name, full_path)
+
+
+def queue_task(original_filename, f_name, full_path, metadata):
+    '''
+    Queue up a single new task, for a single non-archive file.
+    '''
 
     # Add task to sqlite DB
     # Make the sample_id equal the sha256 hash
@@ -267,7 +265,56 @@ def create_task():
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))
 
-    msg = {'task_id': task_id}
+    return task_id
+
+
+@app.route('/api/v1/tasks/create/', methods=['POST'])
+def create_task():
+    '''
+    Create a new task for a submitted file. Save the submitted file to
+    UPLOAD_FOLDER, optionally unzipping it. Return task id and 201 status.
+    '''
+    file_ = request.files['file']
+    original_filename = file_.filename
+
+    metadata = {}
+    task_id_list = []
+    for key in request.form.keys():
+        if key in ['file_id', 'zip-password'] or request.form[key] == '':
+            continue
+        elif key == 'zip-analyze' and request.form[key] == 'true' and zipfile.is_zipfile(file_):
+            # Unzip the file
+            unzip_dir = api_config['api']['upload_folder']
+            z = zipfile.ZipFile(file_)
+            if 'zip-password' in request.form:
+                password = request.form['zip-password']
+                if PY3:
+                    password = bytes(password, 'utf-8')
+            else:
+                password = ''
+            try:
+                z.extractall(path=unzip_dir, pwd=password)
+                for uzfile in z.namelist():
+                    unzipped_file = open(os.path.join(unzip_dir, uzfile))
+                    f_name, full_path = save_hashed_filename(unzipped_file)
+                    tid = queue_task(uzfile, f_name, full_path, metadata)
+                    task_id_list.append(tid)
+            except RuntimeError as e:
+                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                return make_response(
+                    jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST
+                )
+        else:
+            metadata[key] = request.form[key]
+
+    if not task_id_list:
+        # File was not zipped
+        f_name, full_path = save_hashed_filename(file_)
+        tid = queue_task(original_filename, f_name, full_path, metadata)
+        task_id_list = [tid]
+
+    msg = {'task_ids': task_id_list}
     return make_response(
         jsonify({'Message': msg}),
         HTTP_CREATED

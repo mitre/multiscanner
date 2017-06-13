@@ -69,8 +69,14 @@
         uploadClass: 'btn btn-xs btn-primary',
       },
       uploadExtraData: function (previewId, index) {
-        // Send metadata along with the file
         var obj = {};
+        if ($('#zip-analyze').is(':checked')) {
+          obj['zip-analyze'] = 'true';
+          if ($('#zip-password').val() !== '') {
+            obj['zip-password'] = $('#zip-password').val();
+          }
+        }
+        // Send metadata along with the file
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
           var val = $(this).find('input').first().val();
@@ -90,9 +96,10 @@
       })
 
       // Click on preview box to go straight to the task/report
+      // If file was a zip, it will go to the first file
       $('#' + previewId).css('cursor', 'pointer');
       $('#' + previewId).click(function() {
-        window.location = "report/" + data.response.Message.task_id;
+        window.location = "report/" + data.response.Message.task_ids[0];
       })
     });
 
@@ -161,6 +168,16 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
+          <div class="checkbox col-md-4">
+            <label><input type="checkbox" value="" id="zip-analyze" name="zip-analyze">Extract .zips and analyze contents?</label>
+          </div>
+          <div class="form-group zip-group">
+            <label for="zip-password" class="col-md-2 control-label">Zip Password</label>
+            <div class="input-group col-md-5">
+              <input type="text" class='form-control' id="zip-password" name="zip-password"></input>
+            </div>
+          </div>
+          <h4>Metadata Fields</h4>
           <div><p><i>(These apply to all files in this submission.)</i></p></div>
           {% for metadata in metadata_fields %}
           <div class="form-group metadata-group">
