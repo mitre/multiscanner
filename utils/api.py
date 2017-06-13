@@ -231,7 +231,7 @@ def delete_task(task_id):
     return jsonify({'Message': 'Deleted'})
 
 
-def save_hashed_filename(f):
+def save_hashed_filename(f, zipped=False):
     '''
     Save given file to the upload folder, with its SHA256 hash as its filename.
     '''
@@ -243,7 +243,11 @@ def save_hashed_filename(f):
     # and skip this step if it is?
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
     full_path = os.path.join(MS_WD, file_path)
-    shutil.copy2(f.name, full_path)
+    if zipped:
+        print('copying!!!!')
+        shutil.copy2(f.name, full_path)
+    else:
+        f.save(file_path)
     return (f_name, full_path)
 
 
@@ -284,6 +288,7 @@ def create_task():
             continue
         elif key == 'zip-analyze' and request.form[key] == 'true' and zipfile.is_zipfile(file_):
             # Unzip the file
+            # 
             unzip_dir = api_config['api']['upload_folder']
             z = zipfile.ZipFile(file_)
             if 'zip-password' in request.form:
@@ -293,10 +298,12 @@ def create_task():
             else:
                 password = ''
             try:
+                # NOTE: zipfile module prior to Py 2.7.4 is insecure!
+                # https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
                 z.extractall(path=unzip_dir, pwd=password)
                 for uzfile in z.namelist():
                     unzipped_file = open(os.path.join(unzip_dir, uzfile))
-                    f_name, full_path = save_hashed_filename(unzipped_file)
+                    f_name, full_path = save_hashed_filename(unzipped_file, True)
                     tid = queue_task(uzfile, f_name, full_path, metadata)
                     task_id_list.append(tid)
             except RuntimeError as e:
