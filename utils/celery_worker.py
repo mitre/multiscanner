@@ -14,12 +14,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Add the storage dir to the sys.path. Allows import of sql_driver module
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-# Add the libs dir to the sys.path. Allows import of common module
+# Add the libs dir to the sys.path. Allows import of common, celery_batches modules
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'libs'))
 import multiscanner
 import common
 import sql_driver as database
+from celery_batches import Batches
 
 from celery import Celery
 
@@ -56,21 +57,12 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 ))
 db = database.Database(config=db_config)
 
-@app.task
-def multiscanner_celery(file_, original_filename, task_id, file_hash, config=multiscanner.CONFIG):
-    '''
-    TODO: Figure out how to do batching.
-    This function essentially takes in a file list and runs
-    multiscanner on them. Results are stored in the
-    storage configured in storage.ini.
 
-    Usage:
-    from celery_worker import multiscanner_celery
-    multiscanner_celery.delay([list, of, files, to, scan])
+def celery_task(file_, original_filename, task_id, file_hash, config=multiscanner.CONFIG):
     '''
-    # Initialize the connection to the task DB
-    db.init_db()
-
+    Run multiscanner on the given file and store the results in the storage
+    handler(s) specified in the storage configuration file.
+    '''
     print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
 
     # Get the storage config
@@ -96,9 +88,31 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, config=mul
         report_id=file_hash,
     )
 
-    print('Results of the scan:\n{}'.format(results)) 
+    print('Results of the scan:\n{}'.format(results))
 
     return results
+
+# Flush after 100 messages, or 10 seconds.                                      
+@app.task(base=Batches, flush_every=100, flush_interval=10)
+def multiscanner_celery(requests, *args, **kwargs):
+    '''
+    Queue up multiscanner tasks and then run a batch of them at a time for
+    better performance.
+
+    Usage:
+    from celery_worker import multiscanner_celery
+    multiscanner_celery.delay(full_path, original_filename, task_id,
+                              hashed_filename, config=multiscanner.CONFIG)
+    '''
+    # Initialize the connection to the task DB
+    db.init_db()
+
+    for request in requests:
+        file_ = request.args[0]
+        original_filename = request.args[1]
+        task_id = request.args[2]
+        file_hash = request.args[3]
+        celery_task(file_, original_filename, task_id, file_hash)
 
 
 if __name__ == '__main__':
