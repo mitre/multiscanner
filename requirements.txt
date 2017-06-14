@@ -11,6 +11,7 @@ requests
 ssdeep
 #Required by API
 flask
+rarfile
 sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables

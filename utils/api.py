@@ -36,6 +36,7 @@ from flask_cors import CORS
 from flask import Flask, jsonify, make_response, request, abort
 from jinja2 import Markup
 from six import PY3
+import rarfile
 import zipfile
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -244,7 +245,6 @@ def save_hashed_filename(f, zipped=False):
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
     full_path = os.path.join(MS_WD, file_path)
     if zipped:
-        print('copying!!!!')
         shutil.copy2(f.name, full_path)
     else:
         f.save(file_path)
@@ -284,34 +284,51 @@ def create_task():
     metadata = {}
     task_id_list = []
     for key in request.form.keys():
-        if key in ['file_id', 'zip-password'] or request.form[key] == '':
+        if key in ['file_id', 'archive-password'] or request.form[key] == '':
             continue
-        elif key == 'zip-analyze' and request.form[key] == 'true' and zipfile.is_zipfile(file_):
-            # Unzip the file
-            # 
-            unzip_dir = api_config['api']['upload_folder']
-            z = zipfile.ZipFile(file_)
-            if 'zip-password' in request.form:
-                password = request.form['zip-password']
+        elif key == 'archive-analyze' and request.form[key] == 'true':
+            extract_dir = api_config['api']['upload_folder']
+            # Get password if present
+            if 'archive-password' in request.form:
+                password = request.form['archive-password']
                 if PY3:
                     password = bytes(password, 'utf-8')
             else:
                 password = ''
-            try:
-                # NOTE: zipfile module prior to Py 2.7.4 is insecure!
-                # https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
-                z.extractall(path=unzip_dir, pwd=password)
-                for uzfile in z.namelist():
-                    unzipped_file = open(os.path.join(unzip_dir, uzfile))
-                    f_name, full_path = save_hashed_filename(unzipped_file, True)
-                    tid = queue_task(uzfile, f_name, full_path, metadata)
-                    task_id_list.append(tid)
-            except RuntimeError as e:
-                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
-                return make_response(
-                    jsonify({'Message': msg}),
-                    HTTP_BAD_REQUEST
-                )
+            # Extract a zip
+            if zipfile.is_zipfile(file_):
+                z = zipfile.ZipFile(file_)
+                try:
+                    # NOTE: zipfile module prior to Py 2.7.4 is insecure!
+                    # https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
+                    z.extractall(path=extract_dir, pwd=password)
+                    for uzfile in z.namelist():
+                        unzipped_file = open(os.path.join(extract_dir, uzfile))
+                        f_name, full_path = save_hashed_filename(unzipped_file, True)
+                        tid = queue_task(uzfile, f_name, full_path, metadata)
+                        task_id_list.append(tid)
+                except RuntimeError as e:
+                    msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                    return make_response(
+                        jsonify({'Message': msg}),
+                        HTTP_BAD_REQUEST
+                    )
+            # Extract a rar
+            elif rarfile.is_rarfile(file_):
+                r = rarfile.RarFile(file_)
+                try:
+                    r.extractall(path=extract_dir, pwd=password)
+                    for urfile in r.namelist():
+                        unrarred_file = open(os.path.join(extract_dir, urfile))
+                        f_name, full_path = save_hashed_filename(unrarred_file, True)
+                        tid = queue_task(urfile, f_name, full_path, metadata)
+                        task_id_list.append(tid)
+                except RuntimeError as e:
+                    msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                    return make_response(
+                        jsonify({'Message': msg}),
+                        HTTP_BAD_REQUEST
+                    )
         else:
             metadata[key] = request.form[key]
 
