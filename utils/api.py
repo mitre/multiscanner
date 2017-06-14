@@ -50,7 +50,7 @@ import sql_driver as database
 import elasticsearch_storage
 from celery_worker import multiscanner_celery
 
-TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
+TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 
 BATCH_SIZE = 100

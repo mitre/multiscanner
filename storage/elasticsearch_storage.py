@@ -240,7 +240,8 @@ class ElasticSearchStorage(storage.Storage):
             "aggs": {
                 "tags_agg": {
                     "terms": {
-                        "field": "tags.keyword"
+                        "field": "tags.keyword",
+                        "size": 2100000000
                     }
                 }
             }

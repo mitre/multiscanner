@@ -142,6 +142,13 @@
     width: 100%;
 }
 
+.bootstrap-tagsinput .tag {
+    display: inline-block;
+    padding: .4em .6em .5em;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
 #report-tags .tag.label {
     font-size: .9em;
     background-image: -webkit-linear-gradient(#6d94bf, #446e9b 50%, #3e648d);
