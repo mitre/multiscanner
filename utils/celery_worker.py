@@ -47,6 +47,7 @@ if not config_object.has_section('celery') or not os.path.isfile(configfile):
     config_object.write(conffile)
     conffile.close()
 config = common.parse_config(config_object)
+api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
@@ -93,7 +94,7 @@ def celery_task(file_, original_filename, task_id, file_hash, config=multiscanne
 
     return results
 
-@app.task(base=Batches, flush_every=worker_config.get('flush_every'), flush_interval=worker_config.get('flush_interval'))
+@app.task(base=Batches, flush_every=api_config['batch_size'], flush_interval=api_config['batch_interval'])
 def multiscanner_celery(requests, *args, **kwargs):
     '''
     Queue up multiscanner tasks and then run a batch of them at a time for

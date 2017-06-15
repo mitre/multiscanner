@@ -53,10 +53,6 @@ from celery_worker import multiscanner_celery
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 
-BATCH_SIZE = 100
-WAIT_SECONDS = 60   # Number of seconds to wait for additional files
-                    # submitted to the create/ API
-
 HTTP_OK = 200
 HTTP_CREATED = 201
 HTTP_BAD_REQUEST = 400
@@ -68,6 +64,9 @@ DEFAULTCONF = {
     'upload_folder': '/mnt/samples/',
     'distributed': True,
     'cors': 'https?://localhost(:\d+)?',
+    'batch_size': 100,
+    'batch_interval': 60   # Number of seconds to wait for additional files
+                           # submitted to the create/ API
 }
 
 app = Flask(__name__)
@@ -106,6 +105,8 @@ except KeyError:
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
+batch_size = api_config['api']['batch_size']
+batch_interval = api_config['api']['batch_interval']
 
 def multiscanner_process(work_queue, exit_signal):
     '''Not used in distributed mode.
@@ -118,13 +119,13 @@ def multiscanner_process(work_queue, exit_signal):
             metadata_list.append(work_queue.get_nowait())
             if not time_stamp:
                 time_stamp = time.time()
-            while len(metadata_list) < BATCH_SIZE:
+            while len(metadata_list) < batch_size:
                 metadata_list.append(work_queue.get_nowait())
         except queue.Empty:
             if metadata_list and time_stamp:
-                if len(metadata_list) >= BATCH_SIZE:
+                if len(metadata_list) >= batch_size:
                     pass
-                elif time.time() - time_stamp > WAIT_SECONDS:
+                elif time.time() - time_stamp > batch_interval:
                     pass
                 else:
                     continue
