@@ -141,8 +141,7 @@ def multiscanner_process(work_queue, exit_signal):
             os.remove(file_name)
 
         for item in metadata_list:
-
-            # Use the filename as the index instead of the full path
+            # Use the original filename as the index instead of the full path
             results[item[1]] = results[item[0]]
             del results[item[0]]
 
@@ -151,7 +150,6 @@ def multiscanner_process(work_queue, exit_signal):
             db.update_task(
                 task_id=item[2],
                 task_status='Complete',
-                report_id=item[3]
             )
 
         storage_handler.store(results, wait=False)
@@ -356,7 +354,7 @@ def get_report(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        report = handler.get_report(task.sample_id, task.report_id)
+        report = handler.get_report(task.sample_id)
 
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}

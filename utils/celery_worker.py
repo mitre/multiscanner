@@ -85,7 +85,6 @@ def celery_task(file_, original_filename, task_id, file_hash, config=multiscanne
     db.update_task(
         task_id=task_id,
         task_status='Complete',
-        report_id=file_hash,
     )
 
     print('Results of the scan:\n{}'.format(results))

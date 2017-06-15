@@ -4,11 +4,10 @@ import os
 import json
 import configparser
 import codecs
-import sys
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
@@ -20,10 +19,6 @@ from datatables import ColumnDT, DataTables
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-import common
-
 Base = declarative_base()
 Session = sessionmaker()
 
@@ -34,11 +29,10 @@ class Task(Base):
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
     sample_id = Column(String, unique=False)
-    report_id = Column(String, unique=False)
 
     def __repr__(self):
-        return '<Task("{0}","{1}","{2}","{3}")>'.format(
-            self.task_id, self.task_status, self.sample_id, self.report_id
+        return '<Task("{0}","{1}","{2}")>'.format(
+            self.task_id, self.task_status, self.sample_id
         )
 
     def to_dict(self):
@@ -153,13 +147,12 @@ class Database(object):
         finally:
             ses.close()
 
-    def add_task(self, task_id=None, task_status='Pending', sample_id=None, report_id=None):
+    def add_task(self, task_id=None, task_status='Pending', sample_id=None):
         with self.db_session_scope() as ses:
             task = Task(
                 task_id=task_id,
                 task_status=task_status,
                 sample_id=sample_id,
-                report_id=report_id
             )
             try:
                 ses.add(task)
@@ -171,15 +164,11 @@ class Database(object):
             created_task_id = task.task_id
             return created_task_id
 
-    def update_task(self, task_id, task_status, report_id=None):
-        '''
-        report_id will be a list of sha values
-        '''
+    def update_task(self, task_id, task_status):
         with self.db_session_scope() as ses:
             task = ses.query(Task).get(task_id)
             if task:
                 task.task_status = task_status
-                task.report_id = report_id
                 return task.to_dict()
 
     def get_task(self, task_id):
@@ -189,12 +178,6 @@ class Database(object):
                 # unbind Task from Session
                 ses.expunge(task)
                 return task
-
-    def get_report_id_from_task(self, task_id):
-        with self.db_session_scope() as ses:
-            task = ses.query(Task).get(task_id)
-            if task:
-                return task.report_id
 
     def get_all_tasks(self):
         with self.db_session_scope() as ses:
