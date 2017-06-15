@@ -152,6 +152,7 @@ def multiscanner_process(work_queue, exit_signal):
                 task_id=item[2],
                 task_status='Complete',
             )
+        metadata_list = []
 
         storage_handler.store(results, wait=False)
 

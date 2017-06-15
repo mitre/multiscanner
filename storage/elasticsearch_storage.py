@@ -48,14 +48,14 @@ class ElasticSearchStorage(storage.Storage):
             es_indices.create(self.index)
 
         # Create parent-child mappings if don't exist yet
-        mappings = es_indices.get_mapping(index=self.index)
-        if self.doc_type not in mappings[self.index]['mappings'].keys():
+        mappings = es_indices.get_mapping(index=self.index)[self.index]['mappings'].keys()
+        if self.doc_type not in mappings:
             es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
                 '_parent': {
                     'type': 'sample'
                 }
             })
-        if 'note' not in mappings[self.index]['mappings'].keys():
+        if 'note' not in mappings:
             es_indices.put_mapping(index=self.index, doc_type='note', body={
                 '_parent': {
                     'type': 'sample'
@@ -63,6 +63,14 @@ class ElasticSearchStorage(storage.Storage):
                 'properties': {
                     'timestamp': {
                         'type': 'date'
+                    }
+                }
+            })
+        if 'sample' not in mappings:
+            es_indices.put_mapping(index=self.index, doc_type='sample', body={
+                'properties': {
+                    'filename': {
+                        'type': 'text'
                     }
                 }
             })
