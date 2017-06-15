@@ -61,7 +61,7 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 db = database.Database(config=db_config)
 
 
-def celery_task(file_, original_filename, task_id, file_hash, config=multiscanner.CONFIG):
+def celery_task(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG):
     '''
     Run multiscanner on the given file and store the results in the storage
     handler(s) specified in the storage configuration file.
@@ -79,6 +79,8 @@ def celery_task(file_, original_filename, task_id, file_hash, config=multiscanne
     # by the REST API)
     results[original_filename] = results[file_]
     del results[file_]
+
+    results[original_filename]['Metadata'] = metadata
 
     # Save the report to storage
     storage_handler.store(results, wait=False)
@@ -113,7 +115,8 @@ def multiscanner_celery(requests, *args, **kwargs):
         original_filename = request.args[1]
         task_id = request.args[2]
         file_hash = request.args[3]
-        celery_task(file_, original_filename, task_id, file_hash)
+        metadata = request.args[4]
+        celery_task(file_, original_filename, task_id, file_hash, metadata)
 
 
 if __name__ == '__main__':

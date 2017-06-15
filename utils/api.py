@@ -263,7 +263,7 @@ def queue_task(original_filename, f_name, full_path, metadata):
     if DISTRIBUTED:
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
-                                  task_id, f_name,
+                                  task_id, f_name, metadata,
                                   config=multiscanner.CONFIG)
     else:
         # Put the task on the queue
