@@ -106,7 +106,7 @@ class ElasticSearchStorage(storage.Storage):
         return True
 
     def store(self, report):
-        sample_id_list = []
+        sample_ids = {}
         sample_list = []
 
         for filename in report:
@@ -115,7 +115,6 @@ class ElasticSearchStorage(storage.Storage):
                 sample_id = report[filename]['SHA256']
             except KeyError:
                 sample_id = uuid4()
-            sample_id_list.append(sample_id)
 
             # Store metadata with the sample, not the report
             sample = {'filename': filename, 'tags': []}
@@ -125,14 +124,17 @@ class ElasticSearchStorage(storage.Storage):
                         sample[field] = report[filename][field]
                     del report[filename][field]
 
+            # Store report; let ES autogenerate the ID so we can save it with the sample
             report_result = self.es.index(index=self.index, doc_type=self.doc_type,
                                           body=report[filename], parent=sample_id,
                                           pipeline='dedot')
             report_id = report_result['_id']
             sample['report_id'] = report_id
+            sample_ids[sample_id] = report_id
 
             sample_list.append(
                 {
+                    '_op_type': 'create',
                     '_index': self.index,
                     '_type': 'sample',
                     '_id': sample_id,
@@ -141,8 +143,31 @@ class ElasticSearchStorage(storage.Storage):
                 }
             )
 
-        result = helpers.bulk(self.es, sample_list)
-        return sample_id_list
+        result = helpers.bulk(self.es, sample_list, raise_on_error=False)
+
+        creation_errors = result[1]
+        if not creation_errors:
+            return sample_ids
+
+        # Some samples already exist; update them to ref the new reports
+        updates_list = []
+        for err in creation_errors:
+            if err['create']['status'] == 409:
+                sid = err['create']['_id']
+                rid = sample_ids[sid]
+                updates_list.append(
+                    {
+                        '_op_type': 'update',
+                        '_index': self.index,
+                        '_type': 'sample',
+                        '_id': sample_id,
+                        'doc': {'report_id': rid},
+                        'pipeline': 'dedot'
+                    }
+                )
+
+        result = helpers.bulk(self.es, updates_list, raise_on_error=False)
+        return sample_ids
 
     def get_report(self, sample_id):
         try:
