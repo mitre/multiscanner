@@ -18,6 +18,8 @@ METADATA_FIELDS = [
     'Metadata',
 ]
 
+ES_MAX = 2147483647
+
 
 class ElasticSearchStorage(storage.Storage):
     '''
@@ -228,7 +230,7 @@ class ElasticSearchStorage(storage.Storage):
                 "tags_agg": {
                     "terms": {
                         "field": "tags.keyword",
-                        "size": 2100000000
+                        "size": ES_MAX
                     }
                 }
             }

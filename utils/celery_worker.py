@@ -30,6 +30,8 @@ DEFAULTCONF = {
     'user': 'guest',
     'password': '',
     'vhost': '/',
+    'flush_every': '100',
+    'flush_interval': '10',
 }
 
 config_object = configparser.SafeConfigParser()
@@ -91,8 +93,7 @@ def celery_task(file_, original_filename, task_id, file_hash, config=multiscanne
 
     return results
 
-# Flush after 100 messages, or 10 seconds.                                      
-@app.task(base=Batches, flush_every=100, flush_interval=10)
+@app.task(base=Batches, flush_every=worker_config.get('flush_every'), flush_interval=worker_config.get('flush_interval'))
 def multiscanner_celery(requests, *args, **kwargs):
     '''
     Queue up multiscanner tasks and then run a batch of them at a time for
