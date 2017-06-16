@@ -61,36 +61,44 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 db = database.Database(config=db_config)
 
 
-def celery_task(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG):
+def celery_task(files, config=multiscanner.CONFIG):
     '''
     Run multiscanner on the given file and store the results in the storage
     handler(s) specified in the storage configuration file.
     '''
-    print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
 
     # Get the storage config
     storage_conf = multiscanner.common.get_storage_config_path(config)
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
-    resultlist = multiscanner.multiscan([file_], configfile=config)
+    resultlist = multiscanner.multiscan(list(files), configfile=config)
     results = multiscanner.parse_reports(resultlist, python=True)
-    # Use the original filename as the value for the filename
-    # in the report (instead of the tmp path assigned to the file
-    # by the REST API)
-    results[original_filename] = results[file_]
-    del results[file_]
 
-    results[original_filename]['Metadata'] = metadata
+    # Loop through files in a way compatible with Py 2 and 3, and won't be 
+    # affected by changing keys to original filenames
+    for file_ in list(results):
+        original_filename = files[file_]['original_filename']
+        task_id = files[file_]['task_id']
+        file_hash = files[file_]['file_hash']
+        metadata = files[file_]['metadata']
 
-    # Save the report to storage
-    storage_handler.store(results, wait=False)
-    storage_handler.close()
+        # Use the original filename as the value for the filename
+        # in the report (instead of the tmp path assigned to the file
+        # by the REST API)
+        results[original_filename] = results[file_]
+        del results[file_]
 
-    # Update the task DB to reflect that the task is done
-    db.update_task(
-        task_id=task_id,
-        task_status='Complete',
-    )
+        results[original_filename]['Metadata'] = metadata
+
+        # Save the report to storage
+        storage_handler.store(results, wait=False)
+        storage_handler.close()
+
+        # Update the task DB to reflect that the task is done
+        db.update_task(
+            task_id=task_id,
+            task_status='Complete',
+        )
 
     print('Results of the scan:\n{}'.format(results))
 
@@ -110,13 +118,22 @@ def multiscanner_celery(requests, *args, **kwargs):
     # Initialize the connection to the task DB
     db.init_db()
 
+    files = {}
     for request in requests:
         file_ = request.args[0]
         original_filename = request.args[1]
         task_id = request.args[2]
         file_hash = request.args[3]
         metadata = request.args[4]
-        celery_task(file_, original_filename, task_id, file_hash, metadata)
+        print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+        files[file_] = {
+            'original_filename': original_filename,
+            'task_id': task_id,
+            'file_hash': file_hash,
+            'metadata': metadata,
+        }
+
+    celery_task(files)
 
 
 if __name__ == '__main__':
