@@ -10,7 +10,7 @@
       processing: true,
       serverSide: true,
       ajax: {
-        "url": "http://" + apiLoc + "/api/v1/tasks/search/history",
+        "url": "http://" + apiLoc + "/api/v1/tasks/search",
         "data": function ( d ) {
           if ($('#wildcards').is(':checked')) {
             return $.extend( {}, d, {"wildcards": true} );
