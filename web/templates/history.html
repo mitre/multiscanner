@@ -9,7 +9,16 @@
     var table = $('.table').DataTable( {
       processing: true,
       serverSide: true,
-      ajax: "http://" + apiLoc + "/api/v1/tasks/search/history",
+      ajax: {
+        "url": "http://" + apiLoc + "/api/v1/tasks/search/history",
+        "data": function ( d ) {
+          if ($('#wildcards').is(':checked')) {
+            return $.extend( {}, d, {"wildcards": true} );
+          } else {
+            return $.extend( {}, d, {"wildcards": false} );
+          }
+        }
+      },
       columnDefs: [
         {
           targets: 4,
@@ -74,6 +83,9 @@
       ],
       "initComplete": function( settings, json ) {
         table.buttons().containers().appendTo('#DataTables_Table_0_length');
+        // Add checkbox to disable implicit wildcards in search
+        chkbx = $('<div class="checkbox"><input type="checkbox" id="wildcards" title="Enable implicit wildcards" checked="checked"></div>');
+        $('#DataTables_Table_0_filter').append(chkbx);
       }
     });
   }
@@ -98,11 +110,11 @@
     <table class="table table-striped table-hover">
       <thead>
         <tr>
-          <th>Task ID</th>
-          <th>Sample</th>
-          <th>Task Status</th>
-          <th>Timestamp</th>
-          <th class="text-center">Delete</th>
+          <th width="5%">Task ID</th>
+          <th width="60%">Sample</th>
+          <th width="12%">Task Status</th>
+          <th width="17%">Timestamp</th>
+          <th class="text-center" width="6%">Delete</th>
         </tr>
       </thead>
       <tbody>

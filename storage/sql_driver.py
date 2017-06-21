@@ -218,7 +218,6 @@ class Database(object):
                 # Don't limit search by search term or it won't return anything
                 # (search term already handled by Elasticsearch)
                 del params['search[value]']
-            print(query)
             rowTable = DataTables(params, query, columns)
 
             output = rowTable.output_result()

@@ -211,6 +211,26 @@ def task_list():
     return jsonify({'Tasks': db.get_all_tasks()})
 
 
+def search(params, get_all=False):
+    # Pass search term to Elasticsearch, get back list of sample_ids
+    search_term = params['search[value]']
+    if search_term == '':
+        es_result = None
+    else:
+        wildcards = params.pop('wildcards', 'true')
+        if wildcards == 'true':
+            es_result = handler.search(search_term)
+        else:
+            es_result = handler.search(search_term, False)
+
+
+    # Search the task db for the ids we got from Elasticsearch
+    if get_all:
+        return db.search(params, es_result, return_all=True)
+    else:
+        return db.search(params, es_result)
+
+
 @app.route('/api/v1/tasks/search/history', methods=['GET'])
 def task_search_history():
     '''
@@ -218,16 +238,7 @@ def task_search_history():
     Return all reports for matching samples.
     '''
     params = request.args.to_dict()
-
-    # Pass search term to Elasticsearch, get back list of sample_ids
-    search_term = params['search[value]']
-    if search_term == '':
-        es_result = None
-    else:
-        es_result = handler.search(search_term)
-
-    # Search the task db for the ids we got from Elasticsearch
-    resp = db.search(params, es_result, return_all=True)
+    resp = search(params, get_all=True)
     return jsonify(resp)
 
 
@@ -238,13 +249,7 @@ def task_search():
     Return only the most recent report for each of the matching samples.
     '''
     params = request.args.to_dict()
-
-    # Pass search term to Elasticsearch, get back list of sample_ids
-    search_term = params['search[value]']
-    es_result = handler.search(search_term)
-
-    # Search the task db for the ids we got from Elasticsearch
-    resp = db.search(params, es_result)
+    resp = search(params)
     return jsonify(resp)
 
 

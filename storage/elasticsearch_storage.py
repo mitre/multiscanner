@@ -195,11 +195,14 @@ class ElasticSearchStorage(storage.Storage):
             print(e)
             return None
 
-    def search(self, query_string):
+    def search(self, query_string, wildcards=True):
         '''Run a Query String query and return a list of sample_ids associated
         with the matches. Run the query against all document types.
         '''
-        query = {"query": {"query_string": {"query": query_string}}}
+        if wildcards:
+            query = {"query": {"query_string": {"query": "*" + query_string + "*"}}}
+        else:
+            query = {"query": {"query_string": {"query": query_string}}}
         result = helpers.scan(
             self.es, query=query, index=self.index
         )

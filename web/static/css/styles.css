@@ -387,6 +387,20 @@
           animation: spin-rev 1s infinite linear;
 }
 
-#DataTables_Table_0_length .dt-buttons {
+.dataTables_wrapper .dataTables_length .dt-buttons {
     float: right;
+}
+
+.dataTables_wrapper .checkbox input[type="checkbox"] {
+    margin-left: 0.5em;
+}
+
+.table.dataTable {
+    table-layout: fixed;
+}
+
+.table.dataTable td {
+    width: 50px;
+    overflow: hidden;
+    word-wrap: break-word;
 }
