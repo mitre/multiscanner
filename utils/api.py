@@ -32,8 +32,10 @@ import configparser
 import multiprocessing
 import queue
 import shutil
+from datetime import datetime
 from flask_cors import CORS
 from flask import Flask, jsonify, make_response, request, abort
+from flask.json import JSONEncoder
 from jinja2 import Markup
 from six import PY3
 import rarfile
@@ -69,7 +71,20 @@ DEFAULTCONF = {
                            # submitted to the create/ API
 }
 
+
+# Customize timestamp format output of jsonify()
+class CustomJSONEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            if obj.utcoffset() is not None:
+                obj = obj - obj.utcoffset()
+            return str(obj)
+        else:
+            return JSONEncoder.default(self, obj)
+
+
 app = Flask(__name__)
+app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
 api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
@@ -138,6 +153,8 @@ def multiscanner_process(work_queue, exit_signal):
         )
         results = multiscanner.parse_reports(resultlist, python=True)
 
+        scan_time = datetime.now().isoformat()
+
         for file_name in results:
             os.remove(file_name)
 
@@ -146,11 +163,13 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]] = results[item[0]]
             del results[item[0]]
 
+            results[item[1]]['Scan Time'] = scan_time
             results[item[1]]['Metadata'] = item[4]
 
             db.update_task(
                 task_id=item[2],
                 task_status='Complete',
+                timestamp=scan_time,
             )
         metadata_list = []
 
@@ -192,10 +211,31 @@ def task_list():
     return jsonify({'Tasks': db.get_all_tasks()})
 
 
+@app.route('/api/v1/tasks/search/history', methods=['GET'])
+def task_search_history():
+    '''
+    Handle query between jQuery Datatables, the task DB, and Elasticsearch.
+    Return all reports for matching samples.
+    '''
+    params = request.args.to_dict()
+
+    # Pass search term to Elasticsearch, get back list of sample_ids
+    search_term = params['search[value]']
+    if search_term == '':
+        es_result = None
+    else:
+        es_result = handler.search(search_term)
+
+    # Search the task db for the ids we got from Elasticsearch
+    resp = db.search(params, es_result, return_all=True)
+    return jsonify(resp)
+
+
 @app.route('/api/v1/tasks/search', methods=['GET'])
 def task_search():
     '''
-    Handle query between jQuery Datatables, the task DB, and Elasticsearch
+    Handle query between jQuery Datatables, the task DB, and Elasticsearch.
+    Return only the most recent report for each of the matching samples.
     '''
     params = request.args.to_dict()
 
