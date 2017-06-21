@@ -177,15 +177,42 @@ class ElasticSearchStorage(storage.Storage):
         result = helpers.bulk(self.es, updates_list, raise_on_error=False)
         return sample_ids
 
-    def get_report(self, sample_id):
+    def get_report(self, sample_id, timestamp):
+        '''Find a report for the given sample at the given timestamp, and
+        return the report with sample metadata included.
+        '''
+        ts = str(timestamp).replace(' ', 'T')
+        query = {
+            "query": {
+                "bool": {
+                    "must": [
+                        {"has_parent": {
+                            "parent_type": "sample",
+                            "query": {
+                                "term": {
+                                    "_id": sample_id
+                                }
+                            }
+                        }},
+                        {
+                            "term": {
+                                "Scan Time": ts
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
         try:
+            result_search = self.es.search(
+                index=self.index, doc_type='report', body=query
+            )
+            result_report = result_search['hits']['hits'][0]
+
             result_sample = self.es.get(
                 index=self.index, doc_type='sample',
                 id=sample_id
-            )
-            result_report = self.es.get(
-                index=self.index, doc_type=self.doc_type,
-                id=result_sample['_source']['report_id'], parent=sample_id
             )
             del result_sample['_source']['report_id']
             result = result_report['_source'].copy()
