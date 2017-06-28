@@ -11,6 +11,7 @@ requests
 ssdeep
 #Required by API
 flask
+psycopg2
 sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
