@@ -18,5 +18,5 @@ sqlalchemy-datatables
 elasticsearch
 pymongo
 #Required for distributed
-celery[librabbitmq,redis]
+celery
 flask_cors
