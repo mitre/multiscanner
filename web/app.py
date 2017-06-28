@@ -9,9 +9,9 @@ def index():
                            metadata_fields=app.config['METADATA_FIELDS'])
 
 
-@app.route('/tasks', methods=['GET'])
+@app.route('/analyses', methods=['GET'])
 def tasks():
-    return render_template('tasks.html', api_loc=app.config['API_LOC'])
+    return render_template('analyses.html', api_loc=app.config['API_LOC'])
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
