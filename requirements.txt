@@ -12,6 +12,7 @@ ssdeep
 #Required by API
 flask
 psycopg2
+rarfile
 sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
