@@ -8,6 +8,7 @@ import os
 import sys
 import codecs
 import configparser
+from datetime import datetime
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -74,7 +75,9 @@ def celery_task(files, config=multiscanner.CONFIG):
     resultlist = multiscanner.multiscan(list(files), configfile=config)
     results = multiscanner.parse_reports(resultlist, python=True)
 
-    # Loop through files in a way compatible with Py 2 and 3, and won't be 
+    scan_time = datetime.now().isoformat()
+
+    # Loop through files in a way compatible with Py 2 and 3, and won't be
     # affected by changing keys to original filenames
     for file_ in list(results):
         original_filename = files[file_]['original_filename']
@@ -98,11 +101,13 @@ def celery_task(files, config=multiscanner.CONFIG):
         db.update_task(
             task_id=task_id,
             task_status='Complete',
+            timestamp=scan_time,
         )
 
     print('Results of the scan:\n{}'.format(results))
 
     return results
+
 
 @app.task(base=Batches, flush_every=api_config['batch_size'], flush_interval=api_config['batch_interval'])
 def multiscanner_celery(requests, *args, **kwargs):
@@ -113,7 +118,7 @@ def multiscanner_celery(requests, *args, **kwargs):
     Usage:
     from celery_worker import multiscanner_celery
     multiscanner_celery.delay(full_path, original_filename, task_id,
-                              hashed_filename, config=multiscanner.CONFIG)
+                              hashed_filename, config)
     '''
     # Initialize the connection to the task DB
     db.init_db()
@@ -135,6 +140,6 @@ def multiscanner_celery(requests, *args, **kwargs):
 
     celery_task(files)
 
-    
+
 if __name__ == '__main__':
     app.start()
