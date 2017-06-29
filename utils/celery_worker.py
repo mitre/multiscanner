@@ -91,6 +91,7 @@ def celery_task(files, config=multiscanner.CONFIG):
         results[original_filename] = results[file_]
         del results[file_]
 
+        results[original_filename]['Scan Time'] = scan_time
         results[original_filename]['Metadata'] = metadata
 
         # Save the report to storage
