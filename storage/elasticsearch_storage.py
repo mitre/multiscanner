@@ -75,7 +75,7 @@ class ElasticSearchStorage(storage.Storage):
                     }
                 }
             })
-            
+
         # Create de-dot preprocessor if doesn't exist yet
         try:
             dedot = self.es.ingest.get_pipeline('dedot')
@@ -206,7 +206,7 @@ class ElasticSearchStorage(storage.Storage):
 
         try:
             result_search = self.es.search(
-                index=self.index, doc_type='report', body=query
+                index=self.index, doc_type=self.doc_type, body=query
             )
             result_report = result_search['hits']['hits'][0]
 
