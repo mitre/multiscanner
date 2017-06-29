@@ -29,6 +29,18 @@
     border-radius: 4px !important;
 }
 
+#adv-options .checkbox {
+    padding-top: 0;
+}
+
+#adv-options .checkbox input[type="checkbox"] {
+    margin-left: -30px;
+}
+
+#adv-options .control-label {
+    padding-top: 0;
+}
+
 .file-preview {
     border: 0;
 }
@@ -128,6 +140,13 @@
 
 #report-tags .bootstrap-tagsinput {
     width: 100%;
+}
+
+.bootstrap-tagsinput .tag {
+    display: inline-block;
+    padding: .4em .6em .5em;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 #report-tags .tag.label {
@@ -366,4 +385,22 @@
     top: -75px;
     -webkit-animation: spin-rev 1s infinite linear;
           animation: spin-rev 1s infinite linear;
+}
+
+.dataTables_wrapper .dataTables_length .dt-buttons {
+    float: right;
+}
+
+.dataTables_wrapper .checkbox input[type="checkbox"] {
+    margin-left: 0.5em;
+}
+
+.table.dataTable {
+    table-layout: fixed;
+}
+
+.table.dataTable td {
+    width: 50px;
+    overflow: hidden;
+    word-wrap: break-word;
 }

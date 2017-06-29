@@ -17,7 +17,7 @@ sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
 #Required by storage modules
-elasticsearch
+elasticsearch>=5.0.0,<6.0.0
 pymongo
 #Required for distributed
 celery

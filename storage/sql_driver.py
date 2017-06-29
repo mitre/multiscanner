@@ -4,12 +4,11 @@ import os
 import json
 import configparser
 import codecs
-import sys
 from contextlib import contextmanager
+from datetime import datetime
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base, ConcreteBase
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils import database_exists, create_database
@@ -19,10 +18,6 @@ from datatables import ColumnDT, DataTables
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
-
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-import common
 
 Base = declarative_base()
 Session = sessionmaker()
@@ -34,11 +29,11 @@ class Task(Base):
     task_id = Column(Integer, primary_key=True)
     task_status = Column(String)
     sample_id = Column(String, unique=False)
-    report_id = Column(String, unique=False)
+    timestamp = Column(DateTime)
 
     def __repr__(self):
         return '<Task("{0}","{1}","{2}","{3}")>'.format(
-            self.task_id, self.task_status, self.sample_id, self.report_id
+            self.task_id, self.task_status, self.sample_id, self.timestamp
         )
 
     def to_dict(self):
@@ -153,13 +148,12 @@ class Database(object):
         finally:
             ses.close()
 
-    def add_task(self, task_id=None, task_status='Pending', sample_id=None, report_id=None):
+    def add_task(self, task_id=None, task_status='Pending', sample_id=None):
         with self.db_session_scope() as ses:
             task = Task(
                 task_id=task_id,
                 task_status=task_status,
                 sample_id=sample_id,
-                report_id=report_id
             )
             try:
                 ses.add(task)
@@ -171,15 +165,13 @@ class Database(object):
             created_task_id = task.task_id
             return created_task_id
 
-    def update_task(self, task_id, task_status, report_id=None):
-        '''
-        report_id will be a list of sha values
-        '''
+    def update_task(self, task_id, task_status, timestamp=None):
         with self.db_session_scope() as ses:
             task = ses.query(Task).get(task_id)
             if task:
                 task.task_status = task_status
-                task.report_id = report_id
+                if timestamp:
+                    task.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
                 return task.to_dict()
 
     def get_task(self, task_id):
@@ -189,12 +181,6 @@ class Database(object):
                 # unbind Task from Session
                 ses.expunge(task)
                 return task
-
-    def get_report_id_from_task(self, task_id):
-        with self.db_session_scope() as ses:
-            task = ses.query(Task).get(task_id)
-            if task:
-                return task.report_id
 
     def get_all_tasks(self):
         with self.db_session_scope() as ses:
@@ -206,17 +192,28 @@ class Database(object):
                 task_list.append(task.to_dict())
             return task_list
 
-    def search(self, params, id_list=None, search_by_value=False):
+    def search(self, params, id_list=None, search_by_value=False, return_all=False):
         '''Search according to Datatables-supplied parameters.
         Returns results in format expected by Datatables.
         '''
         with self.db_session_scope() as ses:
-            fields = [Task.task_id, Task.sample_id, Task.task_status]
+            fields = [Task.task_id, Task.sample_id, Task.task_status, Task.timestamp]
             columns = [ColumnDT(f) for f in fields]
-            if not id_list:
-                query = ses.query()
+            if return_all:
+                if id_list is None:
+                    # Return all tasks
+                    query = ses.query(*fields)
+                else:
+                    # Query all tasks for samples with given IDs
+                    query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
             else:
-                query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
+                fields[3] = func.max(Task.timestamp)
+                if id_list is None:
+                    # Query for most recent task per sample, for all samples
+                    query = ses.query(*fields).group_by(Task.sample_id)
+                else:
+                    # Query for most recent task per sample, for samples with given IDs
+                    query = ses.query(*fields).group_by(Task.sample_id).filter(Task.sample_id.in_(id_list))
             if not search_by_value:
                 # Don't limit search by search term or it won't return anything
                 # (search term already handled by Elasticsearch)

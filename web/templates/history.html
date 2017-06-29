@@ -1,15 +1,27 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
+<script src="/static/js/dataTables.buttons.min.js"></script>
+<script src="/static/js/buttons.bootstrap.min.js"></script>
 <script type="text/javascript">
   function tasksSetup(apiLoc) {
-    $('.table').DataTable( {
+    var table = $('.table').DataTable( {
       processing: true,
       serverSide: true,
-      ajax: "http://" + apiLoc + "/api/v1/tasks/search",
+      ajax: {
+        "url": "http://" + apiLoc + "/api/v1/tasks/search/history",
+        "data": function ( d ) {
+          if ($('#wildcards').is(':checked')) {
+            return $.extend( {}, d, {"wildcards": true} );
+          } else {
+            return $.extend( {}, d, {"wildcards": false} );
+          }
+        }
+      },
       columnDefs: [
         {
-          targets: 3,
+          targets: 4,
           searchable: false,
           orderable: false,
           data: 0,
@@ -20,7 +32,7 @@
           },
         }
       ],
-      "rowCallback": function( row, data, index ) {
+      rowCallback: function( row, data, index ) {
         if (data[2] == "Complete") {
           tr_class = ""
         } else {
@@ -29,7 +41,7 @@
         $(row).addClass("task-row" + tr_class);
         $(row).attr('data-href', '/report/' + data[0]);
       },
-      "drawCallback": function( settings ) {
+      drawCallback: function( settings ) {
         // Every time the table is loaded with new data...
         // ...make table rows clickable
         $("td").click(function() {
@@ -59,6 +71,21 @@
               $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
             });
         });
+      },
+      buttons: [
+        {
+          text: '<i class="glyphicon glyphicon-refresh"></i>',
+          titleAttr: 'Refresh',
+          action: function ( e, dt, node, config ) {
+            table.draw(false);
+          }
+        }
+      ],
+      "initComplete": function( settings, json ) {
+        table.buttons().containers().appendTo('#DataTables_Table_0_length');
+        // Add checkbox to disable implicit wildcards in search
+        chkbx = $('<div class="checkbox"><input type="checkbox" id="wildcards" title="Enable implicit wildcards" checked="checked"></div>');
+        $('#DataTables_Table_0_filter').append(chkbx);
       }
     });
   }
@@ -69,7 +96,7 @@
 </script>
 {% endblock %}
 
-{% block title %}Task List{% endblock %}
+{% block title %}Task History{% endblock %}
 
 {% block content %}
 <div class="row alert-row">
@@ -78,15 +105,16 @@
 
 <div class="row">
   <div class="col-md-10 col-md-offset-1">
-    <h1 class="text-center">Tasks</h1>
+    <h1 class="text-center">History</h1>
 
     <table class="table table-striped table-hover">
       <thead>
         <tr>
-          <th>Task ID</th>
-          <th>Sample</th>
-          <th>Task Status</th>
-          <th class="text-center">Delete</th>
+          <th width="5%">Task ID</th>
+          <th width="60%">Sample</th>
+          <th width="12%">Task Status</th>
+          <th width="17%">Timestamp</th>
+          <th class="text-center" width="6%">Delete</th>
         </tr>
       </thead>
       <tbody>

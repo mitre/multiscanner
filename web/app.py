@@ -9,15 +9,20 @@ def index():
                            metadata_fields=app.config['METADATA_FIELDS'])
 
 
-@app.route('/tasks', methods=['GET'])
+@app.route('/analyses', methods=['GET'])
 def tasks():
-    return render_template('tasks.html', api_loc=app.config['API_LOC'])
+    return render_template('analyses.html', api_loc=app.config['API_LOC'])
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
 def reports(task_id=1):
     return render_template('report.html', task_id=task_id,
                            api_loc=app.config['API_LOC'])
+
+
+@app.route('/history', methods=['GET'])
+def history():
+    return render_template('history.html', api_loc=app.config['API_LOC'])
 
 
 if __name__ == "__main__":
