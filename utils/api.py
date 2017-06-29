@@ -100,6 +100,9 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
 api_config = multiscanner.common.parse_config(api_config_object)
 
 db = database.Database(config=api_config.get('Database'))
+# To run under Apache, we need to set up the DB outside of __main__
+db.init_db()
+
 storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
@@ -538,8 +541,6 @@ def del_note(task_id, note_id):
 
 
 if __name__ == '__main__':
-
-    db.init_db()
 
     if not os.path.isdir(api_config['api']['upload_folder']):
         print('Creating upload dir')
