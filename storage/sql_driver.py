@@ -10,7 +10,7 @@ from datetime import datetime
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils import database_exists, create_database
 
@@ -205,6 +205,7 @@ class Database(object):
             fields = [Task.task_id, Task.sample_id, Task.task_status, Task.timestamp]
             columns = [ColumnDT(f) for f in fields]
             if return_all:
+                # History page
                 if id_list is None:
                     # Return all tasks
                     query = ses.query(*fields)
@@ -212,10 +213,24 @@ class Database(object):
                     # Query all tasks for samples with given IDs
                     query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
             else:
-                fields[3] = func.max(Task.timestamp)
+                # Analyses page
+                task_alias = aliased(Task)
+                #ts_max_alias = func.max(task_alias.timestamp).alias('ts')
+                #sample_subq = (ses.query(task_alias.sample_id, ts_max_alias)
+                sample_subq = (ses.query(task_alias.sample_id, func.max(task_alias.timestamp))
+                               .group_by(task_alias.sample_id)
+                               .subquery()
+                               .alias('sample_subq'))
+                #subq_alias = sample_subq.alias()
+                #print(sample_subq)
                 if id_list is None:
                     # Query for most recent task per sample, for all samples
-                    query = ses.query(*fields).group_by(Task.sample_id)
+                    print(sample_subq.c)
+                    query = (ses.query(*fields)
+                             .join(sample_subq,
+                                   Task.sample_id==sample_subq.c.sample_id,
+                                   Task.timestamp==sample_subq.c.max_1))
+                    print(query)
                 else:
                     # Query for most recent task per sample, for samples with given IDs
                     query = ses.query(*fields).group_by(Task.sample_id).filter(Task.sample_id.in_(id_list))
