@@ -206,7 +206,7 @@ class ElasticSearchStorage(storage.Storage):
 
         try:
             result_search = self.es.search(
-                index=self.index, doc_type='report', body=query
+                index=self.index, doc_type='reports', body=query
             )
             result_report = result_search['hits']['hits'][0]
 
