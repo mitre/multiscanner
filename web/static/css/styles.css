@@ -29,6 +29,19 @@
     border-radius: 4px !important;
 }
 
+
+#adv-options .checkbox {
+    padding-top: 0;
+}
+
+#adv-options .checkbox input[type="checkbox"] {
+    margin-left: -30px;
+}
+
+#adv-options .control-label {
+    padding-top: 0;
+}
+
 .file-preview {
     border: 0;
 }
@@ -82,6 +95,10 @@
     padding-bottom: 6px;
 }
 
+.file-drop-zone {
+    border: 2px dashed #ddd;
+}
+
 .container {
     margin-bottom: 20px;
 }
@@ -124,6 +141,13 @@
 
 #report-tags .bootstrap-tagsinput {
     width: 100%;
+}
+
+.bootstrap-tagsinput .tag {
+    display: inline-block;
+    padding: .4em .6em .5em;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 #report-tags .tag.label {
@@ -290,4 +314,94 @@
 
 .panel-body {
     padding-bottom: 5px;
+}
+
+/* Spinner for scan pending */
+
+#pending {
+    margin-top: 40px;
+}
+#pending h3 {
+    margin: 0;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+@keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+}
+@-webkit-keyframes spin-rev {
+  0% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+  100% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+}
+@keyframes spin-rev {
+  0% {
+    -webkit-transform: rotate(360deg);
+            transform: rotate(360deg);
+  }
+  100% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+}
+.spin-outer {
+    margin: 0 auto;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    border: 1rem solid;
+    border-color: #678fba rgba(0,0,0,0);
+    -webkit-animation: spin 1.5s infinite linear;
+          animation: spin 1.5s infinite linear;
+}
+.spin-inner {
+    margin: 0 auto;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    border: 0.75rem solid;
+    border-color: #ed8c13 rgba(0,0,0,0);
+    position: relative;
+    top: -75px;
+    -webkit-animation: spin-rev 1s infinite linear;
+          animation: spin-rev 1s infinite linear;
+}
+
+.dataTables_wrapper .dataTables_length .dt-buttons {
+    float: right;
+}
+
+.dataTables_wrapper .checkbox input[type="checkbox"] {
+    margin-left: 0.5em;
+}
+
+.table.dataTable {
+    table-layout: fixed;
+}
+
+.table.dataTable td {
+    width: 50px;
+    overflow: hidden;
+    word-wrap: break-word;
 }

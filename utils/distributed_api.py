@@ -78,6 +78,13 @@ for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
 
+# Enable running under mod_wsgi
+db.init_db()
+
+if not os.path.isdir(api_config['api']['upload_folder']):
+    print('Creating upload dir')
+    os.makedirs(api_config['api']['upload_folder'])
+
 
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
@@ -333,11 +340,4 @@ def del_note(task_id, note_id):
 
 
 if __name__ == '__main__':
-
-    db.init_db()
-
-    if not os.path.isdir(api_config['api']['upload_folder']):
-        print('Creating upload dir')
-        os.makedirs(api_config['api']['upload_folder'])
-
     app.run(host=api_config['api']['host'], port=api_config['api']['port'])

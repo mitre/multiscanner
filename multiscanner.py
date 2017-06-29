@@ -49,8 +49,9 @@ MODULEDIR = os.path.join(MS_WD, "modules")
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": os.path.join(MS_WD, 'storage.ini')
-    }
+    "storage-config": os.path.join(MS_WD, 'storage.ini'),
+    "api-config": os.path.join(MS_WD, 'api_config.ini'),
+}
 
 VERBOSE = False
 
@@ -160,7 +161,7 @@ class _ModuleInterface(object):
         shutil.rmtree(self.write_dir, ignore_errors=True)
 
 
-def _runModule(modname, mod, filelist, threadDict, global_module_interface, conf=None):
+def _run_module(modname, mod, filelist, threadDict, global_module_interface, conf=None):
     """
     Runs a module on a file list.
 
@@ -318,14 +319,15 @@ def _copy_to_share(filelist, filedic, sharedir):
         # Build new path
         newfile = os.path.basename(fname)
         newfile = newfile.replace(' ', '_')
-        newfile = os.path.join(sharedir, newfile)
+        newfile_path = os.path.join(sharedir, newfile)
         # If the new file exists we add in a random ID
         if os.path.exists(newfile):
             uid = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-            newfile = os.path.join(sharedir, uid + '_' + os.path.basename(newfile))
-        shutil.copyfile(fname, newfile)
+            newfile = uid + '_' + newfile
+            newfile_path = os.path.join(sharedir, newfile)
+        shutil.copyfile(fname, newfile_path)
         filedic[newfile] = fname
-        filelist.append(newfile)
+        filelist.append(newfile_path)
     del tmpfilelist
     # Prevents file shares from making modules crash, this might not be the best but meh
     time.sleep(3)
@@ -375,7 +377,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                     conf = mod.DEFAULTCONF
                 except:
                     pass
-            thread = _Thread(target=_runModule, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
+            thread = _Thread(target=_run_module, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
             thread.name = modname
             thread.setDaemon(True)
             ThreadList.append(thread)
@@ -516,9 +518,6 @@ def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, pytho
     else:
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
-# Keep old API compatibility
-parseReports = parse_reports
-
 
 def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, config=None, module_list=None):
     """
@@ -635,7 +634,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Delete copied files
     if main_config["copyfilesto"]:
         for item in filelist:
-            os.remove(item)
+            try:
+                os.remove(item)
+            except OSError:
+                pass
 
     # Get Result list
     results = []
@@ -886,7 +888,7 @@ def _main():
         VERBOSE = args.verbose
 
     # Checks if user is trying to initialize
-    if args.Files == ['init'] and not os.path.isfile('init'):
+    if str(args.Files) == "['init']" and not os.path.isfile('init'):
         _init(args)
 
     if not os.path.isfile(args.config):
@@ -1007,6 +1009,7 @@ def _main():
     # Cleanup zip extracted files
     if args.extractzips:
         shutil.rmtree('_tmp')
+
 
 if __name__ == "__main__":
     _main()

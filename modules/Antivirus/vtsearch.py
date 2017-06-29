@@ -8,6 +8,10 @@ try:
     from urllib2 import urlopen
 except:
     from urllib.request import urlopen
+try:
+    from urllib import urlencode
+except:
+    from urllib.parse import urlencode
 import time
 
 __author__ = "Drew Bonasera"
@@ -51,11 +55,11 @@ def scan(filelist, conf=DEFAULTCONF):
         result = None
         while not result:
             param = {'resource': ', '.join(md5list), 'apikey': apikey}
-            data = urllib.urlencode(param)
+            data = urlencode(param).encode('ascii')
             try:
                 result = urlopen(url, data)
                 result = result.read()
-            except:
+            except Exception as e:
                 result = None
             if not result:
                 time.sleep(30)

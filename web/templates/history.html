@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
+<script src="/static/js/dataTables.buttons.min.js"></script>
+<script src="/static/js/buttons.bootstrap.min.js"></script>
+<script type="text/javascript">
+  function tasksSetup(apiLoc) {
+    var table = $('.table').DataTable( {
+      processing: true,
+      serverSide: true,
+      ajax: {
+        "url": "http://" + apiLoc + "/api/v1/tasks/search/history",
+        "data": function ( d ) {
+          if ($('#wildcards').is(':checked')) {
+            return $.extend( {}, d, {"wildcards": true} );
+          } else {
+            return $.extend( {}, d, {"wildcards": false} );
+          }
+        }
+      },
+      columnDefs: [
+        {
+          targets: 4,
+          searchable: false,
+          orderable: false,
+          data: 0,
+          className: "text-center delete",
+          "render": function ( data, type, full, meta ) {
+            // Add Delete column buttons
+            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data + '"><span class="glyphicon glyphicon-remove"></span></button>';
+          },
+        }
+      ],
+      rowCallback: function( row, data, index ) {
+        if (data[2] == "Complete") {
+          tr_class = ""
+        } else {
+          tr_class = " warning"
+        }
+        $(row).addClass("task-row" + tr_class);
+        $(row).attr('data-href', '/report/' + data[0]);
+      },
+      drawCallback: function( settings ) {
+        // Every time the table is loaded with new data...
+        // ...make table rows clickable
+        $("td").click(function() {
+          // But not cells with a Delete button
+          if ($(this).hasClass('delete')) {
+            return;
+          }
+          window.document.location = $(this).parent().data("href");
+        });
+
+        // ...add tooltip to Delete buttons
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // ...add delete functionality
+        $('.btn-danger').click(function() {
+          var t_id = this.dataset.id;
+          $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
+            .done(function (data, status, jqXHR) {
+              $('td').filter(function() {
+                return this.innerHTML === t_id;
+              }).parent().remove();
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+            })
+            .fail(function (data, status, jqXHR) {
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+            });
+        });
+      },
+      buttons: [
+        {
+          text: '<i class="glyphicon glyphicon-refresh"></i>',
+          titleAttr: 'Refresh',
+          action: function ( e, dt, node, config ) {
+            table.draw(false);
+          }
+        }
+      ],
+      "initComplete": function( settings, json ) {
+        table.buttons().containers().appendTo('#DataTables_Table_0_length');
+        // Add checkbox to disable implicit wildcards in search
+        chkbx = $('<div class="checkbox"><input type="checkbox" id="wildcards" title="Enable implicit wildcards" checked="checked"></div>');
+        $('#DataTables_Table_0_filter').append(chkbx);
+      }
+    });
+  }
+
+  $(document).ready(function($) {
+    tasksSetup("{{ api_loc }}");
+  });
+</script>
+{% endblock %}
+
+{% block title %}Task History{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">History</h1>
+
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th width="5%">Task ID</th>
+          <th width="60%">Sample</th>
+          <th width="12%">Task Status</th>
+          <th width="17%">Timestamp</th>
+          <th class="text-center" width="6%">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
