@@ -4,6 +4,7 @@ import os
 import json
 import configparser
 import codecs
+import sys
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -18,6 +19,10 @@ from datatables import ColumnDT, DataTables
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
+
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.append(os.path.join(MS_WD, 'libs'))
+import common
 
 Base = declarative_base()
 Session = sessionmaker()

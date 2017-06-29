@@ -38,6 +38,7 @@ config_object = configparser.SafeConfigParser()
 config_object.optionxform = str
 configfile = common.get_api_config_path(multiscanner.CONFIG)
 config_object.read(configfile)
+
 if not config_object.has_section('celery') or not os.path.isfile(configfile):
     # Write default config
     config_object.add_section('celery')
@@ -66,7 +67,6 @@ def celery_task(files, config=multiscanner.CONFIG):
     Run multiscanner on the given file and store the results in the storage
     handler(s) specified in the storage configuration file.
     '''
-
     # Get the storage config
     storage_conf = multiscanner.common.get_storage_config_path(config)
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
@@ -135,6 +135,6 @@ def multiscanner_celery(requests, *args, **kwargs):
 
     celery_task(files)
 
-
+    
 if __name__ == '__main__':
     app.start()

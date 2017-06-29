@@ -66,6 +66,7 @@ class ElasticSearchStorage(storage.Storage):
                     }
                 }
             })
+
         if 'sample' not in mappings:
             es_indices.put_mapping(index=self.index, doc_type='sample', body={
                 'properties': {
@@ -74,7 +75,7 @@ class ElasticSearchStorage(storage.Storage):
                     }
                 }
             })
-
+            
         # Create de-dot preprocessor if doesn't exist yet
         try:
             dedot = self.es.ingest.get_pipeline('dedot')
@@ -123,7 +124,6 @@ class ElasticSearchStorage(storage.Storage):
                 sample_id = report[filename]['SHA256']
             except KeyError:
                 sample_id = uuid4()
-
             # Store metadata with the sample, not the report
             sample = {'filename': filename, 'tags': []}
             for field in METADATA_FIELDS:
