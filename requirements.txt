@@ -11,11 +11,14 @@ requests
 ssdeep
 #Required by API
 flask
+psycopg2
+rarfile
 sqlalchemy
 sqlalchemy-utils
-flask_cors
+sqlalchemy-datatables
 #Required by storage modules
-elasticsearch
+elasticsearch>=5.0.0,<6.0.0
 pymongo
 #Required for distributed
 celery
+flask_cors

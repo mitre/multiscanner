@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>{% block title %}{% endblock %} | Multiscanner</title>
+    <title>{% block title %}{% endblock %} | MultiScanner</title>
     <link rel="stylesheet" href="/static/css/bootstrap-spacelab.min.css">
     <link rel="stylesheet" href="/static/css/datatables.min.css">
     <script src="/static/js/jquery-3.1.1.min.js"></script>
@@ -24,14 +24,15 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">Multiscanner</a>
+          <a class="navbar-brand" href="/">MultiScanner</a>
         </div>
 
         <!-- NAVBAR ITEMS -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
           <ul class="nav navbar-nav">
             <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
-            <li {% if request.path == '/tasks' %} class="active" {% endif %}><a href="/tasks">Tasks</a></li>
+            <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
+            <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
             <!-- <li {% if request.path == '/reports' %} class="active" {% endif %}><a href="/reports">Reports</a></li> -->
           </ul>
         </div>

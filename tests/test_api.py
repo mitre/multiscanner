@@ -113,7 +113,8 @@ class TestTaskCreateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Pending',
-                'report_id': None
+                'report_id': None,
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
@@ -127,7 +128,12 @@ class TestTaskCreateCase(unittest.TestCase):
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_get_task_list(self):
-        expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Pending', 'report_id': None}]}
+        expected_response = {'Tasks': [{
+            'task_id': 1,
+            'task_status': 'Pending',
+            'report_id': None,
+            'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+        }]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
@@ -161,7 +167,8 @@ class TestTaskUpdateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Complete',
-                'report_id': 'report1'
+                'report_id': 'report1',
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')

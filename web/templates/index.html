@@ -13,6 +13,7 @@
       browseLabel: "Select File(s) …",
       removeLabel: "Clear",
       removeClass: "btn btn-danger",
+      msgUploadEnd: "Submitted to scanner",
       previewTemplates: {
           other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
           '   <div class="file-thumbnail-footer">\n' +
@@ -68,8 +69,14 @@
         uploadClass: 'btn btn-xs btn-primary',
       },
       uploadExtraData: function (previewId, index) {
-        // Send metadata along with the file
         var obj = {};
+        if ($('#archive-analyze').is(':checked')) {
+          obj['archive-analyze'] = 'true';
+          if ($('#archive-password').val() !== '') {
+            obj['archive-password'] = $('#archive-password').val();
+          }
+        }
+        // Send metadata along with the file
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
           var val = $(this).find('input').first().val();
@@ -80,12 +87,19 @@
     });
 
     $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
-      // Hide delete buttons after upload
-      $('#' + previewId + ' .btn-danger').css('visibility', 'hidden');
+      // Hide buttons after upload
+      $('#' + previewId + ' .file-footer-buttons').css('visibility', 'hidden');
 
       // Disable metadata fields after upload
       $('.metadata-group[data-target=' + previewId + '] input').each(function (index, element) {
         $(element).attr('readonly', true);
+      })
+
+      // Click on preview box to go straight to the task/report
+      // If file was a zip, it will go to the first file
+      $('#' + previewId).css('cursor', 'pointer');
+      $('#' + previewId).click(function() {
+        window.location = "report/" + data.response.Message.task_ids[0];
       })
     });
 
@@ -137,7 +151,7 @@
 
 <div class="row">
   <div class="col-md-8 col-md-offset-2">
-    <h1 class="text-center">Multiscanner</h1>
+    <h1 class="text-center">MultiScanner</h1>
     <br />
 
     <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
@@ -154,6 +168,16 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
+          <div class="checkbox col-md-4">
+            <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
+          </div>
+          <div class="form-group archive-group">
+            <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
+            <div class="input-group col-md-5">
+              <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+            </div>
+          </div>
+          <h4>Metadata Fields</h4>
           <div><p><i>(These apply to all files in this submission.)</i></p></div>
           {% for metadata in metadata_fields %}
           <div class="form-group metadata-group">

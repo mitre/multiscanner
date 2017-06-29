@@ -91,7 +91,7 @@ def get_storage_config_path(config_file):
         sys.exit()
 
 def get_api_config_path(config_file):
-    """Gets the location of the storage config file from the multiscanner config file"""
+    """Gets the location of the API config file from the multiscanner config file"""
     conf = configparser.SafeConfigParser()
     conf.read(config_file)
     conf = parse_config(conf)
@@ -133,7 +133,10 @@ def parseDir(directory, recursive=False):
             else:
                 continue
         else:
-            filelist.append(item)
+            if not PY3:
+                filelist.append(item.decode('utf8'))
+            else:
+                filelist.append(item)
     return filelist
     
 def parseFileList(FileList, recursive=False):
@@ -148,7 +151,10 @@ def parseFileList(FileList, recursive=False):
         if os.path.isdir(item):
             filelist.extend(parseDir(item, recursive))
         elif os.path.isfile(item):
-            filelist.append(item)
+            if not PY3:
+                filelist.append(item.decode('utf8'))
+            else:
+                filelist.append(item)
         else:
             pass
     return filelist
