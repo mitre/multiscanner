@@ -79,7 +79,7 @@ def celery_task(files, config=multiscanner.CONFIG):
 
     # Loop through files in a way compatible with Py 2 and 3, and won't be
     # affected by changing keys to original filenames
-    for file_ in list(results):
+    for file_ in files:
         original_filename = files[file_]['original_filename']
         task_id = files[file_]['task_id']
         file_hash = files[file_]['file_hash']
@@ -94,16 +94,16 @@ def celery_task(files, config=multiscanner.CONFIG):
         results[original_filename]['Scan Time'] = scan_time
         results[original_filename]['Metadata'] = metadata
 
-        # Save the report to storage
-        storage_handler.store(results, wait=False)
-        storage_handler.close()
-
         # Update the task DB to reflect that the task is done
         db.update_task(
             task_id=task_id,
             task_status='Complete',
             timestamp=scan_time,
         )
+
+    # Save the reports to storage
+    storage_handler.store(results, wait=False)
+    storage_handler.close()
 
     print('Results of the scan:\n{}'.format(results))
 
