@@ -8,9 +8,9 @@ import sys
 from contextlib import contextmanager
 from datetime import datetime
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from sqlalchemy import and_, create_engine, Column, Integer, String, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy_utils import database_exists, create_database
 
@@ -205,6 +205,7 @@ class Database(object):
             fields = [Task.task_id, Task.sample_id, Task.task_status, Task.timestamp]
             columns = [ColumnDT(f) for f in fields]
             if return_all:
+                # History page
                 if id_list is None:
                     # Return all tasks
                     query = ses.query(*fields)
@@ -212,13 +213,21 @@ class Database(object):
                     # Query all tasks for samples with given IDs
                     query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
             else:
-                fields[3] = func.max(Task.timestamp)
-                if id_list is None:
-                    # Query for most recent task per sample, for all samples
-                    query = ses.query(*fields).group_by(Task.sample_id)
-                else:
-                    # Query for most recent task per sample, for samples with given IDs
-                    query = ses.query(*fields).group_by(Task.sample_id).filter(Task.sample_id.in_(id_list))
+                # Analyses page
+                task_alias = aliased(Task)
+                sample_subq = (ses.query(task_alias.sample_id,
+                                         func.max(task_alias.timestamp).label('ts_max'))
+                               .group_by(task_alias.sample_id)
+                               .subquery()
+                               .alias('sample_subq'))
+                # Query for most recent task per sample
+                query = (ses.query(*fields)
+                         .join(sample_subq,
+                               and_(Task.sample_id == sample_subq.c.sample_id,
+                                    Task.timestamp == sample_subq.c.ts_max)))
+                if id_list is not None:
+                    # Query for most recent task per sample, only for samples with given IDs
+                    query = query.filter(Task.sample_id.in_(id_list))
             if not search_by_value:
                 # Don't limit search by search term or it won't return anything
                 # (search term already handled by Elasticsearch)
