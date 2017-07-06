@@ -104,6 +104,9 @@
     });
 
     $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
+      // Scroll to file
+	  window.scrollTo(0, $("#" + previewId).offset().top);
+
       // Singularize/pluralize submit button text
       if ($("#filesUpload").fileinput('getFilesCount') > 1) {
         $('#btn-scan').html('Scan them!');
