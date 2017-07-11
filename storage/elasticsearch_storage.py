@@ -5,6 +5,7 @@ from datetime import datetime
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
+import re
 
 import storage
 
@@ -62,7 +63,7 @@ class ElasticSearchStorage(storage.Storage):
                 },
                 'properties': {
                     'timestamp': {
-                        'type': 'date'
+                        'type': 'date',
                     }
                 }
             })
@@ -222,14 +223,29 @@ class ElasticSearchStorage(storage.Storage):
             print(e)
             return None
 
-    def search(self, query_string, wildcards=True):
+    def build_query(self, query_string):
+        return {"query": {"query_string": {
+            "default_operator": 'AND',
+            "query": query_string}}}
+
+    def search(self, query_string, search_type='default'):
         '''Run a Query String query and return a list of sample_ids associated
         with the matches. Run the query against all document types.
         '''
-        if wildcards:
-            query = {"query": {"query_string": {"query": "*" + query_string + "*"}}}
+        print(search_type)
+        if search_type == 'advanced':
+            query = self.build_query(query_string)
         else:
-            query = {"query": {"query_string": {"query": query_string}}}
+            es_reserved_chars_re = '([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
+            query_string = re.sub(es_reserved_chars_re, r'\\\g<1>', query_string)
+            print(query_string)
+            if search_type == 'default':
+                query = self.build_query("*" + query_string + "*")
+            elif search_type == 'exact':
+                query = self.build_query("\"" + query_string + "\"")
+            else:
+                print('Unknown search type!')
+                return None
         result = helpers.scan(
             self.es, query=query, index=self.index
         )
