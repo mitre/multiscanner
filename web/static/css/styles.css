@@ -99,6 +99,10 @@
     border: 2px dashed #ddd;
 }
 
+#search_options {
+    margin-left: 5px;
+}
+
 .container {
     margin-bottom: 20px;
 }
