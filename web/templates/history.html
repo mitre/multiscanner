@@ -20,12 +20,6 @@
         }
       },
       columnDefs: [
-      	{
-          targets: 3,
-          "render": function ( data, type, full, meta ) {
-            return data.replace(' ', 'T');
-          },
-		},
         {
           targets: 4,
           searchable: false,
@@ -39,7 +33,9 @@
         }
       ],
       rowCallback: function( row, data, index ) {
-      	data[3] = data[3].replace(' ', 'T');
+        if (data[3] != null) {
+          data[3] = data[3].replace(' ', 'T');
+        }
         if (data[2] == "Complete") {
           tr_class = ""
         } else {
