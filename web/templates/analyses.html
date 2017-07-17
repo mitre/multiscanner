@@ -90,13 +90,13 @@
 		searchTypeButtons = $('<div id="search_type" class="collapse">' +
 			'<label for="search_type_buttons">Search Type:&nbsp;</label>' +
 			'<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
-		    '<label class="btn btn-primary active">' +
+		    '<label class="btn btn-primary active" title="Add wildcards to start and end of search term, to search as you type">' +
 		  	  '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default' +
 		    '</label>' +
-		    '<label class="btn btn-primary">' +
+		    '<label class="btn btn-primary" title="Add quotes to start and end of search term, to search for the exact phrase">' +
 		  	  '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact' +
 		    '</label>' +
-		    '<label class="btn btn-primary">' +
+		    '<label class="btn btn-primary" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
 		  	  '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced' +
 		    '</label>' +
 		  '</div></div>');
