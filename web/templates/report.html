@@ -145,6 +145,10 @@
         setTimeout(getReport, 5000);
         return;
       }
+      else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
+			  $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        return;
+	  }
       $('#pending').hide();
       $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
