@@ -205,6 +205,28 @@ def index():
     return jsonify({'Message': 'True'})
 
 
+@app.route('/api/v1/modules', methods=['GET'])
+def modules():
+    '''
+    Return a list of module names available for Multiscanner to use,
+    and whether or not they are enabled in the config.
+    '''
+    files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
+    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
+    module_names = [m[0] for m in filenames if m[1] == '.py']
+
+    ms_config = configparser.SafeConfigParser()
+    ms_config.optionxform = str
+    ms_config.read(multiscanner.CONFIG)
+    modules = {}
+    for module in module_names:
+        try:
+            modules[module] = ms_config.get(module, 'ENABLED')
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            pass
+    return jsonify({'Modules': modules})
+
+
 @app.route('/api/v1/tasks/list/', methods=['GET'])
 def task_list():
     '''

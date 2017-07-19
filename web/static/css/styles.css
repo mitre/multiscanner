@@ -42,6 +42,18 @@
     padding-top: 0;
 }
 
+#adv-options .opt-section:not(:last-child) {
+    padding-bottom: 12px;
+}
+
+#module-opts {
+    display: inline-block;
+}
+
+#module-opts .checkbox {
+    text-align: left;
+}
+
 .file-preview {
     border: 0;
 }

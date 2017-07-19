@@ -22,7 +22,7 @@
           '    </div>' +
           '        {footer}\n' +
           '    </div>\n' +
-          '</div>\n' + 
+          '</div>\n' +
           '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
           {% for metadata in metadata_fields %}
           '<div class="form-group-sm">\n' +
@@ -52,7 +52,7 @@
           '        {upload} {delete} {other}' +
           '        <button type="button" class="add-metadata btn btn-xs btn-default" title="Add metadata">\n' +
           '            <i class="glyphicon glyphicon-th-list"></i>\n' +
-          '        </button>\n' + 
+          '        </button>\n' +
           '    </div>\n' +
           '    {drag}\n' +
           '    <div class="file-upload-indicator" title="{indicatorTitle}">{indicator}</div>\n' +
@@ -105,7 +105,7 @@
 
     $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
       // Scroll to file
-	  window.scrollTo(0, $("#" + previewId).offset().top);
+      window.scrollTo(0, $("#" + previewId).offset().top);
 
       // Singularize/pluralize submit button text
       if ($("#filesUpload").fileinput('getFilesCount') > 1) {
@@ -125,6 +125,17 @@
         var value = $(element).val();
         $('#' + previewId + '-' + field).val(value);
       });
+    });
+
+    // Add options for selecting which modules to run
+    $.get("http://{{ api_loc }}/api/v1/modules", function(data) {
+      var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
+      for (mod in data.Modules) {
+        checked = (data.Modules[mod] == "True" ? "checked" : "");
+        modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
+      }
+      modules += '</div>';
+      $('#adv-options').prepend(modules);
     });
 
     // Set metadata field values for all files
@@ -171,26 +182,31 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
-          <div class="checkbox col-md-4">
-            <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
-          </div>
-          <div class="form-group archive-group">
-            <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
-            <div class="input-group col-md-5">
-              <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+          <div id="archive-opts" class="opt-section">
+            <h4>Archives</h4>
+            <div class="checkbox col-md-4">
+              <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
+            </div>
+            <div class="form-group archive-group">
+              <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
+              <div class="input-group col-md-5">
+                <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+              </div>
             </div>
           </div>
-          <h4>Metadata Fields</h4>
-          <div><p><i>(These apply to all files in this submission.)</i></p></div>
-          {% for metadata in metadata_fields %}
-          <div class="form-group metadata-group">
-          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
-          <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
-          <div class="input-group col-md-10">
-            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+          <div id="metadata-opts" class="opt-section">
+            <h4>Metadata Fields</h4>
+            <div><p><i>(These apply to all files in this submission.)</i></p></div>
+            {% for metadata in metadata_fields %}
+            <div class="form-group metadata-group">
+			  {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+           	  <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
+           	  <div class="input-group col-md-10">
+           	    <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+           	  </div>
+            </div>
+            {% endfor %}
           </div>
-          </div>
-          {% endfor %}
         </div>
 
         <div class="form-group text-center">
