@@ -133,15 +133,15 @@
     });
 
     // Add options for selecting which modules to run
-    $.get("http://{{ api_loc }}/api/v1/modules", function(data) {
-      var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
-      for (mod in data.Modules) {
-        checked = (data.Modules[mod] == "True" ? "checked" : "");
-        modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
-      }
-      modules += '</div>';
-      $('#adv-options').prepend(modules);
-    });
+    //$.get("http://{{ api_loc }}/api/v1/modules", function(data) {
+    //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
+    //  for (mod in data.Modules) {
+    //    checked = (data.Modules[mod] == "True" ? "checked" : "");
+    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
+    //  }
+    //  modules += '</div>';
+    //  $('#adv-options').prepend(modules);
+    //});
 
     // Set metadata field values for all files
     $('#adv-options .metadata-group input').change(function() {

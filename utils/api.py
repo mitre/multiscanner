@@ -352,6 +352,7 @@ def create_task():
 
     metadata = {}
     task_id_list = []
+    extract_dir = None
     for key in request.form.keys():
         if key in ['file_id', 'archive-password'] or request.form[key] == '':
             continue
