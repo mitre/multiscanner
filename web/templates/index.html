@@ -69,14 +69,19 @@
         uploadClass: 'btn btn-xs btn-primary',
       },
       uploadExtraData: function (previewId, index) {
+        // Send options along with the file
         var obj = {};
+        // Modules options
+		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
+		obj['modules'] = moduleList;
+        // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
           if ($('#archive-password').val() !== '') {
             obj['archive-password'] = $('#archive-password').val();
           }
         }
-        // Send metadata along with the file
+        // Metadata options
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
           var val = $(this).find('input').first().val();
