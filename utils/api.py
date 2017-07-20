@@ -402,14 +402,12 @@ def get_report(task_id):
 
     if task.task_status == 'Complete':
         report = handler.get_report(task.sample_id, task.timestamp)
-
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}
-
-    if report:
-        return jsonify({'Report': report})
     else:
-        abort(HTTP_NOT_FOUND)
+        report = {'Report': 'Task failed'}
+
+    return jsonify({'Report': report})
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
