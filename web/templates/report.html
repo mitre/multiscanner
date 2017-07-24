@@ -272,6 +272,11 @@
       var noteId = $(this).parents('.panel').attr('id');
       var response = deleteNote(noteId);
     }));
+
+    // Handle downloading of JSON report
+    $('#dl-json').on('click', (function(event) {
+      window.location = "http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+    }));
   });
 </script>
 {% endblock %}
@@ -279,7 +284,8 @@
 {% block title %}Report{% endblock %}
 
 {% block content %}
-<button class="btn btn-primary" id="notes-open">Notes</button>
+<button class="btn btn-primary" id="notes-open" title="View analyst notes">Notes</button>
+<button class="btn btn-primary" id="dl-json" title="Download JSON report">JSON</button>
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>

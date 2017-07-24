@@ -438,6 +438,8 @@ def get_report(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
+    download = request.args.get('d', None)
+
     if task.task_status == 'Complete':
         report = handler.get_report(task.sample_id, task.timestamp)
     elif task.task_status == 'Pending':
@@ -445,7 +447,13 @@ def get_report(task_id):
     else:
         report = {'Report': 'Task failed'}
 
-    return jsonify({'Report': report})
+    if download == 't':
+        response = make_response(jsonify(report))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachemnt'
+        return response
+    else:
+        return jsonify({'Report': report})
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])

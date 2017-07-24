@@ -257,6 +257,14 @@
   background-color: #428bca;
 }
 
+#dl-json {
+    position: fixed;
+    top: 55px;
+    right: 0;
+    border-radius: 20px 0 0 20px;
+    padding-left: 20px;
+}
+
 #report-notes {
     position: fixed;
     z-index: 1;
