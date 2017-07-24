@@ -71,6 +71,9 @@
       uploadExtraData: function (previewId, index) {
         // Send options along with the file
         var obj = {};
+        //Scan or Import?
+        var upload_type = $('#upload-opts .btn.active input').val();
+        obj['upload_type'] = upload_type;
         // Modules options
 		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
 		obj['modules'] = moduleList;
@@ -132,6 +135,14 @@
       });
     });
 
+    // Bootstrap Toggle Switch (https://www.bootply.com/92189)
+    $('.btn-toggle').click(function() {
+      $(this).find('.btn').toggleClass('active');  
+      $(this).find('.btn').toggleClass('btn-primary');
+      $(this).find('.btn').toggleClass('btn-default');
+      $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
+    });
+
     // Add options for selecting which modules to run
     //$.get("http://{{ api_loc }}/api/v1/modules", function(data) {
     //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
@@ -187,6 +198,16 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
+          <div id="upload-opts" class="opt-section">
+			<div class="btn-group btn-toggle" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
+              </label>
+              <label class="btn btn-default">
+                <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
+              </label>
+            </div>
+          </div>
           <div id="archive-opts" class="opt-section">
             <h4>Archives</h4>
             <div class="checkbox col-md-4">

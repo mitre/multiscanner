@@ -29,6 +29,7 @@ import time
 import hashlib
 import codecs
 import configparser
+import json
 import multiprocessing
 import queue
 import shutil
@@ -320,6 +321,23 @@ def save_hashed_filename(f, zipped=False):
     return (f_name, full_path)
 
 
+def import_task(file_):
+    '''
+    Import a JSON report that was downloaded from MultiScanner.
+    '''
+    report = json.loads(file_.read().decode('utf-8'))
+    report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+
+    task_id = db.add_task(
+        sample_id=report['SHA256'],
+        task_status='Complete',
+        timestamp=report['Scan Time'],
+    )
+    storage_handler.store({report['filename']: report}, wait=False)
+
+    return task_id
+
+
 def queue_task(original_filename, f_name, full_path, metadata):
     '''
     Queue up a single new task, for a single non-archive file.
@@ -348,6 +366,14 @@ def create_task():
     UPLOAD_FOLDER, optionally unzipping it. Return task id and 201 status.
     '''
     file_ = request.files['file']
+    if request.form['upload_type'] == 'import':
+        task_id = import_task(file_)
+
+        return make_response(
+            jsonify({'Message': {'task_ids': [task_id]}}),
+            HTTP_CREATED
+        )
+
     original_filename = file_.filename
 
     metadata = {}
