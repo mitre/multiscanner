@@ -25,6 +25,7 @@ This module submits a file to a Cuckoo Sandbox cluster for analysis
 - **timeout** - This is max time a sample with run for
 - **running timeout** - This is an additional timeout, if a task is in the running state this many seconds past **timeout** we will consider the task failed.
 - **delete tasks** - When set to True, tasks will be deleted from cuckoo after detonation. This is to prevent filling up the Cuckoo machine's disk with reports.
+- **maec** - When set to True, [MAEC](https://maecproject.github.io) JSON report is added to Cuckoo JSON report. *NOTE*: Cuckoo needs MAEC reporting enabled to produce results.
 
 ### [VxStream] ###
 This module submits a file to a VxStream Sandbox cluster for analysis
