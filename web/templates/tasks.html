@@ -22,7 +22,7 @@
 
   function tasksSetup(apiLoc) {
     // Get list of tasks and populate the table
-    tasks_data = $.get("http://" + apiLoc + "/api/v1/tasks/list/", function(data, status){
+    tasks_data = $.get(apiLoc + "/api/v1/tasks/list/", function(data, status){
       // Add rows to the table
       $.each(data.Tasks, function(index, item) {
         $("tbody").append(createTaskRow(item));
@@ -45,7 +45,7 @@
       // Add delete functionality
       $('.btn-danger').click(function() {
         var t_id = this.dataset.id;
-        $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
+        $.get(apiLoc + "/api/v1/tasks/delete/" + t_id)
           .done(function (data, status, jqXHR) {
             $('td').filter(function() {
               return this.innerHTML === t_id;
