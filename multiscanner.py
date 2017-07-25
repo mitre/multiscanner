@@ -425,7 +425,7 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
     return False
 
 
-def _rewite_config(ModuleList, Config, filepath=CONFIG):
+def _rewrite_config(ModuleList, Config, filepath=CONFIG):
     """
     Write in default config for all modules.
 
@@ -466,7 +466,7 @@ def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True)):
     """
     Config = configparser.SafeConfigParser()
     Config.optionxform = str
-    _rewite_config(module_list, Config, filepath)
+    _rewrite_config(module_list, Config, filepath)
 
 
 def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
@@ -553,7 +553,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         config_object.optionxform = str
         # Regen the config if needed or wanted
         if configregen or not os.path.isfile(configfile):
-            _rewite_config(module_list, config_object, filepath=configfile)
+            _rewrite_config(module_list, config_object, filepath=configfile)
 
         config_object.read(configfile)
         main_config = _get_main_config(config_object, filepath=configfile)
