@@ -9,6 +9,8 @@ pyclamd
 python-magic
 requests
 ssdeep
+tika
+yara-python
 #Required by API
 flask
 sqlalchemy
@@ -16,3 +18,8 @@ sqlalchemy-utils
 #Required by storage modules
 elasticsearch
 pymongo
+#Required by tests
+nose
+mock
+#Required by utils
+tqdm
