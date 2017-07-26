@@ -14,7 +14,7 @@
       processing: true,
       serverSide: true,
       ajax: {
-        "url": "http://" + apiLoc + "/api/v1/tasks/search/history",
+        "url": apiLoc + "/api/v1/tasks/search/history",
         "data": function ( d ) {
 		  return $.extend( {}, d, {"search_type":$('#search_type_buttons > .btn.active input').val() } );
         }
@@ -63,7 +63,7 @@
         // ...add delete functionality
         $('.btn-danger').click(function() {
           var t_id = this.dataset.id;
-          $.get("http://" + apiLoc + "/api/v1/tasks/delete/" + t_id)
+          $.get(apiLoc + "/api/v1/tasks/delete/" + t_id)
             .done(function (data, status, jqXHR) {
               $('td').filter(function() {
                 return this.innerHTML === t_id;
