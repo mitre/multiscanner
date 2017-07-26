@@ -15,6 +15,7 @@ NAME = "Cuckoo Sandbox"
 DEFAULTCONF = {
     "ENABLED": False,
     "API URL": 'http://cuckoo:8090/',
+    "WEB URL": 'http://cuckoo:80/',
     "timeout": 360,
     "running timeout": 120,
     "delete tasks": False,
@@ -27,21 +28,27 @@ def fetch_report_json(report_url):
         return report.json()
     return {}
 
+def normalize_url(url):
+    if url.endswith('/'):
+        return url
+    return url + '/'
+
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
 
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     tasks = []
-    if conf['API URL'].endswith('/'):
-        url = conf['API URL']
-    else:
-        url = conf['API URL'] + '/'
-    new_file_url = url + 'tasks/create/file'
-    report_url = url + 'tasks/report/'
-    view_url = url + 'tasks/view/'
-    delete_url = url + 'tasks/delete/'
-    maec_report_url = url + 'tasks/report/{task_id}/maec'
+
+    api_url = normalize_url(conf['API URL'])
+    web_url = normalize_url(conf['WEB URL'])
+
+    new_file_url = api_url + 'tasks/create/file'
+    report_url = api_url + 'tasks/report/'
+    view_url = api_url + 'tasks/view/'
+    delete_url = api_url + 'tasks/delete/'
+    maec_report_url = api_url + 'tasks/report/{task_id}/maec'
+    web_report_url = web_url + 'analysis/{task_id}/summary/'
 
     for fname in filelist:
         with open(fname, "rb") as sample:
@@ -71,6 +78,10 @@ def scan(filelist, conf=DEFAULTCONF):
                     maec_report = fetch_report_json(
                         maec_report_url.format(task_id=task_id))
                     report['maec'] = maec_report
+                # TODO - should we just modify Cuckoo to add this itself?
+                if report.get('info'):
+                    report['info']['web_report'] = web_report_url.format(
+                        task_id=task_id)
                 resultlist.append((fname, report))
                 tasks.remove((fname, task_id))
                 if conf['delete tasks']:
