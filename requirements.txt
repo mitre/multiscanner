@@ -13,13 +13,14 @@ tika
 yara-python
 #Required by API
 flask
+psycopg2
+rarfile
 sqlalchemy
 sqlalchemy-utils
+sqlalchemy-datatables
 #Required by storage modules
-elasticsearch
+elasticsearch>=5.0.0,<6.0.0
 pymongo
-#Required by tests
-nose
-mock
-#Required by utils
-tqdm
+#Required for distributed
+celery
+flask_cors
