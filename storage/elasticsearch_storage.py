@@ -24,7 +24,7 @@ METADATA_FIELDS = [
 ]
 
 ES_MAX = 2147483647
-CUCKOO_TEMPLATE = os.path.join(MS_WD, 'storage', 'cuckoo_template.json')
+CUCKOO_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
 CUCKOO_TEMPLATE_NAME = 'cuckoo_template'
 
 
