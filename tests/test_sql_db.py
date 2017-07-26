@@ -35,7 +35,7 @@ DB_CONF['db_name'] = TEST_DB_PATH
 
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
-TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
+TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None, 'sample_id': None}
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 def drop_db_table(db_eng):
@@ -51,16 +51,19 @@ class TestTaskSerialization(unittest.TestCase):
         self.task = Task(
             task_id = 1,
             task_status = 'Pending',
-            report_id = None
+            report_id = None,
+            sample_id = None
         )
 
     def test_task_dict_serialization(self):
         self.assertDictEqual(TEST_TASK, self.task.to_dict())
 
     def test_task_json_serialization(self):
-        self.assertEqual(
-            json.dumps(TEST_TASK), self.task.to_json()
-        )
+        task_serialized = json.dumps(TEST_TASK)
+        self.assertIn('"task_id": 1', task_serialized)
+        self.assertIn('"task_status": "Pending"', task_serialized)
+        self.assertIn('"report_id": null', task_serialized)
+        self.assertIn('"sample_id": null', task_serialized)
 
     def tearDown(self):
         pass
@@ -90,6 +93,7 @@ class TestTaskAdd(unittest.TestCase):
         resp = self.sql_db.add_task(
             task_id=task_id,
             task_status='Pending',
+            sample_id=None,
             report_id=None
         )
         self.assertEqual(resp, task_id)
@@ -98,7 +102,7 @@ class TestTaskAdd(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestTaskManipulation(unittest.TestCase):
@@ -118,6 +122,7 @@ class TestTaskManipulation(unittest.TestCase):
         resp = self.sql_db.get_task(task_id=1)
         self.assertEqual(resp.task_id, 1)
         self.assertEqual(resp.task_status, 'Pending')
+        self.assertEqual(resp.sample_id, None)
         self.assertEqual(resp.report_id, None)
 
     def test_update_task(self):
@@ -127,7 +132,7 @@ class TestTaskManipulation(unittest.TestCase):
             report_id =  '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'
         )
         self.assertDictEqual(resp, self.sql_db.get_task(1).to_dict())
-        self.assertDictEqual(resp, {'task_id': 1, 'task_status': 'Complete', 'report_id': '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'})
+        self.assertDictEqual(resp, {'task_id': 1, 'sample_id': None, 'task_status': 'Complete', 'report_id': '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'})
 
     def test_delete_task(self):
         deleted = self.sql_db.delete_task(task_id=1)
@@ -139,7 +144,7 @@ class TestTaskManipulation(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestGetAllTasks(unittest.TestCase):
@@ -152,7 +157,7 @@ class TestGetAllTasks(unittest.TestCase):
 
     def test_get_all_tasks(self):
         expected_response = [
-            {'task_id': i, 'task_status': 'Pending', 'report_id': None} for i in range(1,4)
+            {'task_id': i, 'sample_id': None, 'task_status': 'Pending', 'report_id': None} for i in range(1,4)
         ]
         resp = self.sql_db.get_all_tasks()
         for i in range(0,3):
@@ -162,7 +167,7 @@ class TestGetAllTasks(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestStressTest(unittest.TestCase):
@@ -181,4 +186,4 @@ class TestStressTest(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)

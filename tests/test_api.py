@@ -35,6 +35,8 @@ TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 if not os.path.isdir(TEST_UPLOAD_FOLDER):
     print('Creating upload dir')
     os.makedirs(TEST_UPLOAD_FOLDER)
+api.api_config['api']['upload_folder'] = TEST_UPLOAD_FOLDER
+
 TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
 
 
@@ -44,8 +46,9 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'),})
 
 
-def fake_multiscanner_process(file_, original_filename, task_id, report_id):
-    pass
+class MockMultiscannerCelery(object):
+    def delay(file_, original_filename, task_id, report_id):
+        pass
 
 
 class MockStorage(object):
@@ -63,10 +66,9 @@ class TestURLCase(unittest.TestCase):
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
-        api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
-        if not os.path.isdir(api.UPLOAD_FOLDER):
-            os.makedirs(api.UPLOAD_FOLDER)
-        api.multiscanner_process = fake_multiscanner_process
+        if not os.path.isdir(TEST_UPLOAD_FOLDER):
+            os.makedirs(TEST_UPLOAD_FOLDER)
+        api.multiscanner_celery = MockMultiscannerCelery
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -99,10 +101,9 @@ class TestTaskCreateCase(unittest.TestCase):
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
-        api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
-        if not os.path.isdir(api.UPLOAD_FOLDER):
-            os.makedirs(api.UPLOAD_FOLDER)
-        api.multiscanner_process = fake_multiscanner_process
+        if not os.path.isdir(TEST_UPLOAD_FOLDER):
+            os.makedirs(TEST_UPLOAD_FOLDER)
+        api.multiscanner_celery = MockMultiscannerCelery
 
         # populate the DB w/ a task
         post_file(self.app)
@@ -112,7 +113,8 @@ class TestTaskCreateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Pending',
-                'report_id': None
+                'report_id': None,
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
@@ -126,7 +128,12 @@ class TestTaskCreateCase(unittest.TestCase):
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_get_task_list(self):
-        expected_response = {'Tasks': [{'task_id': 1, 'task_status': 'Pending', 'report_id': None}]}
+        expected_response = {'Tasks': [{
+            'task_id': 1,
+            'task_status': 'Pending',
+            'report_id': None,
+            'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+        }]}
         resp = self.app.get('/api/v1/tasks/list/')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
@@ -144,9 +151,8 @@ class TestTaskUpdateCase(unittest.TestCase):
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
-        api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
-        if not os.path.isdir(api.UPLOAD_FOLDER):
-            os.makedirs(api.UPLOAD_FOLDER)
+        if not os.path.isdir(TEST_UPLOAD_FOLDER):
+            os.makedirs(TEST_UPLOAD_FOLDER)
 
         # populate the DB w/ a task
         post_file(self.app)
@@ -161,7 +167,8 @@ class TestTaskUpdateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Complete',
-                'report_id': 'report1'
+                'report_id': 'report1',
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
             }
         }
         resp = self.app.get('/api/v1/tasks/list/1')
@@ -187,9 +194,8 @@ class TestTaskDeleteCase(unittest.TestCase):
         self.app = api.app.test_client()
         # Replace the real production DB w/ a testing DB
         api.db = self.sql_db
-        api.UPLOAD_FOLDER = TEST_UPLOAD_FOLDER
-        if not os.path.isdir(api.UPLOAD_FOLDER):
-            os.makedirs(api.UPLOAD_FOLDER)
+        if not os.path.isdir(TEST_UPLOAD_FOLDER):
+            os.makedirs(TEST_UPLOAD_FOLDER)
 
         # populate the DB w/ a task
         post_file(self.app)

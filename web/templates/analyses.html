@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
+<script src="/static/js/dataTables.buttons.min.js"></script>
+<script src="/static/js/buttons.bootstrap.min.js"></script>
+<script type="text/javascript">
+  function tasksSetup(apiLoc) {
+    $.fn.dataTable.ext.errMode = 'none';
+    var table = $('.table')
+      .on( 'error.dt', function ( e, settings, techNote, message ) {
+   		console.error( message );
+   	} ) .DataTable( {
+      processing: true,
+      serverSide: true,
+      ajax: {
+        "url": apiLoc + "/api/v1/tasks/search",
+        "data": function ( d ) {
+		  return $.extend( {}, d, {"search_type":$('#search_type_buttons > .btn.active input').val() } );
+        }
+      },
+      columnDefs: [
+        {
+          targets: 3,
+          searchable: false,
+          orderable: false,
+          data: 0,
+          className: "text-center delete",
+          "render": function ( data, type, full, meta ) {
+            // Add Delete column buttons
+            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data + '"><span class="glyphicon glyphicon-remove"></span></button>';
+          },
+        }
+      ],
+      rowCallback: function( row, data, index ) {
+        if (data[2] == "Complete") {
+          tr_class = ""
+        } else {
+          tr_class = " warning"
+        }
+        $(row).addClass("task-row" + tr_class);
+        $(row).attr('data-href', '/report/' + data[0]);
+      },
+      drawCallback: function( settings ) {
+        // Every time the table is loaded with new data...
+        // ...make table rows clickable
+        $("td").click(function() {
+          // But not cells with a Delete button
+          if ($(this).hasClass('delete')) {
+            return;
+          }
+          window.document.location = $(this).parent().data("href");
+        });
+
+        // ...add tooltip to Delete buttons
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // ...add delete functionality
+        $('.btn-danger').click(function() {
+          var t_id = this.dataset.id;
+          $.get(apiLoc + "/api/v1/tasks/delete/" + t_id)
+            .done(function (data, status, jqXHR) {
+              $('td').filter(function() {
+                return this.innerHTML === t_id;
+              }).parent().remove();
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+            })
+            .fail(function (data, status, jqXHR) {
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+            });
+        });
+      },
+      buttons: [
+        {
+          text: '<i class="glyphicon glyphicon-refresh"></i>',
+          titleAttr: 'Refresh',
+          action: function ( e, dt, node, config ) {
+            table.draw(false);
+          }
+        }
+      ],
+      "initComplete": function( settings, json ) {
+        table.buttons().containers().appendTo('#DataTables_Table_0_length');
+
+        // Add search type options
+		searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="#" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"<span><i class="glyphicon glyphicon-cog"></i></span></a>');
+        $('#DataTables_Table_0_filter').append(searchOptions);
+		searchTypeButtons = $('<div id="search_type" class="collapse">' +
+			'<label for="search_type_buttons">Search Type:&nbsp;</label>' +
+			'<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
+		    '<label class="btn btn-primary active" title="Add wildcards to start and end of search term, to search as you type">' +
+		  	  '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default' +
+		    '</label>' +
+		    '<label class="btn btn-primary" title="Add quotes to start and end of search term, to search for the exact phrase">' +
+		  	  '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact' +
+		    '</label>' +
+		    '<label class="btn btn-primary" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
+		  	  '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced' +
+		    '</label>' +
+		  '</div></div>');
+        $('#DataTables_Table_0_filter').append(searchTypeButtons);
+        $('#search_type :input').change(function() {
+            table.draw();
+        });
+      }
+    });
+  }
+
+  $(document).ready(function($) {
+    tasksSetup("{{ api_loc }}");
+  });
+</script>
+{% endblock %}
+
+{% block title %}Analysis List{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">Analyses</h1>
+
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th width="5%">Task ID</th>
+          <th width="75%">Sample</th>
+          <th width="14%">Task Status</th>
+          <th class="text-center" width="6%">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

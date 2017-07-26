@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{% endblock %} | MultiScanner</title>
+    <link rel="stylesheet" href="/static/css/bootstrap-spacelab.min.css">
+    <link rel="stylesheet" href="/static/css/datatables.min.css">
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script src="/static/js/datatables.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+  </head>
+
+  <body>
+    {% block header %}
+    <nav class="navbar navbar-inverse col-md-8 col-md-offset-2">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">MultiScanner</a>
+        </div>
+
+        <!-- NAVBAR ITEMS -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+          <ul class="nav navbar-nav">
+            <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
+            <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
+            <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
+            <!-- <li {% if request.path == '/reports' %} class="active" {% endif %}><a href="/reports">Reports</a></li> -->
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+		    <li data-toggle="modal" data-target="#help-modal"><a href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endblock %}
+
+    <div class="container">
+      {% block content %}{% endblock %}
+
+      <div class="row">
+        <div class="col-md-12">
+        {% block footer %}
+        {% endblock %}
+        </div>
+      </div>
+    </div>
+
+	<div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">Multiscanner Help</h4>
+          </div>
+          <div class="modal-body">
+		    <p>MultiScanner is a file scanning and analysis framework that automatically runs a suite of tools against file submissions.</p>
+			<h3>Scan Page</h3>
+			<p>This page lets you submit files to be scanned. Click on the "Advanced Options" button to set options for archive files and set metadata fields to be added to the scan results.</p>
+			<h3>Analyses Page</h3>
+			<p>This page displays a searchable list of samples that have been scanned. Clicking on one will take you to the most recent scan report for that file.</p>
+			<h3>History Page</h3>
+			<p>This page displays a searchable list of scan reports. In contrast to the Analyses page, this page shows all reports, not merely the most recent.</p>
+			<br/>
+			<p>MultiScanner is copyright The MITRE Corporation, licensed under the Mozilla Public License, version 2.0.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

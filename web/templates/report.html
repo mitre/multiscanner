@@ -1,0 +1,324 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
+<script src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script src="/static/js/typeahead.bundle.min.js"></script>
+<script type="text/javascript">
+  function createRow(heading, content, isArray) {
+    // Return a row to add to a table
+    isArray = typeof isArray !== 'undefined' ? isArray : false;
+    if (isArray) {
+      headText = '';
+    }
+    else {
+      headText = heading;
+    }
+
+    if (typeof content === 'string' && content.startsWith('<table')) {
+      th = '<th class="expander">';
+      td = '<td class="expander">' + 
+           'Expand ' +
+           '<span class="glyphicon glyphicon-plus"></span>' +
+           '</td><td class="cell-table" style="display: none;">';
+    }
+    else {
+      th = '<th>';
+      td = '<td>';
+    }
+
+    return '<tr>' +
+           th + headText + '</th>' +
+           td + content + '</td>' +
+           '</tr>';
+  }
+
+  function createSubtable(data, isArray) {
+    // Return a table to be nested within a row
+    isArray = typeof isArray !== 'undefined' ? isArray : false;
+    rows = ''
+    $.each(data, function(index, item) {
+      if (isArray) {
+        rows += determineType('', item);
+      }
+      else {
+        rows += determineType(index, item);
+      }
+    });
+    return '<table class="table table-hover"><tbody>' + rows +
+           '</tbody></table>';
+  }
+
+  function determineType(index, item) {
+    // Add a row to the table bases on an item's data type
+    if (item === null || item === undefined) {
+      return createRow(index, '<i>None</i>');
+    }
+    else if (item.constructor === Array) {
+      return createRow(index, createSubtable(item, true));
+    }
+    else if (!(item instanceof String) && typeof item === 'object') {
+      return createRow(index, createSubtable(item));
+    }
+    else {
+      return createRow(index, item);
+    }
+  }
+
+  function openNotes() {
+    // $('#notes-close').show();
+    $('#notes-close').addClass('open');
+    $('#report-notes').addClass('open');
+    $('#report-container').addClass('pushed');
+    $('.navbar').addClass('pushed');
+  }
+
+  function closeNotes() {
+    // $('#notes-close').hide();
+    $('#notes-close').removeClass('open');
+    $('#report-notes').removeClass('open');
+    $('#report-container').removeClass('pushed');
+    $('.navbar').removeClass('pushed');
+  }
+
+  function deleteNote(id) {
+    var text = {"text": $('#note-input').val()}
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
+    $.get(url, function(data, status){
+      if (status == 'success') {
+        $('#' + id).remove();
+      }
+      return status;
+    });
+  }
+
+  function displayNote(data) {
+    // Display the note passed in
+    var text = data._source.text;
+    var tsRegEx = /\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+    var m = tsRegEx.exec(data._source.timestamp)
+    var ts = m[4]+":"+m[5]+" "+m[2]+"/"+m[3]+"/"+m[1];
+    
+    panelBody = $('<div class="panel-body"><span>' + text + '</span></div>')
+      .append($('<textarea class="form-control" rows="4"></textarea>').hide())
+      .append($('<button type="button" class="btn btn-default btn-xs btn-send-note">Submit</button>').hide())
+      .append($('<button type="button" class="btn btn-default btn-xs btn-edit-note"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> Edit</button>'))
+      .append($('<button type="button" class="btn btn-default btn-xs btn-del-note"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete</button>'));
+
+    var panel = $('<div class="panel panel-default" id="' + data._id + '">')
+      .append($('<div class="panel-heading"><span>' + ts + '</span></div>'))
+      .append(panelBody);
+    $('#note-container').append(panel);
+  }
+
+  function getNotes(empty, ts, uid) {
+    // Get all notes for this sample and display them
+    empty = typeof empty !== 'undefined' ? empty : false;
+    ts = typeof ts !== 'undefined' ? ts : false;
+    uid = typeof uid !== 'undefined' ? uid : false;
+    
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
+    if (ts && uid) {
+      url += "?ts=" + ts + "&uid=" + uid;
+    }
+    var resp = $.get(url, function(notes_list, status){
+      if (empty === true) {
+        $('#note-container').empty();
+      }
+      notes_list.forEach(function (item) {
+        displayNote(item);
+      });
+
+      if (notes_list.length === 10) {
+        sort_params = notes_list[notes_list.length-1]["sort"];
+        getNotes(false, sort_params[0], sort_params[1]);
+      }
+    });
+  }
+
+  function getReport() {
+    // Get report and populate the table
+    $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+      if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
+        // Check again in 5 seconds
+        console.log("Check again in 5 seconds");
+        setTimeout(getReport, 5000);
+        return;
+      }
+      else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
+			  $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        return;
+	  }
+      $('#pending').hide();
+      $('#report-tags').show();
+      if (data.Report.hasOwnProperty('tags')) {
+        tags = data.Report.tags;
+        delete data.Report.tags;
+        $('#tags').val(tags.toString());
+      }
+      $.each(data.Report, function(index, item) {
+        $('tbody:first').append(determineType(index, item));
+      });
+      $('.expander').each(function(idx, elem) {
+        $(elem).click(function() {
+          $(this).siblings('td').toggle();
+          if ($(this).is('td')) {
+            $(this).hide();
+          }
+        });
+      });
+      
+      // Set up tags
+      var tagNameArray = [];
+      $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+        buckets = data.Tags.buckets;
+        $.each(buckets, function( index, value ) {
+          tagNameArray.push(value.key);
+        });
+        var tagNames = new Bloodhound({
+          datumTokenizer: Bloodhound.tokenizers.whitespace,
+          queryTokenizer: Bloodhound.tokenizers.whitespace,
+          local: tagNameArray
+        });
+        tagNames.initialize();
+
+        $('#tags').tagsinput({
+          tagClass: 'label label-primary',
+          typeaheadjs: {
+            source: tagNames.ttAdapter()
+          }
+        });
+        $('#tags').on('itemAdded', function(event) {
+          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+            return status;
+          });
+        });
+        $('#tags').on('beforeItemRemove', function(event) {
+          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
+            return status;
+          });
+        });
+        $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
+          .attr("title", "Type something and hit the enter key to add a tag.")
+          .attr("data-placement", "left")
+          .tooltip();
+      })
+    });
+  }
+
+  $(document).ready(function($) {
+    $('#report-tags').hide();
+
+    // Add report data and notes to the page
+    getReport();
+    getNotes();
+
+    // Update notes button based on number of notes
+    $( document ).ajaxStop(function() {
+      numNotes = $('#note-container > div').length;
+      if (numNotes > 0) {
+        if (numNotes === 1) {
+          $('#notes-open').html('1 Note');
+        } else {
+          $('#notes-open').html(numNotes + ' Notes');
+        }
+        $('#notes-open').addClass('btn-warning').removeClass('btn-primary');
+        $('#notes-close').addClass('btn-warning').removeClass('btn-primary');
+      }
+    });
+
+    // Handle submission of notes
+    $('#note-form').submit(function( event ) {
+      var text = {"text": $('#note-input').val()}
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+        displayNote(data);
+        return status;
+      });
+      event.preventDefault();
+    });
+
+    $('#notes-open').click(openNotes);
+    $('#notes-close').click(closeNotes);
+
+    // Handle editing notes
+    $('#report-notes').on('click', '.btn-edit-note', (function(event) {
+      var span = $(this).siblings('span');
+      if (span.is(':visible')) {
+        span.hide();
+        $(this).siblings('textarea').val(span.html());
+        $(this).siblings('textarea, .btn-send-note').show();
+      } else {
+        $(this).siblings('span').show();
+        $(this).siblings('textarea, .btn-send-note').hide();
+      }
+    }));
+    $('#report-notes').on('click', '.btn-send-note', (function(event) {
+      var span = $(this).siblings('span');
+      var textarea = $(this).siblings('textarea');
+      var submit = $(this);
+      var text = {"text": textarea.val()}
+      var noteId = $(this).parents('.panel').attr('id');
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
+      $.post(url, text, function(data, status){
+        textarea.hide();
+        submit.hide();
+        span.html(textarea.val()).show();
+        return status;
+      });
+    }));
+
+    // Handle deleting notes
+    $('#report-notes').on('click', '.btn-del-note', (function(event) {
+      var noteId = $(this).parents('.panel').attr('id');
+      var response = deleteNote(noteId);
+    }));
+  });
+</script>
+{% endblock %}
+
+{% block title %}Report{% endblock %}
+
+{% block content %}
+<button class="btn btn-primary" id="notes-open">Notes</button>
+
+<div id="report-container">
+  <h1 class="text-center">Task {{ task_id }} Report</h1>
+  <div class="row">
+    <div class="col-md-6 col-md-offset-3" id="report-tags">
+      <label for="tags" class="pull-left">Tags</label>
+      <span>
+        <input type="text" id="tags" class="form-control">
+      </span>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1" id="pending">
+      <div class="spin-outer"></div>
+      <div class="spin-inner"></div>
+      <div class="text-center">
+        <h3>Scan results pending...</h3>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1" id="report">
+      <table class="table table-hover ">
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="" id="report-notes">
+  <button id="notes-close" class="btn btn-primary" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  <div id="note-container"></div>
+  <form id="note-form">
+    <div class="form-group">
+      <label for="note-input">Add a Note/Comment:</label>
+      <textarea class="form-control" rows="5" id="note-input"></textarea>
+    </div>
+    <button class="btn btn-primary">Submit</button>
+  </form>
+</div>
+
+{% endblock %}
