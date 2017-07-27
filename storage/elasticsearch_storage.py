@@ -24,8 +24,8 @@ METADATA_FIELDS = [
 ]
 
 ES_MAX = 2147483647
-CUCKOO_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
-CUCKOO_TEMPLATE_NAME = 'cuckoo_template'
+ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
+ES_TEMPLATE_NAME = 'multiscanner_template'
 
 
 def process_cuckoo_signatures(signatures):
@@ -86,11 +86,11 @@ class ElasticSearchStorage(storage.Storage):
         # Create the index if it doesn't exist
         es_indices = self.es.indices
         # Add the template for Cuckoo
-        with open(CUCKOO_TEMPLATE, 'r') as file_:
+        with open(ES_TEMPLATE, 'r') as file_:
             template = json.loads(file_.read())
-        if not es_indices.exists_template(CUCKOO_TEMPLATE_NAME):
+        if not es_indices.exists_template(ES_TEMPLATE_NAME):
             es_indices.put_template(
-                name=CUCKOO_TEMPLATE_NAME,
+                name=ES_TEMPLATE_NAME,
                 body=json.dumps(template)
             )
         if not es_indices.exists(self.index):
