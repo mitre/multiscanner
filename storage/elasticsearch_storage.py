@@ -73,12 +73,16 @@ class ElasticSearchStorage(storage.Storage):
     }
 
     def setup(self):
-        self.host = self.config['host']
+        host_string = self.config['host']
+        host_list = []
+        for host in host_string.split(','):
+            host_list.append(host.strip(' '))
+        self.hosts = host_list
         self.port = self.config['port']
         self.index = self.config['index']
         self.doc_type = self.config['doc_type']
         self.es = Elasticsearch(
-            host=self.host,
+            hosts=self.hosts,
             port=self.port
         )
 
