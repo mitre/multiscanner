@@ -105,8 +105,6 @@ def celery_task(files, config=multiscanner.CONFIG):
     storage_handler.store(results, wait=False)
     storage_handler.close()
 
-    print('Results of the scan:\n{}'.format(results))
-
     return results
 
 
@@ -131,7 +129,7 @@ def multiscanner_celery(requests, *args, **kwargs):
         task_id = request.args[2]
         file_hash = request.args[3]
         metadata = request.args[4]
-        print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+        # print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
         files[file_] = {
             'original_filename': original_filename,
             'task_id': task_id,

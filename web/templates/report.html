@@ -83,7 +83,7 @@
 
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
-    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
     $.get(url, function(data, status){
       if (status == 'success') {
         $('#' + id).remove();
@@ -117,7 +117,7 @@
     ts = typeof ts !== 'undefined' ? ts : false;
     uid = typeof uid !== 'undefined' ? uid : false;
     
-    var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
     if (ts && uid) {
       url += "?ts=" + ts + "&uid=" + uid;
     }
@@ -138,13 +138,17 @@
 
   function getReport() {
     // Get report and populate the table
-    $.get("http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+    $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
       if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
         // Check again in 5 seconds
         console.log("Check again in 5 seconds");
         setTimeout(getReport, 5000);
         return;
       }
+      else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
+			  $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        return;
+	  }
       $('#pending').hide();
       $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
@@ -166,7 +170,7 @@
       
       // Set up tags
       var tagNameArray = [];
-      $.get("http://{{ api_loc }}/api/v1/tags/", function(data, status) {
+      $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
         buckets = data.Tags.buckets;
         $.each(buckets, function( index, value ) {
           tagNameArray.push(value.key);
@@ -185,12 +189,12 @@
           }
         });
         $('#tags').on('itemAdded', function(event) {
-          tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
             return status;
           });
         });
         $('#tags').on('beforeItemRemove', function(event) {
-          tag_response = $.get("http://{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
+          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
             return status;
           });
         });
@@ -226,7 +230,7 @@
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()}
-      $.post("http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
         displayNote(data);
         return status;
       });
@@ -254,7 +258,7 @@
       var submit = $(this);
       var text = {"text": textarea.val()}
       var noteId = $(this).parents('.panel').attr('id');
-      var url = "http://{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
       $.post(url, text, function(data, status){
         textarea.hide();
         submit.hide();

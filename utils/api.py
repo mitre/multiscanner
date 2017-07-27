@@ -126,6 +126,7 @@ CORS(app, origins=cors_origins)
 batch_size = api_config['api']['batch_size']
 batch_interval = api_config['api']['batch_interval']
 
+
 def multiscanner_process(work_queue, exit_signal):
     '''Not used in distributed mode.
     '''
@@ -217,15 +218,11 @@ def task_list():
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
     search_term = params['search[value]']
+    search_type = params.pop('search_type', 'Default')
     if search_term == '':
         es_result = None
     else:
-        wildcards = params.pop('wildcards', 'true')
-        if wildcards == 'true':
-            es_result = handler.search(search_term)
-        else:
-            es_result = handler.search(search_term, False)
-
+        es_result = handler.search(search_term, search_type)
 
     # Search the task db for the ids we got from Elasticsearch
     if get_all:
@@ -405,14 +402,12 @@ def get_report(task_id):
 
     if task.task_status == 'Complete':
         report = handler.get_report(task.sample_id, task.timestamp)
-
     elif task.task_status == 'Pending':
         report = {'Report': 'Task still pending'}
-
-    if report:
-        return jsonify({'Report': report})
     else:
-        abort(HTTP_NOT_FOUND)
+        report = {'Report': 'Task failed'}
+
+    return jsonify({'Report': report})
 
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
