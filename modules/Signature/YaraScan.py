@@ -6,6 +6,7 @@ import os
 import sys
 import time
 from common import parseDir
+from operator import itemgetter
 
 __authors__ = "Nick Beede, Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -78,8 +79,14 @@ def scan(filelist, conf=DEFAULTCONF):
             hlist = []
             for h in hit:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
-                    hlist.append(str(h))
-            hlist.sort()
+                    hit_dict = {
+                        'meta'      : h.meta,
+                        'namespace' : h.namespace,
+                        'rule'      : h.rule,
+                        'tags'      : h.tags,
+                    }
+                    hlist.append(hit_dict)
+            hlist = sorted(hlist, key=itemgetter('rule'))
             matches.append((m, hlist))
             
     metadata = {}
