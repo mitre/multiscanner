@@ -83,7 +83,6 @@ def scan(filelist, conf=DEFAULTCONF):
                         'meta'      : h.meta,
                         'namespace' : h.namespace,
                         'rule'      : h.rule,
-                        'strings'   : h.strings,
                         'tags'      : h.tags,
                     }
                     hlist.append(hit_dict)
