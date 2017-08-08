@@ -48,7 +48,7 @@ def scan(filelist, conf=DEFAULTCONF):
     view_url = api_url + 'tasks/view/'
     delete_url = api_url + 'tasks/delete/'
     maec_report_url = api_url + 'tasks/report/{task_id}/maec'
-    web_report_url = web_url + 'analysis/{task_id}/summary/'
+    web_report_url = '<a href="' + web_url + 'analysis/{task_id}/summary/" target="_blank"' + '>View the report in Cuckoo</a>'
 
     for fname in filelist:
         with open(fname, "rb") as sample:
