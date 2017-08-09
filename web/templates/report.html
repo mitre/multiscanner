@@ -16,11 +16,19 @@
     }
 
     if (typeof content === 'string' && content.startsWith('<table')) {
+      if ((content.match(/<tr>/g) || []).length > 5) {
+        expanderStyle = ''
+        contentStyle = 'style="display: none;"'
+      }
+      else {
+        expanderStyle = 'style="display: none;"'
+        contentStyle = ''
+      }
       th = '<th class="expander">' + headText +
-           ' <span class="glyphicon glyphicon-minus-sign" style="display: none;"></span></th>';
-      td = '<td class="expander">Expand' +
+           ' <span class="glyphicon glyphicon-minus-sign" ' + contentStyle + '></span></th>';
+      td = '<td class="expander" ' + expanderStyle + '>Expand' +
            ' <span class="glyphicon glyphicon-plus-sign"></span>' +
-           '</td><td class="cell-table" style="display: none;">' +
+           '</td><td class="cell-table" ' + contentStyle + '>' +
            content + '</td>';
     }
     else {
