@@ -16,21 +16,19 @@
     }
 
     if (typeof content === 'string' && content.startsWith('<table')) {
-      th = '<th class="expander">';
-      td = '<td class="expander">' + 
-           'Expand ' +
-           '<span class="glyphicon glyphicon-plus"></span>' +
-           '</td><td class="cell-table" style="display: none;">';
+      th = '<th class="expander">' + headText +
+           ' <span class="glyphicon glyphicon-minus-sign" style="display: none;"></span></th>';
+      td = '<td class="expander">Expand' +
+           ' <span class="glyphicon glyphicon-plus-sign"></span>' +
+           '</td><td class="cell-table" style="display: none;">' +
+           content + '</td>';
     }
     else {
-      th = '<th>';
-      td = '<td>';
+      th = '<th>' + headText + '</th>';
+      td = '<td>' + content + '</td>';
     }
 
-    return '<tr>' +
-           th + headText + '</th>' +
-           td + content + '</td>' +
-           '</tr>';
+    return '<tr>' + th + td + '</tr>';
   }
 
   function createSubtable(data, isArray) {
@@ -146,7 +144,7 @@
         return;
       }
       else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
-			  $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
         return;
 	  }
       $('#pending').hide();
@@ -162,8 +160,12 @@
       $('.expander').each(function(idx, elem) {
         $(elem).click(function() {
           $(this).siblings('td').toggle();
+          $(this).siblings('th').children('span').toggle();
           if ($(this).is('td')) {
             $(this).hide();
+          }
+          if ($(this).is('th')) {
+            $(this).children('span').toggle();
           }
         });
       });
