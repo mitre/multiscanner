@@ -6,7 +6,6 @@ import requests
 import json
 import time
 from common import basename
-from collections import Counter
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -16,10 +15,23 @@ NAME = "Cuckoo Sandbox"
 DEFAULTCONF = {
     "ENABLED": False,
     "API URL": 'http://cuckoo:8090/',
+    "WEB URL": 'http://cuckoo:80/',
     "timeout": 360,
     "running timeout": 120,
     "delete tasks": False,
+    "maec": False,
 }
+
+def fetch_report_json(report_url):
+    report = requests.get(report_url)
+    if report.status_code == 200:
+        return report.json()
+    return {}
+
+def normalize_url(url):
+    if url.endswith('/'):
+        return url
+    return url + '/'
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
@@ -27,14 +39,16 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     tasks = []
-    if conf['API URL'].endswith('/'):
-        url = conf['API URL']
-    else:
-        url = conf['API URL'] + '/'
-    new_file_url = url + 'tasks/create/file'
-    report_url = url + 'tasks/report/'
-    view_url = url + 'tasks/view/'
-    delete_url = url + 'tasks/delete/'
+
+    api_url = normalize_url(conf['API URL'])
+    web_url = normalize_url(conf['WEB URL'])
+
+    new_file_url = api_url + 'tasks/create/file'
+    report_url = api_url + 'tasks/report/'
+    view_url = api_url + 'tasks/view/'
+    delete_url = api_url + 'tasks/delete/'
+    maec_report_url = api_url + 'tasks/report/{task_id}/maec'
+    web_report_url = '<a href="' + web_url + 'analysis/{task_id}/summary/" target="_blank"' + '>View the report in Cuckoo</a>'
 
     for fname in filelist:
         with open(fname, "rb") as sample:
@@ -55,18 +69,23 @@ def scan(filelist, conf=DEFAULTCONF):
         for fname, task_id in tasks[:]:
             status = requests.get(view_url+task_id).json()['task']['status']
 
+            # TODO - if we don't find a report, should we add (fname, {}) or
+            # just skip fname?
             # If we have a report
             if status == 'reported':
-                report = requests.get(report_url+task_id)
-                if report.status_code == 200:
-                    report = report.json()
-                    resultlist.append((fname, report))
-                    tasks.remove((fname, task_id))
-                    if conf['delete tasks']:
-                        requests.get(delete_url+task_id)
-                else:
-                    # Do we ever actually hit here?
-                    pass
+                report = fetch_report_json(report_url+task_id)
+                if conf['maec']:
+                    maec_report = fetch_report_json(
+                        maec_report_url.format(task_id=task_id))
+                    report['maec'] = maec_report
+                # TODO - should we just modify Cuckoo to add this itself?
+                if report.get('info'):
+                    report['info']['web_report'] = web_report_url.format(
+                        task_id=task_id)
+                resultlist.append((fname, report))
+                tasks.remove((fname, task_id))
+                if conf['delete tasks']:
+                    requests.get(delete_url+task_id)
 
             # Check for dead tasks
             elif status == 'running':

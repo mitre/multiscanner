@@ -1,13 +1,17 @@
 '''
 Storage module that will interact with elasticsearch.
 '''
+import os
 from datetime import datetime
 from uuid import uuid4
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
 import re
+import json
 
 import storage
+
+MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 METADATA_FIELDS = [
@@ -20,6 +24,40 @@ METADATA_FIELDS = [
 ]
 
 ES_MAX = 2147483647
+CUCKOO_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
+CUCKOO_TEMPLATE_NAME = 'cuckoo_template'
+
+
+def process_cuckoo_signatures(signatures):
+    new_signatures = []
+
+    for signature in signatures:
+        new_signature = signature.copy()
+
+        if 'marks' in signature:
+            new_signature['marks'] = []
+            for mark in signature['marks']:
+                new_mark = {}
+                for k, v in mark.items():
+                    if k != 'call' and type(v) == dict:
+                        # If marks is a dictionary we need to explicitly define it for the ES mapping
+                        # this is in the case that a key in marks is sometimes a string and sometimes a dictionary
+                        # if the first document indexed into ES is a string it will not accept a signature
+                        # and through a ES mapping exception.  To counter this dicts will be explicitly stated
+                        # in the key except for calls which are always dictionaries.
+                        # This presented itself in testing with signatures.marks.section which would sometimes be a
+                        # PE section string such as 'UPX'  and other times full details about the section as a
+                        # dictionary in the case of packer_upx and packer_entropy signatures
+                        new_mark['%s_dict' % k] = v
+                    else:
+                        # If it is not a mark it is fine to leave key as is
+                        new_mark[k] = v
+
+                new_signature['marks'].append(new_mark)
+
+        new_signatures.append(new_signature)
+
+    return new_signatures
 
 
 class ElasticSearchStorage(storage.Storage):
@@ -35,16 +73,30 @@ class ElasticSearchStorage(storage.Storage):
     }
 
     def setup(self):
-        self.host = self.config['host']
+        host_string = self.config['host']
+        host_list = []
+        for host in host_string.split(','):
+            host_list.append(host.strip(' '))
+        self.hosts = host_list
         self.port = self.config['port']
         self.index = self.config['index']
         self.doc_type = self.config['doc_type']
         self.es = Elasticsearch(
-            host=self.host,
+            hosts=self.hosts,
             port=self.port
         )
+
+
         # Create the index if it doesn't exist
         es_indices = self.es.indices
+        # Add the template for Cuckoo
+        with open(CUCKOO_TEMPLATE, 'r') as file_:
+            template = json.loads(file_.read())
+        if not es_indices.exists_template(CUCKOO_TEMPLATE_NAME):
+            es_indices.put_template(
+                name=CUCKOO_TEMPLATE_NAME,
+                body=json.dumps(template)
+            )
         if not es_indices.exists(self.index):
             es_indices.create(self.index)
 
@@ -151,11 +203,54 @@ class ElasticSearchStorage(storage.Storage):
                         sample[field] = report[filename][field]
                     del report[filename][field]
 
+            # If there is Cuckoo results in the report, some
+            # cleanup is needed for the report
+            if 'Cuckoo Sandbox' in report[filename].keys():
+                cuckoo_report = report[filename]['Cuckoo Sandbox']
+                cuckoo_doc = {
+                    'target': cuckoo_report.get('target'),
+                    'summary': cuckoo_report.get('behavior', {}).get('summary'),
+                    'info': cuckoo_report.get('info')
+                }
+                signatures = cuckoo_report.get('signatures')
+                if signatures:
+                    cuckoo_doc['signatures'] = process_cuckoo_signatures(signatures)
+
+                dropped = cuckoo_report.get('dropped')
+                if dropped:
+                    cuckoo_doc['dropped'] = dropped
+
+                procmemory = cuckoo_report.get('procmemory')
+                if procmemory:
+                    cuckoo_doc['procmemory'] = procmemory
+
+                # TODO: add the API calls to the Cuckoo Report document
+                # for process in cuckoo_report.get('behavior', {}).get('processes', []):
+                #     process_pid = process['pid']
+                #     cuckoo_doc['calls'] = {}
+                #     cuckoo_doc['calls'][process_pid] = []
+                #     for call in process['calls']:
+                #         cuckoo_doc['calls'][process_pid].append(call)
+
+                report[filename]['Cuckoo Sandbox'] = cuckoo_doc
+
             # Store report; let ES autogenerate the ID so we can save it with the sample
-            report_result = self.es.index(index=self.index, doc_type=self.doc_type,
-                                          body=report[filename], parent=sample_id,
-                                          pipeline='dedot')
-            report_id = report_result['_id']
+            try:
+                report_result = self.es.index(index=self.index, doc_type=self.doc_type,
+                                              body=report[filename], parent=sample_id,
+                                              pipeline='dedot')
+            except (TransportError, UnicodeEncodeError) as e:
+                # If fail, index empty doc instead
+                print('Failed to index that report!\n{}'.format(e))
+                report_body_fail = {
+                    'ERROR': 'Failed to index the full report in Elasticsearch',
+                    'Scan Time': report[filename]['Scan Time']
+                }
+                report_result = self.es.index(index=self.index, doc_type=self.doc_type,
+                                              body=report_body_fail,
+                                              parent=sample_id, pipeline='dedot')
+
+            report_id = report_result.get('_id')
             sample['report_id'] = report_id
             sample_ids[sample_id] = report_id
 

@@ -25,6 +25,7 @@ This module submits a file to a Cuckoo Sandbox cluster for analysis
 - **timeout** - This is max time a sample with run for
 - **running timeout** - This is an additional timeout, if a task is in the running state this many seconds past **timeout** we will consider the task failed.
 - **delete tasks** - When set to True, tasks will be deleted from cuckoo after detonation. This is to prevent filling up the Cuckoo machine's disk with reports.
+- **maec** - When set to True, [MAEC](https://maecproject.github.io) JSON report is added to Cuckoo JSON report. *NOTE*: Cuckoo needs MAEC reporting enabled to produce results.
 
 ### [VxStream] ###
 This module submits a file to a VxStream Sandbox cluster for analysis
@@ -65,6 +66,11 @@ This module extracts out feature information from EXE files. It uses [pefile](ht
 
 ### [SHA256] ###
 This module generates the SHA256 hash of the files.
+
+### [Tika] ###
+This module extracts metadata from the file using [Tika](https://tika.apache.org/). For configuration of the module see the [tika-python](https://github.com/chrismattmann/tika-python/blob/master/README.md) documentation.
+
+- **remove-entry** - A python list of Tika results that should not be included in the report.
 
 ### [TrID] ###
 This module runs [TrID](http://mark0.net/soft-trid-e.html) against the files. The definition file should be in the same folder as the executable

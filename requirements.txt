@@ -9,6 +9,8 @@ pyclamd
 python-magic
 requests
 ssdeep
+tika
+yara-python
 #Required by API
 flask
 psycopg2
