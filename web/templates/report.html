@@ -16,7 +16,7 @@
     }
 
     if (typeof content === 'string' && content.startsWith('<table')) {
-      if ((content.match(/<tr>/g) || []).length > 10) {
+      if ((content.match(/<tr>/g) || []).length > 3) {
         expanderStyle = ''
         contentStyle = 'style="display: none;"'
       }
