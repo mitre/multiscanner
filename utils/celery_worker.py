@@ -9,6 +9,7 @@ import sys
 import codecs
 import configparser
 from datetime import datetime
+from socket import gethostname
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -84,6 +85,7 @@ def celery_task(files, config=multiscanner.CONFIG):
         task_id = files[file_]['task_id']
         file_hash = files[file_]['file_hash']
         metadata = files[file_]['metadata']
+        metadata['Worker Node'] = gethostname()
 
         # Use the original filename as the value for the filename
         # in the report (instead of the tmp path assigned to the file
