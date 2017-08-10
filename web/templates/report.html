@@ -295,10 +295,11 @@
 
 {% block content %}
 <button class="btn btn-primary" id="notes-open" title="View analyst notes">Notes</button>
-<button class="btn btn-primary" id="dl-json" title="Download JSON report">JSON</button>
 
 <div id="report-container">
-  <h1 class="text-center">Task {{ task_id }} Report</h1>
+  <h1 class="text-center">Task {{ task_id }} Report
+  <button class="btn btn-primary" id="dl-json" title="Download JSON report">Download JSON</button>
+  </h1>
   <div class="row">
     <div class="col-md-6 col-md-offset-3" id="report-tags">
       <label for="tags" class="pull-left">Tags</label>

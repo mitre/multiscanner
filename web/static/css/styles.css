@@ -258,11 +258,15 @@
 }
 
 #dl-json {
-    position: fixed;
-    top: 55px;
-    right: 0;
-    border-radius: 20px 0 0 20px;
-    padding-left: 20px;
+    position: absolute;
+    padding-left: 25px;
+    padding-right: 25px;
+    right: 5px;
+}
+@media (min-width: 992px) {
+    #dl-json {
+        right: 16.66666667%;
+    }
 }
 
 #report-notes {
@@ -287,10 +291,15 @@
 #notes-close {
     padding-bottom: 10px;
     position: fixed;
-    top: 55px;
+    top: 93px;
     left: -50px;
     border-radius: 0 20px 20px 0;
     padding-right: 20px;
+}
+@media (min-width: 992px) {
+    #notes-close {
+        top: 55px;
+    }
 }
 
 #notes-close.open {
@@ -300,10 +309,15 @@
 
 #notes-open {
     position: fixed;
-    top: 55px;
+    top: 93px;
     left: 0;
     border-radius: 0 20px 20px 0;
     padding-right: 20px;
+}
+@media (min-width: 992px) {
+    #notes-open {
+        top: 55px;
+    }
 }
 
 #report-notes .panel {

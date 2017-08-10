@@ -481,7 +481,7 @@ def get_report(task_id):
     if download == 't':
         response = make_response(jsonify(report))
         response.headers['Content-Type'] = 'application/json'
-        response.headers['Content-Disposition'] = 'attachemnt'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
         return response
     else:
         return jsonify({'Report': report})
