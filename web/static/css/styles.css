@@ -49,6 +49,13 @@
 #file-group {
     width: 100%;
 }
+@media (max-width: 992px) {
+    .input-group {
+        width: 90%;
+        margin: auto;
+    }
+}
+
 
 #module-opts {
     display: inline-block;

@@ -21,6 +21,15 @@
     }
   }
 
+  function msgUploadText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if (upload_type == 'scan') {
+      return "Submitted to scanner"
+    } else if (upload_type == 'import') {
+      return "Imported"
+    }
+  }
+
   $(document).ready(function() {
     $("#filesUpload").fileinput({
       uploadUrl: "http://{{ api_loc }}/api/v1/tasks/create/",
@@ -30,7 +39,7 @@
       browseLabel: "Select File(s) …",
       removeLabel: "Clear",
       removeClass: "btn btn-danger",
-      msgUploadEnd: "Submitted to scanner",
+      msgUploadEnd: msgUploadText,
       previewTemplates: {
           other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
           '   <div class="file-thumbnail-footer">\n' +
