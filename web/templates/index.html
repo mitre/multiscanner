@@ -4,6 +4,23 @@
 <link rel="stylesheet" href="/static/css/fileinput.min.css">
 <script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
+  function correctSubmitText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if ($("#filesUpload").fileinput('getFilesCount') > 1) {
+        if (upload_type == 'scan') {
+          $('#btn-scan').html('Scan them!');
+        } else if (upload_type == 'import') {
+          $('#btn-scan').html('Import them!');
+        }
+    } else {
+      if (upload_type == 'scan') {
+        $('#btn-scan').html('Scan it!');
+      } else if (upload_type == 'import') {
+        $('#btn-scan').html('Import it!');
+      }
+    }
+  }
+
   $(document).ready(function() {
     $("#filesUpload").fileinput({
       uploadUrl: "http://{{ api_loc }}/api/v1/tasks/create/",
@@ -74,6 +91,9 @@
         //Scan or Import?
         var upload_type = $('#upload-opts .btn.active input').val();
         obj['upload_type'] = upload_type;
+        if (upload_type == 'import') {
+          return obj;
+        }
         // Modules options
 		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
 		obj['modules'] = moduleList;
@@ -115,12 +135,8 @@
       // Scroll to file
       window.scrollTo(0, $("#" + previewId).offset().top);
 
-      // Singularize/pluralize submit button text
-      if ($("#filesUpload").fileinput('getFilesCount') > 1) {
-        $('#btn-scan').html('Scan them!');
-      } else {
-        $('#btn-scan').html('Scan it!');
-      }
+      // Use correct submit button text
+      correctSubmitText();
 
       // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
@@ -138,9 +154,12 @@
     // Bootstrap Toggle Switch (https://www.bootply.com/92189)
     $('.btn-toggle').click(function() {
       $(this).find('.btn').toggleClass('active');  
-      $(this).find('.btn').toggleClass('btn-primary');
-      $(this).find('.btn').toggleClass('btn-default');
       $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
+      $('#adv-options > div:not(#upload-opts) input').each(function() {
+        $(this).prop('disabled', !$(this).prop('disabled'));
+      });
+      // Use correct submit button text
+      correctSubmitText();
     });
 
     // Add options for selecting which modules to run
@@ -203,7 +222,7 @@
               <label class="btn btn-primary active">
                 <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
               </label>
-              <label class="btn btn-default">
+              <label class="btn btn-primary">
                 <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
               </label>
             </div>

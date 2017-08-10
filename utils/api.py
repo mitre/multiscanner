@@ -367,7 +367,12 @@ def create_task():
     '''
     file_ = request.files['file']
     if request.form['upload_type'] == 'import':
-        task_id = import_task(file_)
+        try:
+            task_id = import_task(file_)
+        except (UnicodeDecodeError, ValueError):
+            return make_response(
+                jsonify({'Message': 'Cannot import non-JSON files!'}),
+                HTTP_BAD_REQUEST)
 
         return make_response(
             jsonify({'Message': {'task_ids': [task_id]}}),
