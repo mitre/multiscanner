@@ -76,7 +76,7 @@ def scan(filelist, conf=DEFAULTCONF):
         finally:
             f.close()
         if hit:
-            hlist = []
+            hdict = {}
             for h in hit:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
                     hit_dict = {
@@ -85,9 +85,13 @@ def scan(filelist, conf=DEFAULTCONF):
                         'rule'      : h.rule,
                         'tags'      : h.tags,
                     }
-                    hlist.append(hit_dict)
-            hlist = sorted(hlist, key=itemgetter('rule'))
-            matches.append((m, hlist))
+                    try:
+                        h_key = '{}:{}'.format(hit_dict['namespace'].split('/')[-1], hit_dict['rule'])
+                    except IndexError:
+                        h_key = '{}'.format(hit_dict['rule'])
+                    hdict[h_key] = hit_dict
+            matches.append((m, hdict))
+
             
     metadata = {}
     rulelist = list(ruleset)
