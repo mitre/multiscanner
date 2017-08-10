@@ -46,6 +46,10 @@
     padding-bottom: 12px;
 }
 
+#file-group {
+    width: 100%;
+}
+
 #module-opts {
     display: inline-block;
 }
