@@ -380,6 +380,8 @@ class ElasticSearchStorage(storage.Storage):
             return None
 
     def add_note(self, sample_id, data):
+        if data['text'] == '':
+            return None  # Don't allow blank notes
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.create(
             index=self.index, doc_type='note', id=uuid4(), body=data,
