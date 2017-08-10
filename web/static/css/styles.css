@@ -454,3 +454,35 @@
     overflow: hidden;
     word-wrap: break-word;
 }
+
+table.dataTable thead .sorting:after {
+    content: None;
+}
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_desc:after,
+table.dataTable thead .sorting_asc_disabled:after,
+table.dataTable thead .sorting_desc_disabled:after {
+    content: None;
+}
+table.dataTable thead .sorting:before {
+    opacity: 0.2;
+    content: "\e150";
+}
+table.dataTable thead .sorting_desc:before {
+    opacity: 0.5;
+    content: "\e156";
+}
+table.dataTable thead .sorting_asc:before {
+    opacity: 0.5;
+    content: "\e155";
+}
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_desc:before,
+table.dataTable thead .sorting_asc_disabled:before,
+table.dataTable thead .sorting_desc_disabled:before {
+    position: relative;
+    display: block;
+    font-family: 'Glyphicons Halflings';
+}
