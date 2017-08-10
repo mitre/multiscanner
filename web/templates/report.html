@@ -285,7 +285,7 @@
 
     // Handle downloading of JSON report
     $('#dl-json').on('click', (function(event) {
-      window.location = "http://{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+      window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
     }));
   });
 </script>
