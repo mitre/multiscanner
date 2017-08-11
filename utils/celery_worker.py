@@ -86,6 +86,19 @@ def celery_task(files, config=multiscanner.CONFIG):
         file_hash = files[file_]['file_hash']
         metadata = files[file_]['metadata']
         metadata['Worker Node'] = gethostname()
+        # Get the Scan Config that the task was run with and
+        # add it to the task metadata
+        scan_config_object = configparser.SafeConfigParser()
+        scan_config_object.optionxform = str
+        scan_config_object.read(config)
+        full_conf = common.parse_config(scan_config_object)
+        sub_conf = {}
+        for key in full_conf:
+            if key == 'main':
+                continue
+            sub_conf[key] = {}
+            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+        metadata['Scan Config'] = sub_conf
 
         # Use the original filename as the value for the filename
         # in the report (instead of the tmp path assigned to the file
