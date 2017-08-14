@@ -8,11 +8,15 @@
   function createRow(heading, content, parentSize) {
     // Return a row to add to a table
     if (typeof content === 'string' && content.startsWith('<table')) {
+      numberRowsInContent = (content.match(/<tr>/g) || []).length;
       if (typeof parentSize === 'undefined') {
-          shouldExpand = ((content.match(/<tr>/g) || []).length > 3);
+        shouldExpand = numberRowsInContent < 4;
+      }
+      else if (numberRowsInContent == 0) {
+        shouldExpand = true;
       }
       else {
-          shouldExpand = parentSize <= 10;
+        shouldExpand = (parentSize < 10 && numberRowsInContent < 10);
       }
 
       if (shouldExpand) {
