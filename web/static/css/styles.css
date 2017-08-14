@@ -194,6 +194,7 @@
     padding: 8px;
     text-align: left;
     vertical-align: top;
+    max-width: 350px;
 }
 
 #report td {
@@ -207,6 +208,13 @@
 #report .table > tbody > tr:first-of-type > th,
 #report .table > tbody > tr:first-of-type > td {
     border-top: 0px;
+}
+
+.table > thead > tr > th, .table > tbody > tr > th,
+.table > tfoot > tr > th, .table > thead > tr > td,
+.table > tbody > tr > td, .table > tfoot > tr > td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #report td.cell-table {
