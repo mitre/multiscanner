@@ -5,26 +5,29 @@
 <script src="/static/js/bootstrap-tagsinput.min.js"></script>
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script type="text/javascript">
-  function createRow(heading, content, isArray) {
+  function createRow(heading, content, parentSize) {
     // Return a row to add to a table
-    isArray = typeof isArray !== 'undefined' ? isArray : false;
-    if (isArray) {
-      headText = '';
-    }
-    else {
-      headText = heading;
-    }
-
     if (typeof content === 'string' && content.startsWith('<table')) {
-      if ((content.match(/<tr>/g) || []).length > 3) {
-        expanderStyle = ''
-        contentStyle = 'style="display: none;"'
+      numberRowsInContent = (content.match(/<tr>/g) || []).length;
+      if (typeof parentSize === 'undefined') {
+        shouldExpand = numberRowsInContent < 4;
+      }
+      else if (numberRowsInContent == 0) {
+        shouldExpand = true;
       }
       else {
+        shouldExpand = (parentSize < 10 && numberRowsInContent < 10);
+      }
+
+      if (shouldExpand) {
         expanderStyle = 'style="display: none;"'
         contentStyle = ''
       }
-      th = '<th class="expander">' + headText +
+      else {
+        expanderStyle = ''
+        contentStyle = 'style="display: none;"'
+      }
+      th = '<th class="expander">' + heading +
            ' <span class="glyphicon glyphicon-minus-sign" ' + contentStyle + '></span></th>';
       td = '<td class="expander" ' + expanderStyle + '>Expand' +
            ' <span class="glyphicon glyphicon-plus-sign"></span>' +
@@ -32,7 +35,7 @@
            content + '</td>';
     }
     else {
-      th = '<th>' + headText + '</th>';
+      th = '<th>' + heading + '</th>';
       td = '<td>' + content + '</td>';
     }
 
@@ -45,26 +48,26 @@
     rows = ''
     $.each(data, function(index, item) {
       if (isArray) {
-        rows += determineType('', item);
+        rows += determineType('', item, Object.keys(data).length);
       }
       else {
-        rows += determineType(index, item);
+        rows += determineType(index, item, Object.keys(data).length);
       }
     });
     return '<table class="table table-hover"><tbody>' + rows +
            '</tbody></table>';
   }
 
-  function determineType(index, item) {
+  function determineType(index, item, parentSize) {
     // Add a row to the table bases on an item's data type
     if (item === null || item === undefined) {
       return createRow(index, '<i>None</i>');
     }
     else if (item.constructor === Array) {
-      return createRow(index, createSubtable(item, true));
+      return createRow(index, createSubtable(item, true), parentSize);
     }
     else if (!(item instanceof String) && typeof item === 'object') {
-      return createRow(index, createSubtable(item));
+      return createRow(index, createSubtable(item), parentSize);
     }
     else {
       return createRow(index, item);
