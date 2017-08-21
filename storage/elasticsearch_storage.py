@@ -97,8 +97,21 @@ class ElasticSearchStorage(storage.Storage):
                 name=CUCKOO_TEMPLATE_NAME,
                 body=json.dumps(template)
             )
-        if not es_indices.exists(self.index):
+
+        # Try to create the index, pass if it exists
+        try:
             es_indices.create(self.index)
+        except TransportError:
+            pass
+
+        # Set the total fields limit
+        try:
+            es_indices.put_settings(
+                index=self.index,
+                body={'index.mapping.total_fields.limit': ES_MAX},
+            )
+        except TransportError:
+            pass
 
         # Create parent-child mappings if don't exist yet
         mappings = es_indices.get_mapping(index=self.index)[self.index]['mappings'].keys()
@@ -106,24 +119,6 @@ class ElasticSearchStorage(storage.Storage):
             es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
                 '_parent': {
                     'type': 'sample'
-                },
-                'properties': {
-                    'pefile': {
-                        'properties': {
-                            'imports': {
-                                'type': 'object',
-                                'dynamic': 'false',
-                            },
-                            'exports': {
-                                'type': 'object',
-                                'dynamic': 'false',
-                            },
-                            'sections': {
-                                'type': 'object',
-                                'dynamic': 'false',
-                            },
-                        }
-                    }
                 }
             })
         if 'note' not in mappings:
@@ -345,11 +340,13 @@ class ElasticSearchStorage(storage.Storage):
         '''Run a Query String query and return a list of sample_ids associated
         with the matches. Run the query against all document types.
         '''
+        print(search_type)
         if search_type == 'advanced':
             query = self.build_query(query_string)
         else:
             es_reserved_chars_re = '([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
             query_string = re.sub(es_reserved_chars_re, r'\\\g<1>', query_string)
+            print(query_string)
             if search_type == 'default':
                 query = self.build_query("*" + query_string + "*")
             elif search_type == 'exact':
@@ -475,8 +472,6 @@ class ElasticSearchStorage(storage.Storage):
             return None
 
     def add_note(self, sample_id, data):
-        if data['text'] == '':
-            return None  # Don't allow blank notes
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.create(
             index=self.index, doc_type='note', id=uuid4(), body=data,
