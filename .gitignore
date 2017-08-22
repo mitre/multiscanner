@@ -2,6 +2,7 @@
 config.ini
 storage.ini
 api_config.ini
+web_config.ini
 
 #Default report location
 report.json

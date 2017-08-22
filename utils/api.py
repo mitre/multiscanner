@@ -88,7 +88,7 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
-api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
+api_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'api')
 api_config_object.read(api_config_file)
 if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
     # Write default config
@@ -104,7 +104,7 @@ db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
 db.init_db()
 
-storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):

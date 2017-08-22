@@ -210,9 +210,9 @@
     border-top: 0px;
 }
 
-.table > thead > tr > th, .table > tbody > tr > th,
-.table > tfoot > tr > th, .table > thead > tr > td,
-.table > tbody > tr > td, .table > tfoot > tr > td {
+#report .table > thead > tr > th, .table > tbody > tr > th,
+#report .table > tfoot > tr > th, .table > thead > tr > td,
+#report .table > tbody > tr > td, .table > tfoot > tr > td {
     word-wrap: break-word;
     overflow-wrap: break-word;
 }

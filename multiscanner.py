@@ -51,6 +51,7 @@ DEFAULTCONF = {
     "group-types": ["Antivirus"],
     "storage-config": os.path.join(MS_WD, 'storage.ini'),
     "api-config": os.path.join(MS_WD, 'api_config.ini'),
+    "web-config": os.path.join(MS_WD, 'web_config.ini'),
 }
 
 VERBOSE = False
