@@ -321,12 +321,18 @@ def save_hashed_filename(f, zipped=False):
     return (f_name, full_path)
 
 
+class InvalidScanTimeFormatError(ValueError):
+    pass
+
 def import_task(file_):
     '''
     Import a JSON report that was downloaded from MultiScanner.
     '''
     report = json.loads(file_.read().decode('utf-8'))
-    report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+    try:
+        report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+    except ValueError:
+        raise InvalidScanTimeFormatError()
 
     task_id = db.add_task(
         sample_id=report['SHA256'],
@@ -369,6 +375,14 @@ def create_task():
     if request.form.get('upload_type', None) == 'import':
         try:
             task_id = import_task(file_)
+        except KeyError:
+            return make_response(
+                jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
+                HTTP_BAD_REQUEST)
+        except InvalidScanTimeFormatError:
+            return make_response(
+                jsonify({'Message': 'Cannot import report with \'Scan Time\' of invalid format!'}),
+                HTTP_BAD_REQUEST)
         except (UnicodeDecodeError, ValueError):
             return make_response(
                 jsonify({'Message': 'Cannot import non-JSON files!'}),
