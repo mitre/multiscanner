@@ -366,11 +366,7 @@ def create_task():
     UPLOAD_FOLDER, optionally unzipping it. Return task id and 201 status.
     '''
     file_ = request.files['file']
-    try:
-        upload_type = request.form['upload_type']
-    except KeyError:
-        upload_type = None
-    if upload_type == 'import':
+    if request.form.get('upload_type', None) == 'import':
         try:
             task_id = import_task(file_)
         except (UnicodeDecodeError, ValueError):
@@ -595,7 +591,7 @@ def edit_note(task_id, note_id):
         abort(HTTP_NOT_FOUND)
 
     response = handler.edit_note(task.sample_id, note_id,
-                                 Markup(request.form['text']).striptags())
+                                 Markup(request.form.get('text', '')).striptags())
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
