@@ -29,7 +29,7 @@
       }
       th = '<th class="expander">' + heading +
            ' <span class="glyphicon glyphicon-minus-sign" ' + contentStyle + '></span></th>';
-      td = '<td class="expander" ' + expanderStyle + '>Expand' +
+      td = '<td class="expander" ' + expanderStyle + ' title="Shift-click to expand all children">Expand' +
            ' <span class="glyphicon glyphicon-plus-sign"></span>' +
            '</td><td class="cell-table" ' + contentStyle + '>' +
            content + '</td>';
@@ -74,6 +74,23 @@
     }
   }
 
+  function toggleRow(row, expandAll) {
+    // Expand/collapse a single row
+    expandAll = typeof expandAll !== 'undefined' ? expandAll : false;
+    var th = row.children('th');
+    var expander = row.children('td.expander');
+    var td = row.children('td.cell-table');
+
+    expander.toggle();
+    td.toggle();
+    th.children('span').toggle();
+    if (expandAll && expander.is(':hidden')) {
+        td.find('th.expander span').show();
+        td.find('td.expander').hide();
+        td.find('td.cell-table').show();
+    }
+  }
+
   function openNotes() {
     // $('#notes-close').show();
     $('#notes-close').addClass('open');
@@ -107,7 +124,7 @@
     var tsRegEx = /\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
     var m = tsRegEx.exec(data._source.timestamp)
     var ts = m[4]+":"+m[5]+" "+m[2]+"/"+m[3]+"/"+m[1];
-    
+
     panelBody = $('<div class="panel-body"><span>' + text + '</span></div>')
       .append($('<textarea class="form-control" rows="4"></textarea>').hide())
       .append($('<button type="button" class="btn btn-default btn-xs btn-send-note">Submit</button>').hide())
@@ -125,7 +142,7 @@
     empty = typeof empty !== 'undefined' ? empty : false;
     ts = typeof ts !== 'undefined' ? ts : false;
     uid = typeof uid !== 'undefined' ? uid : false;
-    
+
     var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
     if (ts && uid) {
       url += "?ts=" + ts + "&uid=" + uid;
@@ -157,7 +174,7 @@
       else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
         $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
         return;
-	  }
+      }
       $('#pending').hide();
       $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
@@ -168,19 +185,13 @@
       $.each(data.Report, function(index, item) {
         $('tbody:first').append(determineType(index, item));
       });
+      // Handle row expanson
       $('.expander').each(function(idx, elem) {
-        $(elem).click(function() {
-          $(this).siblings('td').toggle();
-          $(this).siblings('th').children('span').toggle();
-          if ($(this).is('td')) {
-            $(this).hide();
-          }
-          if ($(this).is('th')) {
-            $(this).children('span').toggle();
-          }
+        $(elem).click(function(e) {
+          toggleRow($(this).parent(), e.shiftKey);
         });
       });
-      
+
       // Set up tags
       var tagNameArray = [];
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {

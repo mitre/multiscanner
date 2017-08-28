@@ -324,6 +324,7 @@ def save_hashed_filename(f, zipped=False):
 class InvalidScanTimeFormatError(ValueError):
     pass
 
+
 def import_task(file_):
     '''
     Import a JSON report that was downloaded from MultiScanner.
