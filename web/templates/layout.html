@@ -7,6 +7,16 @@
     <script src="/static/js/jquery-3.1.1.min.js"></script>
     <script src="/static/js/datatables.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function($) {
+        $('nav-search-btn').click(function() {
+          $('nav-search-form').submit();
+        });
+        $('nav-search-opt-btn').click(function() {
+          $('nav-search-form').toggle();
+        });
+      });
+    </script>
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="/static/css/styles.css">
     <!-- <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -28,15 +38,41 @@
         </div>
 
         <!-- NAVBAR ITEMS -->
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+        <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
             <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
             <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
-            <!-- <li {% if request.path == '/reports' %} class="active" {% endif %}><a href="/reports">Reports</a></li> -->
           </ul>
           <ul class="nav navbar-nav navbar-right">
-		    <li data-toggle="modal" data-target="#help-modal"><a href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></a></li>
+            {% if request.path not in ['/analyses', '/history'] %}
+              <li>
+              <form class="navbar-form" action="analyses" method="post" id="nav-search-form">
+                <a type="button" class="btn btn-default btn-sm collapsed" id="nav-search-opt-btn" href="#" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span class="glyphicon glyphicon-cog"></span></a> 
+                <div class="form-group">
+                  <input type="search" name="search_term" class="form-control" placeholder="Search scans">
+                </div>
+                <a type="button" class="btn btn-success" id="nav-search-btn" href="#"><span class="glyphicon glyphicon-search"></span></a> 
+                <div id="nav-search-opts">
+                  <div id="search_type" class="collapse">
+                    <label for="search_type_buttons">Search Type:&nbsp;</label>
+                    <div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">
+                      <label class="btn btn-primary active" title="Add wildcards to start and end of search term, to search as you type">
+                        <input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default</input>
+                      </label>
+                      <label class="btn btn-primary" title="Add quotes to start and end of search term, to search for the exact phrase">
+                        <input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact</input>
+                      </label>
+                      <label class="btn btn-primary" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">
+                        <input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced</input>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              </li>
+            {% endif %}
+            <li data-toggle="modal" data-target="#help-modal"><a href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></a></li>
           </ul>
         </div>
       </div>
@@ -54,7 +90,7 @@
       </div>
     </div>
 
-	<div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -62,15 +98,15 @@
             <h4 class="modal-title" id="myModalLabel">Multiscanner Help</h4>
           </div>
           <div class="modal-body">
-		    <p>MultiScanner is a file scanning and analysis framework that automatically runs a suite of tools against file submissions.</p>
-			<h3>Scan Page</h3>
-			<p>This page lets you submit files to be scanned. Click on the "Advanced Options" button to set options for archive files and set metadata fields to be added to the scan results. If you have a directory of samples you wish to scan at once, we recommend zipping them and uploading the archive with the option to extract archives enabled. Alternatively you can use the REST API for bulk uploads.</p>
-			<h3>Analyses Page</h3>
-			<p>This page displays a searchable list of samples that have been scanned. Clicking on one will take you to the most recent scan report for that file.</p>
-			<h3>History Page</h3>
-			<p>This page displays a searchable list of scan reports. In contrast to the Analyses page, this page shows all reports, not merely the most recent.</p>
-			<br/>
-			<p>MultiScanner is copyright The MITRE Corporation, licensed under the Mozilla Public License, version 2.0.</p>
+            <p>MultiScanner is a file scanning and analysis framework that automatically runs a suite of tools against file submissions.</p>
+            <h3>Scan Page</h3>
+            <p>This page lets you submit files to be scanned. Click on the "Advanced Options" button to set options for archive files and set metadata fields to be added to the scan results. If you have a directory of samples you wish to scan at once, we recommend zipping them and uploading the archive with the option to extract archives enabled. Alternatively you can use the REST API for bulk uploads.</p>
+            <h3>Analyses Page</h3>
+            <p>This page displays a searchable list of samples that have been scanned. Clicking on one will take you to the most recent scan report for that file.</p>
+            <h3>History Page</h3>
+            <p>This page displays a searchable list of scan reports. In contrast to the Analyses page, this page shows all reports, not merely the most recent.</p>
+            <br/>
+            <p>MultiScanner is copyright The MITRE Corporation, licensed under the Mozilla Public License, version 2.0.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

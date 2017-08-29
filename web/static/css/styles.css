@@ -11,6 +11,27 @@
   }
 }
 
+#nav-search-opts {
+    position: absolute;
+    left: -10px;
+    width: 325px;
+    margin-top: 5px;
+    background-color: #3e648d;
+    padding: 0px 18px;
+    border: 1px solid #345578;
+    border-top: 0px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+#nav-search-opts > div {
+    padding: 5px 0px;
+}
+
+#nav-search-opts > div > label {
+    color: #ddd;
+}
+
 .alert-row {
     position: absolute;
     right: 20px;
