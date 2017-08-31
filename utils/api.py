@@ -31,6 +31,7 @@ import codecs
 import configparser
 import json
 import multiprocessing
+import subprocess
 import queue
 import shutil
 from datetime import datetime
@@ -614,6 +615,58 @@ def del_note(task_id, note_id):
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
+
+@app.route('/api/v1/files/get/<sha256>', methods=['GET'])
+# get raw file - /api/v1/files/get/<sha256>?raw=true
+def files_get(sha256):
+    '''
+    Returns binary from storage. Defaults to password protected zipfile.
+    '''
+    file_path = os.path.join(api_config['api']['upload_folder'], sha256)
+    if not os.path.exists(file_path):
+        abort(HTTP_NOT_FOUND)
+
+    # is there a robust way to just get this as a bool?
+    raw = request.args.get('raw', default='False', type=str)[0].lower()
+
+    with open(file_path, "rb") as fh:
+        fh_content = fh.read()
+
+    if raw == 't' or raw == 'y' or raw == '1':
+        response = make_response(fh_content)
+        response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
+        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
+    else:
+        # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
+        rawname = sha256 + '.bin'
+        with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
+            raw_fh.write(fh_content)
+
+        zipname = sha256 + '.zip'
+        args = ['/usr/bin/zip', '-j',
+                os.path.join('/tmp', zipname),
+                os.path.join('/tmp', rawname),
+                '-P', 'infected']
+        proc = subprocess.Popen(args)
+        wait_seconds = 30
+        while proc.poll() is None and wait_seconds:
+            time.sleep(1)
+            wait_seconds -= 1
+
+        if proc.returncode:
+            return make_response(jsonify({'Error': 'Failed to create zip ()'.format(proc.returncode)}))
+        elif not wait_seconds:
+            proc.terminate()
+            return make_response(jsonify({'Error': 'Process timed out'}))
+        else:
+            with open(os.path.join('/tmp', zipname), 'rb') as zip_fh:
+                zip_data = zip_fh.read()
+            if len(zip_data) == 0:
+                return make_response(jsonify({'Error': 'Zip file empty'}))
+            response = make_response(zip_data)
+            response.headers['Content-Type'] = 'application/zip; charset=UTF-8'
+            response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
+    return response
 
 
 if __name__ == '__main__':
