@@ -637,7 +637,7 @@ def files_get(sha256):
         response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
         response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
     else:
-        # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
+        # ref: https://github.com/crits/crits/blob/master/crits/core/data_tools.py#L12
         rawname = sha256 + '.bin'
         with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
             raw_fh.write(fh_content)
