@@ -290,6 +290,11 @@
     $('#dl-json').on('click', (function(event) {
       window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
     }));
+
+    // Handle downloading binary files
+    $('#dl-sample').on('click', (function(event) {
+      window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+    }));
   });
 </script>
 {% endblock %}
@@ -302,6 +307,7 @@
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report
   <button class="btn btn-primary" id="dl-json" title="Download JSON report">Download JSON</button>
+  <button class="btn btn-primary" id="dl-sample" title="Download sample">Download sample</button>
   </h1>
   <div class="row">
     <div class="col-md-6 col-md-offset-3" id="report-tags">
