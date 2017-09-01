@@ -288,6 +288,18 @@
     }
 }
 
+#dl-dropdown {
+    position: absolute;
+    padding-left: 25px;
+    padding-right: 25px;
+    right: 5px;
+}
+@media (min-width: 992px) {
+    #dl-dropdown {
+        right: 16.66666667%;
+    }
+}
+
 #report-notes {
     position: fixed;
     z-index: 1;
