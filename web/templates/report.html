@@ -2,8 +2,10 @@
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
 <script src="/static/js/bootstrap-tagsinput.min.js"></script>
 <script src="/static/js/typeahead.bundle.min.js"></script>
+<script src="/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript">
   function createRow(heading, content, parentSize) {
     // Return a row to add to a table
@@ -295,7 +297,17 @@
     $('#dl-sample').on('click', (function(event) {
       window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
     }));
+
+    $('ul.dropdown-menu li').click(function(e) {
+      if (this.id == 'getJson') {
+        window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+      } else if (this.id == 'getSample') {
+        window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+      }
+    });
+
   });
+
 </script>
 {% endblock %}
 
@@ -305,10 +317,18 @@
 <button class="btn btn-primary" id="notes-open" title="View analyst notes">Notes</button>
 
 <div id="report-container">
-  <h1 class="text-center">Task {{ task_id }} Report
-  <button class="btn btn-primary" id="dl-json" title="Download JSON report">Download JSON</button>
-  <button class="btn btn-primary" id="dl-sample" title="Download sample">Download sample</button>
-  </h1>
+  <h1 class="text-center">Task {{ task_id }} Report</h1>
+  <div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Download
+      <span class="caret"</span>
+    </button>
+    <ul class="dropdown-menu">
+      <li id="getJson"><a href="#">JSON</a></li>
+      <li id="getSample"><a href="#">Sample</a></li>
+      <li><a href="#">MAEC</a></li>
+    </ul>
+  </div>
+  <br><br>
   <div class="row">
     <div class="col-md-6 col-md-offset-3" id="report-tags">
       <label for="tags" class="pull-left">Tags</label>
