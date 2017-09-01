@@ -7,10 +7,12 @@ the multiscanner.
 
 Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
+GET /api/v1/files/get/<sha256>?raw={t|f} ----> download sample, defaults to passwd protected zip
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
 GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
 GET /api/v1/tasks/report/<task_id> ---> receive report in JSON
 GET /api/v1/tasks/delete/<task_id> ----> delete task_id
+GET /api/v1/tasks/file/<task_id>?raw={t|f} ----> download sample, defaults to passwd protected zip
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
