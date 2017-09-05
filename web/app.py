@@ -70,7 +70,9 @@ def reports(task_id=1):
 @app.route('/history', methods=['GET', 'POST'])
 def history():
     if request.method == 'POST':
-        return render_template('history.html', api_loc=app.config['API_LOC'], search_term=request.form['search_term'])
+        return render_template('history.html', api_loc=app.config['API_LOC'],
+                               search_term=request.form['search_term'],
+                               search_type=request.form['search_type_buttons'])
     else:
         return render_template('history.html', api_loc=app.config['API_LOC'])
 

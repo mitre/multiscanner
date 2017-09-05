@@ -12,6 +12,10 @@
         $('#nav-search-btn').click(function() {
           $('#nav-search-form').submit();
         });
+        $('#nav-search-form').submit(function() {
+          search_target =  $('#search_target_buttons > .btn.active input').val();
+          $('#nav-search-form').attr("action", "/" + search_target);
+        });
       });
     </script>
     {% block head %}{% endblock %}
@@ -62,6 +66,17 @@
                       </label>
                       <label class="btn btn-default" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">
                         <input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced</input>
+                      </label>
+                    </div>
+                  </div>
+                  <div id="search_target">
+                    <label for="search_target_buttons">Search Target:&nbsp;</label>
+                    <div class="btn-group btn-group-sm" data-toggle="buttons" id="search_target_buttons">
+                      <label class="btn btn-default active" title="Search latest scan per sample">
+                        <input type="radio" name="search_target_buttons" id="search-analyses" value="analyses" autocomplete="off" checked>Analyses</input>
+                      </label>
+                      <label class="btn btn-default" title="Search all scans">
+                        <input type="radio" name="search_target_buttons" id="search-history" value="history" autocomplete="off">History</input>
                       </label>
                     </div>
                   </div>
