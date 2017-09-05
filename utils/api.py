@@ -243,7 +243,7 @@ def task_list():
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
     search_term = params['search[value]']
-    search_type = params.pop('search_type', 'Default')
+    search_type = params.pop('search_type', 'default')
     if search_term == '':
         es_result = None
     else:

@@ -1,7 +1,7 @@
 import codecs
 from collections import namedtuple
 import configparser
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import json
 import os
 import sys
@@ -51,9 +51,14 @@ def index():
                            metadata_fields=app.config['METADATA_FIELDS'])
 
 
-@app.route('/analyses', methods=['GET'])
+@app.route('/analyses', methods=['GET', 'POST'])
 def tasks():
-    return render_template('analyses.html', api_loc=app.config['API_LOC'])
+    if request.method == 'POST':
+        return render_template('analyses.html', api_loc=app.config['API_LOC'],
+                               search_term=request.form['search_term'],
+                               search_type=request.form['search_type_buttons'])
+    else:
+        return render_template('analyses.html', api_loc=app.config['API_LOC'])
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
@@ -62,9 +67,12 @@ def reports(task_id=1):
                            api_loc=app.config['API_LOC'])
 
 
-@app.route('/history', methods=['GET'])
+@app.route('/history', methods=['GET', 'POST'])
 def history():
-    return render_template('history.html', api_loc=app.config['API_LOC'])
+    if request.method == 'POST':
+        return render_template('history.html', api_loc=app.config['API_LOC'], search_term=request.form['search_term'])
+    else:
+        return render_template('history.html', api_loc=app.config['API_LOC'])
 
 
 if __name__ == "__main__":

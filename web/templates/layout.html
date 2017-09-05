@@ -9,11 +9,8 @@
     <script src="/static/js/bootstrap.min.js"></script>
     <script type="text/javascript">
       $(document).ready(function($) {
-        $('nav-search-btn').click(function() {
-          $('nav-search-form').submit();
-        });
-        $('nav-search-opt-btn').click(function() {
-          $('nav-search-form').toggle();
+        $('#nav-search-btn').click(function() {
+          $('#nav-search-form').submit();
         });
       });
     </script>
@@ -47,23 +44,23 @@
           <ul class="nav navbar-nav navbar-right">
             {% if request.path not in ['/analyses', '/history'] %}
               <li>
-              <form class="navbar-form" action="analyses" method="post" id="nav-search-form">
-                <a type="button" class="btn btn-default btn-sm collapsed" id="nav-search-opt-btn" href="#" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span class="glyphicon glyphicon-cog"></span></a> 
+              <form class="navbar-form" action="/analyses" method="post" id="nav-search-form">
+                <a type="button" class="btn btn-default btn-sm collapsed" id="nav-search-opt-btn" href="#" data-toggle="collapse" data-target="#nav-search-opts" aria-expanded="false" aria-controls="#nav-search-opts"><span class="glyphicon glyphicon-cog"></span></a> 
                 <div class="form-group">
                   <input type="search" name="search_term" class="form-control" placeholder="Search scans">
                 </div>
                 <a type="button" class="btn btn-success" id="nav-search-btn" href="#"><span class="glyphicon glyphicon-search"></span></a> 
-                <div id="nav-search-opts">
-                  <div id="search_type" class="collapse">
+                <div id="nav-search-opts" class="collapse">
+                  <div id="search_type">
                     <label for="search_type_buttons">Search Type:&nbsp;</label>
                     <div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">
-                      <label class="btn btn-primary active" title="Add wildcards to start and end of search term, to search as you type">
+                      <label class="btn btn-default active" title="Add wildcards to start and end of search term, to search as you type">
                         <input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default</input>
                       </label>
-                      <label class="btn btn-primary" title="Add quotes to start and end of search term, to search for the exact phrase">
+                      <label class="btn btn-default" title="Add quotes to start and end of search term, to search for the exact phrase">
                         <input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact</input>
                       </label>
-                      <label class="btn btn-primary" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">
+                      <label class="btn btn-default" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">
                         <input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced</input>
                       </label>
                     </div>

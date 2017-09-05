@@ -340,13 +340,11 @@ class ElasticSearchStorage(storage.Storage):
         '''Run a Query String query and return a list of sample_ids associated
         with the matches. Run the query against all document types.
         '''
-        print(search_type)
         if search_type == 'advanced':
             query = self.build_query(query_string)
         else:
             es_reserved_chars_re = '([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
             query_string = re.sub(es_reserved_chars_re, r'\\\g<1>', query_string)
-            print(query_string)
             if search_type == 'default':
                 query = self.build_query("*" + query_string + "*")
             elif search_type == 'exact':
