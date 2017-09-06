@@ -7,10 +7,12 @@ the multiscanner.
 
 Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
+GET /api/v1/files/get/<sha256>?raw={t|f} ----> download sample, defaults to passwd protected zip
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
 GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
 GET /api/v1/tasks/report/<task_id> ---> receive report in JSON
 GET /api/v1/tasks/delete/<task_id> ----> delete task_id
+GET /api/v1/tasks/file/<task_id>?raw={t|f} ----> download sample, defaults to passwd protected zip
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
@@ -31,6 +33,7 @@ import codecs
 import configparser
 import json
 import multiprocessing
+import subprocess
 import queue
 import shutil
 from datetime import datetime
@@ -473,34 +476,51 @@ def create_task():
         HTTP_CREATED
     )
 
-
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-    task = db.get_task(task_id)
-    if not task:
-        abort(HTTP_NOT_FOUND)
 
-    download = request.args.get('d', None)
+    download = request.args.get('d', default='False', type=str)[0].lower()
 
-    if task.task_status == 'Complete':
-        report = handler.get_report(task.sample_id, task.timestamp)
-    elif task.task_status == 'Pending':
-        report = {'Report': 'Task still pending'}
-    else:
-        report = {'Report': 'Task failed'}
-
-    if download == 't':
-        response = make_response(jsonify(report))
+    report_dict, success = get_report_dict(task_id)
+    if success and (download == 't' or download == 'y' or download == '1'):
+        response = make_response(jsonify(report_dict))
         response.headers['Content-Type'] = 'application/json'
         response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
         return response
     else:
-        return jsonify({'Report': report})
+        return jsonify(report_dict)
 
+@app.route('/api/v1/tasks/file/<task_id>', methods=['GET'])
+def files_get_task(task_id):
+    # try to get report dict
+    report_dict, success = get_report_dict(task_id)
+    if not success:
+        return jsonify(report_dict)
+
+    # okay, we have report dict; get sha256
+    sha256 = report_dict.get('Report', {}).get('SHA256')
+    if sha256:
+       return files_get_sha256_helper(
+                sha256, 
+                request.args.get('raw', default=None))
+    else:
+        return jsonify({'Error': 'sha256 not in report!'})
+
+def get_report_dict(task_id):
+    task = db.get_task(task_id)
+    if not task:
+        abort(HTTP_NOT_FOUND)
+
+    if task.task_status == 'Complete':
+        return {'Report': handler.get_report(task.sample_id, task.timestamp)}, True
+    elif task.task_status == 'Pending':
+        return {'Report': 'Task still pending'}, False
+    else:
+        return {'Report': 'Task failed'}, False
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
 def delete_report(task_id):
@@ -625,6 +645,65 @@ def del_note(task_id, note_id):
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
+
+@app.route('/api/v1/files/get/<sha256>', methods=['GET'])
+# get raw file - /api/v1/files/get/<sha256>?raw=true
+def files_get_sha256(sha256):
+    '''
+    Returns binary from storage. Defaults to password protected zipfile.
+    '''
+    # is there a robust way to just get this as a bool?
+    raw = request.args.get('raw', default='False', type=str)
+
+    return files_get_sha256_helper(sha256, raw)
+
+def files_get_sha256_helper(sha256, raw=None):
+    '''
+    Returns binary from storage. Defaults to password protected zipfile.
+    '''
+    file_path = os.path.join(api_config['api']['upload_folder'], sha256)
+    if not os.path.exists(file_path):
+        abort(HTTP_NOT_FOUND)
+
+    with open(file_path, "rb") as fh:
+        fh_content = fh.read()
+
+    raw = raw[0].lower()
+    if raw == 't' or raw == 'y' or raw == '1':
+        response = make_response(fh_content)
+        response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
+        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
+    else:
+        # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
+        rawname = sha256 + '.bin'
+        with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
+            raw_fh.write(fh_content)
+
+        zipname = sha256 + '.zip'
+        args = ['/usr/bin/zip', '-j',
+                os.path.join('/tmp', zipname),
+                os.path.join('/tmp', rawname),
+                '-P', 'infected']
+        proc = subprocess.Popen(args)
+        wait_seconds = 30
+        while proc.poll() is None and wait_seconds:
+            time.sleep(1)
+            wait_seconds -= 1
+
+        if proc.returncode:
+            return make_response(jsonify({'Error': 'Failed to create zip ()'.format(proc.returncode)}))
+        elif not wait_seconds:
+            proc.terminate()
+            return make_response(jsonify({'Error': 'Process timed out'}))
+        else:
+            with open(os.path.join('/tmp', zipname), 'rb') as zip_fh:
+                zip_data = zip_fh.read()
+            if len(zip_data) == 0:
+                return make_response(jsonify({'Error': 'Zip file empty'}))
+            response = make_response(zip_data)
+            response.headers['Content-Type'] = 'application/zip; charset=UTF-8'
+            response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
+    return response
 
 
 if __name__ == '__main__':
