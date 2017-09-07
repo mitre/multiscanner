@@ -28,10 +28,15 @@ DEFAULTCONF = {
 
 def post_to_vxstream(
         f_name, environment_id,
-        submit_url, apikey, secret, verify):
+        submit_url, apikey, secret, runtime, verify):
     with open(f_name, 'rb') as f:
-        files = {'file': f}
-        data = {'apikey': apikey, 'secret': secret, 'environmentId': environment_id}
+        files = { 'file': f }
+        data = {
+            'apikey': apikey,
+            'secret': secret,
+            'environmentId': environment_id,
+            'customruntime': runtime,
+        }
         try:
             user_agent = {'User-agent': 'VxStream Sandbox'}
             res = requests.post(submit_url, data=data, headers=user_agent, files=files, verify=verify)
@@ -97,8 +102,9 @@ def scan(filelist, conf=DEFAULTCONF):
     for fname in filelist:
         response = post_to_vxstream(
             fname, environment_id=conf['Environment ID'],
-            submit_url=submit_url, apikey=conf['API key'], secret=conf['API secret'],
-            verify=conf['Verify'])
+            submit_url=submit_url, apikey=conf['API key'],
+            runtime=conf['running timeout'],
+            secret=conf['API secret'], verify=conf['Verify'])
         try:
             file_sha256 = response['response']['sha256']
         except KeyError as e:
