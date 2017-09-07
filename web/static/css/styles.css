@@ -471,6 +471,11 @@
           animation: spin-rev 1s infinite linear;
 }
 
+.highlight {
+    background-color: #d47500;
+    color: #fbeed5;
+}
+
 .dataTables_wrapper .dataTables_length .dt-buttons {
     float: right;
 }
