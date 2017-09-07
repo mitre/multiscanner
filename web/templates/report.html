@@ -18,6 +18,11 @@
       else {
         shouldExpand = (parentSize < 10 && numberRowsInContent < 10);
       }
+      {% if search_term %}
+      if (!shouldExpand && content.indexOf('{{ search_term }}') >= 0) {
+          shouldExpand = true;
+      }
+      {% endif %}
 
       if (shouldExpand) {
         expanderStyle = 'style="display: none;"'
@@ -231,6 +236,11 @@
           .attr("data-placement", "left")
           .tooltip();
       })
+
+      {% if search_term %}
+      // Scroll to highlighted search term
+      $('html, body'). scrollTop($('.highlight').first().offset().top);
+      {% endif %}
     });
   }
 

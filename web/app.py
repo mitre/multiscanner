@@ -63,7 +63,7 @@ def tasks():
 
 @app.route('/report/<int:task_id>', methods=['GET'])
 def reports(task_id=1):
-    term = re.escape(request.args.get('st', None))
+    term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
                            api_loc=app.config['API_LOC'], search_term=term)
