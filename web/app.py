@@ -2,8 +2,8 @@ import codecs
 from collections import namedtuple
 import configparser
 from flask import Flask, render_template, request
-import json
 import os
+import re
 import sys
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -63,8 +63,10 @@ def tasks():
 
 @app.route('/report/<int:task_id>', methods=['GET'])
 def reports(task_id=1):
+    term = re.escape(request.args.get('st', None))
+
     return render_template('report.html', task_id=task_id,
-                           api_loc=app.config['API_LOC'])
+                           api_loc=app.config['API_LOC'], search_term=term)
 
 
 @app.route('/history', methods=['GET', 'POST'])

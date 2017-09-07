@@ -72,7 +72,11 @@
       return createRow(index, createSubtable(item), parentSize);
     }
     else {
+      {% if search_term %}
+      return createRow(index, String(item).replace(/({{ search_term }})/, '<span class="highlight">$1</span>'));
+      {% else %}
       return createRow(index, item);
+      {% endif %}
     }
   }
 

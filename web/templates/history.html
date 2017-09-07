@@ -63,7 +63,12 @@
           if ($(this).hasClass('delete')) {
             return;
           }
-          window.document.location = $(this).parent().data("href");
+          var report_url = $(this).parent().data("href");
+          var report_param = $('#DataTables_Table_0_filter input.form-control').val();
+          if (report_param != "") {
+              report_url += "?st=" + report_param;
+          }
+          window.document.location = report_url;
         });
 
         // ...add tooltip to Delete buttons
