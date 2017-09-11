@@ -119,7 +119,7 @@
         $('#DataTables_Table_0_filter').append(searchTypeButtons);
         $('#search_type :input').change(function() {
           search_type =  $('#search_type_buttons > .btn.active input').val();
-          table.draw();
+        //table.draw();
         });
       }
     });
@@ -127,6 +127,26 @@
 
   $(document).ready(function($) {
     tasksSetup("{{ api_loc }}");
+
+    {% if search_term %}
+    history.replaceState({query: '{{ search_term }}'}, "", "analyses");
+    {% endif %}
+    var search = $('#DataTables_Table_0_filter input.form-control');
+
+    // Insert state into browser history when search term is entered
+    search.on("input", function() {
+      history.pushState({query: $(this).val(),
+                         type: $('#search_type_buttons > .btn.active input').val()},
+                         "",
+                         "analyses")
+    });
+    // Pop back to a previous search on browser back button
+    window.addEventListener("popstate", function(e) {
+      if (e.state) {
+        search.val(e.state.query);
+        search.trigger('paste');
+      }
+    });
   });
 </script>
 {% endblock %}
