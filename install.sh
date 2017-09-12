@@ -54,10 +54,10 @@ read -p "Download TrID? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   mkdir -p /opt/trid
   cd /opt/trid
-  curl http://mark0.net/download/trid_linux_64.zip > trid.zip
+  curl https://web.archive.org/web/20170806191753/http://mark0.net/download/trid_linux_64.zip > trid.zip
   unzip trid.zip
   rm -f trid.zip
-  curl http://mark0.net/download/triddefs.zip > triddefs.zip
+  curl https://web.archive.org/web/20170806191753/http://mark0.net/download/triddefs.zip > triddefs.zip
   unzip triddefs.zip
   rm -f triddefs.zip
   chmod 755 trid
