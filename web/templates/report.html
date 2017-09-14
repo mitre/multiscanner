@@ -343,17 +343,30 @@
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
-  <div class="dropdown" id="dl-dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Download
-      <span class="caret"</span>
-    </button>
-    <ul class="dropdown-menu">
-      <li id="getJson"><a href="#">JSON</a></li>
-      <li id="getSample"><a href="#">Sample</a></li>
-      <li><a href="#">MAEC</a></li>
-    </ul>
+  <div class="row">
+    <div class="col-md-2 col-md-offset-1" id="expand-all">
+      <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
+      </button>
+    </div>
+    <div class="col-md-6" id="search-report">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Search within this report">
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="button"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div>
+    </div>
+    <div class="dropdown col-md-2" id="dl-dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" title="Download report in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li id="getJson"><a href="#">JSON</a></li>
+        <li id="getSample"><a href="#">Sample</a></li>
+        <li><a href="#">MAEC</a></li>
+      </ul>
+    </div>
   </div>
-  <br><br>
   <div class="row">
     <div class="col-md-6 col-md-offset-3" id="report-tags">
       <label for="tags" class="pull-left">Tags</label>
