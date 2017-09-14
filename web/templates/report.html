@@ -102,6 +102,12 @@
     }
   }
 
+  function expandAll() {
+    var shiftClick = jQuery.Event("click");
+    shiftClick.shiftKey = true;
+    $('td.expander:visible').trigger(shiftClick);
+  }
+
   function openNotes() {
     // $('#notes-close').show();
     $('#notes-close').addClass('open');
@@ -311,6 +317,11 @@
     $('#report-notes').on('click', '.btn-del-note', (function(event) {
       var noteId = $(this).parents('.panel').attr('id');
       var response = deleteNote(noteId);
+    }));
+
+    // Handle "Expand All" button
+    $('#expand-all').on('click', (function(event) {
+      expandAll();
     }));
 
     // Handle downloading of JSON report
