@@ -78,7 +78,7 @@
     }
     else {
       {% if search_term %}
-      return createRow(index, String(item).replace(/({{ search_term }})/, '<span class="highlight">$1</span>'));
+      return createRow(index, String(item).replace(/({{ search_term }})/i, '<span class="highlight">$1</span>'));
       {% else %}
       return createRow(index, item);
       {% endif %}
