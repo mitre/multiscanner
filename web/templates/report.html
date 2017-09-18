@@ -182,13 +182,13 @@
   function getReport() {
     // Get report and populate the table
     $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
-      if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
+      if (data.hasOwnProperty('Report') && data.Report == 'Task still pending') {
         // Check again in 5 seconds
         console.log("Check again in 5 seconds");
         setTimeout(getReport, 5000);
         return;
       }
-      else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
+      else if (data.hasOwnProperty('Report') && data.Report == 'Task failed') {
         $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
         return;
       }
@@ -324,16 +324,17 @@
       expandAll();
     }));
 
-    // Handle downloading of JSON report
-    $('#dl-json').on('click', (function(event) {
-      window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
-    }));
-
     // Handle downloading binary files
     $('#dl-sample').on('click', (function(event) {
       window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
     }));
 
+    //Handle in-page search
+    $('#search-report-btn').click(function() {
+
+    });
+
+    // Handle download dropdown
     $('ul.dropdown-menu li').click(function(e) {
       if (this.id == 'getJson') {
         window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
@@ -341,7 +342,6 @@
         window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
       }
     });
-
   });
 
 </script>
@@ -363,7 +363,7 @@
       <div class="input-group">
         <input type="text" class="form-control" placeholder="Search within this report">
         <span class="input-group-btn">
-          <button class="btn btn-primary" type="button"><span class="glyphicon glyphicon-search"></span></button>
+          <button class="btn btn-primary" type="button"><span class="glyphicon glyphicon-search" id="search-report-btn"></span></button>
         </span>
       </div>
     </div>
