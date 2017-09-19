@@ -252,6 +252,69 @@
     });
   }
 
+  function matchText(node, regex, callback, excludeElements) {
+    // Takes a reference to a DOM element, iterates over its text nodes, runs a regex on them and executes a callback
+    // Modified from http://blog.alexanderdickson.com/javascript-replacing-text
+    excludeElements || (excludeElements = ['script', 'style', 'iframe', 'canvas']);
+    var child = node.firstChild;
+
+    do {
+      if (child == null) {
+        break;
+      }
+      else if (child.nodeType == 1) {  // element
+        if (excludeElements.indexOf(child.tagName.toLowerCase()) > -1) {
+            continue;
+        }
+
+        matchText(child, regex, callback, excludeElements);
+      }
+      else if (child.nodeType == 3) {  // text node
+        child.data.replace(regex, function(all) {
+            var args = [].slice.call(arguments),
+                offset = args[args.length - 2],
+                newTextNode = child.splitText(offset);
+
+            newTextNode.data = newTextNode.data.substr(all.length);
+            callback.apply(window, [child].concat(args));
+            child = newTextNode;
+        });
+      }
+    } while (child = child.nextSibling);
+
+    return node;
+  }
+
+  function inPageSearch() {
+    // Remove existing highlights
+    $('#report').find('span.highlight').each(function(index) {
+      var hText = $(this).text();
+      $(this).replaceWith(hText);
+    });
+
+    // Highlight new search term
+    var newHText = $('#search-report input').val();
+    var re = new RegExp(newHText, "i");
+    matchText($("#report").get(0), re, function(node, match, offset) {
+      var span = document.createElement("span");
+      span.className = "highlight";
+      span.textContent = match;
+      node.parentNode.insertBefore(span, node.nextSibling);
+    });
+
+    // Expand new search terms
+    $('.highlight').each(function(index) {
+      if (!$(this).is(':visible')) {
+        var shiftClick = jQuery.Event("click");
+        shiftClick.shiftKey = true;
+        $(this).parents('td').last().siblings('td.expander').trigger(shiftClick);
+      }
+    });
+
+    // Scroll to highlighted search term
+    $('html, body'). scrollTop($('.highlight').first().offset().top);
+  }
+
   $(document).ready(function($) {
     $('#report-tags').hide();
 
@@ -331,7 +394,12 @@
 
     //Handle in-page search
     $('#search-report-btn').click(function() {
-
+      inPageSearch();
+    });
+    $('#search-report input').keypress(function(e) {
+      if (e.which == 13) {  // enter key
+        inPageSearch();
+      }
     });
 
     // Handle download dropdown
@@ -363,7 +431,7 @@
       <div class="input-group">
         <input type="text" class="form-control" placeholder="Search within this report">
         <span class="input-group-btn">
-          <button class="btn btn-primary" type="button"><span class="glyphicon glyphicon-search" id="search-report-btn"></span></button>
+          <button class="btn btn-primary" type="button" id="search-report-btn"><span class="glyphicon glyphicon-search"></span></button>
         </span>
       </div>
     </div>
