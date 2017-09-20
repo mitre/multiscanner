@@ -30,7 +30,19 @@ def scan(filelist):
         #Ran into a weird issue with file locking, this fixes it
         while not goodtogo and i < 5:
             try:
-                results.append((fname, ssdeep.hash_from_file(fname)))
+                ssdeep_hash = ssdeep.hash_from_file(fname)
+                chunksize, chunk, double_chunk = ssdeep_hash.split(':')
+                chunksize = int(chunksize)
+                doc = {
+                    'ssdeep_hash': ssdeep_hash,
+                    'chunksize': chunksize,
+                    'chunk': chunk,
+                    'double_chunk': double_chunk,
+                    'analyzed': false,
+                    'matches': {},
+                }
+
+                results.append((fname, doc))
                 goodtogo = True
             except Exception as e:
                 print('ssdeeper:', e)
