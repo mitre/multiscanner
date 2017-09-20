@@ -305,9 +305,9 @@
     // Expand new search terms
     $('.highlight').each(function(index) {
       if (!$(this).is(':visible')) {
-        var shiftClick = jQuery.Event("click");
-        shiftClick.shiftKey = true;
-        $(this).parents('td').last().siblings('td.expander').trigger(shiftClick);
+        $(this).parents('td').filter(function() {
+          return $(this).css('display') == 'none';
+        }).siblings('td.expander').click();
       }
     });
 
