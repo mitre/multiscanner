@@ -38,7 +38,7 @@ def scan(filelist):
                     'chunksize': chunksize,
                     'chunk': chunk,
                     'double_chunk': double_chunk,
-                    'analyzed': false,
+                    'analyzed': 'false',
                     'matches': {},
                 }
 
