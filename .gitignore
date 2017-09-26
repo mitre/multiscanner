@@ -11,6 +11,7 @@ report.json
 __pycache__/
 *.py[cod]
 *.swp
+*.swo
 # C extensions
 *.so
 *.dll

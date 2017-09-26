@@ -32,7 +32,7 @@
 
   $(document).ready(function() {
     $("#filesUpload").fileinput({
-      uploadUrl: "{{ api_loc }}/api/v1/tasks/create/",
+      uploadUrl: "{{ api_loc }}/api/v1/tasks",
       browseOnZoneClick: true,
       allowedPreviewTypes: [],
       showUpload: false,
@@ -104,8 +104,8 @@
           return obj;
         }
         // Modules options
-		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
-		obj['modules'] = moduleList;
+        var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
+        obj['modules'] = moduleList;
         // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
@@ -162,7 +162,7 @@
 
     // Bootstrap Toggle Switch (https://www.bootply.com/92189)
     $('.btn-toggle').click(function() {
-      $(this).find('.btn').toggleClass('active');  
+      $(this).find('.btn').toggleClass('active');
       $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
       $('#adv-options > div:not(#upload-opts) input').each(function() {
         $(this).prop('disabled', !$(this).prop('disabled'));
@@ -227,7 +227,7 @@
         </div>
         <div id="adv-options" class="collapse form-group text-center">
           <div id="upload-opts" class="opt-section">
-			<div class="btn-group btn-toggle" data-toggle="buttons">
+            <div class="btn-group btn-toggle" data-toggle="buttons">
               <label class="btn btn-primary active">
                 <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
               </label>
@@ -253,11 +253,11 @@
             <div><p><i>(These apply to all files in this submission.)</i></p></div>
             {% for metadata in metadata_fields %}
             <div class="form-group metadata-group">
-			  {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
-           	  <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
-           	  <div class="input-group col-md-10">
-           	    <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
-           	  </div>
+              {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+              <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
+              <div class="input-group col-md-10">
+                <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+              </div>
             </div>
             {% endfor %}
           </div>

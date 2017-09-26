@@ -132,12 +132,16 @@
 
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
-    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
-    $.get(url, function(data, status){
-      if (status == 'success') {
-        $('#' + id).remove();
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + id;
+    $.ajax({
+      url: url,
+      type: 'DELETE',
+      success: function(data, status) {
+        if (status == 'success') {
+          $('#' + id).remove();
+        }
+        return status;
       }
-      return status;
     });
   }
 
@@ -196,7 +200,7 @@
 
   function getReport() {
     // Get report and populate the table
-    $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+    $.get("{{ api_loc }}/api/v1/tasks/{{ task_id }}/report", function(data, status){
       if (data.hasOwnProperty('Report') && data.Report == 'Task still pending') {
         // Check again in 5 seconds
         console.log("Check again in 5 seconds");
@@ -245,13 +249,18 @@
           }
         });
         $('#tags').on('itemAdded', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+            tag_response = $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
             return status;
           });
         });
         $('#tags').on('beforeItemRemove', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
-            return status;
+          tag_response = $.ajax({
+            url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags",
+            type: 'DELETE',
+            data: {'tag': event.item},
+            success: function(data, status) {
+              return status;
+            }
           });
         });
         $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
@@ -353,7 +362,7 @@
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()}
-      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", text, function(data, status){
         displayNote(data);
         return status;
       });
@@ -381,12 +390,17 @@
       var submit = $(this);
       var text = {"text": textarea.val()}
       var noteId = $(this).parents('.panel').attr('id');
-      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
-      $.post(url, text, function(data, status){
-        textarea.hide();
-        submit.hide();
-        span.html(textarea.val()).show();
-        return status;
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + noteId;
+      $.ajax({
+          url: url,
+          type: 'PUT',
+          data: text,
+          success: function(data, status) {
+            textarea.hide();
+            submit.hide();
+            span.html(textarea.val()).show();
+            return status;
+        }
       });
     }));
 
@@ -399,11 +413,6 @@
     // Handle "Expand All" button
     $('#expand-all').on('click', (function(event) {
       expandAll();
-    }));
-
-    // Handle downloading binary files
-    $('#dl-sample').on('click', (function(event) {
-      window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
     }));
 
     //Handle in-page search
@@ -419,9 +428,9 @@
     // Handle download dropdown
     $('ul.dropdown-menu li').click(function(e) {
       if (this.id == 'getJson') {
-        window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
       } else if (this.id == 'getSample') {
-        window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
       }
     });
   });

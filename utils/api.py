@@ -2,20 +2,29 @@
 '''
 THIS APP IS NOT PRODUCTION READY!! DO NOT USE!
 
-Flask app that provides a RESTful API to
-the multiscanner.
+Flask app that provides a RESTful API to MultiScanner.
 
-Proposed supported operations:
+Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
-GET /api/v1/files/get/<sha256>?raw={t|f} ----> download sample, defaults to passwd protected zip
-GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
-GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
-GET /api/v1/tasks/report/<task_id> ---> receive report in JSON
-GET /api/v1/tasks/delete/<task_id> ----> delete task_id
-GET /api/v1/tasks/file/<task_id>?raw={t|f} ----> download sample, defaults to passwd protected zip
-POST /api/v1/tasks/create ---> POST file and receive report id
-Sample POST usage:
-    curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
+GET /api/v1/files/<sha256>?raw={t|f} ----> download sample, defaults to passwd protected zip
+GET /api/v1/modules ---> Receive list of modules available
+GET /api/v1/tags ----> Receive list of all tags in use
+GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
+POST /api/v1/tasks ---> POST file and receive report id
+    Sample POST usage:
+        curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls
+GET /api/v1/tasks/<task_id> ---> receive task in JSON format
+DELETE /api/v1/tasks/<task_id> ----> delete task_id
+GET /api/v1/tasks/search/ ---> receive list of most recent report for matching samples
+GET /api/v1/tasks/search/history ---> receive list of most all reports for matching samples
+GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> download sample, defaults to passwd protected zip
+GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
+POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
+PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
+DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
+GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
+POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
+DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -214,7 +223,7 @@ def index():
 @app.route('/api/v1/modules', methods=['GET'])
 def modules():
     '''
-    Return a list of module names available for Multiscanner to use,
+    Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
     files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
@@ -233,7 +242,7 @@ def modules():
     return jsonify({'Modules': modules})
 
 
-@app.route('/api/v1/tasks/list/', methods=['GET'])
+@app.route('/api/v1/tasks', methods=['GET'])
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
@@ -281,7 +290,7 @@ def task_search():
     return jsonify(resp)
 
 
-@app.route('/api/v1/tasks/list/<int:task_id>', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -294,7 +303,7 @@ def get_task(task_id):
         abort(HTTP_NOT_FOUND)
 
 
-@app.route('/api/v1/tasks/delete/<int:task_id>', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -321,6 +330,7 @@ def save_hashed_filename(f, zipped=False):
         shutil.copy2(f.name, full_path)
     else:
         f.save(file_path)
+    print(full_path)
     return (f_name, full_path)
 
 
@@ -369,7 +379,7 @@ def queue_task(original_filename, f_name, full_path, metadata):
     return task_id
 
 
-@app.route('/api/v1/tasks/create/', methods=['POST'])
+@app.route('/api/v1/tasks', methods=['POST'])
 def create_task():
     '''
     Create a new task for a submitted file. Save the submitted file to
@@ -476,7 +486,8 @@ def create_task():
         HTTP_CREATED
     )
 
-@app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
+
+@app.route('/api/v1/tasks/<task_id>/report', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -494,7 +505,8 @@ def get_report(task_id):
     else:
         return jsonify(report_dict)
 
-@app.route('/api/v1/tasks/file/<task_id>', methods=['GET'])
+
+@app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
 def files_get_task(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -504,11 +516,12 @@ def files_get_task(task_id):
     # okay, we have report dict; get sha256
     sha256 = report_dict.get('Report', {}).get('SHA256')
     if sha256:
-       return files_get_sha256_helper(
-                sha256, 
+        return files_get_sha256_helper(
+                sha256,
                 request.args.get('raw', default=None))
     else:
         return jsonify({'Error': 'sha256 not in report!'})
+
 
 def get_report_dict(task_id):
     task = db.get_task(task_id)
@@ -522,7 +535,8 @@ def get_report_dict(task_id):
     else:
         return {'Report': 'Task failed'}, False
 
-@app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
+
+@app.route('/api/v1/tasks/<task_id>', methods=['DELETE'])
 def delete_report(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -548,7 +562,7 @@ def taglist():
     return jsonify({'Tags': response})
 
 
-@app.route('/api/v1/tasks/tags/<task_id>', methods=['GET'])
+@app.route('/api/v1/tasks/<task_id>/tags', methods=['POST', 'DELETE'])
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
@@ -557,16 +571,16 @@ def tags(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    add = request.args.get('add', '')
-    if add:
-        response = handler.add_tag(task.sample_id, add)
+    tag = request.values.get('tag', '')
+
+    if request.method == 'POST':
+        response = handler.add_tag(task.sample_id, tag)
         if not response:
             abort(HTTP_BAD_REQUEST)
         return jsonify({'Message': 'Tag Added'})
 
-    remove = request.args.get('remove', '')
-    if remove:
-        response = handler.remove_tag(task.sample_id, remove)
+    elif request.method == 'DELETE':
+        response = handler.remove_tag(task.sample_id, tag)
         if not response:
             abort(HTTP_BAD_REQUEST)
         return jsonify({'Message': 'Tag Removed'})
@@ -575,7 +589,7 @@ def tags(task_id):
 @app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
 def get_notes(task_id):
     '''
-    Add an analyst note/comment to the specified task.
+    Get one or more analyst notes/comments associated with the specified task.
     '''
     task = db.get_task(task_id)
     if not task:
@@ -601,7 +615,7 @@ def get_notes(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/note', methods=['POST'])
+@app.route('/api/v1/tasks/<task_id>/notes', methods=['POST'])
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -616,37 +630,27 @@ def add_note(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/note/<note_id>/edit', methods=['POST'])
+@app.route('/api/v1/tasks/<task_id>/notes/<note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
-    Modify the specified analyst note/comment.
+    Modify/remove the specified analyst note/comment.
     '''
     task = db.get_task(task_id)
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    response = handler.edit_note(task.sample_id, note_id,
-                                 Markup(request.form.get('text', '')).striptags())
+    if request.method == 'PUT':
+        response = handler.edit_note(task.sample_id, note_id,
+                                     Markup(request.form.get('text', '')).striptags())
+    elif request.method == 'DELETE':
+        response = handler.delete_note(task.sample_id, note_id)
+
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/note/<note_id>/delete', methods=['GET'])
-def del_note(task_id, note_id):
-    '''
-    Delete an analyst note/comment from the specified task.
-    '''
-    task = db.get_task(task_id)
-    if not task:
-        abort(HTTP_NOT_FOUND)
-
-    response = handler.delete_note(task.sample_id, note_id)
-    if not response:
-        abort(HTTP_BAD_REQUEST)
-    return jsonify(response)
-
-@app.route('/api/v1/files/get/<sha256>', methods=['GET'])
+@app.route('/api/v1/files/<sha256>', methods=['GET'])
 # get raw file - /api/v1/files/get/<sha256>?raw=true
 def files_get_sha256(sha256):
     '''
@@ -656,6 +660,7 @@ def files_get_sha256(sha256):
     raw = request.args.get('raw', default='False', type=str)
 
     return files_get_sha256_helper(sha256, raw)
+
 
 def files_get_sha256_helper(sha256, raw=None):
     '''
