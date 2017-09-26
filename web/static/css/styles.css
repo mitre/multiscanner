@@ -194,7 +194,7 @@
     z-index: 1;
 }
 
-#report-tags {
+#report-tags > div {
     display: table;
 }
 
@@ -204,7 +204,7 @@
     vertical-align: bottom;
 }
 
-#report-tags > span {
+#report-tags > div > span {
     padding-left: 15px;
     display: table-cell;
     width: 100%;

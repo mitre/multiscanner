@@ -212,7 +212,9 @@
         return;
       }
       $('#pending').hide();
+      $('#report-extras').show();
       $('#report-tags').show();
+
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
@@ -339,6 +341,7 @@
   }
 
   $(document).ready(function($) {
+    $('#report-extras').hide();
     $('#report-tags').hide();
 
     // Add report data and notes to the page
@@ -445,7 +448,7 @@
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
-  <div class="row">
+  <div class="row" id="report-extras">
     <div class="col-md-2 col-md-offset-1" id="expand-all">
       <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
       </button>
@@ -469,16 +472,16 @@
       </ul>
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-6 col-md-offset-3" id="report-tags">
+  <div class="row" id="report-tags">
+    <div class="col-md-6 col-md-offset-3">
       <label for="tags" class="pull-left">Tags</label>
       <span>
         <input type="text" id="tags" class="form-control">
       </span>
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-10 col-md-offset-1" id="pending">
+  <div class="row" id="pending">
+    <div class="col-md-10 col-md-offset-1">
       <div class="spin-outer"></div>
       <div class="spin-inner"></div>
       <div class="text-center">
