@@ -138,7 +138,8 @@ CORS(app, origins=cors_origins)
 
 batch_size = api_config['api']['batch_size']
 batch_interval = api_config['api']['batch_interval']
-
+# Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
+delete_after_scan = api_config['api'].get('delete_after_scan', False)
 
 def multiscanner_process(work_queue, exit_signal):
     '''Not used in distributed mode.
@@ -174,8 +175,9 @@ def multiscanner_process(work_queue, exit_signal):
 
         scan_time = datetime.now().isoformat()
 
-        for file_name in results:
-            os.remove(file_name)
+        if delete_after_scan:
+            for file_name in results:
+                os.remove(file_name)
 
         for item in metadata_list:
             # Use the original filename as the index instead of the full path
