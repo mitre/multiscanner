@@ -127,6 +127,7 @@
         },
         "sample": {
             "properties": {
+                "filename": {"type": "text"},
                 "ssdeep": {
                     "properties": {
                         "chunksize": {"type": "integer"},
@@ -141,6 +142,15 @@
                         "ssdeep_hash": {"type": "keyword"}
                     }
                 }
+            }
+        },
+        "reports": {
+            "_parent": {"type": "sample"}
+        },
+        "note": {
+            "_parent": {"type": "sample"},
+            "properties": {
+                "timestamp": {"type": "date"}
             }
         }
     }
