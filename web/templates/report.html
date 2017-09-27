@@ -7,6 +7,9 @@
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript">
+  var expanders = null,
+  collapsers = null;
+
   function regExpEscape(literal_string) {
     // https://stackoverflow.com/a/30851002/
     return literal_string.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
@@ -116,17 +119,26 @@
         td.find('td.cell-table').hide();
       }
     }
+
+    // Show correct "Expand/Collapse All" button
+    if (expanders.filter(':visible').length > 0) {
+      $('#expand-all').show();
+      $('#collapse-all').hide();
+    } else {
+      $('#expand-all').hide();
+      $('#collapse-all').show();
+    }
   }
 
   function expandAll() {
     var shiftClick = jQuery.Event("click");
     shiftClick.shiftKey = true;
-    $('td.expander:visible').trigger(shiftClick);
+    expanders.filter(':visible').trigger(shiftClick);
   }
 
   function collapseAll() {
     var shiftClick = jQuery.Event("click");
-    $('th.expander span:visible').click();
+    collapsers.filter(':visible').click();
   }
 
   function openNotes() {
@@ -241,7 +253,7 @@
       // Handle row expanson
       $('.expander').each(function(idx, elem) {
         $(elem).click(function(e) {
-          toggleRow($(this).parent(), e.shiftKey, e.force);
+          toggleRow($(this).parent(), e.shiftKey);
         });
       });
 
@@ -365,8 +377,12 @@
     getReport();
     getNotes();
 
-    // Update notes button based on number of notes
     $( document ).ajaxStop(function() {
+      // cache jquery selectors for performance
+      expanders = $('td.expander');
+      collapsers = $('th.expander span');
+
+      // Update notes button based on number of notes
       numNotes = $('#note-container > div').length;
       if (numNotes > 0) {
         if (numNotes === 1) {
@@ -433,15 +449,11 @@
     // Handle "Expand All" button
     $('#expand-all').on('click', (function(event) {
       expandAll();
-      $('#expand-all').hide();
-      $('#collapse-all').show();
     }));
 
     // Handle "Collapse All" button
     $('#collapse-all').on('click', (function(event) {
       collapseAll();
-      $('#collapse-all').hide();
-      $('#expand-all').show();
     }));
 
     //Handle in-page search
