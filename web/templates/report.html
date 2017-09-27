@@ -91,9 +91,10 @@
     }
   }
 
-  function toggleRow(row, expandAll) {
+  function toggleRow(row, all) {
     // Expand/collapse a single row
-    expandAll = typeof expandAll !== 'undefined' ? expandAll : false;
+    // If `all` is true, then all subfields of this row will also expand/collapse
+    all = typeof all !== 'undefined' ? all : false;
     var th = row.children('th');
     var expander = row.children('td.expander');
     var td = row.children('td.cell-table');
@@ -101,10 +102,19 @@
     expander.toggle();
     td.toggle();
     th.children('span').toggle();
-    if (expandAll && expander.is(':hidden')) {
+    if (all) {
+      if (expander.is(':hidden')) {
+        // it's expanded; expand children
         td.find('th.expander span').show();
         td.find('td.expander').hide();
         td.find('td.cell-table').show();
+      }
+      else {
+        // it's collapsed; collapse children
+        td.find('th.expander span').hide();
+        td.find('td.expander').show();
+        td.find('td.cell-table').hide();
+      }
     }
   }
 
@@ -112,6 +122,11 @@
     var shiftClick = jQuery.Event("click");
     shiftClick.shiftKey = true;
     $('td.expander:visible').trigger(shiftClick);
+  }
+
+  function collapseAll() {
+    var shiftClick = jQuery.Event("click");
+    $('th.expander span:visible').click();
   }
 
   function openNotes() {
@@ -226,7 +241,7 @@
       // Handle row expanson
       $('.expander').each(function(idx, elem) {
         $(elem).click(function(e) {
-          toggleRow($(this).parent(), e.shiftKey);
+          toggleRow($(this).parent(), e.shiftKey, e.force);
         });
       });
 
@@ -342,6 +357,7 @@
   }
 
   $(document).ready(function($) {
+    $('#collapse-all').hide();
     $('#report-extras').hide();
     $('#report-tags').hide();
 
@@ -417,6 +433,15 @@
     // Handle "Expand All" button
     $('#expand-all').on('click', (function(event) {
       expandAll();
+      $('#expand-all').hide();
+      $('#collapse-all').show();
+    }));
+
+    // Handle "Collapse All" button
+    $('#collapse-all').on('click', (function(event) {
+      collapseAll();
+      $('#collapse-all').hide();
+      $('#expand-all').show();
     }));
 
     //Handle in-page search
@@ -452,6 +477,10 @@
   <div class="row" id="report-extras">
     <div class="col-md-2 col-md-offset-1" id="expand-all">
       <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
+      </button>
+    </div>
+    <div class="col-md-2 col-md-offset-1" id="collapse-all">
+      <button class="btn btn-primary" type="button" title="Collapse all subfields"><span class="glyphicon glyphicon-minus-sign"></span>&nbsp;Collapse All
       </button>
     </div>
     <div class="col-md-6" id="search-report">
