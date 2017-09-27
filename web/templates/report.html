@@ -231,11 +231,12 @@
       });
 
       // Set up tags
-      var tagNameArray = [];
+      var tagNameArray = {{ tags|safe }};
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
-        buckets = data.Tags.buckets;
-        $.each(buckets, function( index, value ) {
-          tagNameArray.push(value.key);
+        $.each(data.Tags, function( index, value ) {
+            if (tagNameArray.indexOf(value.key) > -1) {
+            tagNameArray.push(value.key);
+          }
         });
         var tagNames = new Bloodhound({
           datumTokenizer: Bloodhound.tokenizers.whitespace,

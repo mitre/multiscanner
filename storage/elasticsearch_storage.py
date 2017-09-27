@@ -424,7 +424,7 @@ class ElasticSearchStorage(storage.Storage):
         result = self.es.search(
             index=self.index, doc_type='sample', body=script
         )
-        return result['aggregations']['tags_agg']
+        return result['aggregations']['tags_agg']['buckets']
 
     def get_notes(self, sample_id, search_after=None):
         query = {
