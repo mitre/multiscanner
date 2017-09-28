@@ -86,7 +86,7 @@
     }
     else {
       {% if search_term %}
-      var re = new RegExp(regExpEscape('{{ search_term }}'), "i");
+      var re = new RegExp('(' + regExpEscape('{{ search_term }}') + ')', "i");
       return createRow(index, String(item).replace(re, '<span class="highlight">$1</span>'));
       {% else %}
       return createRow(index, item);
