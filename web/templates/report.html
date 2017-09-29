@@ -2,35 +2,51 @@
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
 <script src="/static/js/bootstrap-tagsinput.min.js"></script>
 <script src="/static/js/typeahead.bundle.min.js"></script>
+<script src="/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript">
-  function createRow(heading, content, isArray) {
+  function createRow(heading, content, parentSize) {
     // Return a row to add to a table
-    isArray = typeof isArray !== 'undefined' ? isArray : false;
-    if (isArray) {
-      headText = '';
-    }
-    else {
-      headText = heading;
-    }
-
     if (typeof content === 'string' && content.startsWith('<table')) {
-      th = '<th class="expander">';
-      td = '<td class="expander">' + 
-           'Expand ' +
-           '<span class="glyphicon glyphicon-plus"></span>' +
-           '</td><td class="cell-table" style="display: none;">';
+      numberRowsInContent = (content.match(/<tr>/g) || []).length;
+      if (typeof parentSize === 'undefined') {
+        shouldExpand = numberRowsInContent < 4;
+      }
+      else if (numberRowsInContent == 0) {
+        shouldExpand = true;
+      }
+      else {
+        shouldExpand = (parentSize < 10 && numberRowsInContent < 10);
+      }
+      {% if search_term %}
+      if (!shouldExpand && content.indexOf('{{ search_term }}') >= 0) {
+          shouldExpand = true;
+      }
+      {% endif %}
+
+      if (shouldExpand) {
+        expanderStyle = 'style="display: none;"'
+        contentStyle = ''
+      }
+      else {
+        expanderStyle = ''
+        contentStyle = 'style="display: none;"'
+      }
+      th = '<th class="expander">' + heading +
+           ' <span class="glyphicon glyphicon-minus-sign" ' + contentStyle + '></span></th>';
+      td = '<td class="expander" ' + expanderStyle + ' title="Shift-click to expand all children">Expand' +
+           ' <span class="glyphicon glyphicon-plus-sign"></span>' +
+           '</td><td class="cell-table" ' + contentStyle + '>' +
+           content + '</td>';
     }
     else {
-      th = '<th>';
-      td = '<td>';
+      th = '<th>' + heading + '</th>';
+      td = '<td>' + content + '</td>';
     }
 
-    return '<tr>' +
-           th + headText + '</th>' +
-           td + content + '</td>' +
-           '</tr>';
+    return '<tr>' + th + td + '</tr>';
   }
 
   function createSubtable(data, isArray) {
@@ -39,29 +55,50 @@
     rows = ''
     $.each(data, function(index, item) {
       if (isArray) {
-        rows += determineType('', item);
+        rows += determineType('', item, Object.keys(data).length);
       }
       else {
-        rows += determineType(index, item);
+        rows += determineType(index, item, Object.keys(data).length);
       }
     });
     return '<table class="table table-hover"><tbody>' + rows +
            '</tbody></table>';
   }
 
-  function determineType(index, item) {
+  function determineType(index, item, parentSize) {
     // Add a row to the table bases on an item's data type
     if (item === null || item === undefined) {
       return createRow(index, '<i>None</i>');
     }
     else if (item.constructor === Array) {
-      return createRow(index, createSubtable(item, true));
+      return createRow(index, createSubtable(item, true), parentSize);
     }
     else if (!(item instanceof String) && typeof item === 'object') {
-      return createRow(index, createSubtable(item));
+      return createRow(index, createSubtable(item), parentSize);
     }
     else {
+      {% if search_term %}
+      return createRow(index, String(item).replace(/({{ search_term }})/, '<span class="highlight">$1</span>'));
+      {% else %}
       return createRow(index, item);
+      {% endif %}
+    }
+  }
+
+  function toggleRow(row, expandAll) {
+    // Expand/collapse a single row
+    expandAll = typeof expandAll !== 'undefined' ? expandAll : false;
+    var th = row.children('th');
+    var expander = row.children('td.expander');
+    var td = row.children('td.cell-table');
+
+    expander.toggle();
+    td.toggle();
+    th.children('span').toggle();
+    if (expandAll && expander.is(':hidden')) {
+        td.find('th.expander span').show();
+        td.find('td.expander').hide();
+        td.find('td.cell-table').show();
     }
   }
 
@@ -98,7 +135,7 @@
     var tsRegEx = /\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
     var m = tsRegEx.exec(data._source.timestamp)
     var ts = m[4]+":"+m[5]+" "+m[2]+"/"+m[3]+"/"+m[1];
-    
+
     panelBody = $('<div class="panel-body"><span>' + text + '</span></div>')
       .append($('<textarea class="form-control" rows="4"></textarea>').hide())
       .append($('<button type="button" class="btn btn-default btn-xs btn-send-note">Submit</button>').hide())
@@ -116,7 +153,7 @@
     empty = typeof empty !== 'undefined' ? empty : false;
     ts = typeof ts !== 'undefined' ? ts : false;
     uid = typeof uid !== 'undefined' ? uid : false;
-    
+
     var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
     if (ts && uid) {
       url += "?ts=" + ts + "&uid=" + uid;
@@ -146,9 +183,9 @@
         return;
       }
       else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
-			  $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
         return;
-	  }
+      }
       $('#pending').hide();
       $('#report-tags').show();
       if (data.Report.hasOwnProperty('tags')) {
@@ -159,15 +196,13 @@
       $.each(data.Report, function(index, item) {
         $('tbody:first').append(determineType(index, item));
       });
+      // Handle row expanson
       $('.expander').each(function(idx, elem) {
-        $(elem).click(function() {
-          $(this).siblings('td').toggle();
-          if ($(this).is('td')) {
-            $(this).hide();
-          }
+        $(elem).click(function(e) {
+          toggleRow($(this).parent(), e.shiftKey);
         });
       });
-      
+
       // Set up tags
       var tagNameArray = [];
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
@@ -203,6 +238,11 @@
           .attr("data-placement", "left")
           .tooltip();
       })
+
+      {% if search_term %}
+      // Scroll to highlighted search term
+      $('html, body'). scrollTop($('.highlight').first().offset().top);
+      {% endif %}
     });
   }
 
@@ -272,17 +312,48 @@
       var noteId = $(this).parents('.panel').attr('id');
       var response = deleteNote(noteId);
     }));
+
+    // Handle downloading of JSON report
+    $('#dl-json').on('click', (function(event) {
+      window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+    }));
+
+    // Handle downloading binary files
+    $('#dl-sample').on('click', (function(event) {
+      window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+    }));
+
+    $('ul.dropdown-menu li').click(function(e) {
+      if (this.id == 'getJson') {
+        window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+      } else if (this.id == 'getSample') {
+        window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+      }
+    });
+
   });
+
 </script>
 {% endblock %}
 
 {% block title %}Report{% endblock %}
 
 {% block content %}
-<button class="btn btn-primary" id="notes-open">Notes</button>
+<button class="btn btn-primary" id="notes-open" title="View analyst notes">Notes</button>
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
+  <div class="dropdown" id="dl-dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Download
+      <span class="caret"</span>
+    </button>
+    <ul class="dropdown-menu">
+      <li id="getJson"><a href="#">JSON</a></li>
+      <li id="getSample"><a href="#">Sample</a></li>
+      <li><a href="#">MAEC</a></li>
+    </ul>
+  </div>
+  <br><br>
   <div class="row">
     <div class="col-md-6 col-md-offset-3" id="report-tags">
       <label for="tags" class="pull-left">Tags</label>

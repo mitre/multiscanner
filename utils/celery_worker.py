@@ -9,6 +9,7 @@ import sys
 import codecs
 import configparser
 from datetime import datetime
+from socket import gethostname
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,7 +38,7 @@ DEFAULTCONF = {
 
 config_object = configparser.SafeConfigParser()
 config_object.optionxform = str
-configfile = common.get_api_config_path(multiscanner.CONFIG)
+configfile = common.get_config_path(multiscanner.CONFIG, 'api')
 config_object.read(configfile)
 
 if not config_object.has_section('celery') or not os.path.isfile(configfile):
@@ -69,7 +70,7 @@ def celery_task(files, config=multiscanner.CONFIG):
     handler(s) specified in the storage configuration file.
     '''
     # Get the storage config
-    storage_conf = multiscanner.common.get_storage_config_path(config)
+    storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscanner.multiscan(list(files), configfile=config)
@@ -84,6 +85,21 @@ def celery_task(files, config=multiscanner.CONFIG):
         task_id = files[file_]['task_id']
         file_hash = files[file_]['file_hash']
         metadata = files[file_]['metadata']
+        # Get the Scan Config that the task was run with and
+        # add it to the task metadata
+        scan_config_object = configparser.SafeConfigParser()
+        scan_config_object.optionxform = str
+        scan_config_object.read(config)
+        full_conf = common.parse_config(scan_config_object)
+        sub_conf = {}
+        for key in full_conf:
+            if key == 'main':
+                continue
+            sub_conf[key] = {}
+            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+        results[file_]['Scan Metadata'] = {}
+        results[file_]['Scan Metadata']['Worker Node'] = gethostname()
+        results[file_]['Scan Metadata']['Scan Config'] = sub_conf
 
         # Use the original filename as the value for the filename
         # in the report (instead of the tmp path assigned to the file

@@ -153,12 +153,13 @@ class Database(object):
         finally:
             ses.close()
 
-    def add_task(self, task_id=None, task_status='Pending', sample_id=None):
+    def add_task(self, task_id=None, task_status='Pending', sample_id=None, timestamp=None):
         with self.db_session_scope() as ses:
             task = Task(
                 task_id=task_id,
                 task_status=task_status,
                 sample_id=sample_id,
+                timestamp=timestamp,
             )
             try:
                 ses.add(task)

@@ -7,10 +7,12 @@ the multiscanner.
 
 Proposed supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
+GET /api/v1/files/get/<sha256>?raw={t|f} ----> download sample, defaults to passwd protected zip
 GET /api/v1/tasks/list  ---> Receive list of tasks in multiscanner
 GET /api/v1/tasks/list/<task_id> ---> receive task in JSON format
 GET /api/v1/tasks/report/<task_id> ---> receive report in JSON
 GET /api/v1/tasks/delete/<task_id> ----> delete task_id
+GET /api/v1/tasks/file/<task_id>?raw={t|f} ----> download sample, defaults to passwd protected zip
 POST /api/v1/tasks/create ---> POST file and receive report id
 Sample POST usage:
     curl -i -X POST http://localhost:8080/api/v1/tasks/create/ -F file=@/bin/ls
@@ -29,7 +31,9 @@ import time
 import hashlib
 import codecs
 import configparser
+import json
 import multiprocessing
+import subprocess
 import queue
 import shutil
 from datetime import datetime
@@ -87,7 +91,7 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
-api_config_file = multiscanner.common.get_api_config_path(multiscanner.CONFIG)
+api_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'api')
 api_config_object.read(api_config_file)
 if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
     # Write default config
@@ -103,7 +107,7 @@ db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
 db.init_db()
 
-storage_conf = multiscanner.common.get_storage_config_path(multiscanner.CONFIG)
+storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
@@ -152,8 +156,10 @@ def multiscanner_process(work_queue, exit_signal):
                 continue
 
         filelist = [item[0] for item in metadata_list]
+        #modulelist = [item[5] for item in metadata_list]
         resultlist = multiscanner.multiscan(
             filelist, configfile=multiscanner.CONFIG
+            #module_list
         )
         results = multiscanner.parse_reports(resultlist, python=True)
 
@@ -205,6 +211,28 @@ def index():
     return jsonify({'Message': 'True'})
 
 
+@app.route('/api/v1/modules', methods=['GET'])
+def modules():
+    '''
+    Return a list of module names available for Multiscanner to use,
+    and whether or not they are enabled in the config.
+    '''
+    files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
+    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
+    module_names = [m[0] for m in filenames if m[1] == '.py']
+
+    ms_config = configparser.SafeConfigParser()
+    ms_config.optionxform = str
+    ms_config.read(multiscanner.CONFIG)
+    modules = {}
+    for module in module_names:
+        try:
+            modules[module] = ms_config.get(module, 'ENABLED')
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            pass
+    return jsonify({'Modules': modules})
+
+
 @app.route('/api/v1/tasks/list/', methods=['GET'])
 def task_list():
     '''
@@ -218,7 +246,7 @@ def task_list():
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
     search_term = params['search[value]']
-    search_type = params.pop('search_type', 'Default')
+    search_type = params.pop('search_type', 'default')
     if search_term == '':
         es_result = None
     else:
@@ -296,6 +324,30 @@ def save_hashed_filename(f, zipped=False):
     return (f_name, full_path)
 
 
+class InvalidScanTimeFormatError(ValueError):
+    pass
+
+
+def import_task(file_):
+    '''
+    Import a JSON report that was downloaded from MultiScanner.
+    '''
+    report = json.loads(file_.read().decode('utf-8'))
+    try:
+        report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+    except ValueError:
+        raise InvalidScanTimeFormatError()
+
+    task_id = db.add_task(
+        sample_id=report['SHA256'],
+        task_status='Complete',
+        timestamp=report['Scan Time'],
+    )
+    storage_handler.store({report['filename']: report}, wait=False)
+
+    return task_id
+
+
 def queue_task(original_filename, f_name, full_path, metadata):
     '''
     Queue up a single new task, for a single non-archive file.
@@ -324,15 +376,51 @@ def create_task():
     UPLOAD_FOLDER, optionally unzipping it. Return task id and 201 status.
     '''
     file_ = request.files['file']
+    if request.form.get('upload_type', None) == 'import':
+        try:
+            task_id = import_task(file_)
+        except KeyError:
+            return make_response(
+                jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
+                HTTP_BAD_REQUEST)
+        except InvalidScanTimeFormatError:
+            return make_response(
+                jsonify({'Message': 'Cannot import report with \'Scan Time\' of invalid format!'}),
+                HTTP_BAD_REQUEST)
+        except (UnicodeDecodeError, ValueError):
+            return make_response(
+                jsonify({'Message': 'Cannot import non-JSON files!'}),
+                HTTP_BAD_REQUEST)
+
+        return make_response(
+            jsonify({'Message': {'task_ids': [task_id]}}),
+            HTTP_CREATED
+        )
+
     original_filename = file_.filename
 
     metadata = {}
     task_id_list = []
+    extract_dir = None
     for key in request.form.keys():
-        if key in ['file_id', 'archive-password'] or request.form[key] == '':
+        if key in ['file_id', 'archive-password', 'upload_type'] or request.form[key] == '':
             continue
+        elif key == 'modules':
+            module_names = request.form[key]
+            files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
+            modules = []
+            for f in files:
+                split = os.path.splitext(os.path.basename(f))
+                if split[0] in module_names and split[1] == '.py':
+                    modules.append(f)
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
+            if not os.path.isdir(extract_dir):
+                return make_response(
+                    jsonify({'Message': "'upload_folder' in API config is not "
+                             "a valid folder!"}),
+                    HTTP_BAD_REQUEST)
+
             # Get password if present
             if 'archive-password' in request.form:
                 password = request.form['archive-password']
@@ -340,45 +428,44 @@ def create_task():
                     password = bytes(password, 'utf-8')
             else:
                 password = ''
-            # Extract a zip
-            if zipfile.is_zipfile(file_):
-                z = zipfile.ZipFile(file_)
-                try:
-                    # NOTE: zipfile module prior to Py 2.7.4 is insecure!
-                    # https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
-                    z.extractall(path=extract_dir, pwd=password)
-                    for uzfile in z.namelist():
-                        unzipped_file = open(os.path.join(extract_dir, uzfile))
-                        f_name, full_path = save_hashed_filename(unzipped_file, True)
-                        tid = queue_task(uzfile, f_name, full_path, metadata)
-                        task_id_list.append(tid)
-                except RuntimeError as e:
-                    msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
-                    return make_response(
-                        jsonify({'Message': msg}),
-                        HTTP_BAD_REQUEST
-                    )
-            # Extract a rar
-            elif rarfile.is_rarfile(file_):
-                r = rarfile.RarFile(file_)
-                try:
-                    r.extractall(path=extract_dir, pwd=password)
-                    for urfile in r.namelist():
-                        unrarred_file = open(os.path.join(extract_dir, urfile))
-                        f_name, full_path = save_hashed_filename(unrarred_file, True)
-                        tid = queue_task(urfile, f_name, full_path, metadata)
-                        task_id_list.append(tid)
-                except RuntimeError as e:
-                    msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
-                    return make_response(
-                        jsonify({'Message': msg}),
-                        HTTP_BAD_REQUEST
-                    )
         else:
             metadata[key] = request.form[key]
 
-    if not task_id_list:
-        # File was not zipped
+    if extract_dir:
+        # Extract a zip
+        if zipfile.is_zipfile(file_):
+            z = zipfile.ZipFile(file_)
+            try:
+                # NOTE: zipfile module prior to Py 2.7.4 is insecure!
+                # https://docs.python.org/2/library/zipfile.html#zipfile.ZipFile.extract
+                z.extractall(path=extract_dir, pwd=password)
+                for uzfile in z.namelist():
+                    unzipped_file = open(os.path.join(extract_dir, uzfile))
+                    f_name, full_path = save_hashed_filename(unzipped_file, True)
+                    tid = queue_task(uzfile, f_name, full_path, metadata)
+                    task_id_list.append(tid)
+            except RuntimeError as e:
+                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                return make_response(
+                    jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST)
+        # Extract a rar
+        elif rarfile.is_rarfile(file_):
+            r = rarfile.RarFile(file_)
+            try:
+                r.extractall(path=extract_dir, pwd=password)
+                for urfile in r.namelist():
+                    unrarred_file = open(os.path.join(extract_dir, urfile))
+                    f_name, full_path = save_hashed_filename(unrarred_file, True)
+                    tid = queue_task(urfile, f_name, full_path, metadata)
+                    task_id_list.append(tid)
+            except RuntimeError as e:
+                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                return make_response(
+                    jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST)
+    else:
+        # File was not an archive to extract
         f_name, full_path = save_hashed_filename(file_)
         tid = queue_task(original_filename, f_name, full_path, metadata)
         task_id_list = [tid]
@@ -389,26 +476,51 @@ def create_task():
         HTTP_CREATED
     )
 
-
 @app.route('/api/v1/tasks/report/<task_id>', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
+
+    download = request.args.get('d', default='False', type=str)[0].lower()
+
+    report_dict, success = get_report_dict(task_id)
+    if success and (download == 't' or download == 'y' or download == '1'):
+        response = make_response(jsonify(report_dict))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+        return response
+    else:
+        return jsonify(report_dict)
+
+@app.route('/api/v1/tasks/file/<task_id>', methods=['GET'])
+def files_get_task(task_id):
+    # try to get report dict
+    report_dict, success = get_report_dict(task_id)
+    if not success:
+        return jsonify(report_dict)
+
+    # okay, we have report dict; get sha256
+    sha256 = report_dict.get('Report', {}).get('SHA256')
+    if sha256:
+       return files_get_sha256_helper(
+                sha256, 
+                request.args.get('raw', default=None))
+    else:
+        return jsonify({'Error': 'sha256 not in report!'})
+
+def get_report_dict(task_id):
     task = db.get_task(task_id)
     if not task:
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        report = handler.get_report(task.sample_id, task.timestamp)
+        return {'Report': handler.get_report(task.sample_id, task.timestamp)}, True
     elif task.task_status == 'Pending':
-        report = {'Report': 'Task still pending'}
+        return {'Report': 'Task still pending'}, False
     else:
-        report = {'Report': 'Task failed'}
-
-    return jsonify({'Report': report})
-
+        return {'Report': 'Task failed'}, False
 
 @app.route('/api/v1/tasks/delete/<task_id>', methods=['GET'])
 def delete_report(task_id):
@@ -514,7 +626,7 @@ def edit_note(task_id, note_id):
         abort(HTTP_NOT_FOUND)
 
     response = handler.edit_note(task.sample_id, note_id,
-                                 Markup(request.form['text']).striptags())
+                                 Markup(request.form.get('text', '')).striptags())
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
@@ -533,6 +645,65 @@ def del_note(task_id, note_id):
     if not response:
         abort(HTTP_BAD_REQUEST)
     return jsonify(response)
+
+@app.route('/api/v1/files/get/<sha256>', methods=['GET'])
+# get raw file - /api/v1/files/get/<sha256>?raw=true
+def files_get_sha256(sha256):
+    '''
+    Returns binary from storage. Defaults to password protected zipfile.
+    '''
+    # is there a robust way to just get this as a bool?
+    raw = request.args.get('raw', default='False', type=str)
+
+    return files_get_sha256_helper(sha256, raw)
+
+def files_get_sha256_helper(sha256, raw=None):
+    '''
+    Returns binary from storage. Defaults to password protected zipfile.
+    '''
+    file_path = os.path.join(api_config['api']['upload_folder'], sha256)
+    if not os.path.exists(file_path):
+        abort(HTTP_NOT_FOUND)
+
+    with open(file_path, "rb") as fh:
+        fh_content = fh.read()
+
+    raw = raw[0].lower()
+    if raw == 't' or raw == 'y' or raw == '1':
+        response = make_response(fh_content)
+        response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
+        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
+    else:
+        # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
+        rawname = sha256 + '.bin'
+        with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
+            raw_fh.write(fh_content)
+
+        zipname = sha256 + '.zip'
+        args = ['/usr/bin/zip', '-j',
+                os.path.join('/tmp', zipname),
+                os.path.join('/tmp', rawname),
+                '-P', 'infected']
+        proc = subprocess.Popen(args)
+        wait_seconds = 30
+        while proc.poll() is None and wait_seconds:
+            time.sleep(1)
+            wait_seconds -= 1
+
+        if proc.returncode:
+            return make_response(jsonify({'Error': 'Failed to create zip ()'.format(proc.returncode)}))
+        elif not wait_seconds:
+            proc.terminate()
+            return make_response(jsonify({'Error': 'Process timed out'}))
+        else:
+            with open(os.path.join('/tmp', zipname), 'rb') as zip_fh:
+                zip_data = zip_fh.read()
+            if len(zip_data) == 0:
+                return make_response(jsonify({'Error': 'Zip file empty'}))
+            response = make_response(zip_data)
+            response.headers['Content-Type'] = 'application/zip; charset=UTF-8'
+            response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
+    return response
 
 
 if __name__ == '__main__':

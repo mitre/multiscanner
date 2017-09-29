@@ -5,19 +5,30 @@
 <script src="/static/js/dataTables.buttons.min.js"></script>
 <script src="/static/js/buttons.bootstrap.min.js"></script>
 <script type="text/javascript">
+  var table;
+  {% if search_type %}
+  var search_type = '{{ search_type }}';
+  {% else %}
+  var search_type = 'default';
+  {% endif %}
+
   function tasksSetup(apiLoc) {
     $.fn.dataTable.ext.errMode = 'none';
-    var table = $('.table')
+    table = $('.table')
       .on( 'error.dt', function ( e, settings, techNote, message ) {
-   		console.error( message );
-   	} ) .DataTable( {
+        console.error( message );
+    } ) .DataTable( {
       processing: true,
       serverSide: true,
       ajax: {
         "url": apiLoc + "/api/v1/tasks/search/history",
         "data": function ( d ) {
-		  return $.extend( {}, d, {"search_type":$('#search_type_buttons > .btn.active input').val() } );
+          return $.extend( {}, d, {"search_type": search_type} );
         }
+      },
+      order: [[0, 'desc']],
+      search: {
+        "search": "{{ search_term }}"
       },
       columnDefs: [
         {
@@ -52,7 +63,12 @@
           if ($(this).hasClass('delete')) {
             return;
           }
-          window.document.location = $(this).parent().data("href");
+          var report_url = $(this).parent().data("href");
+          var report_param = $('#DataTables_Table_0_filter input.form-control').val();
+          if (report_param != "") {
+              report_url += "?st=" + report_param;
+          }
+          window.document.location = report_url;
         });
 
         // ...add tooltip to Delete buttons
@@ -88,24 +104,25 @@
         table.buttons().containers().appendTo('#DataTables_Table_0_length');
 
         // Add search type options
-		searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="#" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"<span><i class="glyphicon glyphicon-cog"></i></span></a>');
+        searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="#" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span><i class="glyphicon glyphicon-cog"></i></span></a>');
         $('#DataTables_Table_0_filter').append(searchOptions);
-		searchTypeButtons = $('<div id="search_type" class="collapse">' +
-			'<label for="search_type_buttons">Search Type:&nbsp;</label>' +
-			'<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
-		    '<label class="btn btn-primary active" title="Add wildcards to start and end of search term, to search as you type">' +
-		  	  '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default' +
-		    '</label>' +
-		    '<label class="btn btn-primary" title="Add quotes to start and end of search term, to search for the exact phrase">' +
-		  	  '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact' +
-		    '</label>' +
-		    '<label class="btn btn-primary" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
-		  	  '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced' +
-		    '</label>' +
-		  '</div></div>');
+        searchTypeButtons = $('<div id="search_type" class="collapse">' +
+            '<label for="search_type_buttons">Search Type:&nbsp;</label>' +
+            '<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
+            '<label class="btn btn-primary {% if search_type == 'default' %}active{% endif %}" title="Add wildcards to start and end of search term, to search as you type">' +
+            '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" {% if search_type == 'default' %}checked{% endif %}>Default' +
+            '</label>' +
+            '<label class="btn btn-primary {% if search_type == 'exact' %}active{% endif %}" title="Add quotes to start and end of search term, to search for the exact phrase">' +
+              '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off" {% if search_type == 'exact' %}checked{% endif %}>Exact' +
+            '</label>' +
+            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
+              '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off" {% if search_type == 'advanced' %}checked{% endif %}>Advanced' +
+            '</label>' +
+          '</div></div>');
         $('#DataTables_Table_0_filter').append(searchTypeButtons);
         $('#search_type :input').change(function() {
-            table.draw();
+          search_type =  $('#search_type_buttons > .btn.active input').val();
+          table.draw();
         });
       }
     });

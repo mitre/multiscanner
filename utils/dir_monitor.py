@@ -72,7 +72,7 @@ def start_observer(directory, work_queue, recursive=False):
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = multiscanner.common.get_storage_config_path(config)
+    storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)

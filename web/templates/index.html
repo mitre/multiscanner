@@ -4,6 +4,32 @@
 <link rel="stylesheet" href="/static/css/fileinput.min.css">
 <script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
+  function correctSubmitText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if ($("#filesUpload").fileinput('getFilesCount') > 1) {
+        if (upload_type == 'scan') {
+          $('#btn-scan').html('Scan them!');
+        } else if (upload_type == 'import') {
+          $('#btn-scan').html('Import them!');
+        }
+    } else {
+      if (upload_type == 'scan') {
+        $('#btn-scan').html('Scan it!');
+      } else if (upload_type == 'import') {
+        $('#btn-scan').html('Import it!');
+      }
+    }
+  }
+
+  function msgUploadText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if (upload_type == 'scan') {
+      return "Submitted to scanner"
+    } else if (upload_type == 'import') {
+      return "Imported"
+    }
+  }
+
   $(document).ready(function() {
     $("#filesUpload").fileinput({
       uploadUrl: "{{ api_loc }}/api/v1/tasks/create/",
@@ -13,7 +39,7 @@
       browseLabel: "Select File(s) …",
       removeLabel: "Clear",
       removeClass: "btn btn-danger",
-      msgUploadEnd: "Submitted to scanner",
+      msgUploadEnd: msgUploadText,
       previewTemplates: {
           other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
           '   <div class="file-thumbnail-footer">\n' +
@@ -22,7 +48,7 @@
           '    </div>' +
           '        {footer}\n' +
           '    </div>\n' +
-          '</div>\n' + 
+          '</div>\n' +
           '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
           {% for metadata in metadata_fields %}
           '<div class="form-group-sm">\n' +
@@ -52,7 +78,7 @@
           '        {upload} {delete} {other}' +
           '        <button type="button" class="add-metadata btn btn-xs btn-default" title="Add metadata">\n' +
           '            <i class="glyphicon glyphicon-th-list"></i>\n' +
-          '        </button>\n' + 
+          '        </button>\n' +
           '    </div>\n' +
           '    {drag}\n' +
           '    <div class="file-upload-indicator" title="{indicatorTitle}">{indicator}</div>\n' +
@@ -69,14 +95,25 @@
         uploadClass: 'btn btn-xs btn-primary',
       },
       uploadExtraData: function (previewId, index) {
+        // Send options along with the file
         var obj = {};
+        //Scan or Import?
+        var upload_type = $('#upload-opts .btn.active input').val();
+        obj['upload_type'] = upload_type;
+        if (upload_type == 'import') {
+          return obj;
+        }
+        // Modules options
+		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
+		obj['modules'] = moduleList;
+        // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
           if ($('#archive-password').val() !== '') {
             obj['archive-password'] = $('#archive-password').val();
           }
         }
-        // Send metadata along with the file
+        // Metadata options
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
           var val = $(this).find('input').first().val();
@@ -105,14 +142,10 @@
 
     $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
       // Scroll to file
-	  window.scrollTo(0, $("#" + previewId).offset().top);
+      window.scrollTo(0, $("#" + previewId).offset().top);
 
-      // Singularize/pluralize submit button text
-      if ($("#filesUpload").fileinput('getFilesCount') > 1) {
-        $('#btn-scan').html('Scan them!');
-      } else {
-        $('#btn-scan').html('Scan it!');
-      }
+      // Use correct submit button text
+      correctSubmitText();
 
       // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
@@ -126,6 +159,28 @@
         $('#' + previewId + '-' + field).val(value);
       });
     });
+
+    // Bootstrap Toggle Switch (https://www.bootply.com/92189)
+    $('.btn-toggle').click(function() {
+      $(this).find('.btn').toggleClass('active');  
+      $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
+      $('#adv-options > div:not(#upload-opts) input').each(function() {
+        $(this).prop('disabled', !$(this).prop('disabled'));
+      });
+      // Use correct submit button text
+      correctSubmitText();
+    });
+
+    // Add options for selecting which modules to run
+    //$.get("{{ api_loc }}/api/v1/modules", function(data) {
+    //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
+    //  for (mod in data.Modules) {
+    //    checked = (data.Modules[mod] == "True" ? "checked" : "");
+    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
+    //  }
+    //  modules += '</div>';
+    //  $('#adv-options').prepend(modules);
+    //});
 
     // Set metadata field values for all files
     $('#adv-options .metadata-group input').change(function() {
@@ -162,7 +217,7 @@
         <legend>Submit Files For Analysis</legend>
 
         <div class="form-group">
-          <div class="input-group col-md-12" id="file-group">
+          <div class="input-group" id="file-group">
             <input type="file" class='file-loading' id="filesUpload" name="file" multiple></input>
           </div>
         </div>
@@ -171,26 +226,41 @@
           <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
         </div>
         <div id="adv-options" class="collapse form-group text-center">
-          <div class="checkbox col-md-4">
-            <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
-          </div>
-          <div class="form-group archive-group">
-            <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
-            <div class="input-group col-md-5">
-              <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+          <div id="upload-opts" class="opt-section">
+			<div class="btn-group btn-toggle" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
+              </label>
+              <label class="btn btn-primary">
+                <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
+              </label>
             </div>
           </div>
-          <h4>Metadata Fields</h4>
-          <div><p><i>(These apply to all files in this submission.)</i></p></div>
-          {% for metadata in metadata_fields %}
-          <div class="form-group metadata-group">
-          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
-          <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
-          <div class="input-group col-md-10">
-            <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+          <div id="archive-opts" class="opt-section">
+            <h4>Archives</h4>
+            <div class="checkbox col-md-4">
+              <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
+            </div>
+            <div class="form-group archive-group">
+              <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
+              <div class="input-group col-md-5">
+                <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+              </div>
+            </div>
           </div>
+          <div id="metadata-opts" class="opt-section">
+            <h4>Metadata Fields</h4>
+            <div><p><i>(These apply to all files in this submission.)</i></p></div>
+            {% for metadata in metadata_fields %}
+            <div class="form-group metadata-group">
+			  {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+           	  <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
+           	  <div class="input-group col-md-10">
+           	    <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+           	  </div>
+            </div>
+            {% endfor %}
           </div>
-          {% endfor %}
         </div>
 
         <div class="form-group text-center">
