@@ -54,10 +54,18 @@ read -p "Download TrID? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   mkdir -p /opt/trid
   cd /opt/trid
-  curl http://mark0.net/download/trid_linux_64.zip > trid.zip
+  curl -#f --retry 3 http://mark0.net/download/trid_linux_64.zip > trid.zip
+  if [[ $? -ne 0 ]]; then
+    echo -e "\nFAILED\nTrying alternative mirror ..."
+    curl -#sf --retry 3 https://web.archive.org/web/20170711171339/http://mark0.net/download/trid_linux_64.zip > trid.zip
+  fi
   unzip trid.zip
   rm -f trid.zip
-  curl http://mark0.net/download/triddefs.zip > triddefs.zip
+  curl -#f --retry 3 http://mark0.net/download/triddefs.zip > triddefs.zip
+  if [[ $? -ne 0 ]]; then
+    echo -e "\nFAILED\nTrying alternative mirror ..."
+    curl -#sf --retry 3 https://web.archive.org/web/20170827141200/http://mark0.net/download/triddefs.zip > triddefs.zip
+  fi
   unzip triddefs.zip
   rm -f triddefs.zip
   chmod 755 trid

@@ -62,7 +62,7 @@ def scan(filelist, conf=DEFAULTCONF):
             waitlist.remove((filename, img, fname))
         time.sleep(20)
 
-    for key, result in results.iteritems():
+    for key, result in results.items():
         if results:
             result.sort()
             resultlist.append((key, result))

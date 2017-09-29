@@ -118,7 +118,7 @@ def _parse_scan_result(response):
             overall_results = response_json.get("scan_results", {})
             scan_details = overall_results.get("scan_details", {})
             engine_results = []
-            for engine_name, engine_output in scan_details.iteritems():
+            for engine_name, engine_output in scan_details.items():
                 scan_code = engine_output.get("scan_result_i", MD_UNKNOWN_SCAN_RES)
                 scan_result_string = MD_SCAN_RES_CODES[scan_code]
                 engine_result = {'engine_name': engine_name,
