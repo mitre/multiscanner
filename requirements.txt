@@ -3,6 +3,7 @@ future
 configparser
 #Required by modules
 bitstring
+git+https://github.com/knowmalware/pehash.git#egg=pehash
 paramiko
 pefile
 pyclamd
