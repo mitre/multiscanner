@@ -78,6 +78,12 @@ if [[ $prompt == "y" ]]; then
   echo You can update these signatures by running cd $DIR/etc/yarasigs/Yara-Rules \&\& git pull
 fi
 
+read -p "Download SupportIntelligence's Icewater yara signatures? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  git clone --depth 1 https://github.com/SupportIntelligence/Icewater.git $DIR/etc/yarasigs/Icewater
+  echo You can update these signatures by running cd $DIR/etc/yarasigs/Icewater \&\& git pull
+fi
+
 read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   pip install -e $DIR
