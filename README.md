@@ -1,5 +1,6 @@
 MultiScanner
 ============
+[![Build Status](https://travis-ci.org/mitre/multiscanner.svg)](https://travis-ci.org/mitre/multiscanner)
 
 Introduction
 ------------

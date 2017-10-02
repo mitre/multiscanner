@@ -20,7 +20,7 @@ sqlalchemy-utils
 elasticsearch
 pymongo
 #Required by tests
-nose
+pytest
 mock
 #Required by utils
 tqdm
