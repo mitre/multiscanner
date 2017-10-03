@@ -248,3 +248,29 @@ class Database(object):
                 return True
             else:
                 return False
+
+    def exists(self, sample_id):
+        '''Checks if any tasks exist in the database with the given sample_id.
+
+        Returns:
+            Task id of the most recent task with the given sample_id if one
+            exists in task database, otherwise None.
+        '''
+        with self.db_session_scope() as ses:
+            task = ses.query(Task).filter(Task.sample_id == sample_id)
+            # Query for most recent task with given sample_id
+            task_alias = aliased(Task)
+            sample_subq = (ses.query(task_alias.sample_id,
+                                     func.max(task_alias.timestamp).label('ts_max'))
+                           .group_by(task_alias.sample_id)
+                           .subquery()
+                           .alias('sample_subq'))
+            query = (ses.query(Task)
+                     .join(sample_subq,
+                           and_(Task.sample_id == sample_subq.c.sample_id,
+                                Task.timestamp == sample_subq.c.ts_max)))
+            task = query.filter(Task.sample_id == sample_id).one()
+            if task:
+                return task.task_id
+            else:
+                return None

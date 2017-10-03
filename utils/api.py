@@ -332,7 +332,6 @@ def save_hashed_filename(f, zipped=False):
         shutil.copy2(f.name, full_path)
     else:
         f.save(file_path)
-    print(full_path)
     return (f_name, full_path)
 
 
@@ -360,10 +359,16 @@ def import_task(file_):
     return task_id
 
 
-def queue_task(original_filename, f_name, full_path, metadata):
+def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
     '''
     Queue up a single new task, for a single non-archive file.
     '''
+    # If option set, or no scan exists for this sample, skip and scan sample again
+    # Otherwise, pull latest scan for this sample
+    if (not rescan):
+        t_exists = db.exists(f_name)
+        if t_exists:
+            return t_exists
 
     # Add task to sqlite DB
     # Make the sample_id equal the sha256 hash
@@ -414,9 +419,15 @@ def create_task():
     metadata = {}
     task_id_list = []
     extract_dir = None
+    rescan = False
     for key in request.form.keys():
         if key in ['file_id', 'archive-password', 'upload_type'] or request.form[key] == '':
             continue
+        elif key == 'duplicate':
+            if request.form[key] == 'latest':
+                rescan = False
+            elif request.form[key] == 'rescan':
+                rescan = True
         elif key == 'modules':
             module_names = request.form[key]
             files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
@@ -454,7 +465,7 @@ def create_task():
                 for uzfile in z.namelist():
                     unzipped_file = open(os.path.join(extract_dir, uzfile))
                     f_name, full_path = save_hashed_filename(unzipped_file, True)
-                    tid = queue_task(uzfile, f_name, full_path, metadata)
+                    tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -469,7 +480,7 @@ def create_task():
                 for urfile in r.namelist():
                     unrarred_file = open(os.path.join(extract_dir, urfile))
                     f_name, full_path = save_hashed_filename(unrarred_file, True)
-                    tid = queue_task(urfile, f_name, full_path, metadata)
+                    tid = queue_task(urfile, f_name, full_path, metadata, rescan=rescan)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -479,7 +490,7 @@ def create_task():
     else:
         # File was not an archive to extract
         f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata)
+        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
         task_id_list = [tid]
 
     msg = {'task_ids': task_id_list}

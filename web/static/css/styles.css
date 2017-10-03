@@ -72,6 +72,14 @@
     padding-bottom: 12px;
 }
 
+#archive-opts label {
+    font-weight: bold;
+}
+
+#duplicate-opts label {
+    padding: 8px 12px;
+}
+
 #file-group {
     width: 100%;
 }
