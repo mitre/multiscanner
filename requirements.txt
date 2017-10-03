@@ -3,6 +3,7 @@ future
 configparser
 #Required by modules
 bitstring
+boltons
 paramiko
 pefile
 pyclamd
