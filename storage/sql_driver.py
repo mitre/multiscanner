@@ -269,7 +269,7 @@ class Database(object):
                      .join(sample_subq,
                            and_(Task.sample_id == sample_subq.c.sample_id,
                                 Task.timestamp == sample_subq.c.ts_max)))
-            task = query.filter(Task.sample_id == sample_id).one()
+            task = query.filter(Task.sample_id == sample_id).first()
             if task:
                 return task.task_id
             else:

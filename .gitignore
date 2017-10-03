@@ -62,5 +62,6 @@ target/
 # Sqlite DB
 sqlite.db
 task_db
+testing.db
 # Tmp Upload Dir
 utils/tmp/
