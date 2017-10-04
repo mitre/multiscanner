@@ -22,6 +22,10 @@ DEFAULTCONF = {
         "Submitter Email",
         "Submitter Organization",
         "Submitter Phone",
+    ],
+    'TAGS': [
+        "Malware",
+        "Benign"
     ]
 }
 
@@ -66,7 +70,8 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           api_loc=app.config['API_LOC'], search_term=term)
+                           api_loc=app.config['API_LOC'], search_term=term,
+                           tags=app.config['TAGS'])
 
 
 @app.route('/history', methods=['GET', 'POST'])

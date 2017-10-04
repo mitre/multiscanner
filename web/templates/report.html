@@ -7,6 +7,9 @@
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript">
+  var expanders = null,
+  collapsers = null;
+
   function regExpEscape(literal_string) {
     // https://stackoverflow.com/a/30851002/
     return literal_string.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
@@ -83,7 +86,7 @@
     }
     else {
       {% if search_term %}
-      var re = new RegExp(regExpEscape('{{ search_term }}'), "i");
+      var re = new RegExp('(' + regExpEscape('{{ search_term }}') + ')', "i");
       return createRow(index, String(item).replace(re, '<span class="highlight">$1</span>'));
       {% else %}
       return createRow(index, item);
@@ -91,9 +94,10 @@
     }
   }
 
-  function toggleRow(row, expandAll) {
+  function toggleRow(row, all) {
     // Expand/collapse a single row
-    expandAll = typeof expandAll !== 'undefined' ? expandAll : false;
+    // If `all` is true, then all subfields of this row will also expand/collapse
+    all = typeof all !== 'undefined' ? all : false;
     var th = row.children('th');
     var expander = row.children('td.expander');
     var td = row.children('td.cell-table');
@@ -101,17 +105,40 @@
     expander.toggle();
     td.toggle();
     th.children('span').toggle();
-    if (expandAll && expander.is(':hidden')) {
+    if (all) {
+      if (expander.is(':hidden')) {
+        // it's expanded; expand children
         td.find('th.expander span').show();
         td.find('td.expander').hide();
         td.find('td.cell-table').show();
+      }
+      else {
+        // it's collapsed; collapse children
+        td.find('th.expander span').hide();
+        td.find('td.expander').show();
+        td.find('td.cell-table').hide();
+      }
+    }
+
+    // Show correct "Expand/Collapse All" button
+    if (expanders.filter(':visible').length > 0) {
+      $('#expand-all').show();
+      $('#collapse-all').hide();
+    } else {
+      $('#expand-all').hide();
+      $('#collapse-all').show();
     }
   }
 
   function expandAll() {
     var shiftClick = jQuery.Event("click");
     shiftClick.shiftKey = true;
-    $('td.expander:visible').trigger(shiftClick);
+    expanders.filter(':visible').trigger(shiftClick);
+  }
+
+  function collapseAll() {
+    var shiftClick = jQuery.Event("click");
+    collapsers.filter(':visible').click();
   }
 
   function openNotes() {
@@ -132,12 +159,16 @@
 
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
-    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
-    $.get(url, function(data, status){
-      if (status == 'success') {
-        $('#' + id).remove();
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + id;
+    $.ajax({
+      url: url,
+      type: 'DELETE',
+      success: function(data, status) {
+        if (status == 'success') {
+          $('#' + id).remove();
+        }
+        return status;
       }
-      return status;
     });
   }
 
@@ -196,7 +227,7 @@
 
   function getReport() {
     // Get report and populate the table
-    $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
+    $.get("{{ api_loc }}/api/v1/tasks/{{ task_id }}/report", function(data, status){
       if (data.hasOwnProperty('Report') && data.Report == 'Task still pending') {
         // Check again in 5 seconds
         console.log("Check again in 5 seconds");
@@ -208,7 +239,9 @@
         return;
       }
       $('#pending').hide();
+      $('#report-extras').show();
       $('#report-tags').show();
+
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
@@ -225,11 +258,12 @@
       });
 
       // Set up tags
-      var tagNameArray = [];
+      var tagNameArray = {{ tags|safe }};
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
-        buckets = data.Tags.buckets;
-        $.each(buckets, function( index, value ) {
-          tagNameArray.push(value.key);
+        $.each(data.Tags, function( index, value ) {
+            if (tagNameArray.indexOf(value.key) > -1) {
+            tagNameArray.push(value.key);
+          }
         });
         var tagNames = new Bloodhound({
           datumTokenizer: Bloodhound.tokenizers.whitespace,
@@ -245,13 +279,18 @@
           }
         });
         $('#tags').on('itemAdded', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+            tag_response = $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
             return status;
           });
         });
         $('#tags').on('beforeItemRemove', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
-            return status;
+          tag_response = $.ajax({
+            url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags",
+            type: 'DELETE',
+            data: {'tag': event.item},
+            success: function(data, status) {
+              return status;
+            }
           });
         });
         $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
@@ -330,14 +369,20 @@
   }
 
   $(document).ready(function($) {
+    $('#collapse-all').hide();
+    $('#report-extras').hide();
     $('#report-tags').hide();
 
     // Add report data and notes to the page
     getReport();
     getNotes();
 
-    // Update notes button based on number of notes
     $( document ).ajaxStop(function() {
+      // cache jquery selectors for performance
+      expanders = $('td.expander');
+      collapsers = $('th.expander span');
+
+      // Update notes button based on number of notes
       numNotes = $('#note-container > div').length;
       if (numNotes > 0) {
         if (numNotes === 1) {
@@ -353,7 +398,7 @@
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()}
-      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", text, function(data, status){
         displayNote(data);
         return status;
       });
@@ -381,12 +426,17 @@
       var submit = $(this);
       var text = {"text": textarea.val()}
       var noteId = $(this).parents('.panel').attr('id');
-      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
-      $.post(url, text, function(data, status){
-        textarea.hide();
-        submit.hide();
-        span.html(textarea.val()).show();
-        return status;
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + noteId;
+      $.ajax({
+          url: url,
+          type: 'PUT',
+          data: text,
+          success: function(data, status) {
+            textarea.hide();
+            submit.hide();
+            span.html(textarea.val()).show();
+            return status;
+        }
       });
     }));
 
@@ -401,9 +451,9 @@
       expandAll();
     }));
 
-    // Handle downloading binary files
-    $('#dl-sample').on('click', (function(event) {
-      window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+    // Handle "Collapse All" button
+    $('#collapse-all').on('click', (function(event) {
+      collapseAll();
     }));
 
     //Handle in-page search
@@ -419,9 +469,9 @@
     // Handle download dropdown
     $('ul.dropdown-menu li').click(function(e) {
       if (this.id == 'getJson') {
-        window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
       } else if (this.id == 'getSample') {
-        window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
       }
     });
   });
@@ -436,9 +486,13 @@
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
-  <div class="row">
+  <div class="row" id="report-extras">
     <div class="col-md-2 col-md-offset-1" id="expand-all">
       <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
+      </button>
+    </div>
+    <div class="col-md-2 col-md-offset-1" id="collapse-all">
+      <button class="btn btn-primary" type="button" title="Collapse all subfields"><span class="glyphicon glyphicon-minus-sign"></span>&nbsp;Collapse All
       </button>
     </div>
     <div class="col-md-6" id="search-report">
@@ -460,16 +514,16 @@
       </ul>
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-6 col-md-offset-3" id="report-tags">
+  <div class="row" id="report-tags">
+    <div class="col-md-6 col-md-offset-3">
       <label for="tags" class="pull-left">Tags</label>
       <span>
         <input type="text" id="tags" class="form-control">
       </span>
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-10 col-md-offset-1" id="pending">
+  <div class="row" id="pending">
+    <div class="col-md-10 col-md-offset-1">
       <div class="spin-outer"></div>
       <div class="spin-inner"></div>
       <div class="text-center">

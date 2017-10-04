@@ -37,13 +37,18 @@ if not os.path.isdir(TEST_UPLOAD_FOLDER):
     os.makedirs(TEST_UPLOAD_FOLDER)
 api.api_config['api']['upload_folder'] = TEST_UPLOAD_FOLDER
 
-TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
+TEST_REPORT = {
+    'MD5': '96b47da202ddba8d7a6b91fecbf89a41',
+    'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f',
+    'libmagic': 'a /bin/python script text executable',
+    'filename': '/opt/other_file'
+}
 
 
 def post_file(app):
     return app.post(
-        '/api/v1/tasks/create/',
-        data={'file': (BytesIO(b'my file contents'), 'hello world.txt'),})
+        '/api/v1/tasks',
+        data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
 class MockMultiscannerCelery(object):
@@ -78,12 +83,12 @@ class TestURLCase(unittest.TestCase):
 
     def test_empty_db(self):
         expected_response = {'Tasks': []}
-        resp = self.app.get('/api/v1/tasks/list/')
+        resp = self.app.get('/api/v1/tasks')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_create_first_task(self):
-        expected_response = {'Message': {'task_id': 1}}
+        expected_response = {'Message': {'task_ids': [1]}}
         resp = post_file(self.app)
         self.assertEqual(resp.status_code, api.HTTP_CREATED)
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
@@ -113,17 +118,17 @@ class TestTaskCreateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Pending',
-                'report_id': None,
-                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9',
+                'timestamp': None,
             }
         }
-        resp = self.app.get('/api/v1/tasks/list/1')
+        resp = self.app.get('/api/v1/tasks/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_get_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
-        resp = self.app.get('/api/v1/tasks/list/2')
+        resp = self.app.get('/api/v1/tasks/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
@@ -131,10 +136,10 @@ class TestTaskCreateCase(unittest.TestCase):
         expected_response = {'Tasks': [{
             'task_id': 1,
             'task_status': 'Pending',
-            'report_id': None,
-            'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+            'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9',
+            'timestamp': None,
         }]}
-        resp = self.app.get('/api/v1/tasks/list/')
+        resp = self.app.get('/api/v1/tasks')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
@@ -159,7 +164,6 @@ class TestTaskUpdateCase(unittest.TestCase):
         self.sql_db.update_task(
             task_id=1,
             task_status='Complete',
-            report_id='report1'
         )
 
     def test_get_updated_task(self):
@@ -167,17 +171,17 @@ class TestTaskUpdateCase(unittest.TestCase):
             'Task': {
                 'task_id': 1,
                 'task_status': 'Complete',
-                'report_id': 'report1',
-                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9'
+                'sample_id': '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9',
+                'timestamp': None,
             }
         }
-        resp = self.app.get('/api/v1/tasks/list/1')
+        resp = self.app.get('/api/v1/tasks/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_delete_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
-        resp = self.app.get('/api/v1/tasks/delete/2')
+        resp = self.app.delete('/api/v1/tasks/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
@@ -202,13 +206,13 @@ class TestTaskDeleteCase(unittest.TestCase):
 
     def test_delete_task(self):
         expected_response = {'Message': 'Deleted'}
-        resp = self.app.get('/api/v1/tasks/delete/1')
+        resp = self.app.delete('/api/v1/tasks/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_delete_nonexistent_task(self):
         expected_response = api.TASK_NOT_FOUND
-        resp = self.app.get('/api/v1/tasks/delete/2')
+        resp = self.app.delete('/api/v1/tasks/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
@@ -220,19 +224,23 @@ class TestTaskDeleteCase(unittest.TestCase):
 
 class TestReportCase(unittest.TestCase):
     def setUp(self):
+        self.sql_db = Database(config=DB_CONF)
+        self.sql_db.init_db()
         self.app = api.app.test_client()
+        # Replace the real production DB w/ a testing DB
+        api.db = self.sql_db
 
     '''
     def test_get_report(self):
         expected_response = {'Report': TEST_REPORT}
-        resp = self.app.get('/api/v1/reports/1')
+        resp = self.app.get('/api/v1/tasks/1/report')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
     '''
 
     def test_get_nonexistent_report(self):
         expected_response = api.TASK_NOT_FOUND
-        resp = self.app.get('/api/v1/reports/42')
+        resp = self.app.get('/api/v1/tasks/42/report')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
