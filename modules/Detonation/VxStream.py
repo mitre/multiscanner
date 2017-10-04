@@ -206,7 +206,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     type_='json', verify=conf['Verify']
                 )
                 if report:
-                    resultlist.append((fname, report))
+                    resultlist.append((fname, report.get('analysis')))
                     tasks.remove((fname, file_sha256))
 
             # Check for dead tasks
