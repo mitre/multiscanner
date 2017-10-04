@@ -11,6 +11,7 @@ report.json
 __pycache__/
 *.py[cod]
 *.swp
+*.swo
 # C extensions
 *.so
 *.dll
@@ -61,5 +62,6 @@ target/
 # Sqlite DB
 sqlite.db
 task_db
+testing.db
 # Tmp Upload Dir
 utils/tmp/

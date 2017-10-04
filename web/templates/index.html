@@ -32,7 +32,7 @@
 
   $(document).ready(function() {
     $("#filesUpload").fileinput({
-      uploadUrl: "{{ api_loc }}/api/v1/tasks/create/",
+      uploadUrl: "{{ api_loc }}/api/v1/tasks",
       browseOnZoneClick: true,
       allowedPreviewTypes: [],
       showUpload: false,
@@ -97,15 +97,18 @@
       uploadExtraData: function (previewId, index) {
         // Send options along with the file
         var obj = {};
-        //Scan or Import?
+        // Scan or Import?
         var upload_type = $('#upload-opts .btn.active input').val();
         obj['upload_type'] = upload_type;
         if (upload_type == 'import') {
           return obj;
         }
+        // Pull latest or Rescan?
+        var duplicate_action = $('#duplicate-opts .btn.active input').val();
+        obj['duplicate'] = duplicate_action;
         // Modules options
-		var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
-		obj['modules'] = moduleList;
+        var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
+        obj['modules'] = moduleList;
         // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
@@ -161,11 +164,14 @@
     });
 
     // Bootstrap Toggle Switch (https://www.bootply.com/92189)
-    $('.btn-toggle').click(function() {
-      $(this).find('.btn').toggleClass('active');  
+    $('#upload-opts .btn-toggle').click(function() {
+      $(this).find('.btn').toggleClass('active');
       $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
       $('#adv-options > div:not(#upload-opts) input').each(function() {
         $(this).prop('disabled', !$(this).prop('disabled'));
+      });
+      $('#adv-options > div:not(#upload-opts) .btn-toggle label').each(function() {
+        $(this).toggleClass('disabled');
       });
       // Use correct submit button text
       correctSubmitText();
@@ -227,12 +233,23 @@
         </div>
         <div id="adv-options" class="collapse form-group text-center">
           <div id="upload-opts" class="opt-section">
-			<div class="btn-group btn-toggle" data-toggle="buttons">
+            <div class="btn-group btn-toggle" data-toggle="buttons">
               <label class="btn btn-primary active">
                 <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
               </label>
               <label class="btn btn-primary">
                 <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
+              </label>
+            </div>
+          </div>
+          <div id="duplicate-opts" class="opt-section">
+            <label class="col-md-5">How to handle resubmissions?</label>
+            <div class="btn-group btn-toggle" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                <input name="duplicate" value="latest" type="radio" title="Pull the latest report" checked> Pull latest
+              </label>
+              <label class="btn btn-primary">
+                <input name="duplicate" value="rescan" type="radio" title="Re-scan and generate a new report"> Re-scan
               </label>
             </div>
           </div>
@@ -253,11 +270,11 @@
             <div><p><i>(These apply to all files in this submission.)</i></p></div>
             {% for metadata in metadata_fields %}
             <div class="form-group metadata-group">
-			  {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
-           	  <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
-           	  <div class="input-group col-md-10">
-           	    <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
-           	  </div>
+              {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+              <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
+              <div class="input-group col-md-10">
+                <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+              </div>
             </div>
             {% endfor %}
           </div>
