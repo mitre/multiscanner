@@ -4,7 +4,9 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import mmap
 try:
+    import floss
     from floss.identification_manager import identify_decoding_functions
+    from floss.main import decode_strings, get_all_plugins, sanitize_string_for_printing
     from floss.stackstrings import extract_stackstrings
     from floss.strings import extract_ascii_strings, extract_unicode_strings
     from floss.utils import get_vivisect_meta_info
@@ -34,7 +36,7 @@ def check(conf=DEFAULTCONF):
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
-    selected_plugins = floss.main.get_all_plugins()
+    selected_plugins = get_all_plugins()
 
     for fname in filelist:
         with open(fname, "rb") as f:
@@ -53,8 +55,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 ret["static_utf16_strings"] = extracted_unicode
 
             decoding_functions_candidates = identify_decoding_functions(vw, selected_plugins, vw.getFunctions())
-            decoded_strings = floss.main.decode_strings(vw, decoding_functions_candidates, conf["min-str-length"])
-            decoded_strings = list(floss.main.sanitize_string_for_printing(s.s) for s in decoded_strings)
+            decoded_strings = decode_strings(vw, decoding_functions_candidates, conf["min-str-length"])
+            decoded_strings = list(sanitize_string_for_printing(s.s) for s in decoded_strings)
 
             if decoded_strings:
                 ret["decoded_strings"] = decoded_strings
