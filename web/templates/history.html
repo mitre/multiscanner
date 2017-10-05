@@ -80,16 +80,19 @@
         // ...add delete functionality
         $('.btn-danger').click(function() {
           var t_id = this.dataset.id;
-          $.get(apiLoc + "/api/v1/tasks/delete/" + t_id)
-            .done(function (data, status, jqXHR) {
+          $.ajax({
+            url: apiLoc + "/api/v1/tasks/" + t_id,
+            type: 'DELETE',
+            success: function(data, status) {
               $('td').filter(function() {
                 return this.innerHTML === t_id;
               }).parent().remove();
               $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
-            })
-            .fail(function (data, status, jqXHR) {
+            },
+            error: function(data, status) {
               $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
-            });
+            }
+          });
         });
       },
       buttons: [
