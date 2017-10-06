@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import json
+import mock
 try:
     from StringIO import StringIO as BytesIO
 except:
@@ -23,6 +24,7 @@ sys.path.insert(0, os.path.dirname(CWD))
 import api
 from sql_driver import Database
 from storage import Storage
+from elasticsearch_storage import ElasticSearchStorage
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
@@ -64,7 +66,7 @@ class MockStorage(object):
         return True
 
 
-class TestURLCase(unittest.TestCase):
+class APITestCase(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
         self.sql_db.init_db()
@@ -73,6 +75,16 @@ class TestURLCase(unittest.TestCase):
         api.db = self.sql_db
         if not os.path.isdir(TEST_UPLOAD_FOLDER):
             os.makedirs(TEST_UPLOAD_FOLDER)
+
+    def tearDown(self):
+        # Clean up Test DB and upload folder
+        os.remove(TEST_DB_PATH)
+        shutil.rmtree(TEST_UPLOAD_FOLDER)
+
+
+class TestURLCase(APITestCase):
+    def setUp(self):
+        super(self.__class__, self).setUp()
         api.multiscanner_celery = MockMultiscannerCelery
 
     def test_index(self):
@@ -93,21 +105,18 @@ class TestURLCase(unittest.TestCase):
         self.assertEqual(resp.status_code, api.HTTP_CREATED)
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def tearDown(self):
-        # Clean up Test DB and upload folder
-        os.remove(TEST_DB_PATH)
-        shutil.rmtree(TEST_UPLOAD_FOLDER)
+    def test_get_modules(self):
+        resp = self.app.get('/api/v1/modules').get_data()
+        self.assertIn('Modules', resp)
+        self.assertIn('ExifToolsScan', resp)
+        self.assertIn('McAfeeScan', resp)
+        self.assertIn('ClamAVScan', resp)
+        self.assertIn('YaraScan', resp)
 
 
-class TestTaskCreateCase(unittest.TestCase):
+class TestTaskCreateCase(APITestCase):
     def setUp(self):
-        self.sql_db = Database(config=DB_CONF)
-        self.sql_db.init_db()
-        self.app = api.app.test_client()
-        # Replace the real production DB w/ a testing DB
-        api.db = self.sql_db
-        if not os.path.isdir(TEST_UPLOAD_FOLDER):
-            os.makedirs(TEST_UPLOAD_FOLDER)
+        super(self.__class__, self).setUp()
         api.multiscanner_celery = MockMultiscannerCelery
 
         # populate the DB w/ a task
@@ -143,21 +152,10 @@ class TestTaskCreateCase(unittest.TestCase):
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def tearDown(self):
-        # Clean up Test DB and upload folder
-        os.remove(TEST_DB_PATH)
-        shutil.rmtree(TEST_UPLOAD_FOLDER)
 
-
-class TestTaskUpdateCase(unittest.TestCase):
+class TestTaskUpdateCase(APITestCase):
     def setUp(self):
-        self.sql_db = Database(config=DB_CONF)
-        self.sql_db.init_db()
-        self.app = api.app.test_client()
-        # Replace the real production DB w/ a testing DB
-        api.db = self.sql_db
-        if not os.path.isdir(TEST_UPLOAD_FOLDER):
-            os.makedirs(TEST_UPLOAD_FOLDER)
+        super(self.__class__, self).setUp()
 
         # populate the DB w/ a task
         post_file(self.app)
@@ -185,21 +183,10 @@ class TestTaskUpdateCase(unittest.TestCase):
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def tearDown(self):
-        # Clean up Test DB and upload folder
-        os.remove(TEST_DB_PATH)
-        shutil.rmtree(TEST_UPLOAD_FOLDER)
 
-
-class TestTaskDeleteCase(unittest.TestCase):
+class TestTaskDeleteCase(APITestCase):
     def setUp(self):
-        self.sql_db = Database(config=DB_CONF)
-        self.sql_db.init_db()
-        self.app = api.app.test_client()
-        # Replace the real production DB w/ a testing DB
-        api.db = self.sql_db
-        if not os.path.isdir(TEST_UPLOAD_FOLDER):
-            os.makedirs(TEST_UPLOAD_FOLDER)
+        super(self.__class__, self).setUp()
 
         # populate the DB w/ a task
         post_file(self.app)
@@ -216,27 +203,24 @@ class TestTaskDeleteCase(unittest.TestCase):
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def tearDown(self):
-        # Clean up Test DB and upload folder
-        os.remove(TEST_DB_PATH)
-        shutil.rmtree(TEST_UPLOAD_FOLDER)
 
-
-class TestReportCase(unittest.TestCase):
+class TestReportCase(APITestCase):
     def setUp(self):
-        self.sql_db = Database(config=DB_CONF)
-        self.sql_db.init_db()
-        self.app = api.app.test_client()
-        # Replace the real production DB w/ a testing DB
-        api.db = self.sql_db
+        super(self.__class__, self).setUp()
+        # populate the DB w/ a task
+        post_file(self.app)
+        self.sql_db.update_task(
+            task_id=1,
+            task_status='Complete',
+        )
 
-    '''
-    def test_get_report(self):
+    @mock.patch('api.handler')
+    def test_get_report(self, mock_handler):
+        mock_handler.get_report.return_value = TEST_REPORT
         expected_response = {'Report': TEST_REPORT}
         resp = self.app.get('/api/v1/tasks/1/report')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
-    '''
 
     def test_get_nonexistent_report(self):
         expected_response = api.TASK_NOT_FOUND
@@ -244,5 +228,82 @@ class TestReportCase(unittest.TestCase):
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def tearDown(self):
-        pass
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
+    def test_search_analyses(self, mock_handler, mock_db):
+        mock_handler.search.return_value = [1]
+        self.app.get('/api/v1/tasks/search?search[value]=other_file')
+
+        hargs, hkwargs = mock_handler.search.call_args_list[0]
+        self.assertEqual(hargs[0], 'other_file')
+        self.assertEqual(hargs[1], 'default')
+
+        dbargs, dbkwargs = mock_db.search.call_args_list[0]
+        self.assertEqual(dbargs[0]['search[value]'], 'other_file')
+        self.assertEqual(dbargs[1], [1])
+
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
+    def test_search_history(self, mock_handler, mock_db):
+        mock_handler.search.return_value = [1]
+        self.app.get('/api/v1/tasks/search/history?search[value]=other_file')
+
+        hargs, hkwargs = mock_handler.search.call_args_list[0]
+        self.assertEqual(hargs[0], 'other_file')
+        self.assertEqual(hargs[1], 'default')
+
+        dbargs, dbkwargs = mock_db.search.call_args_list[0]
+        self.assertEqual(dbargs[0]['search[value]'], 'other_file')
+        self.assertEqual(dbargs[1], [1])
+        self.assertEqual(dbkwargs['return_all'], True)
+
+
+class TestTagsNotesCase(APITestCase):
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        # populate the DB w/ a task
+        post_file(self.app)
+        self.sql_db.update_task(
+            task_id=1,
+            task_status='Complete',
+        )
+
+    @mock.patch('api.handler')
+    def test_add_tags(self, mock_handler):
+        self.app.post('/api/v1/tasks/1/tags', data={'tag': 'foo'})
+
+        args, kwargs = mock_handler.add_tag.call_args_list[0]
+        self.assertEqual(args[1], 'foo')
+
+    @mock.patch('api.handler')
+    def test_remove_tags(self, mock_handler):
+        self.app.delete('/api/v1/tasks/1/tags', data={'tag': 'foo'})
+
+        args, kwargs = mock_handler.remove_tag.call_args_list[0]
+        self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
+        self.assertEqual(args[1], 'foo')
+
+    @mock.patch('api.handler')
+    def test_add_notes(self, mock_handler):
+        self.app.post('/api/v1/tasks/1/notes', data={'text': 'foo'})
+
+        args, kwargs = mock_handler.add_note.call_args_list[0]
+        self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
+        self.assertEqual(args[1]['text'], 'foo')
+
+    @mock.patch('api.handler')
+    def test_edit_notes(self, mock_handler):
+        self.app.put('/api/v1/tasks/1/notes/1', data={'text': 'bar'})
+
+        args, kwargs = mock_handler.edit_note.call_args_list[0]
+        self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
+        self.assertEqual(args[1], '1')
+        self.assertEqual(args[2], 'bar')
+
+    @mock.patch('api.handler')
+    def test_remove_notes(self, mock_handler):
+        self.app.delete('/api/v1/tasks/1/notes/1')
+
+        args, kwargs = mock_handler.delete_note.call_args_list[0]
+        self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
+        self.assertEqual(args[1], '1')
