@@ -113,35 +113,6 @@ class ElasticSearchStorage(storage.Storage):
         except TransportError:
             pass
 
-        # Create parent-child mappings if don't exist yet
-        mappings = es_indices.get_mapping(index=self.index)[self.index]['mappings'].keys()
-        if self.doc_type not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
-                '_parent': {
-                    'type': 'sample'
-                }
-            })
-        if 'note' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='note', body={
-                '_parent': {
-                    'type': 'sample'
-                },
-                'properties': {
-                    'timestamp': {
-                        'type': 'date',
-                    }
-                }
-            })
-
-        if 'sample' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='sample', body={
-                'properties': {
-                    'filename': {
-                        'type': 'text'
-                    }
-                }
-            })
-
         # Create de-dot preprocessor if doesn't exist yet
         try:
             dedot = self.es.ingest.get_pipeline('dedot')
