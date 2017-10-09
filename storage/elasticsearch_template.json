@@ -144,7 +144,7 @@
                 }
             }
         },
-        "reports": {
+        "report": {
             "_parent": {"type": "sample"}
         },
         "note": {
