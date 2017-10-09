@@ -42,14 +42,12 @@ setup(
         'configparser',
         # Required by modules
         'bitstring',
-        'floss',
         'paramiko',
         'pefile',
         'pyclamd',
         'python-magic',
         'requests',
         'ssdeep',
-        'vivisect',
         # Required by API
         'flask',
         'sqlalchemy',
