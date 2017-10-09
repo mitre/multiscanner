@@ -117,7 +117,6 @@ def post_to_vxstream(f_name, environment_id,
                 print('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
         except requests.exceptions.HTTPError as err:
             print(err)
-            #traceback.print_exc()
 
 
 def get_file_status(file_sha256, status_url, environment_id, apikey, secret, verify):
@@ -136,7 +135,7 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
     except requests.exceptions.HTTPError as err:
         print(err)
 
-
+        
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
     user_agent = {'User-agent': 'VxStream Sandbox'}
     params = {'apikey': apikey, 'secret': secret, 'environmentId': environment_id, 'type': type_}
@@ -206,7 +205,16 @@ def scan(filelist, conf=DEFAULTCONF):
                     type_='json', verify=conf['Verify']
                 )
                 if report:
-                    resultlist.append((fname, report.get('analysis')))
+                    # Drop some additional values from report
+                    for field in ['strings', 'signatures_chronology',
+                        'imageprocessing', 'multiscan']:
+                        try:
+                            report['analysis']['final'].pop(field)
+                        except KeyError:
+                            pass
+                    # Add the link to Web Report
+                    report['analysis']['final']['web_report'] = '<a href="https://vxstream.malware.xbis/sample/{}?environmentId={}" target="_blank">View the report in VxStream</a>'.format(file_sha256, conf['Environment ID'])
+                    resultlist.append((fname, report.get('analysis', {}).get('final')))
                     tasks.remove((fname, file_sha256))
 
             # Check for dead tasks
