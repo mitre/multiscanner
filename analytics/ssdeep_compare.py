@@ -2,7 +2,7 @@
 
 '''
 Simple implementation of ssdeep comparisions using
-a few optimizations described at the link below.
+a few optimizations described at the links below.
 
 https://www.virusbulletin.com/virusbulletin/2015/11/optimizing-ssdeep-use-scale
 http://www.intezer.com/intezer-community-tip-ssdeep-comparisons-with-elasticsearch/
@@ -24,7 +24,8 @@ if MS_WD not in sys.path:
 import multiscanner
 import common
 import elasticsearch_storage
-from elasticsearch_dsl import Search, Q
+
+VERBOSE = True
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 config_object = configparser.SafeConfigParser()
@@ -49,51 +50,114 @@ doc_type = 'sample'
 
 # get all of the samples where ssdeep_compare has not been run 
 # e.g., ssdeepmeta.analyzed == false
-new_ssdeep_searcher = Search(using=es, doc_type=doc_type)
+query = {
+    '_source': ['ssdeep', 'SHA256'],
+    'query': {
+        'bool': {
+            'must': [
+                { 'match': { 'ssdeep.analyzed': 'false' }}
+            ]
+        }
+    }
+}
 
-# should probably include some batch functionality to make sure each 
-# report has this
-q = Q('match', **{ 'ssdeep.analyzed': 'false' })
-new_ssdeep_searcher = new_ssdeep_searcher.source(['ssdeep', 'SHA256'])
+results = es.search(index, body=query)
 
-for new_ssdeep_hit in new_ssdeep_searcher.scan():
-    chunksize = new_ssdeep_hit.ssdeep.chunksize
-    chunk = new_ssdeep_hit.ssdeep.chunk
-    double_chunk = new_ssdeep_hit.ssdeep.double_chunk
-    new_sha256 = new_ssdeep_hit.SHA256
+for new_ssdeep_hit in results['hits']['hits']:
+    new_ssdeep_hit_src = new_ssdeep_hit.get('_source')
+    chunksize = new_ssdeep_hit_src.get('ssdeep').get('chunksize')
+    chunk = new_ssdeep_hit_src.get('ssdeep').get('chunk')
+    double_chunk = new_ssdeep_hit_src.get('ssdeep').get('double_chunk')
+    new_sha256 = new_ssdeep_hit_src.get('SHA256')
 
     # build new query for docs that match our optimizations
-    opti_searcher = Search(using=es, doc_type=doc_type)
-    opti_searcher= opti_searcher.source(['ssdeep', 'SHA256'])
-    q_chunksize = Q('terms', **{ 'ssdeep.chunksize': [chunksize, chunksize / 2, chunksize * 2] })
-    q_chunk_7gram = Q('match', **{ 'ssdeep.chunk': chunk })
-    q_double_chunk_7gram = Q('match', **{ 'ssdeep.double_chunk': double_chunk })
-    q_diff_sample = ~Q('match', SHA256=new_sha256)
-    q = q_chunksize & (q_chunk_7gram | q_double_chunk_7gram) & q_diff_sample
-    opti_searcher = opti_searcher.query(q)
+    # https://github.com/intezer/ssdeep-elastic/blob/master/ssdeep_elastic/ssdeep_querying.py#L35
+    opti_query = {
+        '_source': ['ssdeep', 'SHA256'],
+        'query': {
+            'bool': {
+                'must': [
+                    {
+                        'terms': {
+                            'ssdeep.chunksize': [chunksize, chunksize / 2, chunksize * 2]
+                        }
+                    },
+                    {
+                        'bool': {
+                            'should': [
+                                {
+                                    'match': {
+                                        'ssdeep.chunk': {
+                                            'query': chunk
+                                        }
+                                    }
+                                },
+                                {
+                                    'match': {
+                                        'ssdeep.double_chunk': {
+                                            'query': double_chunk
+                                        }
+                                    }
+                                }
+                            ],
+                            'minimum_should_match': 1
+                        }
+                    },
+                    {
+                        'bool': {
+                            'must_not': {
+                                'match': {
+                                    'SHA256': new_sha256
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    # this bool condition isn't working how I expect
+    #   if we have already updated the match dictionary to
+    #   include a hit, don't rerun it for the inverse
+                    # {
+                    #     'bool': {
+                    #         'must_not': {
+                    #             'exists': {
+                    #                 'field': 'ssdeep.matches.' + new_sha256
+                    #             }
+                    #         }
+                    #     }
+                    # }
+
+    opti_search_results = es.search(index, body=opti_query)
 
     # for each hit, ssdeep.compare != 0; update the matches
-    for opti_hit in opti_searcher.scan():
-        opti_sha256 = opti_hit.SHA256
+    for opti_hit in opti_search_results['hits']['hits']:
+        opti_hit_src = opti_hit.get('_source')
+        opti_sha256 = opti_hit_src.get('SHA256')
         result = ssdeep.compare(
-                    new_ssdeep_hit.ssdeep.ssdeep_hash,
-                    opti_hit.ssdeep.ssdeep_hash)
+                    new_ssdeep_hit_src.get('ssdeep').get('ssdeep_hash'),
+                    opti_hit_src.get('ssdeep').get('ssdeep_hash'))
 
-        print(new_ssdeep_hit.SHA256, opti_hit.SHA256, result)
-        print()
+        if VERBOSE:
+            print(
+                new_ssdeep_hit_src.get('SHA256'),
+                opti_hit_src.get('SHA256'),
+                result)
 
         msg = { 'doc': { 'ssdeep': { 'matches': { opti_sha256: result } } } }
         es.update(
             index=index,
             doc_type=doc_type,
-            id=new_ssdeep_hit.meta.id,
+            id=new_ssdeep_hit.get('_id'),
             body=json.dumps(msg))
 
         msg = { 'doc': { 'ssdeep': { 'matches': { new_sha256: result } } } }
         es.update(
             index=index,
             doc_type=doc_type,
-            id=opti_hit.meta.id,
+            id=opti_hit.get('_id'),
             body=json.dumps(msg))
 
     # analytic has run against sample, set ssdeep.analyzed = true
@@ -101,6 +165,6 @@ for new_ssdeep_hit in new_ssdeep_searcher.scan():
     es.update(
         index=index,
         doc_type=doc_type,
-        id=new_ssdeep_hit.meta.id,
+        id=new_ssdeep_hit.get('_id'),
         body=json.dumps(msg))
 
