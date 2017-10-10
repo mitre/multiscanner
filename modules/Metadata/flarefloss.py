@@ -12,7 +12,7 @@ TYPE = 'Metadata'
 NAME = 'floss'
 DEFAULTCONF = {
     'ENABLED': False,
-    'path': 'C:\\floss64.exe',
+    'path': '/opt/floss',
     'cmdline': [u'--show-metainfo']
 }
 
