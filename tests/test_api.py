@@ -108,10 +108,6 @@ class TestURLCase(APITestCase):
     def test_get_modules(self):
         resp = self.app.get('/api/v1/modules').get_data()
         self.assertIn('Modules', resp)
-        self.assertIn('ExifToolsScan', resp)
-        self.assertIn('McAfeeScan', resp)
-        self.assertIn('ClamAVScan', resp)
-        self.assertIn('YaraScan', resp)
 
 
 class TestTaskCreateCase(APITestCase):
