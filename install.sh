@@ -72,6 +72,14 @@ if [[ $prompt == "y" ]]; then
   cd $CWD
 fi
 
+read -p "Download floss? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  cd /opt/
+  curl -f --retry 3 https://s3.amazonaws.com/build-artifacts.floss.flare.fireeye.com/travis/linux/dist/floss
+  chmod 755 trid
+  cd $CWD
+fi
+
 read -p "Download yararules.com signatures? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules
