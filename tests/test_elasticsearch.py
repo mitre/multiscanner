@@ -3,11 +3,8 @@ Module for testing the Elasticsearch datastore.
 '''
 import os
 import sys
-import json
-import magic
 import mock
 import unittest
-import time
 
 from elasticsearch import Elasticsearch
 
@@ -167,13 +164,13 @@ class TestES(unittest.TestCase):
         self.assertEqual(note_id, TEST_ID)
 
     @mock.patch.object(Elasticsearch, 'get')
-    @mock.patch.object(Elasticsearch, 'create')
-    def test_add_note(self, mock_create, mock_get):
-        mock_create.return_value = {'result': 'created', '_id': TEST_ID}
+    @mock.patch.object(Elasticsearch, 'index')
+    def test_add_note(self, mock_index, mock_get):
+        mock_index.return_value = {'result': 'created', '_id': TEST_ID}
         self.handler.add_note(TEST_ID, {'text': 'foo'})
 
-        self.assertEqual(mock_create.call_count, 1)
-        args, kwargs = mock_create.call_args_list[0]
+        self.assertEqual(mock_index.call_count, 1)
+        args, kwargs = mock_index.call_args_list[0]
         doc_type = kwargs['doc_type']
         parent = kwargs['parent']
         body = kwargs['body']
