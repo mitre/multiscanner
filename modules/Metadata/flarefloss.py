@@ -13,7 +13,7 @@ NAME = "floss"
 DEFAULTCONF = {
     "ENABLED": False,
     "path": "C:\\floss64.exe",
-    "cmdline": ["--show-metainfo"]
+    "cmdline": [u"--show-metainfo"]
 }
 
 
@@ -35,40 +35,41 @@ def scan(filelist, conf=DEFAULTCONF):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
 
         for f in p.stdout:
-            if "FLOSS static ASCII strings" in f:
+            f = f.decode("utf-8")
+            if u"FLOSS static ASCII strings" in f:
                 ret["static_ascii_strings"] = []
-                f = next(p.stdout, "")
+                f = next(p.stdout, "").decode("utf-8")
                 while f != "":
                     ret["static_ascii_strings"].append(f)
-                    f = next(p.stdout, "")
+                    f = next(p.stdout, "").decode("utf-8")
                     f = f.strip()
-            elif "FLOSS static UTF-16 strings" in f:
+            elif u"FLOSS static UTF-16 strings" in f:
                 ret["static_utf16_strings"] = []
-                f = next(p.stdout, "")
+                f = next(p.stdout, "").decode("utf-8")
                 while f != "":
                     ret["static_utf16_strings"].append(f)
-                    f = next(p.stdout, "")
+                    f = next(p.stdout, "").decode("utf-8")
                     f = f.strip()
-            elif "FLOSS decoded" in f:
+            elif u"FLOSS decoded" in f:
                 ret["decoded_strings"] = []
-                f = next(p.stdout, "")
+                f = next(p.stdout, "").decode("utf-8")
                 while f != "":
                     ret["decoded_strings"].append(f)
-                    f = next(p.stdout, "")
+                    f = next(p.stdout, "").decode("utf-8")
                     f = f.strip()
-            elif "stackstrings" in f:
+            elif u"stackstrings" in f:
                 ret["stack_strings"] = []
-                f = next(p.stdout, "")
+                f = next(p.stdout, "").decode("utf-8")
                 while f != "":
                     ret["stack_strings"].append(f)
-                    f = next(p.stdout, "")
+                    f = next(p.stdout, "").decode("utf-8")
                     f = f.strip()
-            elif "Vivisect workspace analysis information" in f:
+            elif u"Vivisect workspace analysis information" in f:
                 ret["vivisect_meta_info"] = []
-                f = next(p.stdout, "")
+                f = next(p.stdout, "").decode("utf-8")
                 while f != "":
                     ret["vivisect_meta_info"].append(f)
-                    f = next(p.stdout, "")
+                    f = next(p.stdout, "").decode("utf-8")
                     f = f.strip()
 
         if ret:
