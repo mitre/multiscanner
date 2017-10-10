@@ -4,6 +4,7 @@ configparser
 #Required by modules
 bitstring
 boltons
+git+https://github.com/knowmalware/pehash.git#egg=pehash
 paramiko
 pefile
 pyclamd
@@ -25,3 +26,8 @@ pymongo
 #Required for distributed
 celery
 flask_cors
+#Required by tests
+pytest
+mock
+#Required by utils
+tqdm

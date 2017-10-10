@@ -16,6 +16,7 @@ NAME = "Yara"
 DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
     "fileextensions":[".yar", ".yara", ".sig"],
     "ignore-tags":["TLPRED"],
+    'includes': False,
     'ENABLED': True
     }
     
@@ -24,7 +25,6 @@ try:
 except:
     print("yara-python module not installed...")
     yara = False
-    
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -35,26 +35,34 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     ruleDir = conf["ruledir"]
     extlist = conf["fileextensions"]
+    includes = 'includes' in conf and conf['includes']
+
     ruleset = {}
     rules = parseDir(ruleDir, recursive=True)
     for r in rules:
         for ext in extlist:
             if r.endswith(ext):
-                ruleset[r] = os.path.join(ruleDir, r)
+                full_path = os.path.abspath(os.path.join(ruleDir, r))
+                ruleset[full_path] = full_path
                 break
-    
+
     #Ran into a weird issue with file locking, this fixes it
     goodtogo = False
     i = 0
     yararules = None
     while not goodtogo:
         try:
-            yararules = yara.compile(filepaths=ruleset)
+            yararules = yara.compile(filepaths=ruleset, includes=includes)
             goodtogo = True
         except yara.SyntaxError as e:
-            bad_file = e.message.split('(')[0]
-            del ruleset[bad_file]
-            print(e)
+            bad_file = os.path.abspath(str(e).split('(')[0])
+            if bad_file in ruleset:
+                del ruleset[bad_file]
+                print('WARNING: Yara', e)
+            else:
+                print('ERROR Yara: Invalid rule in', bad_file, 'but we are unable to remove it from our list. Aborting')
+                print(e)
+                return None
 
     matches = []
     for m in filelist:
