@@ -78,6 +78,7 @@ DEFAULTCONF = {
     'port': 8080,
     'upload_folder': '/mnt/samples/',
     'distributed': True,
+    'web_loc': 'http://localhost:80',
     'cors': 'https?://localhost(:\d+)?',
     'batch_size': 100,
     'batch_interval': 60   # Number of seconds to wait for additional files
@@ -510,14 +511,66 @@ def get_report(task_id):
     download = request.args.get('d', default='False', type=str)[0].lower()
 
     report_dict, success = get_report_dict(task_id)
-    if success and (download == 't' or download == 'y' or download == '1'):
-        response = make_response(jsonify(report_dict))
-        response.headers['Content-Type'] = 'application/json'
-        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
-        return response
+    if success:
+        if (download == 't' or download == 'y' or download == '1'):
+            # raw JSON
+            response = make_response(jsonify(report_dict))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+            return response
+        else:
+            # processed JSON intended for web UI
+            report_dict = _pre_process(report_dict)
+            return jsonify(report_dict)
     else:
         return jsonify(report_dict)
 
+def _pre_process(report_dict):
+    '''
+    Returns a JSON dictionary where a series of pre-processing steps are
+    executed on report_dict.
+    '''
+
+    # pop unecessary keys
+    if report_dict.get('Report').get('ssdeep'):
+        for k in ['chunksize', 'chunk', 'double_chunk']:
+            report_dict['Report']['ssdeep'].pop(k)
+
+    report_dict = _add_links(report_dict)
+
+    return report_dict
+
+def _add_links(report_dict):
+    '''
+    Returns a JSON dictionary where certain keys and/or values are replaced
+    with hyperlinks.
+    '''
+
+    web_loc = api_config['api']['web_loc']
+
+    # ssdeep matches
+    matches_dict = report_dict.get('Report', {}) \
+                              .get('ssdeep', {}) \
+                              .get('matches', {})
+
+    if matches_dict:
+        # k=SHA256, v=ssdeep.compare result
+        for k, v in matches_dict.items():
+            t_id = db.exists(k)
+            if t_id:
+                matches_dict.pop(k)
+                url = '{h}/report/{t_id}'.format(
+                    h=web_loc,
+                    t_id=t_id)
+                href = '<a target="_blank" href="{url}">{sha256}</a>'.format(
+                    url=url,
+                    sha256=k)
+                matches_dict[href] = v
+
+        # replace with updated dict
+        report_dict['Report']['ssdeep']['matches'] = matches_dict
+
+    return report_dict
 
 @app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
 def files_get_task(task_id):
