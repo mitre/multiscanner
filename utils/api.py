@@ -534,7 +534,10 @@ def _pre_process(report_dict):
     # pop unecessary keys
     if report_dict.get('Report').get('ssdeep'):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            report_dict['Report']['ssdeep'].pop(k)
+            try:
+                report_dict['Report']['ssdeep'].pop(k)
+            except KeyError as e:
+                pass
 
     report_dict = _add_links(report_dict)
 
