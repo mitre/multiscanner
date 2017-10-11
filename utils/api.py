@@ -57,6 +57,8 @@ import zipfile
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if os.path.join(MS_WD, 'analytics') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
@@ -64,6 +66,7 @@ import multiscanner
 import sql_driver as database
 import elasticsearch_storage
 from celery_worker import multiscanner_celery
+from ssdeep_analytics import SSDeepAnalytic
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -779,6 +782,29 @@ def files_get_sha256_helper(sha256, raw=None):
             response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
     return response
 
+@app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
+def run_ssdeep_compare():
+    '''
+    Runs ssdeep compare analytic and returns success / error message.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        ssdeep_analytic.ssdeep_compare()
+        return make_response(jsonify({ 'Message': 'Success' }))
+    except Exception as e:
+        return make_response(jsonify({ 'Error': e }))
+
+@app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
+def run_ssdeep_group():
+    '''
+    Runs sssdeep group analytic and returns list of groups as a list.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        groups = ssdeep_analytic.ssdeep_group()
+        return make_response(groups)
+    except Exception as e:
+        return make_response(jsonify({ 'Error': e }))
 
 if __name__ == '__main__':
 
