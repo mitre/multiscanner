@@ -72,12 +72,10 @@ if [[ $prompt == "y" ]]; then
   cd $CWD
 fi
 
-read -p "Download floss? <y/N> " prompt
+read -p "Download FLOSS? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
-  cd /opt/
-  curl -f --retry 3 https://s3.amazonaws.com/build-artifacts.floss.flare.fireeye.com/travis/linux/dist/floss
-  chmod 755 trid
-  cd $CWD
+  curl -f --retry 3 https://s3.amazonaws.com/build-artifacts.floss.flare.fireeye.com/travis/linux/dist/floss > /opt/floss
+  chmod 755 /opt/floss
 fi
 
 read -p "Download yararules.com signatures? <y/N> " prompt
