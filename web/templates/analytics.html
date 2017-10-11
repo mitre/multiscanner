@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
+<script src="/static/js/dataTables.buttons.min.js"></script>
+<script src="/static/js/buttons.bootstrap.min.js"></script>
+<script type="text/javascript">
+
+  function createGroupRows(row) {
+    retr_string = '';
+    for (i=0; i<row.length; i++) {
+      retr_string = retr_string + '<tr><td><strong>Group ' + i + '</strong></td></tr>';
+      for (j=0; j<row[i].length; j++) {
+        retr_string = retr_string + '<tr><td>' + row[i][j] + '</td></tr>';
+      }
+    }
+    return retr_string
+  }
+
+  function groupsSetup(apiLoc) {
+    var x; 
+    // Get ssdeep groups and populate table
+    groups_data = $.get(apiLoc + "/api/v1/analytics/ssdeep_group", function(data, status) {
+      // Add rows to the table
+      $("tbody").append(createGroupRows(data.groups));
+    });
+      
+  }
+  
+  $(document).ready(function($) {
+    groupsSetup("{{api_loc}}");
+  });
+
+</script>
+{% endblock %}
+
+{% block title %}SSDeep Groups{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">SSDeep Groups</h1>
+
+    <table class="table table-striped table-hover">
+      <thead>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
