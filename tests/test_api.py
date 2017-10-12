@@ -106,7 +106,7 @@ class TestURLCase(APITestCase):
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_get_modules(self):
-        resp = self.app.get('/api/v1/modules').get_data()
+        resp = self.app.get('/api/v1/modules').get_data().decode('utf-8')
         self.assertIn('Modules', resp)
 
 
