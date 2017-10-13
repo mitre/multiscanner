@@ -53,9 +53,8 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
-class MockMultiscannerCelery(object):
-    def delay(file_, original_filename, task_id, report_id):
-        pass
+def mock_delay(full_path, original_filename, task_id, f_name, metadata, config):
+    pass
 
 
 class MockStorage(object):
@@ -85,7 +84,7 @@ class APITestCase(unittest.TestCase):
 class TestURLCase(APITestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        api.multiscanner_celery = MockMultiscannerCelery
+        api.multiscanner_celery.delay = mock_delay
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -113,7 +112,6 @@ class TestURLCase(APITestCase):
 class TestTaskCreateCase(APITestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        api.multiscanner_celery = MockMultiscannerCelery
 
         # populate the DB w/ a task
         post_file(self.app)

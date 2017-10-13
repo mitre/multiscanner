@@ -63,7 +63,6 @@ if MS_WD not in sys.path:
 import multiscanner
 import sql_driver as database
 import elasticsearch_storage
-from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -112,6 +111,9 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     api_config_object.write(conffile)
     conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
+
+# Needs api_config in order to function properly
+from celery_worker import multiscanner_celery
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
