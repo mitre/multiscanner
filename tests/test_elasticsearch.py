@@ -3,13 +3,11 @@ Module for testing the Elasticsearch datastore.
 '''
 import os
 import sys
-import json
-import magic
 import mock
 import unittest
-import time
 
 from elasticsearch import Elasticsearch
+from elasticsearch.client import IndicesClient, IngestClient
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,18 +21,24 @@ sys.path.insert(0, os.path.dirname(CWD))
 # import elasticsearch_storage
 from elasticsearch_storage import ElasticSearchStorage
 
-TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}}}
+TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}
 TEST_ID = '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6'
 TEST_NOTE_ID = 'eba3d3de-1a7e-4018-8fb3-a4635b4b7ab1'
+TEST_TS = "2017-09-26T16:48:05.395004"
 
 
 class TestES(unittest.TestCase):
-    def setUp(self):
+    @mock.patch.object(IndicesClient, 'exists_template')
+    @mock.patch.object(IngestClient, 'get_pipeline')
+    def setUp(self, mock_pipe, mock_exists):
+        mock_pipe.return_value = True
+        mock_exists.return_value = True
         self.handler = ElasticSearchStorage(config=ElasticSearchStorage.DEFAULTCONF)
         self.handler.setup()
 
+    @mock.patch.object(Elasticsearch, 'index')
     @mock.patch('elasticsearch_storage.helpers')
-    def test_store(self, mock_helpers):
+    def test_store(self, mock_helpers, mock_index):
         mock_helpers.bulk.return_value = (1, [])
         resp = self.handler.store(TEST_MS_OUTPUT)
 
@@ -45,20 +49,25 @@ class TestES(unittest.TestCase):
         self.assertEqual(sample_args['_source']['SHA256'], TEST_ID)
         self.assertEqual(sample_args['_source']['tags'], [])
 
-        args, kwargs = mock_helpers.bulk.call_args_list[1]
-        report_args = args[1][0]
-        self.assertEqual(report_args['_id'], TEST_ID)
-        self.assertEqual(report_args['_source']['libmagic'], 'ASCII text, with very long lines, with no line terminators')
+        report_args, report_kwargs = mock_index.call_args_list[0]
+        self.assertEqual(report_kwargs['parent'], TEST_ID)
+        self.assertEqual(report_kwargs['body']['libmagic'], 'ASCII text, with very long lines, with no line terminators')
+        self.assertEqual(report_kwargs['pipeline'], 'dedot')
 
-        self.assertEqual(resp, [TEST_ID])
-        self.assertEqual(mock_helpers.bulk.call_count, 2)
+        self.assertIn(TEST_ID, resp)
 
+    @mock.patch.object(Elasticsearch, 'search')
     @mock.patch.object(Elasticsearch, 'get')
-    def test_get_report(self, mock_get):
-        self.handler.get_report(TEST_ID, TEST_ID)
+    def test_get_report(self, mock_get, mock_search):
+        self.handler.get_report(TEST_ID, TEST_TS)
+
+        args, kwargs = mock_search.call_args_list[0]
+        self.assertEqual(kwargs['index'], ElasticSearchStorage.DEFAULTCONF['index'])
+        self.assertEqual(kwargs['body']['query']['bool']['must'][0]['has_parent']['query']['term']['_id'], TEST_ID)
+        self.assertEqual(kwargs['body']['query']['bool']['must'][1]['term']['Scan Time'], TEST_TS)
+        self.assertEqual(kwargs['doc_type'], ElasticSearchStorage.DEFAULTCONF['doc_type'])
 
         mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='sample')
-        mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, parent=TEST_ID, doc_type=ElasticSearchStorage.DEFAULTCONF['doc_type'])
 
     @mock.patch('elasticsearch_storage.helpers')
     def test_search(self, mock_helpers):
@@ -67,7 +76,7 @@ class TestES(unittest.TestCase):
 
         args, kwargs = mock_helpers.scan.call_args_list[0]
         query = kwargs['query']
-        self.assertEqual(query['query']['query_string']['query'], 'test')
+        self.assertEqual(query['query']['query_string']['query'], '*test*')
 
         self.assertEqual(resp, (TEST_ID,))
 
@@ -130,8 +139,8 @@ class TestES(unittest.TestCase):
 
         self.assertEqual(doc_type, 'sample')
         self.assertEqual(query['aggs']['tags_agg']['terms']['field'], 'tags.keyword')
-        self.assertEqual(resp['buckets'][0], tag_1)
-        self.assertEqual(resp['buckets'][1], tag_2)
+        self.assertEqual(resp[0], tag_1)
+        self.assertEqual(resp[1], tag_2)
 
     @mock.patch.object(Elasticsearch, 'search')
     def test_get_notes(self, mock_search):
@@ -160,13 +169,13 @@ class TestES(unittest.TestCase):
         self.assertEqual(note_id, TEST_ID)
 
     @mock.patch.object(Elasticsearch, 'get')
-    @mock.patch.object(Elasticsearch, 'create')
-    def test_add_note(self, mock_create, mock_get):
-        mock_create.return_value = {'result': 'created', '_id': TEST_ID}
+    @mock.patch.object(Elasticsearch, 'index')
+    def test_add_note(self, mock_index, mock_get):
+        mock_index.return_value = {'result': 'created', '_id': TEST_ID}
         self.handler.add_note(TEST_ID, {'text': 'foo'})
 
-        self.assertEqual(mock_create.call_count, 1)
-        args, kwargs = mock_create.call_args_list[0]
+        self.assertEqual(mock_index.call_count, 1)
+        args, kwargs = mock_index.call_args_list[0]
         doc_type = kwargs['doc_type']
         parent = kwargs['parent']
         body = kwargs['body']

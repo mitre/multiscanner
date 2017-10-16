@@ -5,12 +5,13 @@
 <script src="/static/js/dataTables.buttons.min.js"></script>
 <script src="/static/js/buttons.bootstrap.min.js"></script>
 <script type="text/javascript">
-  var table;
+  var table, search;
   {% if search_type %}
-  var search_type = '{{ search_type }}';
+  var searchType = '{{ search_type }}';
   {% else %}
-  var search_type = 'default';
+  var searchType = 'default';
   {% endif %}
+  var lastType = searchType;
 
   function tasksSetup(apiLoc) {
     $.fn.dataTable.ext.errMode = 'none';
@@ -23,7 +24,7 @@
       ajax: {
         "url": apiLoc + "/api/v1/tasks/search",
         "data": function ( d ) {
-          return $.extend( {}, d, {"search_type": search_type} );
+          return $.extend( {}, d, {"search_type": searchType} );
         }
       },
       order: [[0, 'desc']],
@@ -61,7 +62,7 @@
             return;
           }
           var report_url = $(this).parent().data("href");
-          var report_param = encodeURIComponent($('#DataTables_Table_0_filter input.form-control').val());
+          var report_param = encodeURIComponent(search.val());
           if (report_param != "") {
               report_url += "?st=" + report_param;
           }
@@ -76,16 +77,19 @@
         // ...add delete functionality
         $('.btn-danger').click(function() {
           var t_id = this.dataset.id;
-          $.get(apiLoc + "/api/v1/tasks/delete/" + t_id)
-            .done(function (data, status, jqXHR) {
+          $.ajax({
+            url: apiLoc + "/api/v1/tasks/" + t_id,
+            type: 'DELETE',
+            success: function(data, status) {
               $('td').filter(function() {
                 return this.innerHTML === t_id;
               }).parent().remove();
-              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
-            })
-            .fail(function (data, status, jqXHR) {
-              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
-            });
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+            },
+            error: function(data, status) {
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+            }
+          });
         });
       },
       buttons: [
@@ -101,25 +105,35 @@
         table.buttons().containers().appendTo('#DataTables_Table_0_length');
 
         // Add search type options
-        searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="#" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span><i class="glyphicon glyphicon-cog"></i></span></a>');
+        searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="javascript:;" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span><i class="glyphicon glyphicon-cog"></i></span></a>');
         $('#DataTables_Table_0_filter').append(searchOptions);
         searchTypeButtons = $('<div id="search_type" class="collapse">' +
             '<label for="search_type_buttons">Search Type:&nbsp;</label>' +
             '<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
-            '<label class="btn btn-primary {% if search_type == 'default' %}active{% endif %}" title="Add wildcards to start and end of search term, to search as you type">' +
-            '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" {% if search_type == 'default' %}checked{% endif %}>Default' +
+            '<label class="btn btn-primary {% if search_type == 'default' or search_type is not defined %}active{% endif %}" title="Add wildcards to start and end of search term, to search as you type">' +
+            '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" {% if search_type == 'default' or search_type is not defined %}checked{% endif %}>Default' +
             '</label>' +
             '<label class="btn btn-primary {% if search_type == 'exact' %}active{% endif %}" title="Add quotes to start and end of search term, to search for the exact phrase">' +
               '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off" {% if search_type == 'exact' %}checked{% endif %}>Exact' +
             '</label>' +
-            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
+            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Lucene query syntax; you must escape reserved characters yourself">' +
               '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off" {% if search_type == 'advanced' %}checked{% endif %}>Advanced' +
             '</label>' +
           '</div></div>');
         $('#DataTables_Table_0_filter').append(searchTypeButtons);
         $('#search_type :input').change(function() {
-          search_type =  $('#search_type_buttons > .btn.active input').val();
-          table.draw();
+          searchType =  $('#search_type_buttons > .btn.active input').val();
+          // TODO: maybe consider changing replaceState here to pushState
+          history.replaceState({query: history.state == null ? '{{ search_term }}' : history.state.query,
+                               type: searchType},
+                               "",
+                               "analyses");
+
+          if (searchType != lastType) {
+            // needed because we click on a searchType button in the popstate listener
+            table.draw();
+          }
+          lastType = searchType;
         });
       }
     });
@@ -127,6 +141,34 @@
 
   $(document).ready(function($) {
     tasksSetup("{{ api_loc }}");
+    search = $('#DataTables_Table_0_filter input.form-control');
+
+    {% if search_term %}
+    history.replaceState({query: '{{ search_term }}',
+                         type: searchType},
+                         "",
+                         "analyses");
+    {% endif %}
+
+    // Insert state into browser history when search term is entered
+    search.on("input", function() {
+      // Use timeout to "debounce" input and only trigger pushState when user is done typing
+      clearTimeout($(this).data('timeout'));
+      $(this).data('timeout', setTimeout(function() {
+        history.pushState({query: search.val(),
+                           type: searchType},
+                           "",
+                           "analyses");
+      }, 250));
+    });
+    // Pop back to a previous search on browser back button
+    window.addEventListener("popstate", function(e) {
+      if (e.state) {
+        search.val(e.state.query);
+        $('#' + e.state.type).click();
+        search.trigger('paste');
+      }
+    });
   });
 </script>
 {% endblock %}

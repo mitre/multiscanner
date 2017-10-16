@@ -7,6 +7,14 @@
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/dataTables.buttons.min.js"></script>
 <script type="text/javascript">
+  var expanders = null,
+  collapsers = null;
+
+  function regExpEscape(literal_string) {
+    // https://stackoverflow.com/a/30851002/
+    return literal_string.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
+  }
+
   function createRow(heading, content, parentSize) {
     // Return a row to add to a table
     if (typeof content === 'string' && content.startsWith('<table')) {
@@ -78,16 +86,18 @@
     }
     else {
       {% if search_term %}
-      return createRow(index, String(item).replace(/({{ search_term }})/, '<span class="highlight">$1</span>'));
+      var re = new RegExp('(' + regExpEscape('{{ search_term }}') + ')', "i");
+      return createRow(index, String(item).replace(re, '<span class="highlight">$1</span>'));
       {% else %}
       return createRow(index, item);
       {% endif %}
     }
   }
 
-  function toggleRow(row, expandAll) {
+  function toggleRow(row, all) {
     // Expand/collapse a single row
-    expandAll = typeof expandAll !== 'undefined' ? expandAll : false;
+    // If `all` is true, then all subfields of this row will also expand/collapse
+    all = typeof all !== 'undefined' ? all : false;
     var th = row.children('th');
     var expander = row.children('td.expander');
     var td = row.children('td.cell-table');
@@ -95,11 +105,40 @@
     expander.toggle();
     td.toggle();
     th.children('span').toggle();
-    if (expandAll && expander.is(':hidden')) {
+    if (all) {
+      if (expander.is(':hidden')) {
+        // it's expanded; expand children
         td.find('th.expander span').show();
         td.find('td.expander').hide();
         td.find('td.cell-table').show();
+      }
+      else {
+        // it's collapsed; collapse children
+        td.find('th.expander span').hide();
+        td.find('td.expander').show();
+        td.find('td.cell-table').hide();
+      }
     }
+
+    // Show correct "Expand/Collapse All" button
+    if (expanders.filter(':visible').length > 0) {
+      $('#expand-all').show();
+      $('#collapse-all').hide();
+    } else {
+      $('#expand-all').hide();
+      $('#collapse-all').show();
+    }
+  }
+
+  function expandAll() {
+    var shiftClick = jQuery.Event("click");
+    shiftClick.shiftKey = true;
+    expanders.filter(':visible').trigger(shiftClick);
+  }
+
+  function collapseAll() {
+    var shiftClick = jQuery.Event("click");
+    collapsers.filter(':visible').click();
   }
 
   function openNotes() {
@@ -120,12 +159,16 @@
 
   function deleteNote(id) {
     var text = {"text": $('#note-input').val()}
-    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + id + "/delete"
-    $.get(url, function(data, status){
-      if (status == 'success') {
-        $('#' + id).remove();
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + id;
+    $.ajax({
+      url: url,
+      type: 'DELETE',
+      success: function(data, status) {
+        if (status == 'success') {
+          $('#' + id).remove();
+        }
+        return status;
       }
-      return status;
     });
   }
 
@@ -173,21 +216,32 @@
     });
   }
 
+  function scrollToHighlight() {
+    // Scroll to first highlighted search term
+    try {
+      $('html, body'). scrollTop($('.highlight').first().offset().top);
+    } catch (err) {
+      // search term not found
+    }
+  }
+
   function getReport() {
     // Get report and populate the table
-    $.get("{{ api_loc }}/api/v1/tasks/report/{{ task_id }}", function(data, status){
-      if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task still pending') {
+    $.get("{{ api_loc }}/api/v1/tasks/{{ task_id }}/report", function(data, status){
+      if (data.hasOwnProperty('Report') && data.Report == 'Task still pending') {
         // Check again in 5 seconds
         console.log("Check again in 5 seconds");
         setTimeout(getReport, 5000);
         return;
       }
-      else if (data.Report.hasOwnProperty('Report') && data.Report.Report == 'Task failed') {
+      else if (data.hasOwnProperty('Report') && data.Report == 'Task failed') {
         $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
         return;
       }
       $('#pending').hide();
+      $('#report-extras').show();
       $('#report-tags').show();
+
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
@@ -204,11 +258,12 @@
       });
 
       // Set up tags
-      var tagNameArray = [];
+      var tagNameArray = {{ tags|safe }};
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
-        buckets = data.Tags.buckets;
-        $.each(buckets, function( index, value ) {
-          tagNameArray.push(value.key);
+        $.each(data.Tags, function( index, value ) {
+            if (tagNameArray.indexOf(value.key) > -1) {
+            tagNameArray.push(value.key);
+          }
         });
         var tagNames = new Bloodhound({
           datumTokenizer: Bloodhound.tokenizers.whitespace,
@@ -224,13 +279,18 @@
           }
         });
         $('#tags').on('itemAdded', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?add=" + event.item, function(data, status){
+            tag_response = $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
             return status;
           });
         });
         $('#tags').on('beforeItemRemove', function(event) {
-          tag_response = $.get("{{ api_loc }}/api/v1/tasks/tags/{{ task_id }}?remove=" + event.item, function(data, status){
-            return status;
+          tag_response = $.ajax({
+            url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags",
+            type: 'DELETE',
+            data: {'tag': event.item},
+            success: function(data, status) {
+              return status;
+            }
           });
         });
         $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
@@ -240,21 +300,89 @@
       })
 
       {% if search_term %}
-      // Scroll to highlighted search term
-      $('html, body'). scrollTop($('.highlight').first().offset().top);
+      scrollToHighlight();
       {% endif %}
     });
   }
 
+  function matchText(node, regex, callback, excludeElements) {
+    // Takes a reference to a DOM element, iterates over its text nodes, runs a regex on them and executes a callback
+    // Modified from http://blog.alexanderdickson.com/javascript-replacing-text
+    excludeElements || (excludeElements = ['script', 'style', 'iframe', 'canvas']);
+    var child = node.firstChild;
+
+    do {
+      if (child == null) {
+        break;
+      }
+      else if (child.nodeType == 1) {  // element
+        if (excludeElements.indexOf(child.tagName.toLowerCase()) > -1) {
+            continue;
+        }
+
+        matchText(child, regex, callback, excludeElements);
+      }
+      else if (child.nodeType == 3) {  // text node
+        child.data.replace(regex, function(all) {
+            var args = [].slice.call(arguments),
+                offset = args[args.length - 2],
+                newTextNode = child.splitText(offset);
+
+            newTextNode.data = newTextNode.data.substr(all.length);
+            callback.apply(window, [child].concat(args));
+            child = newTextNode;
+        });
+      }
+    } while (child = child.nextSibling);
+
+    return node;
+  }
+
+  function inPageSearch() {
+    // Remove existing highlights
+    $('#report').find('span.highlight').each(function(index) {
+      var hText = $(this).text();
+      $(this).replaceWith(hText);
+    });
+
+    // Highlight new search term
+    var newHText = $('#search-report input').val();
+    var re = new RegExp(regExpEscape(newHText), "i");
+    matchText($("#report").get(0), re, function(node, match, offset) {
+      var span = document.createElement("span");
+      span.className = "highlight";
+      span.textContent = match;
+      node.parentNode.insertBefore(span, node.nextSibling);
+    });
+
+    // Expand new search terms
+    $('.highlight').each(function(index) {
+      if (!$(this).is(':visible')) {
+        $(this).parents('td').filter(function() {
+          return $(this).css('display') == 'none';
+        }).siblings('td.expander').click();
+      }
+    });
+
+    // Scroll to highlighted search term
+    scrollToHighlight();
+  }
+
   $(document).ready(function($) {
+    $('#collapse-all').hide();
+    $('#report-extras').hide();
     $('#report-tags').hide();
 
     // Add report data and notes to the page
     getReport();
     getNotes();
 
-    // Update notes button based on number of notes
     $( document ).ajaxStop(function() {
+      // cache jquery selectors for performance
+      expanders = $('td.expander');
+      collapsers = $('th.expander span');
+
+      // Update notes button based on number of notes
       numNotes = $('#note-container > div').length;
       if (numNotes > 0) {
         if (numNotes === 1) {
@@ -270,7 +398,7 @@
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()}
-      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/note", text, function(data, status){
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", text, function(data, status){
         displayNote(data);
         return status;
       });
@@ -298,12 +426,17 @@
       var submit = $(this);
       var text = {"text": textarea.val()}
       var noteId = $(this).parents('.panel').attr('id');
-      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/note/" + noteId + "/edit";
-      $.post(url, text, function(data, status){
-        textarea.hide();
-        submit.hide();
-        span.html(textarea.val()).show();
-        return status;
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + noteId;
+      $.ajax({
+          url: url,
+          type: 'PUT',
+          data: text,
+          success: function(data, status) {
+            textarea.hide();
+            submit.hide();
+            span.html(textarea.val()).show();
+            return status;
+        }
       });
     }));
 
@@ -313,24 +446,34 @@
       var response = deleteNote(noteId);
     }));
 
-    // Handle downloading of JSON report
-    $('#dl-json').on('click', (function(event) {
-      window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
+    // Handle "Expand All" button
+    $('#expand-all').on('click', (function(event) {
+      expandAll();
     }));
 
-    // Handle downloading binary files
-    $('#dl-sample').on('click', (function(event) {
-      window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+    // Handle "Collapse All" button
+    $('#collapse-all').on('click', (function(event) {
+      collapseAll();
     }));
 
-    $('ul.dropdown-menu li').click(function(e) {
-      if (this.id == 'getJson') {
-        window.location = "{{ api_loc }}/api/v1/tasks/report/{{ task_id }}?d=t";
-      } else if (this.id == 'getSample') {
-        window.location = "{{ api_loc }}/api/v1/tasks/file/{{ task_id }}?raw=false";
+    //Handle in-page search
+    $('#search-report-btn').click(function() {
+      inPageSearch();
+    });
+    $('#search-report input').keypress(function(e) {
+      if (e.which == 13) {  // enter key
+        inPageSearch();
       }
     });
 
+    // Handle download dropdown
+    $('ul.dropdown-menu li').click(function(e) {
+      if (this.id == 'getJson') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
+      } else if (this.id == 'getSample') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
+      }
+    });
   });
 
 </script>
@@ -343,27 +486,44 @@
 
 <div id="report-container">
   <h1 class="text-center">Task {{ task_id }} Report</h1>
-  <div class="dropdown" id="dl-dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Download
-      <span class="caret"</span>
-    </button>
-    <ul class="dropdown-menu">
-      <li id="getJson"><a href="#">JSON</a></li>
-      <li id="getSample"><a href="#">Sample</a></li>
-      <li><a href="#">MAEC</a></li>
-    </ul>
+  <div class="row" id="report-extras">
+    <div class="col-md-2 col-md-offset-1" id="expand-all">
+      <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
+      </button>
+    </div>
+    <div class="col-md-2 col-md-offset-1" id="collapse-all">
+      <button class="btn btn-primary" type="button" title="Collapse all subfields"><span class="glyphicon glyphicon-minus-sign"></span>&nbsp;Collapse All
+      </button>
+    </div>
+    <div class="col-md-6" id="search-report">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Search within this report">
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="button" id="search-report-btn"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div>
+    </div>
+    <div class="dropdown col-md-2" id="dl-dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" title="Download report in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li id="getJson"><a href="#">JSON</a></li>
+        <li id="getSample"><a href="#">Sample</a></li>
+        <li><a href="#">MAEC</a></li>
+      </ul>
+    </div>
   </div>
-  <br><br>
-  <div class="row">
-    <div class="col-md-6 col-md-offset-3" id="report-tags">
+  <div class="row" id="report-tags">
+    <div class="col-md-6 col-md-offset-3">
       <label for="tags" class="pull-left">Tags</label>
       <span>
         <input type="text" id="tags" class="form-control">
       </span>
     </div>
   </div>
-  <div class="row">
-    <div class="col-md-10 col-md-offset-1" id="pending">
+  <div class="row" id="pending">
+    <div class="col-md-10 col-md-offset-1">
       <div class="spin-outer"></div>
       <div class="spin-inner"></div>
       <div class="text-center">
