@@ -200,7 +200,7 @@ def _rewrite_config(storage_classes, config_object, filepath):
         config_object.add_section(class_name)
         for key in conf:
             config_object.set(class_name, key, str(conf[key]))
-    
+
     conffile = codecs.open(filepath, 'w', 'utf-8')
     config_object.write(conffile)
     conffile.close()

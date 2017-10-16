@@ -132,7 +132,7 @@ def multiscanner_celery(requests, *args, **kwargs):
 
     Usage:
     from celery_worker import multiscanner_celery
-    multiscanner_celery.delay(full_path, original_filename, task_id,
+    multiscanner_celery.delay(full_path, original_filename, task_id, metdata,
                               hashed_filename, config)
     '''
     # Initialize the connection to the task DB

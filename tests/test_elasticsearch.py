@@ -7,6 +7,7 @@ import mock
 import unittest
 
 from elasticsearch import Elasticsearch
+from elasticsearch.client import IndicesClient, IngestClient
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -27,7 +28,11 @@ TEST_TS = "2017-09-26T16:48:05.395004"
 
 
 class TestES(unittest.TestCase):
-    def setUp(self):
+    @mock.patch.object(IndicesClient, 'exists_template')
+    @mock.patch.object(IngestClient, 'get_pipeline')
+    def setUp(self, mock_pipe, mock_exists):
+        mock_pipe.return_value = True
+        mock_exists.return_value = True
         self.handler = ElasticSearchStorage(config=ElasticSearchStorage.DEFAULTCONF)
         self.handler.setup()
 

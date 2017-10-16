@@ -119,7 +119,7 @@
             '<label class="btn btn-primary {% if search_type == 'exact' %}active{% endif %}" title="Add quotes to start and end of search term, to search for the exact phrase">' +
               '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off" {% if search_type == 'exact' %}checked{% endif %}>Exact' +
             '</label>' +
-            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">' +
+            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Lucene query syntax; you must escape reserved characters yourself">' +
               '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off" {% if search_type == 'advanced' %}checked{% endif %}>Advanced' +
             '</label>' +
           '</div></div>');
