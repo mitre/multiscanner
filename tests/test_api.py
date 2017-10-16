@@ -21,10 +21,13 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
 
+import elasticsearch
+elasticsearch.client.IndicesClient.exists_template = mock.MagicMock(return_value=True)
+elasticsearch.client.IngestClient.get_pipeline = mock.MagicMock(return_value=True)
+
 import api
 from sql_driver import Database
 from storage import Storage
-from elasticsearch_storage import ElasticSearchStorage
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
@@ -55,14 +58,6 @@ def post_file(app):
 
 def mock_delay(full_path, original_filename, task_id, f_name, metadata, config):
     pass
-
-
-class MockStorage(object):
-    def get_report(self, report_id):
-        return TEST_REPORT
-
-    def delete_report(self, report_id):
-        return True
 
 
 class APITestCase(unittest.TestCase):
