@@ -86,7 +86,6 @@ class ElasticSearchStorage(storage.Storage):
             port=self.port
         )
 
-
         # Create the index if it doesn't exist
         es_indices = self.es.indices
         # Add the template for Cuckoo

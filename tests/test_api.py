@@ -21,10 +21,13 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
 
+import elasticsearch
+elasticsearch.client.IndicesClient.exists_template = mock.MagicMock(return_value=True)
+elasticsearch.client.IngestClient.get_pipeline = mock.MagicMock(return_value=True)
+
 import api
 from sql_driver import Database
 from storage import Storage
-from elasticsearch_storage import ElasticSearchStorage
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
@@ -53,17 +56,8 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
-class MockMultiscannerCelery(object):
-    def delay(file_, original_filename, task_id, report_id):
-        pass
-
-
-class MockStorage(object):
-    def get_report(self, report_id):
-        return TEST_REPORT
-
-    def delete_report(self, report_id):
-        return True
+def mock_delay(full_path, original_filename, task_id, f_name, metadata, config):
+    pass
 
 
 class APITestCase(unittest.TestCase):
@@ -85,7 +79,7 @@ class APITestCase(unittest.TestCase):
 class TestURLCase(APITestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        api.multiscanner_celery = MockMultiscannerCelery
+        api.multiscanner_celery.delay = mock_delay
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -106,14 +100,13 @@ class TestURLCase(APITestCase):
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_get_modules(self):
-        resp = self.app.get('/api/v1/modules').get_data()
+        resp = self.app.get('/api/v1/modules').get_data().decode('utf-8')
         self.assertIn('Modules', resp)
 
 
 class TestTaskCreateCase(APITestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        api.multiscanner_celery = MockMultiscannerCelery
 
         # populate the DB w/ a task
         post_file(self.app)

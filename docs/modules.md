@@ -52,9 +52,6 @@ This module uses a FireEye AX to scan the files. It uses the Malware Repository 
 - **good path** - The folder name where good files are put
 - **cheatsheet** - Not implemented yet
 
-### [KasperskyScan] ###
-This module scans a file with Kaspersky anti-virus 15.
-
 ### [MD5] ###
 This module generates the MD5 hash of the files.
 

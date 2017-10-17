@@ -25,6 +25,8 @@ DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
+GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
+GET /api/v1/analytics/ssdeep_group---> Receive list of sample hashes grouped by ssdeep hash
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -57,13 +59,14 @@ import zipfile
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if os.path.join(MS_WD, 'analytics') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import multiscanner
 import sql_driver as database
 import elasticsearch_storage
-from celery_worker import multiscanner_celery
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -112,6 +115,10 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     api_config_object.write(conffile)
     conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
+
+# Needs api_config in order to function properly
+from celery_worker import multiscanner_celery
+from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
@@ -779,6 +786,33 @@ def files_get_sha256_helper(sha256, raw=None):
             response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
     return response
 
+@app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
+def run_ssdeep_compare():
+    '''
+    Runs ssdeep compare analytic and returns success / error message.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        ssdeep_analytic.ssdeep_compare()
+        return make_response(jsonify({ 'Message': 'Success' }))
+    except Exception as e:
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
+
+@app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
+def run_ssdeep_group():
+    '''
+    Runs sssdeep group analytic and returns list of groups as a list.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        groups = ssdeep_analytic.ssdeep_group()
+        return make_response(groups)
+    except Exception as e:
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
 
 if __name__ == '__main__':
 
