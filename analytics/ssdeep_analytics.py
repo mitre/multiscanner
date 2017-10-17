@@ -254,16 +254,18 @@ class SSDeepAnalytic:
 
         return groups
 
+
 def main():
     parser = argparse.ArgumentParser(description='Script to interact with '
         'Multiscanner\'s Elasticsearch datastore to run analytics based on '
         'ssdeep hash.')
+    group = parser.add_mutually_exclusive_group(required=True)
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
                         help='Increase output to stdout')
-    parser.add_argument('-c', '--compare', dest='compare', action='store_true',
+    group.add_argument('-c', '--compare', dest='compare', action='store_true',
         help='Run ssdeep.compare using a few optimizations based on ssdeep'
-        'hash structure.')
-    parser.add_argument('-g', '--group', dest='group', action='store_true',
+        ' hash structure.')
+    group.add_argument('-g', '--group', dest='group', action='store_true',
         help='Returns group of samples based on ssdeep hash.')
 
     args = parser.parse_args()
@@ -276,6 +278,7 @@ def main():
     elif args.group:
         pprint(ssdeep_analytic.ssdeep_group())
         print('[*] Success')
+
 
 if __name__ == '__main__':
     main()
