@@ -25,6 +25,8 @@ DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
+GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
+GET /api/v1/analytics/ssdeep_group---> Receive list of sample hashes grouped by ssdeep hash
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -792,7 +794,9 @@ def run_ssdeep_compare():
         ssdeep_analytic.ssdeep_compare()
         return make_response(jsonify({ 'Message': 'Success' }))
     except Exception as e:
-        return make_response(jsonify({ 'Error': e }))
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
 
 @app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
 def run_ssdeep_group():
@@ -804,7 +808,9 @@ def run_ssdeep_group():
         groups = ssdeep_analytic.ssdeep_group()
         return make_response(groups)
     except Exception as e:
-        return make_response(jsonify({ 'Error': e }))
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
 
 if __name__ == '__main__':
 
