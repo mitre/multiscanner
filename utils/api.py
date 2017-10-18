@@ -264,9 +264,17 @@ def task_list():
 
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
-    search_term = params['search[value]']
+    sample_id = params.get('sha256')
+    if sample_id:
+        task_id = db.exists(sample_id)
+        if task_id:
+            return { 'TaskID' : task_id }
+        else:
+            return TASK_NOT_FOUND
+
+    search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
-    if search_term == '':
+    if not search_term:
         es_result = None
     else:
         es_result = handler.search(search_term, search_type)
@@ -808,7 +816,7 @@ def run_ssdeep_group():
     try:
         ssdeep_analytic = SSDeepAnalytic()
         groups = ssdeep_analytic.ssdeep_group()
-        return make_response(groups)
+        return make_response(jsonify({ 'groups': groups }))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
