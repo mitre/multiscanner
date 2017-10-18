@@ -266,7 +266,9 @@ def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
     sample_id = params.get('sha256')
     if sample_id:
-        return db.exists(sample_id)
+        task_id = db.exists(sample_id)
+        if task_id:
+            return { 'TaskID' : task_id }
 
     search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
