@@ -24,8 +24,8 @@ METADATA_FIELDS = [
 ]
 
 ES_MAX = 2147483647
-CUCKOO_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
-CUCKOO_TEMPLATE_NAME = 'cuckoo_template'
+ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
+ES_TEMPLATE_NAME = 'multiscanner_template'
 
 
 def process_cuckoo_signatures(signatures):
@@ -86,15 +86,14 @@ class ElasticSearchStorage(storage.Storage):
             port=self.port
         )
 
-
         # Create the index if it doesn't exist
         es_indices = self.es.indices
         # Add the template for Cuckoo
-        with open(CUCKOO_TEMPLATE, 'r') as file_:
+        with open(ES_TEMPLATE, 'r') as file_:
             template = json.loads(file_.read())
-        if not es_indices.exists_template(CUCKOO_TEMPLATE_NAME):
+        if not es_indices.exists_template(ES_TEMPLATE_NAME):
             es_indices.put_template(
-                name=CUCKOO_TEMPLATE_NAME,
+                name=ES_TEMPLATE_NAME,
                 body=json.dumps(template)
             )
 
@@ -112,35 +111,6 @@ class ElasticSearchStorage(storage.Storage):
             )
         except TransportError:
             pass
-
-        # Create parent-child mappings if don't exist yet
-        mappings = es_indices.get_mapping(index=self.index)[self.index]['mappings'].keys()
-        if self.doc_type not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
-                '_parent': {
-                    'type': 'sample'
-                }
-            })
-        if 'note' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='note', body={
-                '_parent': {
-                    'type': 'sample'
-                },
-                'properties': {
-                    'timestamp': {
-                        'type': 'date',
-                    }
-                }
-            })
-
-        if 'sample' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='sample', body={
-                'properties': {
-                    'filename': {
-                        'type': 'text'
-                    }
-                }
-            })
 
         # Create de-dot preprocessor if doesn't exist yet
         try:
@@ -424,7 +394,7 @@ class ElasticSearchStorage(storage.Storage):
         result = self.es.search(
             index=self.index, doc_type='sample', body=script
         )
-        return result['aggregations']['tags_agg']
+        return result['aggregations']['tags_agg']['buckets']
 
     def get_notes(self, sample_id, search_after=None):
         query = {
@@ -471,8 +441,8 @@ class ElasticSearchStorage(storage.Storage):
 
     def add_note(self, sample_id, data):
         data['timestamp'] = datetime.now().isoformat()
-        result = self.es.create(
-            index=self.index, doc_type='note', id=uuid4(), body=data,
+        result = self.es.index(
+            index=self.index, doc_type='note', body=data,
             parent=sample_id
         )
         if result['result'] == 'created':

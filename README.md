@@ -1,5 +1,6 @@
 MultiScanner
 ============
+[![Build Status](https://travis-ci.org/mitre/multiscanner.svg)](https://travis-ci.org/mitre/multiscanner)
 
 Introduction
 ------------
@@ -15,8 +16,8 @@ options can be found in [docs/modules.md](docs/modules.md)
 
 Requirements
 ------------
-Python 2.7 is recommended. Compatibility with 2.7+ and
-3.3+ is supported but not thoroughly maintained and tested. Please submit an issue
+Python 3.6 is recommended. Compatibility with 2.7+ and
+3.4+ is supported but not as thoroughly maintained and tested. Please submit an issue
 or a pull request fixing any issues found with other versions of Python.
 
 

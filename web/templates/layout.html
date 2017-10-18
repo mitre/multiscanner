@@ -26,7 +26,7 @@
 
   <body>
     {% block header %}
-    <nav class="navbar navbar-inverse col-md-8 col-md-offset-2">
+    <nav class="navbar navbar-inverse col-md-10 col-md-offset-1">
       <div class="container-fluid">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
@@ -44,6 +44,7 @@
             <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
             <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
             <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
+            <li {% if request.path == '/analytics' %} class="active" {% endif %}><a href="/analytics">Analytics</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             {% if request.path not in ['/analyses', '/history'] %}
@@ -64,7 +65,7 @@
                       <label class="btn btn-default" title="Add quotes to start and end of search term, to search for the exact phrase">
                         <input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact</input>
                       </label>
-                      <label class="btn btn-default" title="Use the full power of Elasticsearch\'s query string; you must escape reserved characters yourself">
+                      <label class="btn btn-default" title="Use the full power of Lucene query syntax; you must escape reserved characters yourself">
                         <input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced</input>
                       </label>
                     </div>
@@ -107,7 +108,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title" id="myModalLabel">Multiscanner Help</h4>
+            <h4 class="modal-title" id="myModalLabel">MultiScanner Help</h4>
           </div>
           <div class="modal-body">
             <p>MultiScanner is a file scanning and analysis framework that automatically runs a suite of tools against file submissions.</p>
@@ -117,8 +118,13 @@
             <p>This page displays a searchable list of samples that have been scanned. Clicking on one will take you to the most recent scan report for that file.</p>
             <h3>History Page</h3>
             <p>This page displays a searchable list of scan reports. In contrast to the Analyses page, this page shows all reports, not merely the most recent.</p>
+            <h3>Report Page</h3>
+            <p>This page displays the results of a single scan. Some rows in the report can be expanded or collapsed to reveal more data by clicking on the row header or the "Expand" button. Shift-clicking will also expand or collapse all of it's child rows. The "Expand All" button will expand all rows at once.</p>
+            <p>Click on "Notes" to open a sidebar where analysts may enter notes or comments.</p>
             <h3>Sample Download</h3>
             <p>Samples are downloaded as password-protected ZIP files. The password is <tt>infected</tt>.</p>
+            <h3>Search</h3>
+            <p>Reports can be searched from any page, with a few options. You can search Analyses to get the most recent scan per file, or search History to get all scans recorded for each file. Use the "Default "search type to have wildcards automatically appended to the beginning and end of your search term. Use the "Exact" search type to search automatically append quotes and search for the exact phrase. Finally, use the "Advanced" search type to search with the full power of Elasticsearch's query string syntax. Nothing will be automatically appended. When you click on one of the search results, the search term will be highlighted on the Report page.</p>
             <br/>
             <p>MultiScanner is copyright The MITRE Corporation, licensed under the Mozilla Public License, version 2.0.</p>
           </div>
