@@ -269,6 +269,8 @@ def search(params, get_all=False):
         task_id = db.exists(sample_id)
         if task_id:
             return { 'TaskID' : task_id }
+        else:
+            return TASK_NOT_FOUND
 
     search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
