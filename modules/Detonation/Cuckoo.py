@@ -47,7 +47,7 @@ def scan(filelist, conf=DEFAULTCONF):
     report_url = api_url + 'tasks/report/'
     view_url = api_url + 'tasks/view/'
     delete_url = api_url + 'tasks/delete/'
-    maec_report_url = api_url + 'tasks/report/{task_id}/maec'
+    maec_report_url = '<a href="' + api_url + '/v1/tasks/report/{task_id}/maec" target="_blank"' + '>View the Cuckoo MAEC report</a>'
     web_report_url = '<a href="' + web_url + 'analysis/{task_id}/summary/" target="_blank"' + '>View the report in Cuckoo</a>'
 
     for fname in filelist:
@@ -75,9 +75,10 @@ def scan(filelist, conf=DEFAULTCONF):
             if status == 'reported':
                 report = fetch_report_json(report_url+task_id)
                 if conf['maec']:
-                    maec_report = fetch_report_json(
-                        maec_report_url.format(task_id=task_id))
-                    report['maec'] = maec_report
+                    report['info']['maec report'] = maec_report_url.format(task_id=task_id)
+                    # maec_report = fetch_report_json(
+                    #     maec_report_url.format(task_id=task_id))
+                    # report['maec'] = maec_report
                 # TODO - should we just modify Cuckoo to add this itself?
                 if report.get('info'):
                     report['info']['web_report'] = web_report_url.format(
