@@ -583,21 +583,23 @@ def _add_links(report_dict):
                               .get('matches', {})
 
     if matches_dict:
+        links_dict = {}
         # k=SHA256, v=ssdeep.compare result
         for k, v in matches_dict.items():
             t_id = db.exists(k)
             if t_id:
-                matches_dict.pop(k)
                 url = '{h}/report/{t_id}'.format(
                     h=web_loc,
                     t_id=t_id)
                 href = '<a target="_blank" href="{url}">{sha256}</a>'.format(
                     url=url,
                     sha256=k)
-                matches_dict[href] = v
+                links_dict[href] = v
+            else:
+                links_dict[k] = v
 
         # replace with updated dict
-        report_dict['Report']['ssdeep']['matches'] = matches_dict
+        report_dict['Report']['ssdeep']['matches'] = links_dict
 
     return report_dict
 
