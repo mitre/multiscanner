@@ -805,6 +805,7 @@ def run_ssdeep_compare():
         if DISTRIBUTED:
             # Publish task to Celery
             ssdeep_compare_celery.delay()
+            return make_response(jsonify({ 'Message': 'Success' }))
         else:
             ssdeep_analytic = SSDeepAnalytic()
             ssdeep_analytic.ssdeep_compare()
