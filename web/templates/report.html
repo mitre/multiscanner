@@ -472,6 +472,8 @@
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
       } else if (this.id == 'getSample') {
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
+      } else if (this.id == 'getMAEC') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/maec";
       }
     });
   });
@@ -510,7 +512,7 @@
       <ul class="dropdown-menu">
         <li id="getJson"><a href="#">JSON</a></li>
         <li id="getSample"><a href="#">Sample</a></li>
-        <li><a href="#">MAEC</a></li>
+        <li id="getMAEC">><a href="#">MAEC</a></li>
       </ul>
     </div>
   </div>
