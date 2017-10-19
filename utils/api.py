@@ -633,19 +633,18 @@ def get_maec_report(task_id):
     except KeyError:
         return jsonify({'Error': 'No MAEC report found for that task!'})
 
+    # Get the MAEC report from Cuckoo
     try:
         maec_report = requests.get(
-            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL'), cuckoo_task_id)
+            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
         )
-        # raw JSON
-        response = make_response(jsonify(maec_report.json()))
-        response.headers['Content-Type'] = 'application/json'
-        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
-        return response
-    except Exception as e:
-        print(e)
+    except:
         return jsonify({'Error': 'No MAEC report found for that task!'})
-
+    # raw JSON
+    response = make_response(jsonify(maec_report.json()))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+    return response
 
 def get_report_dict(task_id):
     task = db.get_task(task_id)
