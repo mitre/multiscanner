@@ -29,6 +29,7 @@ from celery_batches import Batches
 from ssdeep_analytics import SSDeepAnalytic
 
 from celery import Celery
+from celery.schedules import crontab
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
@@ -69,14 +70,13 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
-# TODO: test this
-# @app.on_after_configure.connect
-# def setup_periodic_tasks(sender, **kwargs):
-#     # Executes every morning at 2:00 a.m.
-#     sender.add_periodic_task(
-#         crontab(hour=2, minute=0),
-#         ssdeep_compare_celery.s(),
-#     )
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    # Executes every morning at 2:00 a.m.
+    sender.add_periodic_task(
+        crontab(hour=2, minute=0),
+        ssdeep_compare_celery.s(),
+    )
 
 def celery_task(files, config=multiscanner.CONFIG):
     '''
