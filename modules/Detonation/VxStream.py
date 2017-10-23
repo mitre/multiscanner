@@ -17,6 +17,7 @@ TYPE = 'Detonation'
 NAME = 'VxStream Sandbox'
 DEFAULTCONF = {
     'ENABLED': False,
+    'BASE URL': 'http://localhost',
     'API URL': 'http://localhost/api/',
     'API key': '',
     'API secret': '',
@@ -213,7 +214,7 @@ def scan(filelist, conf=DEFAULTCONF):
                         except KeyError:
                             pass
                     # Add the link to Web Report
-                    report['analysis']['final']['web_report'] = '<a href="https://vxstream.malware.xbis/sample/{}?environmentId={}" target="_blank">View the report in VxStream</a>'.format(file_sha256, conf['Environment ID'])
+                    report['analysis']['final']['web_report'] = '<a href="{}/sample/{}?environmentId={}" target="_blank">View the report in VxStream</a>'.format(conf['BASE URL'], file_sha256, conf['Environment ID'])
                     resultlist.append((fname, report.get('analysis', {}).get('final')))
                     tasks.remove((fname, file_sha256))
 

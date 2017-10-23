@@ -18,6 +18,7 @@ DELETE /api/v1/tasks/<task_id> ----> delete task_id
 GET /api/v1/tasks/search/ ---> receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> receive list of most all reports for matching samples
 GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> download sample, defaults to passwd protected zip
+GET /api/v1/tasks/<task_id>/maec ----> download the Cuckoo MAEC 5.0 report, if it exists 
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
 POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
@@ -25,6 +26,8 @@ DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
+GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
+GET /api/v1/analytics/ssdeep_group---> Receive list of sample hashes grouped by ssdeep hash
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -53,16 +56,22 @@ from jinja2 import Markup
 from six import PY3
 import rarfile
 import zipfile
+import requests
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if os.path.join(MS_WD, 'analytics') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import multiscanner
 import sql_driver as database
 import elasticsearch_storage
+import common
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -114,6 +123,7 @@ api_config = multiscanner.common.parse_config(api_config_object)
 
 # Needs api_config in order to function properly
 from celery_worker import multiscanner_celery
+from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
@@ -124,6 +134,12 @@ storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
+
+ms_config_object = configparser.SafeConfigParser()
+ms_config_object.optionxform = str 
+ms_configfile = multiscanner.CONFIG
+ms_config_object.read(ms_configfile)
+ms_config = common.parse_config(ms_config_object)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
@@ -259,9 +275,17 @@ def task_list():
 
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
-    search_term = params['search[value]']
+    sample_id = params.get('sha256')
+    if sample_id:
+        task_id = db.exists(sample_id)
+        if task_id:
+            return { 'TaskID' : task_id }
+        else:
+            return TASK_NOT_FOUND
+
+    search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
-    if search_term == '':
+    if not search_term:
         es_result = None
     else:
         es_result = handler.search(search_term, search_type)
@@ -559,21 +583,23 @@ def _add_links(report_dict):
                               .get('matches', {})
 
     if matches_dict:
+        links_dict = {}
         # k=SHA256, v=ssdeep.compare result
         for k, v in matches_dict.items():
             t_id = db.exists(k)
             if t_id:
-                matches_dict.pop(k)
                 url = '{h}/report/{t_id}'.format(
                     h=web_loc,
                     t_id=t_id)
                 href = '<a target="_blank" href="{url}">{sha256}</a>'.format(
                     url=url,
                     sha256=k)
-                matches_dict[href] = v
+                links_dict[href] = v
+            else:
+                links_dict[k] = v
 
         # replace with updated dict
-        report_dict['Report']['ssdeep']['matches'] = matches_dict
+        report_dict['Report']['ssdeep']['matches'] = links_dict
 
     return report_dict
 
@@ -593,6 +619,32 @@ def files_get_task(task_id):
     else:
         return jsonify({'Error': 'sha256 not in report!'})
 
+
+@app.route('/api/v1/tasks/<task_id>/maec', methods=['GET'])
+def get_maec_report(task_id):
+    # try to get report dict
+    report_dict, success = get_report_dict(task_id)
+    if not success:
+        return jsonify(report_dict)
+
+    # okay, we have report dict; get cuckoo task ID
+    try:
+        cuckoo_task_id = report_dict['Report']['Cuckoo Sandbox']['info']['id']
+    except KeyError:
+        return jsonify({'Error': 'No MAEC report found for that task!'})
+
+    # Get the MAEC report from Cuckoo
+    try:
+        maec_report = requests.get(
+            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
+        )
+    except:
+        return jsonify({'Error': 'No MAEC report found for that task!'})
+    # raw JSON
+    response = make_response(jsonify(maec_report.json()))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+    return response
 
 def get_report_dict(task_id):
     task = db.get_task(task_id)
@@ -781,6 +833,33 @@ def files_get_sha256_helper(sha256, raw=None):
             response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
     return response
 
+@app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
+def run_ssdeep_compare():
+    '''
+    Runs ssdeep compare analytic and returns success / error message.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        ssdeep_analytic.ssdeep_compare()
+        return make_response(jsonify({ 'Message': 'Success' }))
+    except Exception as e:
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
+
+@app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
+def run_ssdeep_group():
+    '''
+    Runs sssdeep group analytic and returns list of groups as a list.
+    '''
+    try:
+        ssdeep_analytic = SSDeepAnalytic()
+        groups = ssdeep_analytic.ssdeep_group()
+        return make_response(jsonify({ 'groups': groups }))
+    except Exception as e:
+        return make_response(
+            jsonify({'Message': 'Unable to complete request.'}),
+            HTTP_BAD_REQUEST)
 
 if __name__ == '__main__':
 
