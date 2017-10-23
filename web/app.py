@@ -84,6 +84,11 @@ def history():
         return render_template('history.html', api_loc=app.config['API_LOC'])
 
 
+@app.route('/analytics', methods=['GET'])
+def analytics():
+    return render_template('analytics.html', api_loc=app.config['API_LOC'])
+
+
 if __name__ == "__main__":
     app.run(debug=app.config['DEBUG'],
             port=app.config['PORT'],
