@@ -90,6 +90,16 @@ if [[ $prompt == "y" ]]; then
   echo You can update these signatures by running cd $DIR/etc/yarasigs/Icewater \&\& git pull
 fi
 
+read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  # Download the unique set
+  curl -k https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernu.zip > rds_modernu.zip
+  unzip rds_modernu.zip
+  rm rds_modernu.zip
+  python $DIR/utils/nsrl_parse.py -o $DIR/etc/nsrl RDS_*/NSRLFile.txt
+  rm -fr RDS_*
+fi
+
 read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   pip install -e $DIR
