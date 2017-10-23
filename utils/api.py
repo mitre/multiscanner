@@ -551,14 +551,15 @@ def get_report(task_id):
     else:
         return jsonify(report_dict)
 
-def _pre_process(report_dict):
+
+def _pre_process(report_dict={}):
     '''
     Returns a JSON dictionary where a series of pre-processing steps are
     executed on report_dict.
     '''
 
     # pop unecessary keys
-    if report_dict.get('Report').get('ssdeep'):
+    if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
             try:
                 report_dict['Report']['ssdeep'].pop(k)
@@ -568,6 +569,7 @@ def _pre_process(report_dict):
     report_dict = _add_links(report_dict)
 
     return report_dict
+
 
 def _add_links(report_dict):
     '''
@@ -602,6 +604,7 @@ def _add_links(report_dict):
         report_dict['Report']['ssdeep']['matches'] = links_dict
 
     return report_dict
+
 
 @app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
 def files_get_task(task_id):
@@ -645,6 +648,7 @@ def get_maec_report(task_id):
     response.headers['Content-Type'] = 'application/json'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
     return response
+
 
 def get_report_dict(task_id):
     task = db.get_task(task_id)
