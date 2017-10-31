@@ -588,12 +588,8 @@ def _add_links(report_dict):
         for k, v in matches_dict.items():
             t_id = db.exists(k)
             if t_id:
-                url = '{h}/report/{t_id}'.format(
-                    h=web_loc,
-                    t_id=t_id)
-                href = '<a target="_blank" href="{url}">{sha256}</a>'.format(
-                    url=url,
-                    sha256=k)
+                url = '{h}/report/{t_id}'.format(h=web_loc, t_id=t_id)
+                href = _linkify(k, url, True)
                 links_dict[href] = v
             else:
                 links_dict[k] = v
@@ -602,6 +598,17 @@ def _add_links(report_dict):
         report_dict['Report']['ssdeep']['matches'] = links_dict
 
     return report_dict
+
+#TODO: should we move these helper functions to separate file?
+def _linkify(s, url, new_tab=True):
+    '''
+    Return string s as HTML a tag with href pointing to url.
+    '''
+
+    return '<a{new_tab} href="{url}">{s}</a>'.format(
+        new_tab=' target="_blank"' if new_tab else '',
+        url=url,
+        s=s)
 
 @app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
 def files_get_task(task_id):
