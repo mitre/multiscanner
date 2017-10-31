@@ -507,6 +507,7 @@
     width: 50px;
     overflow: hidden;
     word-wrap: break-word;
+    font-family: 'Inconsolata', 'Consolas', monospace;
 }
 
 table.dataTable thead .sorting:after {
