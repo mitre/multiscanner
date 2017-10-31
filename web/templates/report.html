@@ -242,14 +242,35 @@
       $('#report-extras').show();
       $('#report-tags').show();
 
+      // Take tags out of report and put into tags input element
       if (data.Report.hasOwnProperty('tags')) {
         tags = data.Report.tags;
         delete data.Report.tags;
         $('#tags').val(tags.toString());
       }
+
+      // Take some report data and put it at the top of the report
+      var top_fields_list = [
+          'filename',
+          'Scan Time',
+          'Scan Metadata',
+          'MD5',
+          'SHA1',
+          'SHA256'
+      ]
+      top_fields_list.forEach(function(elem) {
+        if (data.Report.hasOwnProperty(elem)) {
+          val = data.Report[elem];
+          delete data.Report[elem];
+          $('tbody:first').append(determineType(elem, val));
+        }
+      });
+
+      // Put report into table
       $.each(data.Report, function(index, item) {
         $('tbody:first').append(determineType(index, item));
       });
+
       // Handle row expanson
       $('.expander').each(function(idx, elem) {
         $(elem).click(function(e) {
@@ -472,6 +493,8 @@
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
       } else if (this.id == 'getSample') {
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
+      } else if (this.id == 'getMAEC') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/maec";
       }
     });
   });
@@ -510,7 +533,7 @@
       <ul class="dropdown-menu">
         <li id="getJson"><a href="#">JSON</a></li>
         <li id="getSample"><a href="#">Sample</a></li>
-        <li><a href="#">MAEC</a></li>
+        <li id="getMAEC"><a href="#">MAEC</a></li>
       </ul>
     </div>
   </div>
