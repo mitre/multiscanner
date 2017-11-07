@@ -1,0 +1,55 @@
+FROM centos:centos7
+MAINTAINER Austin West awest1339
+
+ENV PYTHON_VER 3.6.2
+
+# Set Proxy variables if necessary
+# ENV http_proxy http://proxy.example:80
+# ENV https_proxy http://proxy.example:80
+
+# Install all the things!!!!
+RUN yum -y install \
+ gcc \
+ gcc-c++ \
+ git \
+ make \
+ libffi-devel \
+ zlib-devel \
+ bzip2-devel \
+ openssl-devel \
+ ncurses-devel \
+ sqlite-devel \
+ readline-devel \
+ gdbm-devel \
+ db4-devel \
+ libpcap-devel \
+ xz-devel \
+ && yum clean all
+
+
+# Compile python
+RUN curl -k https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tgz | tar zx \
+ && cd Python-$PYTHON_VER \
+ && ./configure --prefix=/usr/local --enable-shared LDFLAGS="-Wl,-rpath /usr/local/lib" \
+ && make -j$(nproc) install \
+ && cd .. \
+ && rm -rf Python-$PYTHON_VER \
+ && ln -s /usr/local/bin/python3 /usr/local/bin/python \
+ && ln -s /usr/local/bin/pip3 /usr/local/bin/pip \
+ && ln -s /usr/local/bin/python3-config /usr/local/bin/python-config \
+ && ln -s /usr/local/bin/pydoc3 /usr/local/bin/pydoc \
+ && ldconfig \
+ && curl -k https://bootstrap.pypa.io/get-pip.py | python
+
+COPY . /opt/multiscanner
+COPY ./docker_utils/*.ini /opt/multiscanner/
+
+WORKDIR /opt/multiscanner
+RUN ./install.sh
+
+# Undo proxy
+# ENV http_proxy=
+# ENV https_proxy=
+
+# Run script
+CMD python web/app.py
