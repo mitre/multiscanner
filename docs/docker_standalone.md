@@ -5,7 +5,7 @@ $ docker-compose up
 ```
 This will build the 3 necessary containers (one for the web application, one for the REST API, and one for the ElasticSearch backend).
 
-**_Note 1_: We are assuming that you are already running docker and have docker-compose installed on your machine. Guides on how to do that are here: https://docs.docker.com/engine/installation/ and here: https://docs.docker.com/compose/install/**
+**_Note 1_: We are assuming that you are already running latest version of docker and have the latest version of docker-compose installed on your machine. Guides on how to do that are here: https://docs.docker.com/engine/installation/ and here: https://docs.docker.com/compose/install/**
 
 **_Note 2_: Since this docker container runs two web applications and an ElasticSearch node, there is a fairly high requirement for RAM / computing power. We'd recommend running this on a machine with at least 4GB of RAM.**
 
