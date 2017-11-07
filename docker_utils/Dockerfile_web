@@ -42,6 +42,7 @@ RUN curl -k https://www.python.org/ftp/python/$PYTHON_VER/Python-$PYTHON_VER.tgz
  && curl -k https://bootstrap.pypa.io/get-pip.py | python
 
 COPY . /opt/multiscanner
+COPY ./docker_utils/*.ini /opt/multiscanner/
 
 WORKDIR /opt/multiscanner
 RUN ./install.sh
