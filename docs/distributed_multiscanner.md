@@ -49,7 +49,7 @@ The REST API is also written in Flask. It has an underlying PostgreSQL database 
 We use Celery as our distributed task queue. 
 
 ### Task Tracking ###
-Postgres is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed, etc...).
+PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed, etc...).
 
 ### Distributed File System ###
 GlusterFS is our selection for our distributed file system. Each componenet that needs access to the raw samples mounts the share. We selected GlusterFS because it is much more performant in our use case of storing a large number of small samples than a technology like HDFS is.
