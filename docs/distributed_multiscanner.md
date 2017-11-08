@@ -26,7 +26,8 @@ MAF is intended to solve any combination of these problems / use cases:
   * Malware analysis centers
   * CTI sharing organizations
 
-This is what the architecture looks like:
+## Architecture ##
+This is what the current architecture looks like:
 
 ![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
 
