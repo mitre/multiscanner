@@ -12,11 +12,13 @@ MAF is intended to solve any combination of these problems / use cases:
     * Does not perform auto-scaling (e.g. auto-provisioning of VM’s, etc)
     * New nodes must be deployed manually and added to the Ansible playbook to receive the proper configurations
 * Enable analytics on malware samples
-  * Either by interacting with the ElasticSearch backend or plugging into the web / REST UI * CTI integration / storage
+  * Either by interacting with the ElasticSearch backend or plugging into the web / REST UI
+  * CTI integration / storage
 * Export CTI
-  * Intended to output AMAC Malware Analysis Reports (AMAR) in multiple formats: STIX, PDF, HTML, and text.
+  * Intended to output reports in multiple formats: STIX, PDF, HTML, JSON, and text.
   * Allows for export of raw JSON reports
-  * Will allow for export of MAEC 5.0 reports * Sharing malware analysis results
+  * Allows for export of MAEC 5.0 reports
+  * Sharing malware analysis results
   * Either within the framework’s UI itself or by exporting as JSON and sharing.
 * Support file submission types:
   * Currently support all file formats (e.g. PE, PDF, Office, etc…)
