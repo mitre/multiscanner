@@ -48,6 +48,8 @@ setup(
         'python-magic',
         'requests',
         'ssdeep',
+        # Required by PDF
+        'reportlab',
         # Required by API
         'flask',
         'sqlalchemy',
