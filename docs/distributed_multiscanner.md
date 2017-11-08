@@ -1,6 +1,31 @@
 # Distributed MultiScanner #
 MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new addition includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
 
+## Intended Use case ##
+MAF is intended to solve any combination of these problems / use cases:
+
+* Malware repository (i.e, long term storage of binaries and metadata)
+* Scalable analysis capabilities
+  * Every component of the MAF is designed with scale in mind
+  * Note this does not include the following:
+    * The scaling of external malware analysis tools such as Cuckoo
+    * Does not perform auto-scaling (e.g. auto-provisioning of VM’s, etc)
+    * New nodes must be deployed manually and added to the Ansible playbook to receive the proper configurations
+* Enable analytics on malware samples
+  * Either by interacting with the ElasticSearch backend or plugging into the web / REST UI * CTI integration / storage
+* Export CTI
+  * Intended to output AMAC Malware Analysis Reports (AMAR) in multiple formats: STIX, PDF, HTML, and text.
+  * Allows for export of raw JSON reports
+  * Will allow for export of MAEC 5.0 reports * Sharing malware analysis results
+  * Either within the framework’s UI itself or by exporting as JSON and sharing.
+* Support file submission types:
+  * Currently support all file formats (e.g. PE, PDF, Office, etc…)
+  * Currently doesn’t support extraction of files from PCAP / memory dumps / other data streams (but that is in the dev plan)
+* Intended users:
+  * SOCs
+  * Malware analysis centers
+  * CTI sharing organizations
+
 This is what the architecture looks like:
 
 ![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
