@@ -2,11 +2,11 @@
 MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new addition includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
 
 ## Intended Use case ##
-MAF is intended to solve any combination of these problems / use cases:
+Distributed MultiScanner is intended to solve any combination of these problems / use cases:
 
 * Malware repository (i.e, long term storage of binaries and metadata)
 * Scalable analysis capabilities
-  * Every component of the MAF is designed with scale in mind
+  * Every component of the Distributed MultiScanner is designed with scale in mind
   * Note this does not include the following:
     * The scaling of external malware analysis tools such as Cuckoo
     * Does not perform auto-scaling (e.g. auto-provisioning of VM’s, etc)
