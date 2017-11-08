@@ -1,4 +1,8 @@
 # Distributed MultiScanner #
+MultiScanner is a file analysis framework that assists the user in evaluating a set of files by automatically running a suite of tools for the user and aggregating the output. Tools can be custom built python scripts, web APIs, software running on another machine, etc. Tools are incorporated by creating modules that run in the MultiScanner framework.
+
+Modules are designed to be quickly written and easily incorporated into the framework. Currently written and maintained modules are related to malware analytics, but the framework is not limited to that scope. For a list of modules you can look in [modules](../modules), descriptions and config options can be found in [modules.md](modules.md).
+
 MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new functionality includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
 
 ## Intended Use case ##
