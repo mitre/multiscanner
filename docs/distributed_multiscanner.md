@@ -1,13 +1,6 @@
 # Distributed MultiScanner #
 MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new addition includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
 
-## Architecture ##
-This is what the current architecture looks like:
-
-![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
-
-When a sample is submitted (either via the web UI or the REST API), the sample is saved to the distributed file system (GlusterFS), a task is added to the distributed task queue (Celery), and an entry is added to the task management database (PostgreSQL). The worker nodes (Celery clients) all have the GlusterFS mounted, which gives them access to the samples for scanning. In our setup, we colocate the worker nodes with the GlusterFS nodes in order to reduce the network load of workers pulling samples from GlusterFS. When a new task is added to the Celery task queue, one of the worker nodes will pull the task and retrieve the corresponding sample from the GlusterFS via its SHA256 value. The worker node then performs the scanning work. For a full list of modules, look here: https://github.com/awest1339/multiscanner/blob/celery/docs/modules.md. Modules can be enabled / disabled via a configuration file. When the worker finishes its scans, it will generate a JSON blob and index that JSON into ElasticSearch for permanent storage / searching. It will then update the task management database with a status of "Complete". The user will then be able view the report via the web interface or retrieve the raw JSON.
-
 ## Intended Use case ##
 MAF is intended to solve any combination of these problems / use cases:
 
@@ -34,6 +27,13 @@ MAF is intended to solve any combination of these problems / use cases:
   * SOCs
   * Malware analysis centers
   * CTI sharing organizations
+
+## Architecture ##
+This is what the current architecture looks like:
+
+![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
+
+When a sample is submitted (either via the web UI or the REST API), the sample is saved to the distributed file system (GlusterFS), a task is added to the distributed task queue (Celery), and an entry is added to the task management database (PostgreSQL). The worker nodes (Celery clients) all have the GlusterFS mounted, which gives them access to the samples for scanning. In our setup, we colocate the worker nodes with the GlusterFS nodes in order to reduce the network load of workers pulling samples from GlusterFS. When a new task is added to the Celery task queue, one of the worker nodes will pull the task and retrieve the corresponding sample from the GlusterFS via its SHA256 value. The worker node then performs the scanning work. For a full list of modules, look here: https://github.com/awest1339/multiscanner/blob/celery/docs/modules.md. Modules can be enabled / disabled via a configuration file. When the worker finishes its scans, it will generate a JSON blob and index that JSON into ElasticSearch for permanent storage / searching. It will then update the task management database with a status of "Complete". The user will then be able view the report via the web interface or retrieve the raw JSON.
 
 ## Setup ##
 Currently, we deploy this system with Ansible. More information about that process can be found here: https://github.com/mitre/multiscanner-ansible. We are also currently working on supporting deploying the distributed architecture via Docker. If you wish to get an idea of how the system works without having to go through the full process of setting up the distributed architecture, look into our docker containers for a standalone system: https://github.com/awest1339/multiscanner/blob/celery/docs/docker_standalone.md. Obviously, the standalone system will be far less scalable / robust / feature rich. However, it will stand up the web UI, the REST API, and an ElasticSearch node for you to see how the system works.
