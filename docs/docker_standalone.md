@@ -9,6 +9,8 @@ This will build the 3 necessary containers (one for the web application, one for
 
 **_Note 2_: Since this docker container runs two web applications and an ElasticSearch node, there is a fairly high requirement for RAM / computing power. We'd recommend running this on a machine with at least 4GB of RAM.**
 
-**_Note 3_: It is important to note that this is not designed for production use. This is simply a primer for using MultiScanner's web interface. Users should not run this in production or at scale. The MultiScanner framework is highly scalable and distributed, but that requires a full install. Currently, we support installing the distributed system via ansible. More information about that process can be found here: https://github.com/mitre/multiscanner-ansible**
+**_Note 3_: THIS CONTAINER IS NOT DESIGNED FOR PRODUCTION USE. This is simply a primer for using MultiScanner's web interface. Users should not run this in production or at scale. The MultiScanner framework is highly scalable and distributed, but that requires a full install. Currently, we support installing the distributed system via ansible. More information about that process can be found here: https://github.com/mitre/multiscanner-ansible**
 
-**_Note 4_: Additionally, if you are installing this system behind a proxy, you must edit Dockerfiles in the docker_utils directory. Set line 7 and 8 of https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_api#L7 and https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_web#L7 to the appropriate values for your environment.**
+**_Note 4_: This container will only be reachable / functioning on localhost.**
+
+**_Note 5_: Additionally, if you are installing this system behind a proxy, you must edit Dockerfiles in the docker_utils directory. Set line 7 and 8 of https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_api#L7 and https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_web#L7 to the appropriate values for your environment.**
