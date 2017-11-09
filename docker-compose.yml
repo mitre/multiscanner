@@ -14,12 +14,12 @@ services:
       context: .
       dockerfile: docker_utils/Dockerfile_web
     ports:
-     - "8000:8000"
+     - "127.0.0.1:8000:8000"
   api:
     build:
       context: .
       dockerfile: docker_utils/Dockerfile_api
     ports:
-     - "8080:8080"
+     - "127.0.0.1:8080:8080"
     depends_on:
      - elastic
