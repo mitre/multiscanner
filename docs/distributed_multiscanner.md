@@ -3,7 +3,7 @@ MultiScanner is a file analysis framework that assists the user in evaluating a 
 
 Modules are designed to be quickly written and easily incorporated into the framework. Currently written and maintained modules are related to malware analytics, but the framework is not limited to that scope. For a list of modules you can look in [modules](../modules), descriptions and config options can be found in [modules.md](modules.md).
 
-MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new functionality includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
+MultiScanner also supports a distributed workflow for sample storage, analysis, and report viewing. This functionality includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and distributed task management (Celery / RabbitMQ).
 
 ## Intended Use case ##
 Distributed MultiScanner is intended to solve any combination of these problems / use cases:
@@ -19,9 +19,8 @@ Distributed MultiScanner is intended to solve any combination of these problems 
   * Either by interacting with the ElasticSearch backend or plugging into the web / REST UI
   * Cyber Threat Intelligence (CTI) integration / storage
 * Export CTI
-  * Intended to output reports in multiple formats: STIX, MAEC, PDF, HTML, and JSON
-  * Allows for export of raw JSON reports
-  * Allows for export of MAEC 5.0 reports
+  * Intend to output reports in multiple formats: STIX, MAEC, PDF, HTML, and JSON
+    * Currently support JSON, MAEC 5.0, and HTML
   * Enables sharing of malware analysis results
 * Support file submission types:
   * Currently support all file formats (e.g. PE, PDF, Office, etc…)
@@ -54,7 +53,7 @@ The REST API is also powered by Flask and served via Apache. It has an underlyin
 We use Celery as our distributed task queue. 
 
 ### Task Tracking ###
-PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed, etc...).
+PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed).
 
 ### Distributed File System ###
 GlusterFS is our distributed file system. Each component that needs access to the raw samples mounts the share via FUSE. We selected GlusterFS because it is much more performant in our use case of storing a large number of small samples than a technology like HDFS would be.
