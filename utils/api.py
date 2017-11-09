@@ -692,8 +692,6 @@ def taglist():
     Return a list of all tags currently in use.
     '''
     response = handler.get_tags()
-    if not response:
-        abort(HTTP_BAD_REQUEST)
     return jsonify({'Tags': response})
 
 
