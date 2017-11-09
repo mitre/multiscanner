@@ -80,7 +80,7 @@ the location defined by filepath.
 
 Distributed MultiScanner
 ------------------------
-MultiScanner is also part of a full blown, scalable file analysis framework, complete with web interface, REST API, and report storage. Please set [Distributed Multiscanner](<docs/distributed_multiscanner.md) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/docker_standalone.md>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
+MultiScanner is also part of a full blown, scalable file analysis framework, complete with web interface, REST API, and report storage. Please set [Distributed Multiscanner](<docs/distributed_multiscanner.md>) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/docker_standalone.md>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
 
 Other Reading
 -------------
