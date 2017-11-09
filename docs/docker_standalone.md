@@ -13,4 +13,4 @@ This will build the 3 necessary containers (one for the web application, one for
 
 **_Note 4_: This container will only be reachable / functioning on localhost.**
 
-**_Note 5_: Additionally, if you are installing this system behind a proxy, you must edit Dockerfiles in the docker_utils directory. Set line 7 and 8 of https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_api#L7 and https://github.com/awest1339/multiscanner/blob/docker/docker_utils/Dockerfile_web#L7 to the appropriate values for your environment.**
+**_Note 5_: Additionally, if you are installing this system behind a proxy, you must edit the docker-compose.yml file in four places. First, uncomment [lines 18-20](<../docker-compose.yml#L18>) and [lines 35-37](<../docker-compose.yml#L35>). Next, uncomment [lines 25-28](../docker-compose.yml#L25>) and set the correct proxy variables there. Finally, do the same thing in [lines 42-45](../docker-compose.yml#L42>). The docker-compose.yml file has comments to make clear where to make these changes.**
