@@ -895,7 +895,8 @@ def create_pdf_document(report):
     '''
     Method to create PDF report document from JSON.
     '''
-    with open('..\\multiscanner\\pdf_generator\\pdf_config.json') as data_file:
+    # with open('/opt/multiscanner/pdf_generator/pdf_config.json') as data_file:
+    with open(os.path.join(MS_WD, 'pdf_generator/pdf_config.json')) as data_file:
         pdf_components = json.load(data_file)
 
     gen_pdf = GenericPDF(pdf_components)
