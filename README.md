@@ -78,6 +78,10 @@ Results is a dictionary object where each key is a filename of a scanned file.
 `multiscanner.config_init(filepath)` will create a default configuration file at
 the location defined by filepath.
 
+Distributed MultiScanner
+------------------------
+MultiScanner is also part of a full blown, scalable file analysis framework, complete with web interface, REST API, and report storage. Please set [Distributed Multiscanner](<docs/distributed_multiscanner.md) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/docker_standalone.md>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
+
 Other Reading
 -------------
 For more information on module configuration or writing modules check the
