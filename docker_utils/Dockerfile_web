@@ -3,10 +3,6 @@ MAINTAINER Austin West awest1339
 
 ENV PYTHON_VER 3.6.2
 
-# Set Proxy variables if necessary
-# ENV http_proxy http://proxy.example:80
-# ENV https_proxy http://proxy.example:80
-
 # Install all the things!!!!
 RUN yum -y install \
  gcc \
