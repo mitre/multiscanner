@@ -1,5 +1,9 @@
 # Distributed MultiScanner #
-MultiScanner now supports a distributed workflow for sample storage, analysis, and report viewing. This new functionality includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and task management (Celery / RabbitMQ).
+MultiScanner is a file analysis framework that assists the user in evaluating a set of files by automatically running a suite of tools for the user and aggregating the output. Tools can be custom built python scripts, web APIs, software running on another machine, etc. Tools are incorporated by creating modules that run in the MultiScanner framework.
+
+Modules are designed to be quickly written and easily incorporated into the framework. Currently written and maintained modules are related to malware analytics, but the framework is not limited to that scope. For a list of modules you can look in [modules](../modules), descriptions and config options can be found in [modules.md](modules.md).
+
+MultiScanner also supports a distributed workflow for sample storage, analysis, and report viewing. This functionality includes a web interface, a REST API, a distributed file system (GlusterFS), distributed report storage / searching (ElasticSearch), and distributed task management (Celery / RabbitMQ).
 
 ## Intended Use case ##
 Distributed MultiScanner is intended to solve any combination of these problems / use cases:
@@ -15,9 +19,8 @@ Distributed MultiScanner is intended to solve any combination of these problems 
   * Either by interacting with the ElasticSearch backend or plugging into the web / REST UI
   * Cyber Threat Intelligence (CTI) integration / storage
 * Export CTI
-  * Intended to output reports in multiple formats: STIX, MAEC, PDF, HTML, and JSON
-  * Allows for export of raw JSON reports
-  * Allows for export of MAEC 5.0 reports
+  * Intend to output reports in multiple formats: STIX, MAEC, PDF, HTML, and JSON
+    * Currently support JSON, MAEC 5.0, and HTML
   * Enables sharing of malware analysis results
 * Support file submission types:
   * Currently support all file formats (e.g. PE, PDF, Office, etc…)
@@ -32,10 +35,10 @@ This is the current architecture:
 
 ![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
 
-When a sample is submitted (either via the web UI or the REST API), the sample is saved to the distributed file system (GlusterFS), a task is added to the distributed task queue (Celery), and an entry is added to the task management database (PostgreSQL). The worker nodes (Celery clients) all have the GlusterFS mounted, which gives them access to the samples for scanning. In our setup, we colocate the worker nodes with the GlusterFS nodes in order to reduce the network load of workers pulling samples from GlusterFS. When a new task is added to the Celery task queue, one of the worker nodes will pull the task and retrieve the corresponding sample from the GlusterFS via its SHA256 value. The worker node then performs the scanning work. For a full list of modules, look [here](https://github.com/awest1339/multiscanner/blob/celery/docs/modules.md). Modules can be enabled / disabled via a configuration file. This configuration file is distributed to the workers by Ansible at setup time (details on this process later). When the worker finishes its scans, it will generate a JSON blob and index it into ElasticSearch for permanent storage. It will then update the task management database with a status of "Complete". The user will then be able view the report via the web interface or retrieve the raw JSON.
+When a sample is submitted (either via the web UI or the REST API), the sample is saved to the distributed file system (GlusterFS), a task is added to the distributed task queue (Celery), and an entry is added to the task management database (PostgreSQL). The worker nodes (Celery clients) all have the GlusterFS mounted, which gives them access to the samples for scanning. In our setup, we colocate the worker nodes with the GlusterFS nodes in order to reduce the network load of workers pulling samples from GlusterFS. When a new task is added to the Celery task queue, one of the worker nodes will pull the task and retrieve the corresponding sample from the GlusterFS via its SHA256 value. The worker node then performs the scanning work. Modules can be enabled / disabled via a configuration file. This configuration file is distributed to the workers by Ansible at setup time (details on this process later). When the worker finishes its scans, it will generate a JSON blob and index it into ElasticSearch for permanent storage. It will then update the task management database with a status of "Complete". The user will then be able view the report via the web interface or retrieve the raw JSON.
 
 ## Setup ##
-Currently, we deploy this system with Ansible. More information about that process can be found [here](https://github.com/mitre/multiscanner-ansible). We are also currently working to support deploying the distributed architecture via Docker. If you wish to get an idea of how the system works without having to go through the full process of setting up the distributed architecture, look into our docker containers for a standalone [system](https://github.com/awest1339/multiscanner/blob/celery/docs/docker_standalone.md). Obviously, the standalone system will be far less scalable / robust / feature-rich. However, it will stand up the web UI, the REST API, and an ElasticSearch node for you to see how the system works. The standalone container is intended as an introduction to the system and its capabilities, but not designed for use in production.
+Currently, we deploy this system with Ansible. More information about that process can be found [here](https://github.com/mitre/multiscanner-ansible). We are also currently working to support deploying the distributed architecture via Docker. If you wish to get an idea of how the system works without having to go through the full process of setting up the distributed architecture, look into our docker containers for a standalone [system](docker_standalone.md). Obviously, the standalone system will be far less scalable / robust / feature-rich. However, it will stand up the web UI, the REST API, and an ElasticSearch node for you to see how the system works. The standalone container is intended as an introduction to the system and its capabilities, but not designed for use in production.
 
 ## Architecture Details ##
 What follows is a brief discussion of the tools and design choices we made in the creation of this system.
@@ -50,7 +53,7 @@ The REST API is also powered by Flask and served via Apache. It has an underlyin
 We use Celery as our distributed task queue. 
 
 ### Task Tracking ###
-PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed, etc...).
+PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed).
 
 ### Distributed File System ###
 GlusterFS is our distributed file system. Each component that needs access to the raw samples mounts the share via FUSE. We selected GlusterFS because it is much more performant in our use case of storing a large number of small samples than a technology like HDFS would be.
