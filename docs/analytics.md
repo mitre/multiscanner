@@ -1,14 +1,16 @@
 # Analytics #
 Enabling analytics and advanced queries is the primary advantage of running 
 several tools against a sample, extracting as much information as possible, and
-storing in a common datastorecs.
+storing the output in a common datastore.
 
-Types of analytics and queries of interest:
+The following are some example types of analytics and queries that may be of interest:
 
 - cluster samples
 - outlier samples
 - samples for deep-dive analysis
 - gaps in current toolset
+- machine learning analytics on tool outputs
+- others
 
 ## ssdeep Comparison ##
 Fuzzy hashing is an effective method to identify similar files based on common
@@ -36,5 +38,5 @@ Because we need to compute ```ssdeep.compare```, the ssdeep analytic cannot be
 done entirely in Elasticsearch. Python is used to query Elasicsearch, compute
 ```ssdeep.compare``` on the results, and update the documents in Elasticsearch.
 
-
-
+### Deployment ###
+We use a Celery beat task to kick off the ssdeep comparison nightly at 2am local time, when the system is at lower user loads. This ensures that the analytic will be run on all samples without adding an exorbinant load to the system.
