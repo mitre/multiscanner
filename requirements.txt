@@ -13,6 +13,8 @@ requests
 ssdeep
 tika
 yara-python
+#Required for PDF
+reportlab
 #Required by API
 flask
 psycopg2
