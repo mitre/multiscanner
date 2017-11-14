@@ -13,7 +13,7 @@ TYPE = "Metadata"
 NAME = "entropy"
 
 
-def check():
+def check(conf=DEFAULTCONF):
     return True
 
 
