@@ -3,7 +3,8 @@ Enabling analytics and advanced queries is the primary advantage of running
 several tools against a sample, extracting as much information as possible, and
 storing the output in a common datastore.
 
-The following are some example types of analytics and queries that may be of interest:
+The following are some example types of analytics and queries that may be of
+interest:
 
 - cluster samples
 - outlier samples
@@ -39,4 +40,8 @@ done entirely in Elasticsearch. Python is used to query Elasicsearch, compute
 ```ssdeep.compare``` on the results, and update the documents in Elasticsearch.
 
 ### Deployment ###
-We use a Celery beat task to kick off the ssdeep comparison nightly at 2am local time, when the system is at lower user loads. This ensures that the analytic will be run on all samples without adding an exorbinant load to the system.
+[celery beat](http://docs.celeryproject.org/en/latest/userguide/periodic-tasks.html)
+is used to schedule and kick off the ssdeep comparison task nightly at 2am
+local time, when the system is experiencing less load from users. This ensures
+that the analytic will be run on all samples without adding an exorbinant load
+to the system.
