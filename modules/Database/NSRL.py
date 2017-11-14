@@ -17,11 +17,14 @@ REQUIRES = ["SHA1", "MD5"]
 
 DEFAULTCONF = {
     'hash_list': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'hash_list'),
-    'offsets': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'offsets')
+    'offsets': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'offsets'),
+    'ENABLED': True
     }
 
 
 def check(conf=DEFAULTCONF):
+    if not conf['ENABLED']:
+        return False
     if None in REQUIRES:
         return False
     if not os.path.isfile(conf['hash_list']) or not os.path.isfile(conf['offsets']):
