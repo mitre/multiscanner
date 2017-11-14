@@ -11,13 +11,16 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "entropy"
+DEFAULTCONF = {
+    'ENABLED': True
+}
 
 
 def check(conf=DEFAULTCONF):
     return True
 
 
-def scan(filelist):
+def scan(filelist, conf=DEFAULTCONF):
     '''Calculate entropy of a string'''
     results = []
     for fname in filelist:
