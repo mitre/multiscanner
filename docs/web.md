@@ -55,10 +55,10 @@ scans recorded for each file. Use the "Default" search type to have wildcards
 automatically appended to the beginning and end of your search term. Use the
 "Exact" search type to search automatically append quotes and search for the
 exact phrase. Finally, use the "Advanced" search type to search with the full
-power of Elasticsearch's query string syntax. Nothing will be automatically
-appended. When you click on one of the search results, the search term will be
-highlighted on the Report page and the report will be expanded and automatically
-scrolled to the first match..
+power of Lucene query string syntax. Nothing will be automatically appended and
+you will need to escape any reserved characters yourself. When you click on one
+of the search results, the search term will be highlighted on the Report page
+and the report will be expanded and automatically scrolled to the first match.
 
 Report page
 -----------
@@ -72,8 +72,8 @@ collapse them all again.
 
 As reports can contain a great deal of content, you can search the report to
 find the exact data you are looking for with the search field located under the
-report title. The search term, if found, will be highlighted, the report will
-be expanded, and the page automatically scrolled to the first match.
+report title. The search term, if found, will be highlighted, the matching
+fields will be expanded, and the page automatically scrolled to the first match.
 
 Reports can be tagged by entering text in the Tags input box and hitting the
 enter key. As you type, a dropdown will appear with suggestions from the tags
