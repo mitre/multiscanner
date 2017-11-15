@@ -1,8 +1,13 @@
-Module Writing
---------------
+# Developing an Analysis Module
+
 Modules are intended to be easily written and incorporated into the MultiScanner framework. A finished module must be in the modules folder for it to be used on the next run.
 
-## Functions ##
+Modules are intended to be quickly written and incorporated into the MultiScanner framework. A finished module must be placed in the modules folder before it can be used. The configuration file does not need to be manually updated.
+ 
+See this [example module](example.md).
+
+
+## Mandatory Functions ##
 When writing a new module, there are two mandatory functions that must be defined: check() and scan(). Additional functions can be written if required.
 
 ### check() ###
@@ -28,7 +33,7 @@ There are two global variables that when present, affect the way the module is c
 
 **DEFAULTCONF** - This is a dictionary of configuration settings. When set, the settings will be written to the configuration file, making it user editable. The configuration object will be passed to the module's check and scan function and must be an argument in both functions.
 
-**REQUIRES** - This is a list of the module results needed for a module. For example, `REQUIRES = ['MD5']` will be set to the output from the module MD5.py. A code sample is provided in [examples/include_module.py](examples/include_module.py)
+**REQUIRES** - This is a list of the module results needed for a module. For example, `REQUIRES = ['MD5']` will be set to the output from the module MD5.py. A [code sample](example.md) is provided.
 
 ## Module Interface ##
 The module interface is a class that is put into each module as it is run. This allows for several features to be added for interacting with the framework at runtime. It is injected as `multiscanner` in the global namespace.
@@ -41,7 +46,7 @@ The module interface is a class that is put into each module as it is run. This 
 * `apply_async(func, args=(), kwds={}, callback=None)` - This mirrors multiprocessing.Pool.apply_async and returns a [multiprocessing.pool.AsyncResult](https://docs.python.org/2/library/multiprocessing.html#multiprocessing.pool.AsyncResult). The pool is shared by all modules.
 * `scan_file(file_path, from_filename)` - This will scan a file that was found inside another file. `file_path` should be the extracted file on the filesystem (you can write it in path at `multiscanner.write_dir`). `from_filename` is the file it was extracted from.
 
-## Config ##
+## Configuration ##
 If a module requires configuration, the DEFAULTCONF global variable must be defined. This variable is passed to both check() and scan(). The configuration will be read from the configuration file if it is present. If the file is not present, it will be written into the configuration file.
 
 If `replacement path` is set in the configuration, the module will receive file names, with the folder path replaced with the variable's value. This is useful for analytics which are run on a remote machine.
