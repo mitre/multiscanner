@@ -19,12 +19,17 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 # Add the libs dir to the sys.path. Allows import of common, celery_batches modules
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'libs'))
+# Add the analytics dir to the sys.path. Allows import of ssdeep_analytics
+if os.path.join(MS_WD, 'analytics') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
 import multiscanner
 import common
 import sql_driver as database
 from celery_batches import Batches
+from ssdeep_analytics import SSDeepAnalytic
 
 from celery import Celery
+from celery.schedules import crontab
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
@@ -34,6 +39,7 @@ DEFAULTCONF = {
     'vhost': '/',
     'flush_every': '100',
     'flush_interval': '10',
+    'tz': 'US/Eastern',
 }
 
 config_object = configparser.SafeConfigParser()
@@ -61,8 +67,16 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('host'),
     worker_config.get('vhost'),
 ))
+app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    # Executes every morning at 2:00 a.m.
+    sender.add_periodic_task(
+        crontab(hour=2, minute=0),
+        ssdeep_compare_celery.s(),
+    )
 
 def celery_task(files, config=multiscanner.CONFIG):
     '''
@@ -154,6 +168,18 @@ def multiscanner_celery(requests, *args, **kwargs):
         }
 
     celery_task(files)
+
+@app.task()
+def ssdeep_compare_celery():
+    '''
+    Run ssdeep.compare for new samples.
+
+    Usage:
+    from celery_worker import ssdeep_compare_celery
+    ssdeep_compare_celery.delay()
+    '''
+    ssdeep_analytic = SSDeepAnalytic()
+    ssdeep_analytic.ssdeep_compare()
 
 
 if __name__ == '__main__':
