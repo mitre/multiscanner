@@ -33,7 +33,7 @@ Distributed MultiScanner is intended to solve any combination of these problems 
 ## Architecture ##
 This is the current architecture:
 
-![alt text](https://raw.githubusercontent.com/awest1339/multiscanner/celery/docs/distributed_ms_diagram.PNG)
+![Distributed MultiScanner Architecture](imgs/distributed_ms_diagram.PNG)
 
 When a sample is submitted (either via the web UI or the REST API), the sample is saved to the distributed file system (GlusterFS), a task is added to the distributed task queue (Celery), and an entry is added to the task management database (PostgreSQL). The worker nodes (Celery clients) all have the GlusterFS mounted, which gives them access to the samples for scanning. In our setup, we colocate the worker nodes with the GlusterFS nodes in order to reduce the network load of workers pulling samples from GlusterFS. When a new task is added to the Celery task queue, one of the worker nodes will pull the task and retrieve the corresponding sample from the GlusterFS via its SHA256 value. The worker node then performs the scanning work. Modules can be enabled / disabled via a configuration file. This configuration file is distributed to the workers by Ansible at setup time (details on this process later). When the worker finishes its scans, it will generate a JSON blob and index it into ElasticSearch for permanent storage. It will then update the task management database with a status of "Complete". The user will then be able view the report via the web interface or retrieve the raw JSON.
 
