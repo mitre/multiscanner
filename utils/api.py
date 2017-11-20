@@ -24,6 +24,7 @@ POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
 DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
+GET /api/v1/tasks/<task_id>/pdf ---> Receive PDF report
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
@@ -56,8 +57,6 @@ from jinja2 import Markup
 from six import PY3
 import rarfile
 import zipfile
-from reportlab.platypus import TableStyle
-from reportlab.lib import colors, units
 import requests
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +73,7 @@ import multiscanner
 import sql_driver as database
 import elasticsearch_storage
 import common
-from pdf_generator.generic_pdf import GenericPDF
+from utils.pdf_generator import create_pdf_document
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -848,6 +847,7 @@ def files_get_sha256_helper(sha256, raw=None):
             response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(sha256)
     return response
 
+
 @app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
 def run_ssdeep_compare():
     '''
@@ -862,10 +862,11 @@ def run_ssdeep_compare():
             jsonify({'Message': 'Unable to complete request.'}),
             HTTP_BAD_REQUEST)
 
+
 @app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
 def run_ssdeep_group():
     '''
-    Runs sssdeep group analytic and returns list of groups as a list.
+    Runs ssdeep group analytic and returns list of groups as a list.
     '''
     try:
         ssdeep_analytic = SSDeepAnalytic()
@@ -877,136 +878,21 @@ def run_ssdeep_group():
             HTTP_BAD_REQUEST)
 
 
-@app.route('/api/v1/tasks/report/<task_id>/pdf', methods=['GET'])
+@app.route('/api/v1/tasks/<task_id>/pdf', methods=['GET'])
 def get_pdf_report(task_id):
+    '''
+    Generates a PDF version of a JSON report.
+    '''
     report_dict, success = get_report_dict(task_id)
 
     if not success:
         return jsonify(report_dict)
 
-    pdf = create_pdf_document(report_dict)
+    pdf = create_pdf_document(MS_WD, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
     return response
-
-
-def create_pdf_document(report):
-    '''
-    Method to create PDF report document from JSON.
-    '''
-    with open('..\\multiscanner\\pdf_generator\\pdf_config.json') as data_file:
-        pdf_components = json.load(data_file)
-
-    gen_pdf = GenericPDF(pdf_components)
-    gen_pdf.tlp_color = 'GREEN'
-
-    notice = gen_pdf.section('Notification', pdf_components['notification'], gen_pdf.style)
-
-    for n in notice:
-        gen_pdf.pdf_list.append(n)
-
-    summary = gen_pdf.section('Summary', '', gen_pdf.style)
-
-    for s in summary:
-        gen_pdf.pdf_list.append(s)
-
-    summary_data = [
-        ['Date Submitted', 'N\A'],
-        ['Artifact ID', 'N\A'],
-        ['Description', pdf_components['summary_description']],
-        ['Files Processed', '1'],
-        ['', report['Report']['filename']]
-    ]
-
-    gen_pdf.vertical_table(summary_data)
-
-    gen_pdf.line_break()
-
-    file_and_obs = gen_pdf.section('File Indicators and Observables', '', gen_pdf.style)
-
-    for f in file_and_obs:
-        gen_pdf.pdf_list.append(f)
-
-    # This list will store data for table under File Indicators and Observables
-    file_data = []
-
-    # This list will store data for Yara results. Currently, extracts description of rule. This is a horizontal table.
-    yara_data = [['Yara Rule', 'Yara Rule Description']]
-
-    # This list will store AV results. This is a horizontal table.
-    av_data = [['Antivirus', 'Scan Result']]
-
-    if 'Report' in report:
-        r = report['Report']
-        if 'filename' in r:
-            file_data.append(['File Name', r['filename']])
-        if 'Scan Time' in r:
-            file_data.append(['Scan Time', r['Scan Time']])
-        if 'libmagic' in r:
-            file_data.append(['Type', r['libmagic']])
-        if 'MD5' in r:
-            file_data.append(['MD5', r['MD5']])
-        if 'SHA1' in r:
-            file_data.append(['SHA1', r['SHA1']])
-        if 'SHA256' in r:
-            file_data.append(['SHA256', r['SHA256']])
-        if 'ssdeep' in r and 'ssdeep_hash' in r['ssdeep']:
-            file_data.append(['SSDEEP', r['ssdeep']['ssdeep_hash']])
-
-        if 'Yara' in r:
-            for v in r['Yara'].values():
-                if 'meta' in v and 'description' in v['meta']:
-                    yara_data.append([v['rule'], v['meta']['description']])
-                elif 'meta' in v and 'description' not in v['meta']:
-                    yara_data.append([v['rule'], "NO RULE DESCRIPTION"])
-
-        if 'AVG 2014' in r:
-            av_data.append(['AVG 2014', r['AVG 2014']])
-        if 'Microsoft Security Essentials' in r:
-            av_data.append(['Microsoft Security Essentials', r['Microsoft Security Essentials']])
-
-    gen_pdf.vertical_table(file_data)
-
-    gen_pdf.line_break()
-
-    av_table_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.skyblue),
-    ])
-
-    gen_pdf.horizontal_table(av_data, av_table_style, (50 * units.mm, 140 * units.mm))
-
-    gen_pdf.line_break()
-
-    yara_table_style = TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.skyblue),
-    ])
-
-    gen_pdf.horizontal_table(yara_data, yara_table_style, (50 * units.mm, 140 * units.mm))
-
-    gen_pdf.line_break()
-
-    mitigation_recommendation = gen_pdf.section('Mitigation Recommendations', pdf_components['mitigation_recommendations'], gen_pdf.style)
-
-    for mr in mitigation_recommendation:
-        gen_pdf.pdf_list.append(mr)
-
-    mitigation_bullets = gen_pdf.bullet_list(pdf_components['mitigation_bullet_list'], 1)
-    gen_pdf.pdf_list.append(mitigation_bullets)
-
-    gen_pdf.line_break()
-
-    contact = gen_pdf.section('Contact Information', pdf_components['contact_information'], gen_pdf.style)
-
-    for c in contact:
-        gen_pdf.pdf_list.append(c)
-
-    faq = gen_pdf.section('Document FAQ', pdf_components['document_faq'], gen_pdf.style)
-
-    for f in faq:
-        gen_pdf.pdf_list.append(f)
-
-    return gen_pdf.build()
 
 
 if __name__ == '__main__':
