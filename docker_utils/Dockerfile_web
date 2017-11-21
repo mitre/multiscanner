@@ -1,0 +1,13 @@
+FROM python:3.6
+MAINTAINER Austin West awest1339
+
+ENV PYTHON_VER 3.6.2
+
+COPY . /opt/multiscanner
+COPY ./docker_utils/*.ini /opt/multiscanner/
+
+WORKDIR /opt/multiscanner
+RUN ./install.sh
+
+# Run script
+CMD python web/app.py

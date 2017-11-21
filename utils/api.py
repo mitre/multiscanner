@@ -124,7 +124,7 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
 api_config = multiscanner.common.parse_config(api_config_object)
 
 # Needs api_config in order to function properly
-from celery_worker import multiscanner_celery
+from celery_worker import multiscanner_celery, ssdeep_compare_celery
 from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
@@ -694,8 +694,6 @@ def taglist():
     Return a list of all tags currently in use.
     '''
     response = handler.get_tags()
-    if not response:
-        abort(HTTP_BAD_REQUEST)
     return jsonify({'Tags': response})
 
 
@@ -854,9 +852,14 @@ def run_ssdeep_compare():
     Runs ssdeep compare analytic and returns success / error message.
     '''
     try:
-        ssdeep_analytic = SSDeepAnalytic()
-        ssdeep_analytic.ssdeep_compare()
-        return make_response(jsonify({ 'Message': 'Success' }))
+        if DISTRIBUTED:
+            # Publish task to Celery
+            ssdeep_compare_celery.delay()
+            return make_response(jsonify({ 'Message': 'Success' }))
+        else:
+            ssdeep_analytic = SSDeepAnalytic()
+            ssdeep_analytic.ssdeep_compare()
+            return make_response(jsonify({ 'Message': 'Success' }))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
