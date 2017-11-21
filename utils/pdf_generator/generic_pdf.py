@@ -52,14 +52,16 @@ class GenericPDF(object):
         self.style.add(ParagraphStyle(name='bullet_list',
                                       parent=self.style['Normal'],
                                       fontSize=11))
-
-        self.buffer = six.StringIO()
+        if six.PY3:
+            self.buffer = six.BytesIO()
+        else:
+            self.buffer = six.StringIO()
         self.firstPage = True
         self.document = SimpleDocTemplate(self.buffer, pagesize=letter,
                                           rightMargin=12.7*mm, leftMargin=12.7*mm,
                                           topMargin=120, bottomMargin=80)
 
-        self.tlp_color = None
+        self.tlp_color = pdf_components.get('tlp_color', '')
         self.pdf_components = pdf_components
         self.pdf_list = []
 

@@ -22,7 +22,6 @@ def create_pdf_document(WD, report):
         pdf_components = json.load(data_file)
 
     gen_pdf = generic_pdf.GenericPDF(pdf_components)
-    gen_pdf.tlp_color = pdf_components.get('tlp_color', None)
 
     notice = []
 
@@ -75,7 +74,7 @@ def create_pdf_document(WD, report):
             file_data.append(['SSDEEP', r.get('ssdeep', {}).get('ssdeep_hash', '')])
 
         if 'Yara' in r:
-            for v in r.get('Yara', []).values():
+            for v in r.get('Yara', {}).values():
                 if 'meta' in v:
                     yara_data.append([v.get('rule', 'NO RULE NAME'),
                                       v.get('meta', {}).get('description', 'NO RULE DESCRIPTION')])
