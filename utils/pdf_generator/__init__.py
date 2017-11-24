@@ -33,8 +33,8 @@ def create_pdf_document(WD, report):
     gen_pdf.pdf_list.extend(summary)
 
     summary_data = [
-        ['Date Submitted', 'N\A'],
-        ['Artifact ID', 'N\A'],
+        ['Date Submitted', report.get('Report', {}).get('Scan Time', 'N\A')],
+        ['Artifact ID', report.get('Report', {}).get('SHA256', 'N\A')],
         ['Description', pdf_components.get('summary_description', 'N\A')],
         ['Files Processed', '1'],
         ['', report.get('Report', {}).get('filename', 'NO FILENAME AVAILABLE')]
