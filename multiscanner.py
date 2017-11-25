@@ -352,7 +352,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
             moddir = os.path.dirname(module)
-            mod = load_module(os.path.basename(module.split('.')[0]), [moddir])
+            mod = load_module(os.path.basename(module).split('.')[0], [moddir])
             if not mod:
                 print(module, " not a valid module...")
                 continue
