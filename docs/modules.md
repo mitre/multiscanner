@@ -93,3 +93,8 @@ This module generates context triggered piecewise hashes (CTPH) for the files. M
 ### [vtsearch] ###
 This module searches [virustotal](https://www.virustotal.com/) for the files hash and download the report if available.
 - **apikey** - This is your public/private api key. You can optionally make it a list and the requests will be distributed across them. This is useful when two groups with private api keys want to share the load and reports
+
+### [officemeta] ###
+This module extracts metadata from Microsoft Office documents.
+
+*Note*: This module does not support [OOXML](https://en.wikipedia.org/wiki/Office_Open_XML) documents (e.g., docx, pptx, xlsx).
