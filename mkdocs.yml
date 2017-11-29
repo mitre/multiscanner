@@ -5,8 +5,9 @@ pages:
 - Use Cases: 'use-cases.md'
 - Installation: 'install.md'
 - Using MultiScanner:
-    - 'Web User Interface': 'use/web-ui.md'
-    - 'REST API': 'use/rest-api.md'
+    - 'Web Interface': 'use/web-ui.md'
+    - 'Python API': 'use/python-api.md'
+    - 'RESTful API': 'use/rest-api.md'
     - 'Analysis Modules': 'use/use-analysis-mods.md'
     - 'Analytics': 'use/use-analytics.md'
 - Custom Development: 

@@ -1,14 +1,12 @@
-# Developing an Analysis Module
+Developing an Analysis Module
+=============================
 
-Modules are intended to be easily written and incorporated into the MultiScanner framework. A finished module must be in the modules folder for it to be used on the next run.
-
-Modules are intended to be quickly written and incorporated into the MultiScanner framework. A finished module must be placed in the modules folder before it can be used. The configuration file does not need to be manually updated.
+Modules are intended to be quickly written and incorporated into the MultiScanner framework. A module must be located in the [modules](<https://github.com/awest1339/multiscanner/tree/master/modules>) folder before it can be used. The configuration file does not need to be manually updated.
  
-See this [example module](example.md).
-
+See this [example module](example.html).
 
 ## Mandatory Functions ##
-When writing a new module, there are two mandatory functions that must be defined: check() and scan(). Additional functions can be written if required.
+When writing a new module, two mandatory functions must be defined: check() and scan(). Additional functions can be written as required.
 
 ### check() ###
 The check() function tests whether or not the scan function should be run.
@@ -24,23 +22,23 @@ The scan() function performs the analytic and returns the results.
 
 **Outputs:** There are two return values of the scan() function: Results and Metadata (i.e., `return (Results, Metadata)`).  
 
-- **Results** is a list of tuples, the tuples values being the filename and the corresponding scan results (i.e.,`[("file1.exe", "Executable"), ("file2.jpg", "Picture")]`)
+- **Results** is a list of tuples, the tuple values being the filename and the corresponding scan results (e.g.,`[("file1.exe", "Executable"), ("file2.jpg", "Picture")]`).
 
-- **Metadata** is a dictionary of metadata information from the module. There are two required pieces of metadata `Name` and `Type`. Name is the name in the module and will be used in the report. Type is what type of module it is (e.g., Antivirus, content detonation). This information is used for a grouping feature in the report generation and is helpful to provide context to a newly written module. Optionally, metadata information can be disabled and not be included in the report by setting `metadata["Include"] = False`.
+- **Metadata** is a dictionary of metadata information from the module. There are two required pieces of metadata `Name` and `Type`. Name is the name in the module and will be used in the report. Type is what type of module it is (e.g., Antivirus, content detonation). This information is used for a grouping feature in the report generation and provides context to a newly written module. Optionally, metadata information can be disabled and not be included in the report by setting `metadata["Include"] = False`.
 
 ## Special Globals ##
 There are two global variables that when present, affect the way the module is called.
 
 **DEFAULTCONF** - This is a dictionary of configuration settings. When set, the settings will be written to the configuration file, making it user editable. The configuration object will be passed to the module's check and scan function and must be an argument in both functions.
 
-**REQUIRES** - This is a list of the module results needed for a module. For example, `REQUIRES = ['MD5']` will be set to the output from the module MD5.py. A [code sample](example.md) is provided.
+**REQUIRES** - This is a list of analysis results required by a module. For example, `REQUIRES = ['MD5']` will be set to the output from the module MD5.py. A [code sample](example.html) is provided.
 
 ## Module Interface ##
 The module interface is a class that is put into each module as it is run. This allows for several features to be added for interacting with the framework at runtime. It is injected as `multiscanner` in the global namespace.
 
 ### Variables ###
-* `write_dir` - This is a directory path that your module can write to. This will be unique for each run.
-* `run_count` - This is an integer that increments for each subscan that is called. It is useful for preventing infinite recurring
+* `write_dir` - This is a directory path that the module can write to. This will be unique for each run.
+* `run_count` - This is an integer that increments for each subscan that is called. It is useful for preventing infinite recursion.
 
 ### Functions ###
 * `apply_async(func, args=(), kwds={}, callback=None)` - This mirrors multiprocessing.Pool.apply_async and returns a [multiprocessing.pool.AsyncResult](https://docs.python.org/2/library/multiprocessing.html#multiprocessing.pool.AsyncResult). The pool is shared by all modules.
@@ -51,4 +49,4 @@ If a module requires configuration, the DEFAULTCONF global variable must be defi
 
 If `replacement path` is set in the configuration, the module will receive file names, with the folder path replaced with the variable's value. This is useful for analytics which are run on a remote machine.
 
-By default, ConfigParser reads everything in as a string, before options are passed to the module `ast.literal_eval()` is ran on each option. If a string is not returned when expected, this is why. This does mean that the correct python type will be returned instead of all strings.
+By default, ConfigParser reads everything in as a string, before options are passed to the module and `ast.literal_eval()` is run on each option. If a string is not returned when expected, this is why. This does mean that the correct Python type will be returned instead of all strings.
