@@ -11,6 +11,7 @@ __license__ = "MPL 2.0"
 TYPE = "Antivirus"
 NAME = "VirusTotal"
 VT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
+VT_HASH_LIMIT = 25
 REQUIRES = ["MD5"]
 DEFAULTCONF = {
     'apikey': None,
@@ -32,22 +33,26 @@ def check(conf=DEFAULTCONF):
 
 def scan(filelist, conf=DEFAULTCONF):
     md5_tuples, junk = REQUIRES[0]
-    hash_list = [md5[1] for md5 in md5_tuples]
-
     apikey = conf['apikey']
+    all_hashes = [md5[1] for md5 in md5_tuples]
+
+    # Virustotals API limits the number of hashes per request to 25 - sublists of len <=25 are created
+    hash_lists = [all_hashes[i:i + VT_HASH_LIMIT] for i in range(0, len(all_hashes), VT_HASH_LIMIT)]
 
     # Check for key rotation
     rotkey = False
-    if isinstance(conf['apikey'], list):
-        rotkey = _repeatlist(conf['apikey'])
+    if isinstance(apikey, list):
+        rotkey = _repeatlist(apikey)
         apikey = rotkey.next()
 
-    params = {'resource': ', '.join(hash_list),
-              'apikey': apikey,
-              'allinfo': conf['allinfo']}
+    jdata = []
+    for hash_list in hash_lists:
+        params = {'resource': ', '.join(hash_list),
+                  'apikey': apikey,
+                  'allinfo': conf['allinfo']}
 
-    response = _send_virustotal_request(params, rotkey)
-    jdata = response.json()
+        response = _send_vt_request(params, rotkey)
+        jdata = jdata + response.json()
 
     results = list(_generate_results(jdata, md5_tuples))
 
@@ -58,7 +63,7 @@ def scan(filelist, conf=DEFAULTCONF):
     return (results, metadata)
 
 
-def _send_virustotal_request(params, rotkey):
+def _send_vt_request(params, rotkey):
     try:
         response = requests.get(VT_URL, params=params)
 
@@ -68,7 +73,7 @@ def _send_virustotal_request(params, rotkey):
         if response.status_code == 403 and rotkey:
             try:
                 params['apikey'] = rotkey.next()
-                _send_virustotal_request(params, rotkey)
+                _send_vt_request(params, rotkey)
 
             except:
                 print("ERROR: No more VirusTotal API keys to try")
