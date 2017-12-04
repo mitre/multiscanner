@@ -7,6 +7,7 @@ git+https://github.com/knowmalware/pehash.git#egg=pehash
 paramiko
 pefile
 pyclamd
+pyimpfuzzy
 python-magic
 requests
 ssdeep
