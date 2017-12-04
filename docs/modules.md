@@ -96,3 +96,11 @@ This module searches [virustotal](https://www.virustotal.com/) for the files has
 
 ### [impfuzzy] ###
 This module calculates a fuzzy hash using ssdeep where Windows PE imports is the input. This strategy was originally described in a [blog post](http://blog.jpcert.or.jp/2016/05/classifying-mal-a988.html) from JPCERT/CC.
+
+### [officemeta] ###
+This module extracts metadata from Microsoft Office documents.
+
+*Note*: This module does not support [OOXML](https://en.wikipedia.org/wiki/Office_Open_XML) documents (e.g., docx, pptx, xlsx).
+
+### [flarefloss] ###
+This module extracts ASCII, UTF-8, stack and obfuscated strings from executable files. More information about module configuration can be found at the [flare-floss](https://github.com/fireeye/flare-floss/blob/master/doc/usage.md) documentation.
