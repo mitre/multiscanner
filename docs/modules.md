@@ -93,3 +93,6 @@ This module generates context triggered piecewise hashes (CTPH) for the files. M
 ### [vtsearch] ###
 This module searches [virustotal](https://www.virustotal.com/) for the files hash and download the report if available.
 - **apikey** - This is your public/private api key. You can optionally make it a list and the requests will be distributed across them. This is useful when two groups with private api keys want to share the load and reports
+
+### [flarefloss] ###
+This module extracts ASCII, UTF-8, stack and obfuscated strings from executable files. More information about module configuration can be found at the [flare-floss](https://github.com/fireeye/flare-floss/blob/master/doc/usage.md) documentation.
