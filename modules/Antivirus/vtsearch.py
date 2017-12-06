@@ -2,96 +2,114 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import json
-import urllib
-try:
-    from urllib2 import urlopen
-except:
-    from urllib.request import urlopen
-try:
-    from urllib import urlencode
-except:
-    from urllib.parse import urlencode
-import time
+import sys
+import requests
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "VirusTotal"
+VT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
+VT_HASH_LIMIT = 25
 REQUIRES = ["MD5"]
 DEFAULTCONF = {
+    'allinfo': 0, # All info requires a 0 or 1 value
     'apikey': None,
     'ENABLED': True
-    }
+}
+
 
 def check(conf=DEFAULTCONF):
-    if not conf['ENABLED']:
+    if not conf.get('ENABLED'):
         return False
     if None in REQUIRES:
         return False
-    if not conf['apikey']:
+    if not conf.get('apikey'):
+        return False
+    if not conf.get('allinfo'):
         return False
     return True
 
+
 def scan(filelist, conf=DEFAULTCONF):
-    #Check for key rotation
-    apikey = conf['apikey']
+    md5_tuples, junk = REQUIRES[0]
+    apikey = conf.get('apikey')
+    all_hashes = [md5[1] for md5 in md5_tuples]
+
+    # Virustotals API limits the number of hashes per request to 25 - sublists of len <=25 are created
+    hash_lists = [all_hashes[i:i + VT_HASH_LIMIT] for i in range(0, len(all_hashes), VT_HASH_LIMIT)]
+
+    # Check for key rotation
     rotkey = False
-    if isinstance(conf['apikey'], list):
-        rotkey = _repeatlist(conf['apikey'])
+    if isinstance(apikey, list):
+        rotkey = _repeatlist(apikey)
         apikey = rotkey.next()
-    results = []
-    md5s, junk = REQUIRES[0]
-    requests = [[]]
-    md5name = {}
-    for fname, md5 in md5s:
-        if len(requests[-1]) == 25:
-            requests.append([])
-        requests[-1].append(md5)
-        md5name[md5] = fname
-    for md5list in requests:
-        url = 'https://www.virustotal.com/vtapi/v2/file/report'
-        result = None
-        while not result:
-            param = {'resource': ', '.join(md5list), 'apikey': apikey}
-            data = urlencode(param).encode('ascii')
-            try:
-                result = urlopen(url, data)
-                result = result.read()
-            except Exception as e:
-                result = None
-            if not result:
-                time.sleep(30)
-            if rotkey:
-                apikey = rotkey.next()
-        jdata = json.loads(result)
-        if isinstance(jdata, list):
-            for j in jdata:
-                ret = _vt_report(j, md5name)
-                if ret:
-                    results.append(ret)
-        else:
-            ret = _vt_report(jdata, md5name)
-            if ret:
-                results.append(ret)
-    metadata = {}
-    metadata["Name"] = NAME
-    metadata["Type"] = TYPE
-    metadata["Include"] = False
+
+    jdata = []
+    for hash_list in hash_lists:
+        params = {'resource': ', '.join(hash_list),
+                  'apikey': apikey,
+                  'allinfo': conf.get('allinfo')}
+
+        response = _send_vt_request(params, rotkey)
+        jres = response.json()
+
+        if isinstance(jres, dict):
+            jres = [jres]
+
+        jdata = jdata + jres
+
+    results = list(_generate_results(jdata, md5_tuples))
+
+    metadata = {"Name": NAME,
+                "Type": TYPE,
+                "Include": False}
+
     return (results, metadata)
 
-def _vt_report(report, md5name):
-    if report['response_code'] == 0:
-        return None
-    if report['response_code'] == 1:
-        fname = md5name[report['md5']]
-        del report['response_code']
-        del report['verbose_msg']
-        return (fname, report)
+
+def _send_vt_request(params, rotkey):
+    try:
+        response = requests.get(VT_URL, params=params)
+
+        if response.status_code == 200:
+            return response
+
+        if response.status_code == 403 and rotkey:
+            try:
+                params['apikey'] = rotkey.next()
+                _send_vt_request(params, rotkey)
+
+            except:
+                print("ERROR: No more VirusTotal API keys to try")
+                sys.exit(1)
+        else:
+            print("ERROR: Invalid VirusTotal API key")
+            sys.exit(1)
+
+    except requests.exceptions.RequestException as e:
+        print("ERROR: VirusTotal connection failure: " + str(e))
+        sys.exit(1)
+
+
+def _generate_results(jdata, md5_tuples):
+    if not isinstance(jdata, list):
+        jdata = [jdata]
+
+    for report in jdata:
+        if report['response_code'] == 1:
+
+            # get filename using hash as the lookup key
+            filename = [v[0] for i, v in enumerate(md5_tuples) if v[1] == report['md5']][0]
+
+            del report['response_code']
+            del report['verbose_msg']
+
+            yield (filename, report)
+
 
 def _repeatlist(data):
     while True:
         for d in data:
             yield d
-
