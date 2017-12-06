@@ -195,7 +195,9 @@ def config_init(filepath, overwrite=False, storage_classes=None):
 
 
 def _rewrite_config(storage_classes, config_object, filepath):
-    for class_name in storage_classes:
+    keys = list(storage_classes.keys())
+    keys.sort()
+    for class_name in keys:
         conf = storage_classes[class_name].DEFAULTCONF
         config_object.add_section(class_name)
         for key in conf:
@@ -217,10 +219,13 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
     if storage_classes is None:
         storage_classes = _get_storage_classes()
     ConfNeedsWrite = False
-    storage_classes.sort()
-    for module in storage_classes:
+    keys = list(storage_classes.keys())
+    keys.sort()
+    for module in keys:
+        if module in config_object:
+            continue
         try:
-            conf = module.DEFAULTCONF
+            conf = storage_classes[module].DEFAULTCONF
         except:
             continue
         ConfNeedsWrite = True
@@ -254,4 +259,6 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
                 member = getattr(mod, member_name)
                 if inspect.isclass(member) and issubclass(member, Storage):
                     storage_classes[member_name] = member()
+    if 'Storage' in storage_classes:
+        del storage_classes['Storage']
     return storage_classes
