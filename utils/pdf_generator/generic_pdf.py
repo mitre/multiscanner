@@ -1,3 +1,5 @@
+from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
 import cgi
 
 import six
@@ -8,7 +10,8 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, mm
 from reportlab.pdfgen import canvas
-from reportlab.platypus import SimpleDocTemplate, Spacer, Image, Paragraph, ListFlowable, ListItem, TableStyle, Table
+from reportlab.platypus import (SimpleDocTemplate, Spacer, Image, Paragraph,
+                                ListFlowable, ListItem, TableStyle, Table)
 
 
 class NumberedCanvas(canvas.Canvas):
@@ -29,9 +32,9 @@ class NumberedCanvas(canvas.Canvas):
         canvas.Canvas.save(self)
 
     def draw_page_number(self, page_count):
-        self.setFont("Helvetica-Bold", 7)
+        self.setFont('Helvetica-Bold', 7)
         self.drawRightString(203*mm, 12.7*mm,
-                             "Page %d of %d" % (self._pageNumber, page_count))
+                             'Page %d of %d' % (self._pageNumber, page_count))
 
 
 class GenericPDF(object):
@@ -49,14 +52,16 @@ class GenericPDF(object):
         self.style.add(ParagraphStyle(name='bullet_list',
                                       parent=self.style['Normal'],
                                       fontSize=11))
-
-        self.buffer = six.StringIO()
+        if six.PY3:
+            self.buffer = six.BytesIO()
+        else:
+            self.buffer = six.StringIO()
         self.firstPage = True
         self.document = SimpleDocTemplate(self.buffer, pagesize=letter,
                                           rightMargin=12.7*mm, leftMargin=12.7*mm,
                                           topMargin=120, bottomMargin=80)
 
-        self.tlp_color = None
+        self.tlp_color = pdf_components.get('tlp_color', '')
         self.pdf_components = pdf_components
         self.pdf_list = []
 
@@ -68,21 +73,21 @@ class GenericPDF(object):
         height_adjust = self.add_banner(canvas, doc)
 
         # Document Header
-        if self.pdf_components['hdr_image'] and self.firstPage:
-            header = Image(self.pdf_components['hdr_image'], height=25*mm, width=191*mm)
+        if self.pdf_components.get('hdr_image', None) and self.firstPage:
+            header = Image(self.pdf_components.get('hdr_image'), height=25*mm, width=191*mm)
             header.drawOn(canvas, doc.rightMargin, doc.height + doc.topMargin - 15*mm)
             self.firstPage = False
         elif self.firstPage:
-            header = Paragraph(self.pdf_components['hdr_html'], self.style['centered'])
+            header = Paragraph(self.pdf_components.get('hdr_html', ''), self.style['centered'])
             w, h = header.wrap(doc.width, doc.topMargin)
             header.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin - height_adjust * h)
 
         # Document Footer
-        if self.pdf_components['ftr_image']:
-            footer = Image(self.pdf_components['ftr_image'], 8.5 * inch, 1.8 * inch)
+        if self.pdf_components.get('ftr_image', None):
+            footer = Image(self.pdf_components.get('ftr_image'), 8.5 * inch, 1.8 * inch)
             footer.drawOn(canvas, 0, 0)
         else:
-            footer = Paragraph(self.pdf_components['ftr_html'], self.style['centered'])
+            footer = Paragraph(self.pdf_components.get('ftr_html', ''), self.style['centered'])
             w, h = footer.wrap(doc.width, doc.bottomMargin)
             footer.drawOn(canvas, doc.leftMargin, height_adjust * h)
 
@@ -108,7 +113,7 @@ class GenericPDF(object):
                                               textTransform='uppercase',
                                               alignment=TA_RIGHT))
 
-            banner = Paragraph(self.span_text(self.bold_text('TLP:' + self.tlp_color), bgcolor="black"), self.style['banner_style'])
+            banner = Paragraph(self.span_text(self.bold_text('TLP:' + self.tlp_color), bgcolor='black'), self.style['banner_style'])
             w, h = banner.wrap(doc.width, doc.topMargin)
             banner.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin + (h + 12*mm))
             w, h = banner.wrap(doc.width, doc.bottomMargin)
@@ -158,8 +163,8 @@ class GenericPDF(object):
 
     def vertical_table(self, data, table_style=None, col_widths=None):
         '''A table where the first column is bold. A label followed by values.'''
-        self.style["BodyText"].wordWrap = 'LTR'
-        self.style["BodyText"].spaceBefore = 2
+        self.style['BodyText'].wordWrap = 'LTR'
+        self.style['BodyText'].spaceBefore = 2
 
         if table_style:
             style = table_style
@@ -175,8 +180,8 @@ class GenericPDF(object):
         else:
             cols = (35*mm, 140*mm)
 
-        data2 = [[Paragraph(self.bold_text(cell), self.style["BodyText"]) if idx == 0
-                  else Paragraph(cell, self.style["BodyText"])
+        data2 = [[Paragraph(self.bold_text(cell), self.style['BodyText']) if idx == 0
+                  else Paragraph(cell, self.style['BodyText'])
                   for idx, cell in enumerate(row)] for row in data]
 
         table = Table(data2, style=style, colWidths=cols)
@@ -184,8 +189,8 @@ class GenericPDF(object):
 
     def horizontal_table(self, data, table_style=None, col_widths=None):
         '''A table where the first row is bold. The first row are labels, the rest values.'''
-        self.style["BodyText"].wordWrap = 'LTR'
-        self.style["BodyText"].spaceBefore = 2
+        self.style['BodyText'].wordWrap = 'LTR'
+        self.style['BodyText'].spaceBefore = 2
 
         if table_style:
             style = table_style
@@ -201,8 +206,8 @@ class GenericPDF(object):
         else:
             cols = (35*mm, 140*mm)
 
-        data2 = [[Paragraph(self.bold_text(cell), self.style["BodyText"]) if idx == 0
-                  else Paragraph(cell, self.style["BodyText"])
+        data2 = [[Paragraph(self.bold_text(cell), self.style['BodyText']) if idx == 0
+                  else Paragraph(cell, self.style['BodyText'])
                   for cell in row] for idx, row in enumerate(data)]
 
         table = Table(data2, style=style, colWidths=cols)
