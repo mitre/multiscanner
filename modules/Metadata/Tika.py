@@ -32,7 +32,7 @@ def scan(filelist, conf=DEFAULTCONF):
     results = []
 
     for f in filelist:
-        metadata = parser.from_file(f)['metadata']
+        metadata = parser.from_file(f).get('metadata', {})
         for field in conf['remove-entry']:
             if field in metadata:
                 del metadata[field]
