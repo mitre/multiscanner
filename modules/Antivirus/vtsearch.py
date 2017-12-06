@@ -14,7 +14,7 @@ VT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
 VT_HASH_LIMIT = 25
 REQUIRES = ["MD5"]
 DEFAULTCONF = {
-    'allinfo': False,
+    'allinfo': 0, # All info requires a 0 or 1 value
     'apikey': None,
     'ENABLED': True
 }
