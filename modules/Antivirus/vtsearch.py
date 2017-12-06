@@ -14,26 +14,27 @@ VT_URL = 'https://www.virustotal.com/vtapi/v2/file/report'
 VT_HASH_LIMIT = 25
 REQUIRES = ["MD5"]
 DEFAULTCONF = {
+    'allinfo': False,
     'apikey': None,
     'ENABLED': True
 }
 
 
 def check(conf=DEFAULTCONF):
-    if not conf['ENABLED']:
+    if not conf.get('ENABLED'):
         return False
     if None in REQUIRES:
         return False
-    if not conf['apikey']:
+    if not conf.get('apikey'):
         return False
-    if not conf['allinfo']:
-        conf['allinfo'] = 0
+    if not conf.get('allinfo'):
+        return False
     return True
 
 
 def scan(filelist, conf=DEFAULTCONF):
     md5_tuples, junk = REQUIRES[0]
-    apikey = conf['apikey']
+    apikey = conf.get('apikey')
     all_hashes = [md5[1] for md5 in md5_tuples]
 
     # Virustotals API limits the number of hashes per request to 25 - sublists of len <=25 are created
@@ -49,10 +50,15 @@ def scan(filelist, conf=DEFAULTCONF):
     for hash_list in hash_lists:
         params = {'resource': ', '.join(hash_list),
                   'apikey': apikey,
-                  'allinfo': conf['allinfo']}
+                  'allinfo': conf.get('allinfo')}
 
         response = _send_vt_request(params, rotkey)
-        jdata = jdata + response.json()
+        jres = response.json()
+
+        if isinstance(jres, dict):
+            jres = [jres]
+
+        jdata = jdata + jres
 
     results = list(_generate_results(jdata, md5_tuples))
 
