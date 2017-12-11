@@ -63,13 +63,13 @@ class Storage(object):
         self.config = config
 
     def setup(self):
-        pass
+        return True
 
     def store(self, results):
         raise NotImplementedError
 
     def teardown(self):
-        pass
+        return True
 
 
 class StorageHandler(object):
