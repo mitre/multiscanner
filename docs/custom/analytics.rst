@@ -9,6 +9,6 @@ Enabling analytics and advanced queries is the primary advantage of running seve
 - gaps in current toolset
 - machine learning analytics on tool outputs
 
-Analytic development is currently ad hoc. Until interfaces are created to standardize development, the [Current Analytics](../use/use-analytics.md) page might prove useful - it contains development details of the **ssdeep** analytic.
+Analytic development is currently ad hoc. Until interfaces are created to standardize development, the :ref:`analytics` section might prove useful - it contains development details of the **ssdeep** analytic.
 
-Here's the [ssdeep code](https://github.com/mitre/multiscanner/blob/feature-celery/analytics/ssdeep_analytics.py) to use as a reference for how one might implement an analytic.
+Here's the `ssdeep code <https://github.com/mitre/multiscanner/blob/feature-celery/analytics/ssdeep_analytics.py>`_ to use as a reference for how one might implement an analytic.

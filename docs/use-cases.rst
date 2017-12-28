@@ -7,7 +7,7 @@ Scalable Malware Analysis
 -------------------------
 Every component of MultiScanner is designed with scaling in mind, enabling analysis of large malware data sets. 
 
-Note that scaling required for external analysis tools such as Cuckoo Sandbox is beyond the scope of MultiScanner code, as is auto-scaling (e.g., scaling required to auto-provision virtual machines). New worker nodes must be deployed manually and added to the Ansible playbook for proper configuration (see `Installing Analytic Machines <install.rst#installing-analytic-machines>`_).
+Note that scaling required for external analysis tools such as Cuckoo Sandbox is beyond the scope of MultiScanner code, as is auto-scaling (e.g., scaling required to auto-provision virtual machines). New worker nodes must be deployed manually and added to the Ansible playbook for proper configuration (see :ref:`installing-analytic-machines`).
 
 Manual Malware Analysis
 -------------------------

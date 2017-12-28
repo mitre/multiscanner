@@ -1,3 +1,5 @@
+.. _web-ui:
+
 Web UI
 ======
 
@@ -180,8 +182,8 @@ These notes and comments can be edited and deleted. Click the "<" button to coll
    :scale: 50 %
    :alt: Close Notes
 
-Using Analytics
----------------
+Viewing Analytics
+-----------------
 
 The Analytics page displays various pieces of advanced analysis. For now, this is limited to ssdeep comparisons.
 
@@ -191,4 +193,4 @@ The Analytics page displays various pieces of advanced analysis. For now, this i
    :alt: Analytics Page
 ..
 
- The table lists samples, with those that have very similar ssdeep hashes grouped together. Other analytics will be added in the future. For more information, see the `Using Analytics <use-analytics.html>`_ page.
+ The table lists samples, with those that have very similar ssdeep hashes grouped together. Other analytics will be added in the future. For more information, see the :ref:`analytics` section.

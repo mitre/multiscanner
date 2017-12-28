@@ -1,3 +1,5 @@
+.. _analysis-modules:
+
 Analysis Modules
 ================
 

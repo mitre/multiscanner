@@ -1,7 +1,7 @@
 Installation
 ============
 
-Installation information for the different components of MultiScanner is provided below. To get an idea of how the system works without going through the full process of setting up the distributed architecture, refer to the section on `Standalone Docker Installation <http://www.sphinx-doc.org/en/stable/markup/install.html#standalone-docker-installation>`_. 
+Installation information for the different components of MultiScanner is provided below. To get an idea of how the system works without going through the full process of setting up the distributed architecture, refer to the section on :ref:`standalone-docker-installation`. 
 
 The Docker standalone system is less scalable, robust, and feature-rich, but it enables easy stand up the web UI, the REST API, and an Elasticsearch node, allowing users to quickly see how the system works. The standalone container is intended as an introduction to the system and its capabilities, but is not designed for operational use.
 
@@ -22,6 +22,8 @@ The `installer script <https://github.com/mitre/multiscanner/blob/feature-celery
 MultiScanner requires a configuration file to run. After cloning the repository, generate the MultiScanner default
 configuration by running ``python multiscanner.py init``. The command can be used to rewrite the configuration file to its default state or, if new modules have been written, to add their configuration details to the configuration
 file.
+
+.. _installing-analytic-machines:
 
 Installing Analytic Machines
 ----------------------------
@@ -52,6 +54,10 @@ To use the Multiscanner web UI, also add the following::
     http.cors.enabled: true
     http.cors.allow-origin: "<yourOrigin>"
 
+..
+	
+.. _module-config:
+	
 Module Configuration
 --------------------
 
@@ -63,7 +69,7 @@ Modules are intended to be quickly written and incorporated into the framework. 
 
 * Modules are configured within the configuration file, `config.ini <https://github.com/mitre/multiscanner/blob/feature-celery/docker_utils/config.ini>`_. 
 
-Parameters common to all modules are listed in the next section, and module-specific parameters (for core and analysis modules that have parameters) are listed in the subsequent sections. See `Analysis Modules <use/use-analysis-mods.html>`_ for information about *all* current modules.
+Parameters common to all modules are listed in the next section, and module-specific parameters (for core and analysis modules that have parameters) are listed in the subsequent sections. See :ref:`analysis-modules` for information about *all* current modules.
 
 Common Parameters
 ^^^^^^^^^^^^^^^^^
@@ -86,7 +92,7 @@ Parameter             Description
 Parameters of Core Modules
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**[main]** - This module searches virustotal for a file hash and downloads the report, if available.
+**[main]** - searches virustotal for a file hash and downloads the report, if available.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -103,9 +109,9 @@ Parameter             Description
 Parameters of Analysis Modules
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Analysis modules with additional parameters (or notes for installation) are given below in alphabetical order. See `Analysis Modules <use/use-analysis-mods.md>`_ for a list of all current analysis modules.
+Analysis modules with additional parameters (or notes for installation) are given below in alphabetical order. See :ref:`analysis-modules` for a list of all current analysis modules.
 
-**[Cuckoo]** - This module submits a file to a Cuckoo Sandbox cluster for analysis
+**[Cuckoo]** - submits a file to a Cuckoo Sandbox cluster for analysis.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -120,7 +126,7 @@ Parameter             Description
 *maec*                When set to True, a `MAEC <https://maecproject.github.io>`_ JSON-based report is added to Cuckoo JSON report. *NOTE*: Cuckoo needs MAEC reporting enabled to produce results.
 ====================  =============================
 
-**[ExifToolsScan]** - This module scans the file with Exif tools and returns the results.
+**[ExifToolsScan]** - scans the file with Exif tools and returns the results.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -130,7 +136,7 @@ Parameter             Description
 *remove-entry*        A Python list of ExifTool results that should not be included in the report. File system level attributes are not useful and stripped out.
 ====================  =============================
 
-**[FireeyeAPI]** - Detonates the sample in FireEye AX via FireEye's API. This "API" version replaces the "FireEye Scan" module.
+**[FireeyeAPI]** - detonates the sample in FireEye AX via FireEye's API. This "API" version replaces the "FireEye Scan" module.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -148,7 +154,7 @@ Parameter             Description
 *application id*      For AX Series appliances (7.7 and higher) and CM Series appliances that manage AX Series appliances (7.7 and higher), setting the application value to -1 allows the AX Series appliance to choose the application. For other appliances, setting the application value to 0 allows the AX Series appliance to choose the application.
 ====================  =============================
 
-**[libmagic]** - This module runs libmagic against the files.
+**[libmagic]** - runs libmagic against the files.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -158,7 +164,7 @@ Parameter             Description
 *magicfile*           The path to the compiled magic file you wish to use. If None it will use the default one.
 ====================  =============================
 
-**[Metadefender]** - This module runs Metadefender against the files.
+**[Metadefender]** - runs Metadefender against the files.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -172,7 +178,7 @@ Parameter               Description
 *user agent*          
 ======================  =============================
 
-**[NSRL]** - This module looks up hashes in the NSRL database.
+**[NSRL]** - looks up hashes in the NSRL database.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -183,11 +189,11 @@ Parameter             Description
 *offsets*   
 ====================  =============================
 
-**[PEFile]** - This module extracts out feature information from EXE files. 
+**[PEFile]** - extracts out feature information from EXE files. 
 
-* It uses `pefile <https://code.google.com/p/pefile/>`_ which is currently not available for Python 3.
+* The module uses `pefile <https://code.google.com/p/pefile/>`_ which is currently not available for Python 3.
 
-**[Tika]** - This module extracts metadata from the file using `Tika <https://tika.apache.org/>`_. For configuration of the module see the `tika-python <https://github.com/chrismattmann/tika-python/blob/master/README.md>`_ documentation.
+**[Tika]** - extracts metadata from the file using `Tika <https://tika.apache.org/>`_. For configuration of the module see the `tika-python <https://github.com/chrismattmann/tika-python/blob/master/README.md>`_ documentation.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -197,11 +203,11 @@ Parameter             Description
 *remove-entry*        A Python list of Tika results that should not be included in the report.
 ====================  =============================
 
-**[TrID]** - This module runs `TrID <http://mark0.net/soft-trid-e.html>`_ against a file. 
+**[TrID]** - runs `TrID <http://mark0.net/soft-trid-e.html>`_ against a file. 
 
-* The definition file must be in the same folder as the executable malware sample.
+* The module definition file must be in the same folder as the executable malware sample.
 
-**[vtsearch]** - This module searches `virustotal <https://www.virustotal.com/>`_ for the files hash and download the report if available.
+**[vtsearch]** - searches `virustotal <https://www.virustotal.com/>`_ for the files hash and download the report if available.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -211,7 +217,7 @@ Parameter             Description
 *apikey*              Public/private api key. Can optionally make it a list and the requests will be distributed across them. This is useful when two groups with private api keys want to share the load and reports.
 ====================  =============================
 
-**[VxStream]** - This module submits a file to a VxStream Sandbox cluster for analysis
+**[VxStream]** - submits a file to a VxStream Sandbox cluster for analysis.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -228,7 +234,7 @@ Parameter             Description
 *running timeout*     An additional timeout, if a task is in the running state this many seconds past *timeout*, the task is considered failed.
 ====================  =============================
 
-**[YaraScan]** - This module scans the files with yara and returns the results; yara-python must be installed.
+**[YaraScan]** - scans the files with yara and returns the results; yara-python must be installed.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
@@ -240,14 +246,16 @@ Parameter             Description
 *ignore-tags*         A Python array of yara rule tags that will not be included in the report.
 ====================  =============================
 
+.. _standalone-docker-installation:
+
 Standalone Docker Installation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 To introduce new users to the power of the MultiScanner framework, web UI, and REST API, we have built a standalone docker application that is simple to run in new environments. Simply clone the top level directory and run::
 
     $ docker-compose up
 
-This will build the 3 necessary containers (one for the web application, one for the REST API, and one for the Elasticsearch backend).
+This will build the three necessary containers (one for the web application, one for the REST API, and one for the Elasticsearch backend).
 
 Running this command will generate a lot of output and take some time. The system is not ready until you see the following output in your terminal::
 
