@@ -173,20 +173,20 @@ Parameter               Description
 ======================  =============================
 *timeout*               The maximum time a sample will run.
 *running timeout*       An additional timeout, if a task is in the running state this many seconds past *timeout*, the task is considered failed.
-*fetch delay seconds*   
-*poll interval*       
-*user agent*          
+*fetch delay seconds*   The number of seconds for the module to wait between submitting all samples and polling for scan results. Increase this value if Metadefender is taking a long time to store the samples.
+*poll interval*         The number of seconds between successive queries to Metadefender for scan results. Default is 5 seconds.
+*user agent*            Metadefender user agent string, refer to your Metadefender server configuration for this value. Default is "user agent".
 ======================  =============================
 
-**[NSRL]** - looks up hashes in the NSRL database.
+**[NSRL]** - looks up hashes in the NSRL database. These two parameters are automatically generated. Users must run nsrl_parse.py tool in the utils/ directory before using this module.
 
 .. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
 ====================  =============================
-*hash_list* 
-*offsets*   
+*hash_list*           The path to the NSRL database on the local filesystem, containing the MD5 hash, SHA1 hash, and original file name.
+*offsets*             A file that contains the pointers into hash_list file. This is necessary to speed up searching of the NSRL database file.
 ====================  =============================
 
 **[PEFile]** - extracts out feature information from EXE files. 
@@ -224,12 +224,12 @@ Parameter             Description
 ====================  =============================
 Parameter             Description
 ====================  =============================
-*BASE URL* 
+*BASE URL*            The base URL of the VxStream server.
 *API URL*             The URL to the API server (include the /api/ in this URL).
 *API Key*             The user's API key to the API server.
 *API Secret*          The user's secret to the API server.
-*Environment ID* 
-*Verify* 
+*Environment ID*      The environment in which to execute the sample (if you have different sandboxes configured).
+*Verify*              Set to false to ignore TLS certificate errors when querying the VxStream server.
 *timeout*             The maximum time a sample will run
 *running timeout*     An additional timeout, if a task is in the running state this many seconds past *timeout*, the task is considered failed.
 ====================  =============================
