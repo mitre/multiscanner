@@ -31,5 +31,6 @@ flask_cors
 #Required by tests
 pytest
 mock
+selenium
 #Required by utils
 tqdm
