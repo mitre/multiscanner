@@ -77,13 +77,6 @@ class TestSubmission(TestBase):
             data_file = Path(__file__).parent / 'test_files/{}'.format(fname)
             assert data_file.exists()
 
-            # this is the drag-and-drop box (maybe more of our HTML elements should
-            # have ids)
-            self.driver.find_element(
-                By.XPATH,
-                '/html/body/div[1]/div[2]/div/form/fieldset/div[1]/div/div/div[1]/div[2]'
-            ).send_keys(str(data_file))
-
             # send file path
             self.driver.find_element_by_css_selector("input[type=\"file\"]").clear()
             self.driver.find_element_by_css_selector("input[type=\"file\"]").send_keys(str(data_file))
