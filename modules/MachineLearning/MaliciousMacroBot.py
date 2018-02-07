@@ -41,7 +41,6 @@ def scan(filelist, conf=DEFAULTCONF):
             # only run the analytic if it is an Office document
             if 'Microsoft' in _get_libmagicresults(REQUIRES[0][0], fname):
                 result = mmb.mmb_predict(fname, datatype='filepath')
-                p = mmb.mmb_prediction_to_json(result)
                 prediction = result.iloc[0].get('prediction', None)
                 confidence = result.iloc[0].get('result_dictionary', {}).get('confidence')
                 result_dict = {
