@@ -10,6 +10,7 @@ from mocks import get_free_server_port, start_mock_server
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,7 +44,6 @@ class TestBase(LiveServerTestCase):
     @classmethod
     def setup_class(cls):
         cls.mock_server_port = get_free_server_port()
-        # cls.mock_server_port = 8080
         start_mock_server(cls.mock_server_port)
 
     def create_app(self):
@@ -58,7 +58,9 @@ class TestBase(LiveServerTestCase):
     def setUp(self):
         """Set up test driver"""
         #self.driver = webdriver.Chrome()
-        self.driver = webdriver.Firefox()
+        opts = Options()
+        opts.add_argument('-headless')
+        self.driver = webdriver.Firefox(firefox_options=opts)
         self.driver.get(self.get_server_url())
 
     def tearDown(self):
