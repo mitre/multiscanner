@@ -9,6 +9,8 @@ env:
   - MOZ_HEADLESS=1
 addons:
   firefox: latest
+before_install:
+  - npm install -g geckodriver
 install:
   - yes "" | sudo -HE ./install.sh
   - pip install -r requirements.txt
