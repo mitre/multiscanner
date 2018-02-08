@@ -29,6 +29,8 @@ pymongo
 celery
 flask_cors
 #Required by tests
+Flask-Testing
+pathlib
 pytest
 mock
 selenium
