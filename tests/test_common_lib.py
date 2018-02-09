@@ -55,4 +55,4 @@ def test_parseDir():
     path = os.path.abspath(os.path.join(MS_WD, 'tests', 'dir_test'))
     result = common.parseDir(path, recursive=False)
     expected = [os.path.join(path, '1.1.txt'), os.path.join(path, '1.2.txt')]
-    assert result == expected
+    assert sorted(result) == sorted(expected)

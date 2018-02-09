@@ -5,9 +5,11 @@ configparser
 bitstring
 boltons
 git+https://github.com/knowmalware/pehash.git#egg=pehash
+mmbot
 paramiko
 pefile
 pyclamd
+pyimpfuzzy
 python-magic
 requests
 ssdeep

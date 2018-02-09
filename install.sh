@@ -93,6 +93,7 @@ fi
 read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   # Download the unique set
+  mkdir $DIR/etc/nsrl
   curl -k https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernu.zip > rds_modernu.zip
   unzip rds_modernu.zip
   rm rds_modernu.zip
