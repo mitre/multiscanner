@@ -21,14 +21,14 @@ Set of analytics based on ssdeep hash.
     Returns SHA256 hashes of samples grouped based on ssdeep hash.
 '''
 
-import sys
-import os
 import argparse
-import requests
-import json
-import ssdeep
 import configparser
+import json
+import os
+import sys
 from pprint import pprint
+
+import ssdeep
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -36,9 +36,9 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
-import multiscanner
 import common
 import elasticsearch_storage
+import multiscanner
 
 
 class SSDeepAnalytic:
