@@ -16,10 +16,10 @@ __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "McAfee"
-#These are overwritten by the config file
-#SSH Key
+# These are overwritten by the config file
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {
@@ -49,13 +49,13 @@ def scan(filelist, conf=DEFAULTCONF):
         host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
-    #Fixes list2cmd so we can actually quote things...
+    # Fixes list2cmd so we can actually quote things...
     subprocess.list2cmdline = list2cmdline
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmdline.append('"' + item + '"')
 
-    #Create full command line
+    # Create full command line
     cmdline.insert(0, path)
 
     output = ""
@@ -71,7 +71,7 @@ def scan(filelist, conf=DEFAULTCONF):
         except:
             return None
 
-    #Parse output
+    # Parse output
     output = output.decode("utf-8")
     virusresults = re.findall("([^\n\r]+) ... Found: ([^\n\r]+)", output, re.MULTILINE)
     metadata = {}

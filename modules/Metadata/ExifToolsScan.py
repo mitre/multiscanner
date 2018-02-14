@@ -16,11 +16,11 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "ExifTool"
-#These are overwritten by the config file
+# These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
-#Entries to be removed from the final results
+# Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
 DEFAULTCONF = {'cmdline': ["-t"],
@@ -88,7 +88,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     data = {}
                 fname = row[0][9:]
                 if re.match('[A-Za-z]:/', fname):
-                    #why exif tools, whyyyyyyyy
+                    # why exif tools, whyyyyyyyy
                     fname = fname.replace('/', '\\')
                 continue
         except:
@@ -103,7 +103,7 @@ def scan(filelist, conf=DEFAULTCONF):
         data = {}
     reader = None
 
-    #Gather metadata
+    # Gather metadata
     metadata = {}
     output = output.replace('\r', '')
     reader = output.split('\n')

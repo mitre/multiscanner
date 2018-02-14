@@ -23,7 +23,7 @@ def scan(filelist):
     for fname in filelist:
         goodtogo = False
         i = 0
-        #Ran into a weird issue with file locking, this fixes it
+        # Ran into a weird issue with file locking, this fixes it
         while not goodtogo and i < 5:
             try:
                 results.append((fname, hashfile(fname, hashlib.md5())))

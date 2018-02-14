@@ -64,7 +64,7 @@ def scan(filelist, conf=DEFAULTCONF):
         if task_id is not None:
             tasks.append((fname, str(task_id)))
         else:
-            #TODO Do something here?
+            # TODO Do something here?
             pass
 
     # Wait for tasks to finish
@@ -98,12 +98,12 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #TODO Log timeout
+                        # TODO Log timeout
                         tasks.remove((fname, task_id))
 
             # If there is an unknown status
             elif status not in ['pending', 'processing', 'finished', 'completed', 'running']:
-                #TODO Log errors better
+                # TODO Log errors better
                 tasks.remove((fname, task_id))
         time.sleep(15)
 

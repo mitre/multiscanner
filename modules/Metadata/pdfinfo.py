@@ -54,8 +54,8 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Include"] = False
     return (results, metadata)
 
-#This section is an adaption from the CRITS pdfinfo service
-#https://github.com/MITRECND/crits_services/blob/master/pdfinfo_service/__init__.py
+# This section is an adaption from the CRITS pdfinfo service
+# https://github.com/MITRECND/crits_services/blob/master/pdfinfo_service/__init__.py
 
 
 def H(data):
@@ -83,7 +83,7 @@ def run(fname, data, fast=False):
     ret = {}
     ret['objects'] = {}
     ret['stats'] = {}
-    #data = obj.filedata.read()
+    # data = obj.filedata.read()
     object_summary = {
         'XRef': 0,
         'Catalog': 0,
@@ -113,7 +113,7 @@ def run(fname, data, fast=False):
     object_summary["Version"] = _get_pdf_version(data[:1024])
     oPDFParser = pdfparser.cPDFParser(fname)
     done = True
-    #self._debug("Parsing document")
+    # self._debug("Parsing document")
     while done == True:
         try:
             pdf_object = oPDFParser.GetObject()
@@ -149,12 +149,12 @@ def run(fname, data, fast=False):
                 else:
                     object_summary["Other_objects"] += 1
                 object_summary["Total"] += 1
-                #self._add_result('pdf_object', pdf_object.id, result)
+                # self._add_result('pdf_object', pdf_object.id, result)
                 ret['objects'][pdf_object.id] = result
         else:
             done = False
     for item in object_summary.items():
         item_str = "{0}: {1}".format(item[0], item[1])
-        #self._add_result('stats', item_str, {'type': item[0], 'count': item[1]})
+        # self._add_result('stats', item_str, {'type': item[0], 'count': item[1]})
         ret['stats'][item[0]] = item[1]
     return ret

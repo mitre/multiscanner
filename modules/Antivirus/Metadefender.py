@@ -246,7 +246,7 @@ def scan(filelist, conf=DEFAULTCONF):
             if task_id is not None:
                 tasks.append((fname, str(task_id)))
             else:
-                #TODO Do something here?
+                # TODO Do something here?
                 pass
         else:
             err_msg = submission_resp['error']
@@ -272,7 +272,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #Log timeout
+                        # Log timeout
                         if scan_result['overall_status'] == STATUS_PENDING:
                             scan_result['overall_status'] = STATUS_TIMEOUT
                         resultlist.append((fname, scan_result))

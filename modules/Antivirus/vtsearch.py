@@ -36,7 +36,7 @@ def check(conf=DEFAULTCONF):
 
 
 def scan(filelist, conf=DEFAULTCONF):
-    #Check for key rotation
+    # Check for key rotation
     apikey = conf['apikey']
     rotkey = False
     if isinstance(conf['apikey'], list):

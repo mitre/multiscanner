@@ -16,12 +16,12 @@ __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "AVG 2014"
-#These are overwritten by the config file
-#Hostname, port, username
+# These are overwritten by the config file
+# Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
-#SSH Key
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {"path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
     "key": KEY,
@@ -48,12 +48,12 @@ def scan(filelist, conf=DEFAULTCONF):
         local = False
 
     cmdline = conf["cmdline"]
-    #Generate scan option
+    # Generate scan option
     scan = '/SCAN='
     for item in filelist:
         scan += '"' + item + '";'
 
-    #Create full command line
+    # Create full command line
     cmdline.insert(0, conf["path"])
     cmdline.append(scan)
     output = ""
@@ -62,14 +62,13 @@ def scan(filelist, conf=DEFAULTCONF):
             output = subprocess.check_output(cmdline)
         except subprocess.CalledProcessError as e:
             output = e.output
-            #returnval = e.returncode
     else:
         host, port, user = conf["host"]
         try:
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
         except:
             return None
-    #Parse output
+    # Parse output
     output = output.decode("utf-8", errors='replace')
     virusresults = re.findall("(?:\([^\)]*\) )?([^\s]+) (.+)\s+$", output, re.MULTILINE)
     results = []

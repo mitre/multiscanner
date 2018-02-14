@@ -48,7 +48,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 ruleset[full_path] = full_path
                 break
 
-    #Ran into a weird issue with file locking, this fixes it
+    # Ran into a weird issue with file locking, this fixes it
     goodtogo = False
     i = 0
     yararules = None
@@ -68,7 +68,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     matches = []
     for m in filelist:
-        #Ran into a weird issue with file locking, this fixes it
+        # Ran into a weird issue with file locking, this fixes it
         goodtogo = False
         i = 0
         while not goodtogo and i < 5:

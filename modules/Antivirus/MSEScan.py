@@ -15,10 +15,10 @@ __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "Microsoft Security Essentials"
-#These are overwritten by the config file
-#SSH Key
+# These are overwritten by the config file
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {"path": "C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe",
@@ -48,9 +48,9 @@ def scan(filelist, conf=DEFAULTCONF):
     cmdline = conf["cmdline"]
     path = conf["path"]
 
-    #Fixes list2cmd so we can actually quote things...
+    # Fixes list2cmd so we can actually quote things...
     subprocess.list2cmdline = list2cmdline
-    #Create full command line
+    # Create full command line
     cmdline.insert(0, path)
 
     resultlist = []
@@ -59,13 +59,13 @@ def scan(filelist, conf=DEFAULTCONF):
     except:
         return None
 
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmd = cmdline[:]
         cmd.append('"' + item + '"')
 
-        #print(repr(cmd))
-        #print(repr(list2cmdline(cmd)))
+        # print(repr(cmd))
+        # print(repr(list2cmdline(cmd)))
         output = ""
         if local:
             try:
@@ -80,15 +80,15 @@ def scan(filelist, conf=DEFAULTCONF):
             except Exception as e:
                 return None
 
-        #Parse output
+        # Parse output
         output = output.decode("utf-8")
-        #print(output)
+        # print(output)
 
         if "<===========================LIST OF DETECTED THREATS==========================>" not in output:
-            #resultlist.append((item, {"malicious": False, "raw_output": output}))
+            # resultlist.append((item, {"malicious": False, "raw_output": output}))
             continue
 
-        #res = {"malicious": True, "raw_output": output, "threats": []}
+        # res = {"malicious": True, "raw_output": output, "threats": []}
 
         while '----------------------------- Threat information ------------------------------' in output:
             _, _, output = output.partition('----------------------------- Threat information ------------------------------')
@@ -96,17 +96,17 @@ def scan(filelist, conf=DEFAULTCONF):
 
             block, _, _ = output.partition('-------------------------------------------------------------------------------')
 
-            #print(block)
+            # print(block)
             lines = block.split('\n')
             threat_name = lines[0].partition(':')[2].strip()
-            #threat = {"threat": threat_name, "resources": []}
-            #for line in lines[2:]:
+            # threat = {"threat": threat_name, "resources": []}
+            # for line in lines[2:]:
             #	if not ':' in line:
             #		continue
             #	kind, _, path = line.partition(':')
             #	threat['resources'].append({kind.strip(): path.strip()})
 
-            #res['threats'].append(threat)
+            # res['threats'].append(threat)
 
         resultlist.append((item, threat_name))
 

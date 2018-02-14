@@ -16,12 +16,12 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "TrID"
-#These are overwritten by the config file
-#Hostname, port, username
+# These are overwritten by the config file
+# Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
-#SSH Key
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {"path": '/opt/trid/trid',
     'ENABLED': True,
@@ -52,7 +52,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     cmdline = [conf["path"]]
     cmdline.extend(conf["cmdline"])
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmdline.append('"' + item + '"')
 
@@ -70,7 +70,7 @@ def scan(filelist, conf=DEFAULTCONF):
         except:
             return None
 
-    #Parse output
+    # Parse output
     output = output.decode("utf-8")
     output = output.replace('\r', '')
     output = output.split('\n')

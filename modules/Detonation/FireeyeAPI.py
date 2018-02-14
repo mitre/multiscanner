@@ -18,11 +18,11 @@ DEFAULTCONF = {
         "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp3"],
         "username": "api_analyst",
         "password": "Password123",
-        "info level": "normal", # concise, normal, extended
+        "info level": "normal",  # concise, normal, extended
         "timeout": 500,
-        "force": False, # rescan if it exactly matches a previous scan?
-        "analysis type": 0, # 0 = sandbox, 1 = live
-        "application id": 0, # For AX Series appliances (7.7 and higher) and
+        "force": False,  # rescan if it exactly matches a previous scan?
+        "analysis type": 0,  # 0 = sandbox, 1 = live
+        "application id": 0,  # For AX Series appliances (7.7 and higher) and
                              # CM Series appliances that manage AX Series
                              # appliances (7.7 and higher), setting the applic-
                              # ation value to -1 allows the AX Series appliance

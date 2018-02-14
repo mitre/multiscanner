@@ -13,7 +13,7 @@ TYPE = "Detonation"
 NAME = "FireEye"
 DEFAULTCONF = {
 "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
-#"cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
+# "cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
 "ENABLED": False,
 "good path": "good",
 "base path": "/mnt/fireeyeshare/",
@@ -26,7 +26,7 @@ def check(conf=DEFAULTCONF):
 
 
 def scan(filelist, conf=DEFAULTCONF):
-    #cheatsheet = conf["cheatsheet"]
+    # cheatsheet = conf["cheatsheet"]
     base = conf["base path"]
     FEGood = conf["good path"]
     FEBad = conf["bad path"]
