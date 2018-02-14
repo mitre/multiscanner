@@ -209,7 +209,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 if report:
                     # Drop some additional values from report
                     for field in ['strings', 'signatures_chronology',
-                        'imageprocessing', 'multiscan']:
+                                  'imageprocessing', 'multiscan']:
                         try:
                             report['analysis']['final'].pop(field)
                         except KeyError:
