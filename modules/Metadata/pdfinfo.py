@@ -154,7 +154,7 @@ def run(fname, data, fast=False):
         else:
             done = False
     for item in object_summary.items():
-        item_str = "{0}: {1}".format(item[0], item[1])
+        # item_str = "{0}: {1}".format(item[0], item[1])
         # self._add_result('stats', item_str, {'type': item[0], 'count': item[1]})
         ret['stats'][item[0]] = item[1]
     return ret

@@ -425,19 +425,19 @@ def _get_version_info(pe):
                         for str_entry in st_entry.entries.items():
                             try:
                                 value = str_entry[1].encode('ascii')
-                                result = {
-                                    'key': str_entry[0],
-                                    'value': value,
-                                }
+                                # result = {
+                                #     'key': str_entry[0],
+                                #     'value': value,
+                                # }
                             except:
                                 value = str_entry[1].encode('ascii', errors='ignore')
-                                raw = binascii.hexlify(str_entry[1].encode('utf-8'))
-                                result = {
-                                    'key': str_entry[0],
-                                    'value': value,
-                                    'raw': raw,
-                                }
-                            result_name = str_entry[0] + ': ' + value[:255]
+                                # raw = binascii.hexlify(str_entry[1].encode('utf-8'))
+                                # result = {
+                                #     'key': str_entry[0],
+                                #     'value': value,
+                                #     'raw': raw,
+                                # }
+                            # result_name = str_entry[0] + ': ' + value[:255]
                             # self._add_result('version_info', result_name, result)
                             results[str_entry[0]] = value[:255]
                 elif hasattr(entry, 'Var'):
@@ -446,19 +446,19 @@ def _get_version_info(pe):
                             for key in var_entry.entry.keys():
                                 try:
                                     value = var_entry.entry[key].encode('ascii')
-                                    result = {
-                                        'key': key,
-                                        'value': value,
-                                    }
+                                    # result = {
+                                    #     'key': key,
+                                    #     'value': value,
+                                    # }
                                 except:
                                     value = var_entry.entry[key].encode('ascii', errors='ignore')
-                                    raw = binascii.hexlify(var_entry.entry[key])
-                                    result = {
-                                        'key': key,
-                                        'value': value,
-                                        'raw': raw,
-                                    }
-                                result_name = key + ': ' + value
+                                    # raw = binascii.hexlify(var_entry.entry[key])
+                                    # result = {
+                                    #     'key': key,
+                                    #     'value': value,
+                                    #     'raw': raw,
+                                    # }
+                                # result_name = key + ': ' + value
                                 # self._add_result('version_var', result_name, result)
                                 results[key] = value
         except Exception as e:
@@ -487,7 +487,7 @@ def _get_tls_info(pe):
         for idx, va in enumerate(callback_functions):
             va_string = "0x%08x" % va
             # self._info("TLS callback function at %s" % va_string)
-            data = {'Callback Function': idx}
+            # data = {'Callback Function': idx}
             # self._add_result('tls_callback', va_string, data)
             results[va_string] = idx
     return results
