@@ -12,13 +12,13 @@ __license__ = "MPL 2.0"
 TYPE = "Detonation"
 NAME = "FireEye"
 DEFAULTCONF = {
-"fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
-# "cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
-"ENABLED": False,
-"good path": "good",
-"base path": "/mnt/fireeyeshare/",
-"bad path": "bad",
-"src path": "src"}
+    "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
+    # "cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
+    "ENABLED": False,
+    "good path": "good",
+    "base path": "/mnt/fireeyeshare/",
+    "bad path": "bad",
+    "src path": "src"}
 
 
 def check(conf=DEFAULTCONF):
