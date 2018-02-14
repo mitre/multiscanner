@@ -21,7 +21,7 @@ REQUIRES = ["libmagic"]
 DEFAULTCONF = {
     'ENABLED': True,
     'fast': False
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

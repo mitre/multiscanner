@@ -19,7 +19,7 @@ DEFAULTCONF = {
     'hash_list': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'hash_list'),
     'offsets': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

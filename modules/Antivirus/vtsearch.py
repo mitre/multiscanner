@@ -22,7 +22,7 @@ REQUIRES = ["MD5"]
 DEFAULTCONF = {
     'apikey': None,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

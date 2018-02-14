@@ -21,13 +21,14 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
-DEFAULTCONF = {"path": "C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe",
+DEFAULTCONF = {
+    "path": "C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe",
     "key": KEY,
     "cmdline": ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"],
     'host': HOST,
     "replacement path": PATHREPLACE,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

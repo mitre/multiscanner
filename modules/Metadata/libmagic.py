@@ -16,7 +16,7 @@ NAME = "libmagic"
 DEFAULTCONF = {
     'magicfile': None,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

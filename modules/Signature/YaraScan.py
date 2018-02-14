@@ -12,12 +12,13 @@ __license__ = "MPL 2.0"
 
 TYPE = "Signature"
 NAME = "Yara"
-DEFAULTCONF = {"ruledir": os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
+DEFAULTCONF = {
+    "ruledir": os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
     "fileextensions": [".yar", ".yara", ".sig"],
     "ignore-tags": ["TLPRED"],
     'includes': False,
     'ENABLED': True
-    }
+}
 
 try:
     import yara

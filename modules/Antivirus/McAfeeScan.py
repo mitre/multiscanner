@@ -29,7 +29,7 @@ DEFAULTCONF = {
     'host': HOST,
     "replacement path": PATHREPLACE,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

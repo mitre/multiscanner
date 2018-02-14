@@ -23,14 +23,15 @@ PATHREPLACE = "X:\\"
 # Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
-DEFAULTCONF = {'cmdline': ["-t"],
+DEFAULTCONF = {
+    'cmdline': ["-t"],
     "path": "C:\\exiftool.exe",
     "key": KEY,
     'host': HOST,
     "replacement path": PATHREPLACE,
     'remove-entry': REMOVEENTRY,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

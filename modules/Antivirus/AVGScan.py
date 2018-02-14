@@ -23,13 +23,14 @@ HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
+DEFAULTCONF = {
+    "path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
     "key": KEY,
     "cmdline": ['/A', '/H', '/PRIORITY=High'],
     'host': HOST,
     "replacement path": PATHREPLACE,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

@@ -36,7 +36,7 @@ NAME = "pefile"
 REQUIRES = ["libmagic"]
 DEFAULTCONF = {
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):

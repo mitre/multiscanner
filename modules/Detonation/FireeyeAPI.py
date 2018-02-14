@@ -99,14 +99,14 @@ def scan(filelist, conf=DEFAULTCONF):
     for fname in filelist:
         with open(fname, 'rb') as f:
             options = {
-                    "priority": "0",
-                    "profiles": conf['fireeye images'],
-                    "analysistype": str(conf['analysis type']),
-                    "prefetch": "1",
-                    "force": conf['force'],
-                    "timeout": str(conf['timeout']),
-                    "application": str(conf['application id'])
-                    }
+                "priority": "0",
+                "profiles": conf['fireeye images'],
+                "analysistype": str(conf['analysis type']),
+                "prefetch": "1",
+                "force": conf['force'],
+                "timeout": str(conf['timeout']),
+                "application": str(conf['application id'])
+            }
             resp = _request(conf, '/submissions', files={"filename": f}, data={"options": json.dumps(options)})
             resp.raise_for_status()
             waitlist.append((fname, resp.json()[0]['ID']))

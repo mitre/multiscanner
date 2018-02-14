@@ -137,10 +137,11 @@ def _parse_scan_result(response):
             msg = 'No data received from Metadefender'
         engine_results = []
 
-    scan_result = {'overall_status': overall_status,
-                   'msg': msg,
-                   'engine_results': engine_results
-                  }
+    scan_result = {
+        'overall_status': overall_status,
+        'msg': msg,
+        'engine_results': engine_results
+    }
     return (is_complete, scan_result)
 
 
@@ -185,10 +186,11 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
         except (ValueError, AttributeError):
             error_msg = MD_HTTP_ERR_CODES.get(resp_status_code, UNKNOWN_ERROR)
 
-    submission_response = {'status_code': resp_status_code,
-                           'scan_id': scan_id,
-                           'error': error_msg
-                          }
+    submission_response = {
+        'status_code': resp_status_code,
+        'scan_id': scan_id,
+        'error': error_msg
+    }
     return submission_response
 
 
