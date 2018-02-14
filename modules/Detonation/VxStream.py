@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
-import json
 import time
 # from common import basename
-from collections import Counter
 from boltons.iterutils import remap
 
 

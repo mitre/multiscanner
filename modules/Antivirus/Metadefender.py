@@ -17,10 +17,8 @@ Notes on special configuration options:
 '''
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
-import json
 import time
 from common import basename
-from collections import Counter
 
 __author__ = "Julian Feild"
 __license__ = "MPL 2.0"

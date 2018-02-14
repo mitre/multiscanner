@@ -4,7 +4,6 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import os
 import subprocess
-import re
 import sys
 from common import list2cmdline
 from common import sshconnect

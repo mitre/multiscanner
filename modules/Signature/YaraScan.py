@@ -6,7 +6,6 @@ import os
 import sys
 import time
 from common import parseDir
-from operator import itemgetter
 
 __authors__ = "Nick Beede, Drew Bonasera"
 __license__ = "MPL 2.0"

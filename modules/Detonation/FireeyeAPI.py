@@ -2,11 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import os
 import time
-import csv
-import shutil
-import sys
 import requests
 import json
 from requests.packages.urllib3.exceptions import InsecureRequestWarning

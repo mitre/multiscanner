@@ -4,9 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import os
 import time
-import csv
 import shutil
-import sys
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"

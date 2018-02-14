@@ -318,7 +318,6 @@ def _get_imports(pe):
     except Exception as e:
         #self._parse_error("imports", e)
         print(e)
-        pass
     return result
         
 def _get_exports(pe):

@@ -22,9 +22,6 @@ except:
     print("pehash module not installed...")
     pehash = False
 
-from common import hashfile
-import hashlib
-import time
 import sys
 
 PY3 = False
