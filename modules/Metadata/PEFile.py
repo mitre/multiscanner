@@ -246,7 +246,7 @@ def _dump_resource_data(name, dir, pe, save):
             if hasattr(i, 'data'):
                 x = i.data
                 rva = x.struct.OffsetToData
-                rname = "%s_%s_%s" % (name, i.name, x.struct.name)
+                "%s_%s_%s" % (name, i.name, x.struct.name)
                 size = x.struct.Size
                 data = pe.get_memory_mapped_image()[rva:rva + size]
                 if not data:

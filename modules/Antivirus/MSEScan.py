@@ -70,10 +70,9 @@ def scan(filelist, conf=DEFAULTCONF):
         if local:
             try:
                 output = subprocess.check_output(cmd)
-                returnval = 0
             except subprocess.CalledProcessError as e: 
                 output = e.output
-                returnval = e.returncode
+                e.returncode
         else:
             try:
                 stdin, stdout, stderr = client.exec_command(list2cmdline(cmd))

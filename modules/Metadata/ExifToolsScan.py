@@ -63,10 +63,9 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmd)
-            returnval = 0
         except subprocess.CalledProcessError as e: 
             output = e.output
-            returnval = e.returncode
+            e.returncode
     else:
         try:
             output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
