@@ -31,5 +31,7 @@ flask_cors
 #Required by tests
 pytest
 mock
+#Requred by dev
+pre-commit
 #Required by utils
 tqdm
