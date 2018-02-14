@@ -1,7 +1,8 @@
-import storage
+import codecs
 import gzip
 import json
-import codecs
+
+import storage
 
 
 class File(storage.Storage):

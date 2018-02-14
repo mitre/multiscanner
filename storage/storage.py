@@ -2,22 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import codecs
 import configparser
+import inspect
 import os
 import sys
 import threading
-import inspect
+from builtins import *  # TODO: Is this needed?
+
+from future import standard_library
+
+standard_library.install_aliases()
+
 STORAGE_DIR = os.path.dirname(__file__)
 MS_WD = os.path.dirname(STORAGE_DIR)
+CONFIG = os.path.join(MS_WD, "storage.ini")
+
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
+
 import common
-CONFIG = os.path.join(MS_WD, "storage.ini")
 
 
 class ThreadCounter(object):

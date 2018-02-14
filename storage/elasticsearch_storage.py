@@ -1,13 +1,14 @@
 '''
 Storage module that will interact with elasticsearch.
 '''
+import json
 import os
+import re
 from datetime import datetime
 from uuid import uuid4
+
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
-import re
-import json
 
 import storage
 

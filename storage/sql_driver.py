@@ -1,29 +1,27 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import os
-import json
-import configparser
+
 import codecs
+import configparser
+import json
+import os
 import sys
 from contextlib import contextmanager
 from datetime import datetime
 
-from sqlalchemy import and_, create_engine, Column, Integer, String, DateTime, func
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, aliased
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy_utils import database_exists, create_database
-
 from datatables import ColumnDT, DataTables
-
+from sqlalchemy import (Column, DateTime, Integer, String, and_, create_engine,
+                        func)
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import aliased, sessionmaker
+from sqlalchemy_utils import create_database, database_exists
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
-
-import common
 
 Base = declarative_base()
 Session = sessionmaker()
