@@ -18,7 +18,7 @@ DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[
     'includes': False,
     'ENABLED': True
     }
-    
+
 try:
     import yara
 except:
@@ -99,7 +99,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     hdict[h_key] = hit_dict
             matches.append((m, hdict))
 
-            
+
     metadata = {}
     rulelist = list(ruleset)
     rulelist.sort()

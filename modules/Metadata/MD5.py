@@ -17,7 +17,7 @@ def check():
 
 def scan(filelist):
     results = []
-    
+
     for fname in filelist:
         goodtogo = False
         i = 0

@@ -21,10 +21,10 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
-DEFAULTCONF = {"path":"C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe", 
-    "key":KEY, 
-    "cmdline":["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"], 
-    'host':HOST, 
+DEFAULTCONF = {"path":"C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe",
+    "key":KEY,
+    "cmdline":["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"],
+    'host':HOST,
     "replacement path":PATHREPLACE,
     'ENABLED': True
     }
@@ -47,7 +47,7 @@ def scan(filelist, conf=DEFAULTCONF):
         host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
-    
+
     #Fixes list2cmd so we can actually quote things...
     subprocess.list2cmdline = list2cmdline
     #Create full command line
@@ -63,14 +63,14 @@ def scan(filelist, conf=DEFAULTCONF):
     for item in filelist:
         cmd = cmdline[:]
         cmd.append('"' + item + '"')
-    
+
         #print(repr(cmd))
         #print(repr(list2cmdline(cmd)))
         output = ""
         if local:
             try:
                 output = subprocess.check_output(cmd)
-            except subprocess.CalledProcessError as e: 
+            except subprocess.CalledProcessError as e:
                 output = e.output
                 e.returncode
         else:
@@ -83,7 +83,7 @@ def scan(filelist, conf=DEFAULTCONF):
         #Parse output
         output = output.decode("utf-8")
         #print(output)
-        
+
         if "<===========================LIST OF DETECTED THREATS==========================>" not in output:
             #resultlist.append((item, {"malicious": False, "raw_output": output}))
             continue

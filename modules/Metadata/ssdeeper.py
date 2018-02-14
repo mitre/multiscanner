@@ -48,7 +48,7 @@ def scan(filelist):
                 print('ssdeeper:', e)
                 time.sleep(3)
                 i += 1
-                
+
     metadata = {}
     metadata["Name"] = NAME
     metadata["Type"] = TYPE

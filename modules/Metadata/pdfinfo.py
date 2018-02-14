@@ -20,7 +20,7 @@ NAME = "pdfinfo"
 REQUIRES = ["libmagic"]
 DEFAULTCONF = {
     'ENABLED': True,
-    'fast': False	
+    'fast': False
     }
 
 def check(conf=DEFAULTCONF):
@@ -137,7 +137,7 @@ def run(fname, data, fast=False):
                             "size": len(rawContent),
                             "type": object_type,
                     }
-                    
+
                 if object_type[1:] in object_summary:
                     object_summary[object_type[1:]] += 1
                 else:

@@ -134,7 +134,7 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
     except requests.exceptions.HTTPError as err:
         print(err)
 
-        
+
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
     user_agent = {'User-agent': 'VxStream Sandbox'}
     params = {'apikey': apikey, 'secret': secret, 'environmentId': environment_id, 'type': type_}

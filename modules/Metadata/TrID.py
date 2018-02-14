@@ -24,10 +24,10 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {"path":'/opt/trid/trid',
-    'ENABLED': True, 
-    "key":KEY, 
-    "cmdline":['-r:3'], 
-    'host':HOST, 
+    'ENABLED': True,
+    "key":KEY,
+    "cmdline":['-r:3'],
+    'host':HOST,
     "replacement path":PATHREPLACE
     }
 
@@ -58,7 +58,7 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmdline)
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
 
     else:
@@ -67,7 +67,7 @@ def scan(filelist, conf=DEFAULTCONF):
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
         except:
             return None
-    
+
     #Parse output
     output = output.decode("utf-8")
     output = output.replace('\r', '')
@@ -80,14 +80,14 @@ def scan(filelist, conf=DEFAULTCONF):
             fname = line[6:]
             fresults[fname] = []
             continue
-            
+
         elif line.startswith('Collecting data from file: '):
             fname = line[27:]
             fresults[fname] = []
             continue
-            
+
         if fname:
-            virusresults = re.findall("\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line) 
+            virusresults = re.findall("\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line)
             if virusresults:
                 confidence, exnt, ftype = virusresults[0]
                 fresults[fname].append([confidence, ftype, exnt])

@@ -23,10 +23,10 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {
-    "path":"C:\\vscl-w32-604-e\\scan.exe", 
-    "key":KEY, 
-    "cmdline":["/ALL"], 
-    'host':HOST, 
+    "path":"C:\\vscl-w32-604-e\\scan.exe",
+    "key":KEY,
+    "cmdline":["/ALL"],
+    'host':HOST,
     "replacement path":PATHREPLACE,
     'ENABLED': True
     }
@@ -52,15 +52,15 @@ def scan(filelist, conf=DEFAULTCONF):
     #Generate scan option
     for item in filelist:
         cmdline.append('"' + item + '"')
-    
+
     #Create full command line
     cmdline.insert(0, path)
-    
+
     output = ""
     if local:
         try:
             output = subprocess.check_output(cmdline)
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
             e.returncode
     else:
@@ -83,6 +83,6 @@ def scan(filelist, conf=DEFAULTCONF):
         verinfo = re.search("Dat set version: (\d+) created (\w+ (?:\d|\d\d) \d\d\d\d)", output)
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
-    
-    return (virusresults, metadata)	
+
+    return (virusresults, metadata)
 

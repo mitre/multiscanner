@@ -23,11 +23,11 @@ PATHREPLACE = "X:\\"
 #Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
-DEFAULTCONF = {'cmdline':["-t"], 
-    "path":"C:\\exiftool.exe", 
-    "key":KEY, 
-    'host':HOST, 
-    "replacement path":PATHREPLACE, 
+DEFAULTCONF = {'cmdline':["-t"],
+    "path":"C:\\exiftool.exe",
+    "key":KEY,
+    'host':HOST,
+    "replacement path":PATHREPLACE,
     'remove-entry':REMOVEENTRY,
     'ENABLED': True
     }
@@ -39,7 +39,7 @@ def check(conf=DEFAULTCONF):
         if 'replacement path' in conf:
             del conf['replacement path']
         return True
-    
+
     if SSH:
         return True
     else:
@@ -50,7 +50,7 @@ def scan(filelist, conf=DEFAULTCONF):
         local = True
     elif SSH:
         local = False
-        
+
     cmdline = conf["cmdline"]
     results = []
     output = ""
@@ -63,7 +63,7 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmd)
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
             e.returncode
     else:
@@ -100,7 +100,7 @@ def scan(filelist, conf=DEFAULTCONF):
         results.append((fname, data))
         data = {}
     reader = None
-    
+
     #Gather metadata
     metadata = {}
     output = output.replace('\r', '')
@@ -109,8 +109,8 @@ def scan(filelist, conf=DEFAULTCONF):
         row = row.split('\t')
         if row and row[0] == "ExifTool Version Number":
             metadata["Program version"] = row[1]
-            break	
+            break
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
-    return (results, metadata)	
+    return (results, metadata)
 

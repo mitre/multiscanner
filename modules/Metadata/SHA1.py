@@ -19,7 +19,7 @@ def check():
 
 def scan(filelist):
     results = []
-    
+
     for fname in filelist:
         goodtogo = False
         i = 0
@@ -32,7 +32,7 @@ def scan(filelist):
                 print('SHA1:', e)
                 time.sleep(3)
                 i += 1
-                
+
     metadata = {}
     metadata["Name"] = NAME
     metadata["Type"] = TYPE

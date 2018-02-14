@@ -52,7 +52,7 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     results = []
     libmagicresults, libmagicmeta = REQUIRES[0]
-    
+
     for fname, libmagicresult in libmagicresults:
         if fname not in filelist:
             print("DEBUG: File not in filelist")
@@ -115,7 +115,7 @@ def _get_pehash(exe):
         return None
     #pad to 16 bits
     img_chars = bitstring.BitArray(bytes=img_chars.tobytes())
-    
+
     img_chars_xor = img_chars[0:8] ^ img_chars[8:16]
 
     #start to build pehash
@@ -199,7 +199,7 @@ def _get_pehash(exe):
     m.update(pehash_bin.tobytes())
     output = m.hexdigest()
     return output
-    
+
 # http://www.ntcore.com/files/richsign.htm
 def _get_rich_header(pe):
     rich_hdr = pe.parse_rich_header()
@@ -319,7 +319,7 @@ def _get_imports(pe):
         #self._parse_error("imports", e)
         print(e)
     return result
-        
+
 def _get_exports(pe):
     results = {}
     try:

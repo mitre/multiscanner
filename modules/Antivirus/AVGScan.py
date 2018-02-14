@@ -23,10 +23,10 @@ HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path":"C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe", 
-    "key":KEY, 
+DEFAULTCONF = {"path":"C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
+    "key":KEY,
     "cmdline":['/A', '/H', '/PRIORITY=High'],
-    'host':HOST, 
+    'host':HOST,
     "replacement path":PATHREPLACE,
     'ENABLED': True
     }
@@ -44,13 +44,13 @@ def scan(filelist, conf=DEFAULTCONF):
         local = True
     elif SSH:
         local = False
-    
+
     cmdline = conf["cmdline"]
     #Generate scan option
     scan = '/SCAN='
     for item in filelist:
         scan += '"' + item + '";'
-    
+
     #Create full command line
     cmdline.insert(0, conf["path"])
     cmdline.append(scan)
@@ -58,7 +58,7 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmdline)
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
             #returnval = e.returncode
     else:
