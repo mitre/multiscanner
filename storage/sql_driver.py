@@ -22,6 +22,7 @@ CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
+
 import common
 
 Base = declarative_base()

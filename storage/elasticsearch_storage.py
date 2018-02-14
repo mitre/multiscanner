@@ -138,7 +138,7 @@ class ElasticSearchStorage(storage.Storage):
                         }
                     }
                     dedot(ctx);"""
-                }
+            }
             self.es.ingest.put_pipeline(id='dedot', body={
                 'description': 'Replace dots in field names with underscores.',
                 'processors': [

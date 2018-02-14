@@ -17,6 +17,7 @@ from storage import Storage
 from uuid import uuid4
 from pymongo import MongoClient
 
+
 class MongoStorage(Storage):
     '''
     Subclass of Storage. Allows user to interact
