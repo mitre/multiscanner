@@ -60,9 +60,9 @@ def H(data):
     data = data.decode('utf-8', 'replace')
     entropy = 0
     for x in range(256):
-        p_x = float(data.count(chr(x)))/len(data)
+        p_x = float(data.count(chr(x))) / len(data)
         if p_x > 0:
-            entropy += - p_x*math.log(p_x, 2)
+            entropy += - p_x * math.log(p_x, 2)
     return entropy
 
 def _get_pdf_version(data):
@@ -79,7 +79,7 @@ def run(fname, data, fast=False):
     ret['stats'] = {}
     #data = obj.filedata.read()
     object_summary = {
-        'XRef':	0,
+        'XRef': 0,
         'Catalog': 0,
         'ObjStm': 0,
         'Page': 0,

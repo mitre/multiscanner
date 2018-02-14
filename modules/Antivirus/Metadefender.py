@@ -203,7 +203,7 @@ def _retrieve_scan_results(results_url, scan_id, api_key=None):
     headers = None
     if api_key:
         headers = {'apikey': api_key}
-    scan_output = requests.get(results_url+scan_id, headers=headers)
+    scan_output = requests.get(results_url + scan_id, headers=headers)
     return scan_output
 
 def scan(filelist, conf=DEFAULTCONF):

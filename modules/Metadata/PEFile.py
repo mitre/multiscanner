@@ -9,7 +9,7 @@ except:
     pefile = False
 
 try:
-    xrange(0,1)
+    xrange(0, 1)
 except:
     xrange = range
 
@@ -157,13 +157,13 @@ def _get_pehash(exe):
     #Section chars
     for section in exe.sections:
         #virutal address
-        sect_va =  bitstring.BitArray(hex(section.VirtualAddress))
+        sect_va = bitstring.BitArray(hex(section.VirtualAddress))
         sect_va = bitstring.BitArray(bytes=sect_va.tobytes())
         sect_va_bits = sect_va[8:32]
         pehash_bin.append(sect_va_bits)
 
         #rawsize
-        sect_rs =  bitstring.BitArray(hex(section.SizeOfRawData))
+        sect_rs = bitstring.BitArray(hex(section.SizeOfRawData))
         sect_rs = bitstring.BitArray(bytes=sect_rs.tobytes())
         if PY3:
             sect_rs_bits = sect_rs.bin.zfill(32)
@@ -175,7 +175,7 @@ def _get_pehash(exe):
         pehash_bin.append(sect_rs_bits)
 
         #section chars
-        sect_chars =  bitstring.BitArray(hex(section.Characteristics))
+        sect_chars = bitstring.BitArray(hex(section.Characteristics))
         sect_chars = bitstring.BitArray(bytes=sect_chars.tobytes())
         sect_chars_xor = sect_chars[16:24] ^ sect_chars[24:32]
         pehash_bin.append(sect_chars_xor)
@@ -183,7 +183,7 @@ def _get_pehash(exe):
         #entropy calulation
         address = section.VirtualAddress
         size = section.SizeOfRawData
-        raw = exe.write()[address+size:]
+        raw = exe.write()[address + size:]
         if size == 0:
             kolmog = bitstring.BitArray(float=1, length=32)
             pehash_bin.append(kolmog[0:8])
@@ -206,7 +206,7 @@ def _get_rich_header(pe):
     if not rich_hdr:
         return (None, None)
     data = {"raw": str(rich_hdr['values'])}
-    richchecksum =  hex(rich_hdr['checksum'])
+    richchecksum = hex(rich_hdr['checksum'])
     #self._add_result('rich_header', hex(rich_hdr['checksum']), data)
 
     # Generate a signature of the block. Need to apply checksum
@@ -256,7 +256,7 @@ def _dump_resource_data(name, dir, pe, save):
                         #self._debug("Adding new file from resource len %d - %s" % (len(data), rname))
                         #self.added_files.append((rname, data))
                 results = {
-                        "resource_type": x.struct.name.decode('UTF-8', errors='replace') ,
+                        "resource_type": x.struct.name.decode('UTF-8', errors='replace'),
                         "resource_id": i.id,
                         "language": x.lang,
                         "sub_language": x.sublang,
@@ -418,16 +418,16 @@ def _get_version_info(pe):
                             try:
                                 value = str_entry[1].encode('ascii')
                                 result = {
-                                    'key':	  str_entry[0],
-                                    'value':	value,
+                                    'key': str_entry[0],
+                                    'value': value,
                                 }
                             except:
                                 value = str_entry[1].encode('ascii', errors='ignore')
                                 raw = binascii.hexlify(str_entry[1].encode('utf-8'))
                                 result = {
-                                    'key':	  str_entry[0],
-                                    'value':	value,
-                                    'raw':	  raw,
+                                    'key': str_entry[0],
+                                    'value': value,
+                                    'raw': raw,
                                 }
                             result_name = str_entry[0] + ': ' + value[:255]
                             #self._add_result('version_info', result_name, result)
@@ -439,16 +439,16 @@ def _get_version_info(pe):
                                 try:
                                     value = var_entry.entry[key].encode('ascii')
                                     result = {
-                                        'key':	  key,
-                                        'value':	value,
+                                        'key': key,
+                                        'value': value,
                                     }
                                 except:
                                     value = var_entry.entry[key].encode('ascii', errors='ignore')
                                     raw = binascii.hexlify(var_entry.entry[key])
                                     result = {
-                                        'key':	  key,
-                                        'value':	value,
-                                        'raw':	  raw,
+                                        'key': key,
+                                        'value': value,
+                                        'raw': raw,
                                     }
                                 result_name = key + ': ' + value
                                 #self._add_result('version_var', result_name, result)
@@ -465,7 +465,7 @@ def _get_tls_info(pe):
 
     # read the array of TLS callbacks until we hit a NULL ptr (end of array)
     idx = 0
-    callback_functions = [ ]
+    callback_functions = []
     while pe.get_dword_from_data(pe.get_data(callback_array_rva + 4 * idx, 4), 0):
         callback_functions.append(pe.get_dword_from_data(pe.get_data(callback_array_rva + 4 * idx, 4), 0))
         idx += 1
@@ -478,7 +478,7 @@ def _get_tls_info(pe):
         for idx, va in enumerate(callback_functions):
             va_string = "0x%08x" % va
             #self._info("TLS callback function at %s" % va_string)
-            data = { 'Callback Function': idx }
+            data = {'Callback Function': idx}
             #self._add_result('tls_callback', va_string, data)
             results[va_string] = idx
     return results

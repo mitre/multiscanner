@@ -14,13 +14,13 @@ __license__ = "MPL 2.0"
 TYPE = "Detonation"
 NAME = "FireEyeAPI"
 DEFAULTCONF = {
-        "API URL":"https://fireeye/wsapis/v1.1.0",
-        "fireeye images":["win7-sp1", "win7x64-sp1", "winxp-sp3"],
-        "username":"api_analyst",
-        "password":"Password123",
-        "info level":"normal", # concise, normal, extended
-        "timeout":500,
-        "force":False, # rescan if it exactly matches a previous scan?
+        "API URL": "https://fireeye/wsapis/v1.1.0",
+        "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp3"],
+        "username": "api_analyst",
+        "password": "Password123",
+        "info level": "normal", # concise, normal, extended
+        "timeout": 500,
+        "force": False, # rescan if it exactly matches a previous scan?
         "analysis type": 0, # 0 = sandbox, 1 = live
         "application id": 0, # For AX Series appliances (7.7 and higher) and
                              # CM Series appliances that manage AX Series
@@ -30,7 +30,7 @@ DEFAULTCONF = {
                              # appliances, setting the application value to 0
                              # allows the AX Series appliance to choose the
                              # application for you.
-        "ENABLED":False}
+        "ENABLED": False}
 
 VERBOSE = False
 
@@ -40,7 +40,7 @@ def _authenticate(conf):
     global token
     if VERBOSE:
         print('Authenticating to FireEye API...')
-    resp = requests.post(conf['API URL']+'/auth/login', auth=(conf["username"], conf["password"]), verify=False)
+    resp = requests.post(conf['API URL'] + '/auth/login', auth=(conf["username"], conf["password"]), verify=False)
     if resp.status_code == 200:
         token = resp.headers['x-feapi-token']
         if VERBOSE:
@@ -109,7 +109,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     while waitlist:
         for fname, fid in waitlist[:]:
-            resp = _request(conf, '/submissions/status/'+fid)
+            resp = _request(conf, '/submissions/status/' + fid)
             resp.raise_for_status()
             if resp.json()['submissionStatus'] == 'In Progress':
                 continue
@@ -121,7 +121,7 @@ def scan(filelist, conf=DEFAULTCONF):
         time.sleep(20)
 
     for fname, fid in donelist:
-        resp = _request(conf, '/submissions/results/'+fid, params={'info_level': conf['info level']})
+        resp = _request(conf, '/submissions/results/' + fid, params={'info_level': conf['info level']})
         resp.raise_for_status()
         resultlist.append((fname, resp.json()))
 

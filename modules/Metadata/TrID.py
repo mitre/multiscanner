@@ -23,18 +23,18 @@ HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path":'/opt/trid/trid',
+DEFAULTCONF = {"path": '/opt/trid/trid',
     'ENABLED': True,
-    "key":KEY,
-    "cmdline":['-r:3'],
-    'host':HOST,
-    "replacement path":PATHREPLACE
+    "key": KEY,
+    "cmdline": ['-r:3'],
+    'host': HOST,
+    "replacement path": PATHREPLACE
     }
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
-    if os.path.isfile(conf["path"]) :
+    if os.path.isfile(conf["path"]):
         del conf['replacement path']
         return True
     elif SSH:

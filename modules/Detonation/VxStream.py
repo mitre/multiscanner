@@ -64,10 +64,10 @@ EMPTY_STR_TO_OBJ = {
 }
 EMPTY_STR_TO_LS = {
     'runtime': [
-        'targets',],
+        'targets', ],
     'hybridanalysis': [
         'targets',
-        'dropped',],
+        'dropped', ],
 }
 
 # we could use the full path of the keys
@@ -100,7 +100,7 @@ def visit(path, key, value):
 def post_to_vxstream(f_name, environment_id,
         submit_url, apikey, secret, runtime, verify):
     with open(f_name, 'rb') as f:
-        files = { 'file': f }
+        files = {'file': f}
         data = {
             'apikey': apikey,
             'secret': secret,

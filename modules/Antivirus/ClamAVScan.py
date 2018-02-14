@@ -11,7 +11,7 @@ except:
 __author__ = 'Mike Long'
 __license__ = "MPL 2.0"
 
-DEFAULTCONF ={
+DEFAULTCONF = {
     "ENABLED": True,
 }
 

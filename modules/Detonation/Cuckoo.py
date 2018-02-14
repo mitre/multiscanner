@@ -67,13 +67,13 @@ def scan(filelist, conf=DEFAULTCONF):
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
-            status = requests.get(view_url+task_id).json()['task']['status']
+            status = requests.get(view_url + task_id).json()['task']['status']
 
             # TODO - if we don't find a report, should we add (fname, {}) or
             # just skip fname?
             # If we have a report
             if status == 'reported':
-                report = fetch_report_json(report_url+task_id)
+                report = fetch_report_json(report_url + task_id)
                 if conf['maec']:
                     report['info']['maec report'] = maec_report_url.format(task_id=task_id)
                     # maec_report = fetch_report_json(
@@ -86,7 +86,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 resultlist.append((fname, report))
                 tasks.remove((fname, task_id))
                 if conf['delete tasks']:
-                    requests.get(delete_url+task_id)
+                    requests.get(delete_url + task_id)
 
             # Check for dead tasks
             elif status == 'running':

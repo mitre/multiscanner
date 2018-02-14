@@ -23,11 +23,11 @@ HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 #Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path":"C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
-    "key":KEY,
-    "cmdline":['/A', '/H', '/PRIORITY=High'],
-    'host':HOST,
-    "replacement path":PATHREPLACE,
+DEFAULTCONF = {"path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
+    "key": KEY,
+    "cmdline": ['/A', '/H', '/PRIORITY=High'],
+    'host': HOST,
+    "replacement path": PATHREPLACE,
     'ENABLED': True
     }
 
@@ -82,7 +82,7 @@ def scan(filelist, conf=DEFAULTCONF):
             if file not in filelist or not result:
                 continue
         result = result[-1]
-        results.append((file,result))
+        results.append((file, result))
 
     metadata = {}
     verinfo = re.search("Program version ([\d\.]+), engine ([\d\.]+)", output)

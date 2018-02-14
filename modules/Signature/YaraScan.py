@@ -12,9 +12,9 @@ __license__ = "MPL 2.0"
 
 TYPE = "Signature"
 NAME = "Yara"
-DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
-    "fileextensions":[".yar", ".yara", ".sig"],
-    "ignore-tags":["TLPRED"],
+DEFAULTCONF = {"ruledir": os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
+    "fileextensions": [".yar", ".yara", ".sig"],
+    "ignore-tags": ["TLPRED"],
     'includes': False,
     'ENABLED': True
     }
@@ -87,10 +87,10 @@ def scan(filelist, conf=DEFAULTCONF):
             for h in hit:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
                     hit_dict = {
-                        'meta'      : h.meta,
-                        'namespace' : h.namespace,
-                        'rule'      : h.rule,
-                        'tags'      : h.tags,
+                        'meta': h.meta,
+                        'namespace': h.namespace,
+                        'rule': h.rule,
+                        'tags': h.tags,
                     }
                     try:
                         h_key = '{}:{}'.format(hit_dict['namespace'].split('/')[-1], hit_dict['rule'])

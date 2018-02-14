@@ -23,11 +23,11 @@ KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rs
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {
-    "path":"C:\\vscl-w32-604-e\\scan.exe",
-    "key":KEY,
-    "cmdline":["/ALL"],
-    'host':HOST,
-    "replacement path":PATHREPLACE,
+    "path": "C:\\vscl-w32-604-e\\scan.exe",
+    "key": KEY,
+    "cmdline": ["/ALL"],
+    'host': HOST,
+    "replacement path": PATHREPLACE,
     'ENABLED': True
     }
 

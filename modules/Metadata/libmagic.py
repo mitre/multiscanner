@@ -14,7 +14,7 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "libmagic"
 DEFAULTCONF = {
-    'magicfile':None,
+    'magicfile': None,
     'ENABLED': True
     }
 
