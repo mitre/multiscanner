@@ -170,8 +170,8 @@ class SimpleRequest(object):
 
     @classmethod
     def from_request(cls, request):
-        #return cls(request.id, request.name, request.args,
-        #           request.kwargs, request.delivery_info, request.hostname)
+        # return cls(request.id, request.name, request.args,
+        #            request.kwargs, request.delivery_info, request.hostname)
         return cls(request.id, request.name, request.body[0],
                    request.body[1], request.delivery_info, request.hostname)
 
@@ -196,7 +196,7 @@ class Batches(Task):
 
     def Strategy(self, task, app, consumer):
         self._pool = consumer.pool
-        hostname = consumer.hostname
+        # hostname = consumer.hostname
         eventer = consumer.event_dispatcher
         Req = Request
         connection_errors = consumer.connection_errors
@@ -205,7 +205,7 @@ class Batches(Task):
         flush_buffer = self._do_flush
 
         def task_message_handler(message, body, ack, reject, callbacks, **kw):
-            #request = Req(body, on_ack=ack, app=app, hostname=hostname,
+            # request = Req(body, on_ack=ack, app=app, hostname=hostname,
             request = Req(message, body=message.payload, on_ack=ack, app=app,
                           events=eventer, task=task,
                           connection_errors=connection_errors,

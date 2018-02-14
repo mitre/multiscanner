@@ -180,8 +180,8 @@ def chunk_file_list(filelist, cmdlength=7191):
     # 8191 is the windows limit
     filechunks = []
     if len(list2cmdline(filelist)) >= cmdlength:
-        filechunks.append(filelist[:len(filelist)/2])
-        filechunks.append(filelist[len(filelist)/2:])
+        filechunks.append(filelist[:len(filelist) / 2])
+        filechunks.append(filelist[len(filelist) / 2:])
         # Keeps splitting chunks until all are correct size
         splitter = True
         while splitter:
@@ -189,8 +189,8 @@ def chunk_file_list(filelist, cmdlength=7191):
             for chunk in filechunks[:]:
                 if len(list2cmdline(chunk)) >= cmdlength:
                     filechunks.remove(chunk)
-                    filechunks.append(chunk[:len(chunk)/2])
-                    filechunks.append(chunk[len(chunk)/2:])
+                    filechunks.append(chunk[:len(chunk) / 2])
+                    filechunks.append(chunk[len(chunk) / 2:])
                     splitter = True
     else:
         filechunks = [filelist]
@@ -222,11 +222,13 @@ def hashfile(fname, hasher, blocksize=65536):
     return hasher.hexdigest()
 
 
-def sshconnect(hostname, port=22, username=None, password=None, pkey=None, key_filename=None, timeout=None, allow_agent=True, look_for_keys=True, compress=False, sock=None):
+def sshconnect(hostname, port=22, username=None, password=None, pkey=None, key_filename=None, timeout=None,
+               allow_agent=True, look_for_keys=True, compress=False, sock=None):
     """A wrapper for paramiko, returns a SSHClient after it connects."""
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(hostname, port=port, username=username, password=password, pkey=pkey, key_filename=key_filename, timeout=timeout, allow_agent=allow_agent, look_for_keys=look_for_keys, compress=compress, sock=sock)
+    client.connect(hostname, port=port, username=username, password=password, pkey=pkey, key_filename=key_filename,
+        timeout=timeout, allow_agent=allow_agent, look_for_keys=look_for_keys, compress=compress, sock=sock)
     return client
 
 
