@@ -85,11 +85,11 @@ from __future__ import absolute_import
 
 from itertools import count
 
-from celery.task import Task
 from celery.five import Empty, Queue
+from celery.task import Task
+from celery.utils import noop
 from celery.utils.log import get_logger
 from celery.worker.request import Request
-from celery.utils import noop
 
 __all__ = ['Batches']
 

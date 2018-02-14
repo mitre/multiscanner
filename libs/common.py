@@ -1,12 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import os
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import ast
-import sys
-import imp
 import configparser
+import imp
+import os
+import sys
+
 PY3 = False
 if sys.version_info > (3,):
     PY3 = True
