@@ -255,9 +255,9 @@ def _dump_resource_data(name, dir, pe, save):
                 if not data:
                     data = ""
                 # if len(data) > 0:
-                    # if (save or data[:2] == 'MZ' or data[:4] == "%%PDF"):
-                        # self._debug("Adding new file from resource len %d - %s" % (len(data), rname))
-                        # self.added_files.append((rname, data))
+                #     if (save or data[:2] == 'MZ' or data[:4] == "%%PDF"):
+                #         self._debug("Adding new file from resource len %d - %s" % (len(data), rname))
+                #         self.added_files.append((rname, data))
                 results = {
                         "resource_type": x.struct.name.decode('UTF-8', errors='replace'),
                         "resource_id": i.id,
