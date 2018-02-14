@@ -5,11 +5,11 @@ from __future__ import division, absolute_import, with_statement, print_function
 import json
 try:
     from urllib2 import urlopen
-except:
+except ImportError:
     from urllib.request import urlopen
 try:
     from urllib import urlencode
-except:
+except ImportError:
     from urllib.parse import urlencode
 import time
 

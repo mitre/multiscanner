@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import pefile
-except:
+except ImportError:
     print("pefile module not installed...")
     pefile = False
 
@@ -18,7 +18,7 @@ try:
         'crits': pehash.crits,
         'pehashng': pehash.pehashng,
     }
-except:
+except ImportError:
     print("pehash module not installed...")
     pehash = False
 

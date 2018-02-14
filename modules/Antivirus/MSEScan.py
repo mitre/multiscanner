@@ -57,7 +57,8 @@ def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
     try:
         client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
-    except:
+    except Exception as e:
+        # TODO: log exception
         return None
 
     # Generate scan option

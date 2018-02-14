@@ -68,7 +68,8 @@ def scan(filelist, conf=DEFAULTCONF):
     else:
         try:
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     # Parse output

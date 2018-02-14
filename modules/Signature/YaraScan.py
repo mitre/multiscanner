@@ -22,7 +22,7 @@ DEFAULTCONF = {
 
 try:
     import yara
-except:
+except ImportError:
     print("yara-python module not installed...")
     yara = False
 
@@ -82,7 +82,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 i += 1
         try:
             hit = yararules.match(data=f.read())
-        except:
+        except Exception as e:
+            # TODO: log exception
             continue
         finally:
             f.close()

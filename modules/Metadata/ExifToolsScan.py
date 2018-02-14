@@ -72,7 +72,8 @@ def scan(filelist, conf=DEFAULTCONF):
     else:
         try:
             output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     output = output.decode("utf-8", errors="ignore")
@@ -92,12 +93,14 @@ def scan(filelist, conf=DEFAULTCONF):
                     # why exif tools, whyyyyyyyy
                     fname = fname.replace('/', '\\')
                 continue
-        except:
+        except Exception as e:
+            # TODO: log exception
             pass
         try:
             if row[0] not in conf['remove-entry']:
                 data[row[0]] = row[1]
-        except:
+        except Exception as e:
+            # TODO: log exception
             continue
     if data:
         results.append((fname, data))

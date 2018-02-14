@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import magic
-except:
+except ImportError:
     print("python-magic module not installed...")
     magic = False
 
@@ -32,7 +32,8 @@ def scan(filelist, conf=DEFAULTCONF):
     if conf['magicfile']:
         try:
             maaagic = magic.Magic(magic_file=conf['magicfile'])
-        except:
+        except Exception as e:
+            # TODO: log exception
             print("ERROR: Failed to use magic file", conf['magicfile'])
             maaagic = magic.Magic()
     else:

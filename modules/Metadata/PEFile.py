@@ -4,13 +4,13 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import pefile
-except:
+except ImportError:
     print("pefile module not installed...")
     pefile = False
 
 try:
     xrange(0, 1)
-except:
+except NameError:
     xrange = range
 
 __author__ = "Drew Bonasera"
@@ -69,7 +69,8 @@ def scan(filelist, conf=DEFAULTCONF):
         if callable(getattr(pe, 'get_imphash', None)):
             try:
                 result['import_hash'] = pe.get_imphash()
-            except:
+            except Exception as e:
+                # TODO: log exception
                 pass
         if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
             result['resource_data'] = _dump_resource_data("ROOT",
@@ -429,7 +430,8 @@ def _get_version_info(pe):
                                 #     'key': str_entry[0],
                                 #     'value': value,
                                 # }
-                            except:
+                            except Exception as e:
+                                # TODO: log exception
                                 value = str_entry[1].encode('ascii', errors='ignore')
                                 # raw = binascii.hexlify(str_entry[1].encode('utf-8'))
                                 # result = {
@@ -450,7 +452,8 @@ def _get_version_info(pe):
                                     #     'key': key,
                                     #     'value': value,
                                     # }
-                                except:
+                                except Exception as e:
+                                    # TODO: log exception
                                     value = var_entry.entry[key].encode('ascii', errors='ignore')
                                     # raw = binascii.hexlify(var_entry.entry[key])
                                     # result = {
