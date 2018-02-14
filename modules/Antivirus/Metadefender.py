@@ -252,7 +252,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 pass
         else:
             err_msg = submission_resp['error']
-            print('%s: %s not submitted: Code: %d, Message: %s' \
+            print('%s: %s not submitted: Code: %d, Message: %s'
                   % (NAME, basename(fname), resp_status_code, err_msg))
 
     # Wait for tasks to finish
