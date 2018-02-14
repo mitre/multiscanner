@@ -160,15 +160,15 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
         }
     '''
     with open(fname, "rb") as sample:
-            # TODO - send file in chunks if file size > some threshold.
-            # Due to MD's API, we would have to split the file up manually
-            # and perform several POSTS
-            headers = {'content-type': 'application/json',
-                       'user_agent': user_agent,
-                       'filename': basename(fname)}
-            if api_key:
-                headers['apikey'] = api_key
-            request = requests.post(scan_url, data=sample, headers=headers)
+        # TODO - send file in chunks if file size > some threshold.
+        # Due to MD's API, we would have to split the file up manually
+        # and perform several POSTS
+        headers = {'content-type': 'application/json',
+                   'user_agent': user_agent,
+                   'filename': basename(fname)}
+        if api_key:
+            headers['apikey'] = api_key
+        request = requests.post(scan_url, data=sample, headers=headers)
     resp_status_code = request.status_code
     resp_json = None
     if resp_status_code == requests.codes.ok:
