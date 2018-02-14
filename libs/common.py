@@ -13,7 +13,7 @@ if sys.version_info > (3,):
 try:
     import paramiko
     SSH = True
-except:
+except ImportError:
     SSH = False
 
 
@@ -77,7 +77,8 @@ def parse_config(config_object):
         for key in section_dict:
             try:
                 section_dict[key] = ast.literal_eval(section_dict[key])
-            except:
+            except Exception as e:
+                # TODO: log exception
                 pass
         return_var[section] = section_dict
     return return_var
