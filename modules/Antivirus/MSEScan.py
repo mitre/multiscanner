@@ -92,20 +92,22 @@ def scan(filelist, conf=DEFAULTCONF):
         # res = {"malicious": True, "raw_output": output, "threats": []}
 
         while '----------------------------- Threat information ------------------------------' in output:
-            _, _, output = output.partition('----------------------------- Threat information ------------------------------')
+            _, _, output = output.partition(
+                    '----------------------------- Threat information ------------------------------')
             output = output.lstrip()
 
-            block, _, _ = output.partition('-------------------------------------------------------------------------------')
+            block, _, _ = output.partition(
+                '-------------------------------------------------------------------------------')
 
             # print(block)
             lines = block.split('\n')
             threat_name = lines[0].partition(':')[2].strip()
             # threat = {"threat": threat_name, "resources": []}
             # for line in lines[2:]:
-            #	if not ':' in line:
-            #		continue
-            #	kind, _, path = line.partition(':')
-            #	threat['resources'].append({kind.strip(): path.strip()})
+            #     if not ':' in line:
+            #         continue
+            #     kind, _, path = line.partition(':')
+            #     threat['resources'].append({kind.strip(): path.strip()})
 
             # res['threats'].append(threat)
 

@@ -31,9 +31,11 @@ def fetch_report_json(report_url):
 
 
 def normalize_url(url):
+    """Removes trailing '/' from url.
+    """
     if url.endswith('/'):
-        return url
-    return url + '/'
+        return url[:-1]
+    return url
 
 
 def check(conf=DEFAULTCONF):
@@ -51,8 +53,14 @@ def scan(filelist, conf=DEFAULTCONF):
     report_url = api_url + 'tasks/report/'
     view_url = api_url + 'tasks/view/'
     delete_url = api_url + 'tasks/delete/'
-    maec_report_url = '<a href="' + api_url + '/v1/tasks/report/{task_id}/maec" target="_blank"' + '>View the Cuckoo MAEC report</a>'
-    web_report_url = '<a href="' + web_url + 'analysis/{task_id}/summary/" target="_blank"' + '>View the report in Cuckoo</a>'
+    maec_report_url = (
+        '<a href="{api_url}/v1/tasks/report/{{task_id}}/maec" target="_blank">'
+        'View the Cuckoo MAEC report</a>'
+    ).format(api_url=api_url)
+    web_report_url = (
+        '<a href="{web_url}/analysis/{{task_id}}/summary/" target="_blank">'
+        'View the report in Cuckoo</a>'
+    ).format(web_url=web_url)
 
     for fname in filelist:
         with open(fname, "rb") as sample:

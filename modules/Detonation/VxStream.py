@@ -215,7 +215,10 @@ def scan(filelist, conf=DEFAULTCONF):
                         except KeyError:
                             pass
                     # Add the link to Web Report
-                    report['analysis']['final']['web_report'] = '<a href="{}/sample/{}?environmentId={}" target="_blank">View the report in VxStream</a>'.format(conf['BASE URL'], file_sha256, conf['Environment ID'])
+                    report['analysis']['final']['web_report'] = (
+                        '<a href="{base_url}/sample/{file_sha256}?environmentId={env_id}" target="_blank">'
+                        'View the report in VxStream</a>'
+                    ).format(base_url=conf['BASE URL'], file_sha256=file_sha256, env_id=conf['Environment ID'])
                     resultlist.append((fname, report.get('analysis', {}).get('final')))
                     tasks.remove((fname, file_sha256))
 
