@@ -100,7 +100,7 @@ def _parse_scan_result(response):
         # result, so we have to check the output for a progress percentage.
         # No results could mean that MD simply hasn't begun processing so
         # we don't want to mark the scan as failed
-        if prog_percent == None:
+        if prog_percent is None:
             is_complete = False
             overall_status = STATUS_PENDING
             msg = 'Scan results not found; Metadefender has likely not started analysis yet'

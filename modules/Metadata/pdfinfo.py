@@ -114,12 +114,12 @@ def run(fname, data, fast=False):
     oPDFParser = pdfparser.cPDFParser(fname)
     done = True
     # self._debug("Parsing document")
-    while done == True:
+    while done is True:
         try:
             pdf_object = oPDFParser.GetObject()
         except Exception as e:
             pdf_object = None
-        if pdf_object != None:
+        if pdf_object is not None:
             if pdf_object.type in [pdfparser.PDF_ELEMENT_INDIRECT_OBJECT]:
                 rawContent = pdfparser.FormatOutput(pdf_object.content, True)
                 if PY3:
