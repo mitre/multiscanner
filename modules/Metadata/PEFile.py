@@ -330,8 +330,7 @@ def _get_exports(pe):
     results = {}
     try:
         for entry in pe.DIRECTORY_ENTRY_EXPORT.symbols:
-            data = {"rva_offset": pe.OPTIONAL_HEADER.ImageBase
-                                    + entry.address}
+            data = {"rva_offset": pe.OPTIONAL_HEADER.ImageBase + entry.address}
             # self._add_result('pe_export', entry.name, data)
             results[entry.name] = data
     except Exception as e:
