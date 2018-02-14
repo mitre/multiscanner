@@ -39,6 +39,7 @@ DEFAULTCONF = {
     'ENABLED': True,
 }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED'] or \
        not pefile or \
@@ -46,6 +47,7 @@ def check(conf=DEFAULTCONF):
        None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
@@ -70,4 +72,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

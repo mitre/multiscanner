@@ -24,12 +24,15 @@ try:
 except:
     print("yara-python module not installed...")
     yara = False
+
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if not yara:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     ruleDir = conf["ruledir"]
@@ -99,7 +102,6 @@ def scan(filelist, conf=DEFAULTCONF):
                     hdict[h_key] = hit_dict
             matches.append((m, hdict))
 
-
     metadata = {}
     rulelist = list(ruleset)
     rulelist.sort()
@@ -107,4 +109,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Rules"] = rulelist
     return (matches, metadata)
-

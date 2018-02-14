@@ -31,6 +31,7 @@ DEFAULTCONF = {"path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
     'ENABLED': True
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -38,6 +39,7 @@ def check(conf=DEFAULTCONF):
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
@@ -96,4 +98,3 @@ def scan(filelist, conf=DEFAULTCONF):
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
     return (results, metadata)
-

@@ -31,6 +31,7 @@ DEFAULTCONF = {"path": '/opt/trid/trid',
     "replacement path": PATHREPLACE
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -41,6 +42,7 @@ def check(conf=DEFAULTCONF):
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
@@ -98,4 +100,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

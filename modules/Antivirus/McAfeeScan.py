@@ -31,6 +31,7 @@ DEFAULTCONF = {
     'ENABLED': True
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -38,6 +39,7 @@ def check(conf=DEFAULTCONF):
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
@@ -85,4 +87,3 @@ def scan(filelist, conf=DEFAULTCONF):
         metadata["Definition date"] = verinfo.group(2)
 
     return (virusresults, metadata)
-

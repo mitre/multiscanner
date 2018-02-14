@@ -23,12 +23,14 @@ DEFAULTCONF = {
     'fast': False
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
@@ -54,6 +56,8 @@ def scan(filelist, conf=DEFAULTCONF):
 
 #This section is an adaption from the CRITS pdfinfo service
 #https://github.com/MITRECND/crits_services/blob/master/pdfinfo_service/__init__.py
+
+
 def H(data):
     if not data:
         return 0
@@ -65,6 +69,7 @@ def H(data):
             entropy += - p_x * math.log(p_x, 2)
     return entropy
 
+
 def _get_pdf_version(data):
     header_ver = re.compile('%PDF-([A-Za-z0-9\.]{1,3})[\r\n]', re.M)
     matches = header_ver.match(data.decode('UTF-8', 'replace'))
@@ -72,6 +77,7 @@ def _get_pdf_version(data):
         return matches.group(1)
     else:
         return "0.0"
+
 
 def run(fname, data, fast=False):
     ret = {}
@@ -152,4 +158,3 @@ def run(fname, data, fast=False):
         #self._add_result('stats', item_str, {'type': item[0], 'count': item[1]})
         ret['stats'][item[0]] = item[1]
     return ret
-

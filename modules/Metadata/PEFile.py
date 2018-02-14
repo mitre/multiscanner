@@ -201,6 +201,8 @@ def _get_pehash(exe):
     return output
 
 # http://www.ntcore.com/files/richsign.htm
+
+
 def _get_rich_header(pe):
     rich_hdr = pe.parse_rich_header()
     if not rich_hdr:
@@ -239,6 +241,7 @@ def _get_rich_header(pe):
         sha_256.update(struct.pack('<I', hv))
     return (richchecksum, sha_256.hexdigest())
 
+
 def _dump_resource_data(name, dir, pe, save):
     resultlist = []
     for i in dir.entries:
@@ -276,6 +279,7 @@ def _dump_resource_data(name, dir, pe, save):
             return None
         return resultlist
 
+
 def _get_sections(pe):
     resultdict = {}
     for section in pe.sections:
@@ -295,6 +299,7 @@ def _get_sections(pe):
         except Exception as e:
             continue
     return resultdict
+
 
 def _get_imports(pe):
     result = {}
@@ -320,6 +325,7 @@ def _get_imports(pe):
         print(e)
     return result
 
+
 def _get_exports(pe):
     results = {}
     try:
@@ -333,6 +339,7 @@ def _get_exports(pe):
         pass
     return results
 
+
 def _get_timestamp(pe):
     try:
         timestamp = pe.FILE_HEADER.TimeDateStamp
@@ -343,6 +350,7 @@ def _get_timestamp(pe):
     except Exception as e:
         #self._parse_error("timestamp", e)
         return None
+
 
 def _get_debug_info(pe):
     # woe is pefile when it comes to debug entries
@@ -407,6 +415,7 @@ def _get_debug_info(pe):
         print(e)
     return results
 
+
 def _get_version_info(pe):
     results = {}
     if hasattr(pe, 'FileInfo'):
@@ -458,6 +467,7 @@ def _get_version_info(pe):
             #self._parse_error("version info", e)
         return results
 
+
 def _get_tls_info(pe):
     results = {}
     #self._info("TLS callback table listed at 0x%08x" % pe.DIRECTORY_ENTRY_TLS.struct.AddressOfCallBacks)
@@ -482,4 +492,3 @@ def _get_tls_info(pe):
             #self._add_result('tls_callback', va_string, data)
             results[va_string] = idx
     return results
-

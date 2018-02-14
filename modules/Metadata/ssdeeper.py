@@ -16,11 +16,13 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "ssdeep"
 
+
 def check():
     if ssdeep:
         return True
     else:
         return False
+
 
 def scan(filelist):
     results = []
@@ -54,4 +56,3 @@ def scan(filelist):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

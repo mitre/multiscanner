@@ -38,4 +38,3 @@ def scan(filelist):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return results, metadata
-

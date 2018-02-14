@@ -22,19 +22,23 @@ DEFAULTCONF = {
     "maec": False,
 }
 
+
 def fetch_report_json(report_url):
     report = requests.get(report_url)
     if report.status_code == 200:
         return report.json()
     return {}
 
+
 def normalize_url(url):
     if url.endswith('/'):
         return url
     return url + '/'
 
+
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
+
 
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []

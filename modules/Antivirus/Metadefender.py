@@ -58,6 +58,7 @@ STATUS_FAIL = 'Failure'
 STATUS_PENDING = 'Pending'
 STATUS_TIMEOUT = 'Timeout'
 
+
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
 
@@ -184,12 +185,12 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
         except (ValueError, AttributeError):
             error_msg = MD_HTTP_ERR_CODES.get(resp_status_code, UNKNOWN_ERROR)
 
-
     submission_response = {'status_code': resp_status_code,
                            'scan_id': scan_id,
                            'error': error_msg
                           }
     return submission_response
+
 
 def _retrieve_scan_results(results_url, scan_id, api_key=None):
     '''
@@ -205,6 +206,7 @@ def _retrieve_scan_results(results_url, scan_id, api_key=None):
         headers = {'apikey': api_key}
     scan_output = requests.get(results_url + scan_id, headers=headers)
     return scan_output
+
 
 def scan(filelist, conf=DEFAULTCONF):
     '''

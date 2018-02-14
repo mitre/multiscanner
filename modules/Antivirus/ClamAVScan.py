@@ -36,6 +36,7 @@ def _connect_clam():
             raise ValueError("Unable to connect to clamd")
     return clamScanner
 
+
 def scan(filelist, conf=DEFAULTCONF):
     results = []
     try:

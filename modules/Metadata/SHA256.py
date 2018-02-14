@@ -12,8 +12,10 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "SHA256"
 
+
 def check():
     return True
+
 
 def scan(filelist):
     results = []
@@ -36,4 +38,3 @@ def scan(filelist):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

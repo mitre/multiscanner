@@ -20,8 +20,10 @@ DEFAULTCONF = {
 "bad path": "bad",
 "src path": "src"}
 
+
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
+
 
 def scan(filelist, conf=DEFAULTCONF):
     #cheatsheet = conf["cheatsheet"]
@@ -69,4 +71,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     return (resultlist, metadata)
-

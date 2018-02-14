@@ -24,6 +24,7 @@ DEFAULTCONF = {
     'ENABLED': True
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -32,6 +33,7 @@ def check(conf=DEFAULTCONF):
     if not conf['apikey']:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     #Check for key rotation
@@ -80,6 +82,7 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Include"] = False
     return (results, metadata)
 
+
 def _vt_report(report, md5name):
     if report['response_code'] == 0:
         return None
@@ -89,8 +92,8 @@ def _vt_report(report, md5name):
         del report['verbose_msg']
         return (fname, report)
 
+
 def _repeatlist(data):
     while True:
         for d in data:
             yield d
-

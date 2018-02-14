@@ -72,6 +72,8 @@ EMPTY_STR_TO_LS = {
 
 # we could use the full path of the keys
 # known to cause issues
+
+
 def visit(path, key, value):
     if value == '':
         if key in EMPTY_STR_TO_OBJ['runtime'] or \
@@ -96,6 +98,7 @@ def visit(path, key, value):
         # make all of them floats
         return key, float(value)
     return key, value
+
 
 def post_to_vxstream(f_name, environment_id,
         submit_url, apikey, secret, runtime, verify):

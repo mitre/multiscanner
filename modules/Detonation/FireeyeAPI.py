@@ -36,6 +36,7 @@ VERBOSE = False
 
 token = None
 
+
 def _authenticate(conf):
     global token
     if VERBOSE:
@@ -51,6 +52,7 @@ def _authenticate(conf):
         raise ValueError('FireEye WSAPI is not enabled')
     else:
         raise ValueError('Unknown response')
+
 
 def _request(conf, path, method=None, **kwargs):
     if not token:
@@ -84,8 +86,10 @@ def _request(conf, path, method=None, **kwargs):
 
     return resp
 
+
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
+
 
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []

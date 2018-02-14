@@ -18,6 +18,7 @@ DEFAULTCONF = {
     'ENABLED': True
     }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
@@ -25,6 +26,7 @@ def check(conf=DEFAULTCONF):
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if conf['magicfile']:
