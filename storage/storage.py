@@ -134,8 +134,7 @@ class StorageHandler(object):
         self.loaded_storage = loaded_storage
 
     def store(self, dictionary, wait=True):
-        """
-        Takes a dictionary and stores it in each of the active storage modules. If wait is False a thread object is returned.
+        """Stores dictionary in active storage module. If wait is False, a thread object is returned.
         """
         if wait:
             self._store_thread(dictionary)
