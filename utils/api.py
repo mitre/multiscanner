@@ -18,7 +18,7 @@ DELETE /api/v1/tasks/<task_id> ----> delete task_id
 GET /api/v1/tasks/search/ ---> receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> receive list of most all reports for matching samples
 GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ----> download the Cuckoo MAEC 5.0 report, if it exists 
+GET /api/v1/tasks/<task_id>/maec ----> download the Cuckoo MAEC 5.0 report, if it exists
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
 POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
@@ -140,7 +140,7 @@ for handler in storage_handler.loaded_storage:
         break
 
 ms_config_object = configparser.SafeConfigParser()
-ms_config_object.optionxform = str 
+ms_config_object.optionxform = str
 ms_configfile = multiscanner.CONFIG
 ms_config_object.read(ms_configfile)
 ms_config = common.parse_config(ms_config_object)
@@ -189,10 +189,10 @@ def multiscanner_process(work_queue, exit_signal):
                 continue
 
         filelist = [item[0] for item in metadata_list]
-        #modulelist = [item[5] for item in metadata_list]
+        # modulelist = [item[5] for item in metadata_list]
         resultlist = multiscanner.multiscan(
             filelist, configfile=multiscanner.CONFIG
-            #module_list
+            # module_list
         )
         results = multiscanner.parse_reports(resultlist, python=True)
 
@@ -283,7 +283,7 @@ def search(params, get_all=False):
     if sample_id:
         task_id = db.exists(sample_id)
         if task_id:
-            return { 'TaskID' : task_id }
+            return {'TaskID': task_id}
         else:
             return TASK_NOT_FOUND
 
@@ -606,7 +606,7 @@ def _add_links(report_dict):
     return report_dict
 
 
-#TODO: should we move these helper functions to separate file?
+# TODO: should we move these helper functions to separate file?
 def _linkify(s, url, new_tab=True):
     '''
     Return string s as HTML a tag with href pointing to url.
@@ -857,11 +857,11 @@ def run_ssdeep_compare():
         if DISTRIBUTED:
             # Publish task to Celery
             ssdeep_compare_celery.delay()
-            return make_response(jsonify({ 'Message': 'Success' }))
+            return make_response(jsonify({'Message': 'Success'}))
         else:
             ssdeep_analytic = SSDeepAnalytic()
             ssdeep_analytic.ssdeep_compare()
-            return make_response(jsonify({ 'Message': 'Success' }))
+            return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
@@ -876,7 +876,7 @@ def run_ssdeep_group():
     try:
         ssdeep_analytic = SSDeepAnalytic()
         groups = ssdeep_analytic.ssdeep_group()
-        return make_response(jsonify({ 'groups': groups }))
+        return make_response(jsonify({'groups': groups}))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),

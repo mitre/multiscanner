@@ -33,7 +33,7 @@ class NumberedCanvas(canvas.Canvas):
 
     def draw_page_number(self, page_count):
         self.setFont('Helvetica-Bold', 7)
-        self.drawRightString(203*mm, 12.7*mm,
+        self.drawRightString(203 * mm, 12.7 * mm,
                              'Page %d of %d' % (self._pageNumber, page_count))
 
 
@@ -58,7 +58,7 @@ class GenericPDF(object):
             self.buffer = six.StringIO()
         self.firstPage = True
         self.document = SimpleDocTemplate(self.buffer, pagesize=letter,
-                                          rightMargin=12.7*mm, leftMargin=12.7*mm,
+                                          rightMargin=12.7 * mm, leftMargin=12.7 * mm,
                                           topMargin=120, bottomMargin=80)
 
         self.tlp_color = pdf_components.get('tlp_color', '')
@@ -74,8 +74,8 @@ class GenericPDF(object):
 
         # Document Header
         if self.pdf_components.get('hdr_image', None) and self.firstPage:
-            header = Image(self.pdf_components.get('hdr_image'), height=25*mm, width=191*mm)
-            header.drawOn(canvas, doc.rightMargin, doc.height + doc.topMargin - 15*mm)
+            header = Image(self.pdf_components.get('hdr_image'), height=25 * mm, width=191 * mm)
+            header.drawOn(canvas, doc.rightMargin, doc.height + doc.topMargin - 15 * mm)
             self.firstPage = False
         elif self.firstPage:
             header = Paragraph(self.pdf_components.get('hdr_html', ''), self.style['centered'])
@@ -115,9 +115,9 @@ class GenericPDF(object):
 
             banner = Paragraph(self.span_text(self.bold_text('TLP:' + self.tlp_color), bgcolor='black'), self.style['banner_style'])
             w, h = banner.wrap(doc.width, doc.topMargin)
-            banner.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin + (h + 12*mm))
+            banner.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin + (h + 12 * mm))
             w, h = banner.wrap(doc.width, doc.bottomMargin)
-            banner.drawOn(canvas, doc.leftMargin, h + 12*mm)
+            banner.drawOn(canvas, doc.leftMargin, h + 12 * mm)
 
             height_adjust = 3
 
@@ -153,7 +153,7 @@ class GenericPDF(object):
         for text_line in body.split('<br/>'):
             try:
                 bullet_text = ListItem(Paragraph(text_line, self.style['bullet_list']),
-                                       leftIndent=level*35,
+                                       leftIndent=level * 35,
                                        value='bulletchar')
                 items.append(bullet_text)
             except Exception as e:
@@ -178,7 +178,7 @@ class GenericPDF(object):
         if col_widths:
             cols = col_widths
         else:
-            cols = (35*mm, 140*mm)
+            cols = (35 * mm, 140 * mm)
 
         data2 = [[Paragraph(self.bold_text(cell), self.style['BodyText']) if idx == 0
                   else Paragraph(cell, self.style['BodyText'])
@@ -204,7 +204,7 @@ class GenericPDF(object):
         if col_widths:
             cols = col_widths
         else:
-            cols = (35*mm, 140*mm)
+            cols = (35 * mm, 140 * mm)
 
         data2 = [[Paragraph(self.bold_text(cell), self.style['BodyText']) if idx == 0
                   else Paragraph(cell, self.style['BodyText'])

@@ -20,7 +20,7 @@ from watchdog.observers import Observer
 
 standard_library.install_aliases()
 
-#Append .. to sys.path
+# Append .. to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import multiscanner
