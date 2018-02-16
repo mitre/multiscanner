@@ -86,10 +86,7 @@ def _main():
     args = _parse_args()
     # Pull config options
     conf = _read_conf(args.config)
-    broker = conf['distributed']['broker']
-    database = conf['distributed']['database']
     multiscanner_config = conf['worker']['multiscanner_config']
-    storage_config = conf['worker']['storage_config']
 
     # Start worker task
     work_queue = multiprocessing.Queue()
@@ -99,7 +96,6 @@ def _main():
     ms_process.start()
 
     # Start message pickup task
-
     try:
         while True:
             time.sleep(60)

@@ -100,7 +100,6 @@ def celery_task(files, config=multiscanner.CONFIG):
     for file_ in files:
         original_filename = files[file_]['original_filename']
         task_id = files[file_]['task_id']
-        file_hash = files[file_]['file_hash']
         metadata = files[file_]['metadata']
         # Get the Scan Config that the task was run with and
         # add it to the task metadata
