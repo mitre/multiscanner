@@ -13,6 +13,7 @@ functions:
     delete: Given a report_id (a sha256 hash), delete the
         specified report.
 '''
+import json
 from uuid import uuid4
 
 from pymongo import MongoClient
