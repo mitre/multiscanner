@@ -51,7 +51,9 @@ class TestES(unittest.TestCase):
 
         report_args, report_kwargs = mock_index.call_args_list[0]
         self.assertEqual(report_kwargs['parent'], TEST_ID)
-        self.assertEqual(report_kwargs['body']['libmagic'], 'ASCII text, with very long lines, with no line terminators')
+        self.assertEqual(
+            report_kwargs['body']['libmagic'],
+            'ASCII text, with very long lines, with no line terminators')
         self.assertEqual(report_kwargs['pipeline'], 'dedot')
 
         self.assertIn(TEST_ID, resp)

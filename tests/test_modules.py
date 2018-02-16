@@ -69,21 +69,25 @@ class Test_runModule_test_2(_runmod_tests):
 
     def test_no_requires(self):
         del self.threadDict['test_1']
-        self.result = multiscanner._run_module('test_2', self.m, self.filelist, self.threadDict, self.global_module_interface)
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.filelist, self.threadDict, self.global_module_interface)
         assert self.result is None
 
     def test_results_1(self):
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
         assert self.result == ([('a', True), ('b', 'b'), ('C:\\c', True), ('/d/d', '/d/d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
 
     def test_replacepath_linux(self):
         self.m.DEFAULTCONF['replacement path'] = '/tmp'
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
         assert self.result == ([('a', True), ('b', '/tmp/b'), ('C:\\c', True), ('/d/d', '/tmp/d')], {'Name': 'test_2', 'Include': True, 'Type': 'Test'})
 
     def test_replacepath_windows(self):
         self.m.DEFAULTCONF['replacement path'] = 'X:\\'
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
         assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
 
 
@@ -97,7 +101,8 @@ class test_start_module_threads(_runmod_tests):
         self.global_module_interface._cleanup()
 
     def test_all_started(self):
-        ThreadList = multiscanner._start_module_threads(self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
+        ThreadList = multiscanner._start_module_threads(
+            self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started

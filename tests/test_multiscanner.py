@@ -25,7 +25,8 @@ class _runmulti_tests(object):
 
 class Test_multiscan(_runmulti_tests):
     def setup(self):
-        self.result = multiscanner.multiscan(self.filelist, recursive=False, configregen=False, configfile='.tmpfile.ini')
+        self.result = multiscanner.multiscan(
+            self.filelist, recursive=False, configregen=False, configfile='.tmpfile.ini')
         self.report = multiscanner.parse_reports(self.result, includeMetadata=False, python=True)
         self.report_m = multiscanner.parse_reports(self.result, includeMetadata=True, python=True)
 
