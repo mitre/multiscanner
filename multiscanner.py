@@ -3,26 +3,27 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
-import sys
-import os
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
+import codecs
+import configparser
+import datetime
 import json
+import multiprocessing
+import os
+import random
 import re
 import shutil
-import time
-import datetime
-import random
 import string
-import threading
-import configparser
-import codecs
-import multiprocessing
+import sys
 import tempfile
-import storage
-import common
+import threading
+import time
+from builtins import *
+
+from future import standard_library
+standard_library.install_aliases()
 
 PY3 = False
 if sys.version_info < (2, 7) or sys.version_info > (4,):
@@ -45,6 +46,11 @@ CONFIG = os.path.join(MS_WD, "config.ini")
 # The directory where the modules are kept
 MODULEDIR = os.path.join(MS_WD, "modules")
 
+import common
+import storage
+from common import (basename, convert_encoding, load_module, parse_config,
+                    parseDir, parseFileList, queue2list)
+
 # The default configuration options for the main script
 DEFAULTCONF = {
     "copyfilesto": False,
@@ -56,13 +62,6 @@ DEFAULTCONF = {
 
 VERBOSE = False
 
-from common import parseDir
-from common import parseFileList
-from common import parse_config
-from common import basename
-from common import convert_encoding
-from common import queue2list
-from common import load_module
 
 
 class _Print():
