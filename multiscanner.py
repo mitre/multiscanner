@@ -63,7 +63,6 @@ DEFAULTCONF = {
 VERBOSE = False
 
 
-
 class _Print():
     def __init__(self, lock=threading.Lock(), real_print=print):
         self.lock = lock
@@ -75,7 +74,10 @@ class _Print():
             self.real_print(*args, **kwargs)
         finally:
             self.lock.release()
+
+
 print = _Print()
+
 
 class _Thread(threading.Thread):
     """The threading.Thread class with some more cowbell"""
@@ -620,7 +622,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
                 i = 0
                 thread_wait_list.remove(thread)
                 if VERBOSE:
-                    print(thread.name, "took", thread.endtime-thread.starttime)
+                    print(thread.name, "took", thread.endtime - thread.starttime)
         if i == 15:
             i = 0
             if VERBOSE:
@@ -756,7 +758,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
                 i = 0
                 thread_wait_list.remove(thread)
                 if VERBOSE:
-                    print(thread.name, "took", thread.endtime-thread.starttime)
+                    print(thread.name, "took", thread.endtime - thread.starttime)
         if i == 15:
             i = 0
             if VERBOSE:
@@ -973,12 +975,16 @@ def _main():
         except:
             username = os.getenv('USERNAME')
 
-        results.append(([], {"Name": "MultiScanner",
-            "Start Time": starttime,
-            "End Time": endtime,
-            # "Command Line":list2cmdline(sys.argv),
-            "Run by": username
-        }))
+        results.append((
+            [],
+            {
+                "Name": "MultiScanner",
+                "Start Time": starttime,
+                "End Time": endtime,
+                # "Command Line":list2cmdline(sys.argv),
+                "Run by": username
+            }
+        ))
 
         if args.show or not stdout.isatty():
             # TODO: Make this output something readable
