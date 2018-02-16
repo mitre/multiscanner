@@ -8,9 +8,9 @@ import common
 
 
 def test_list2cmdline():
-    l = ['1', 'a', '"dsafsad"']
+    ls = ['1', 'a', '"dsafsad"']
     result = '1 a "dsafsad"'
-    assert common.list2cmdline(l) == result
+    assert common.list2cmdline(ls) == result
 
 
 def test_dirname_linux_file():
