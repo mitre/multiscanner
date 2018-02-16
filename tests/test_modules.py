@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, with_statement, print_function
 import sys
 import os
 import types
-import configparser
 import mock
 import time
 

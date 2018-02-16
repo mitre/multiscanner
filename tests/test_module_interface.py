@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.dirname(CWD))
 import multiscanner
 
 sys.path.append(os.path.join(CWD, '..', 'libs'))
-import common
 
 def add_int(x, y):
     return x + y

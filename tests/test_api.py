@@ -27,7 +27,6 @@ elasticsearch.client.IngestClient.get_pipeline = mock.MagicMock(return_value=Tru
 
 import api
 from sql_driver import Database
-from storage import Storage
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')

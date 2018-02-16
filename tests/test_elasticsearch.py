@@ -144,7 +144,7 @@ class TestES(unittest.TestCase):
 
     @mock.patch.object(Elasticsearch, 'search')
     def test_get_notes(self, mock_search):
-        resp = self.handler.get_notes(TEST_ID)
+        self.handler.get_notes(TEST_ID)
 
         self.assertEqual(mock_search.call_count, 1)
         args, kwargs = mock_search.call_args_list[0]
@@ -156,7 +156,7 @@ class TestES(unittest.TestCase):
 
     @mock.patch.object(Elasticsearch, 'get')
     def test_get_note(self, mock_get):
-        resp = self.handler.get_note(TEST_ID, TEST_ID)
+        self.handler.get_note(TEST_ID, TEST_ID)
 
         self.assertEqual(mock_get.call_count, 1)
         args, kwargs = mock_get.call_args_list[0]
