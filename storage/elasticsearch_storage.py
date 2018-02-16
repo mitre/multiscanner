@@ -353,7 +353,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=sample_id, body=script
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def remove_tag(self, sample_id, tag):
@@ -374,7 +375,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=sample_id, body=script
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def get_tags(self):
@@ -437,7 +439,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=note_id, parent=sample_id
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def add_note(self, sample_id, data):
@@ -478,7 +481,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=report_id
             )
             return True
-        except:
+        except Exception as e:
+            # TODO: log exception
             return False
 
     def teardown(self):

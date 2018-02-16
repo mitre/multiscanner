@@ -146,7 +146,8 @@ class Database(object):
         try:
             yield ses
             ses.commit()
-        except:
+        except Exception as e:
+            # TODO: log exception
             ses.rollback()
             raise
         finally:
