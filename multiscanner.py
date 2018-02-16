@@ -379,7 +379,9 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                     conf = mod.DEFAULTCONF
                 except:
                     pass
-            thread = _Thread(target=_run_module, args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
+            thread = _Thread(
+                target=_run_module,
+                args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
             thread.name = modname
             thread.setDaemon(True)
             ThreadList.append(thread)
@@ -821,18 +823,29 @@ def _parse_args():
     import argparse
     # argparse stuff
     parser = argparse.ArgumentParser(description="Analyse files against multiple engines")
-    parser.add_argument("-c", "--config", help="The config file to use", required=False, default=CONFIG)
-    parser.add_argument('-j', '--json', help="The json file to write", required=False, metavar="filepath", default=None)
-    parser.add_argument("-m", "--metadata", help="This will include the metadata section from the report", action="store_true")
-    parser.add_argument('-n', '--numberper', help="The max number of files per report", required=False, metavar="num", default=200, type=int)
-    parser.add_argument("-r", "--recursive", action="store_true", help="Recursively parse folders for files to scan")
-    parser.add_argument("-z", "--extractzips", action="store_true", help="If any zip files are detected, extract them and scan the contents")
-    parser.add_argument("-p", "--password", help="Password to unzip any archives listed", default="")
-    parser.add_argument("-s", "--show", action="store_true", help="Print report to screen")
-    parser.add_argument("-u", "--ugly", help="If set the printed json will not have whitespace", action="store_true")
+    parser.add_argument("-c", "--config", required=False, default=CONFIG,
+                        help="The config file to use")
+    parser.add_argument('-j', '--json', required=False, metavar="filepath", default=None,
+                        help="The json file to write")
+    parser.add_argument("-m", "--metadata", action="store_true",
+                        help="This will include the metadata section from the report")
+    parser.add_argument('-n', '--numberper', required=False, metavar="num", default=200, type=int,
+                        help="The max number of files per report")
+    parser.add_argument("-r", "--recursive", action="store_true",
+                        help="Recursively parse folders for files to scan")
+    parser.add_argument("-z", "--extractzips", action="store_true",
+                        help="If any zip files are detected, extract them and scan the contents")
+    parser.add_argument("-p", "--password", default="",
+                        help="Password to unzip any archives listed")
+    parser.add_argument("-s", "--show", action="store_true",
+                        help="Print report to screen")
+    parser.add_argument("-u", "--ugly", action="store_true",
+                        help="If set the printed json will not have whitespace")
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("--resume", action="store_true", help="Read in the report file and continue where we left off")
-    parser.add_argument('Files', help="Files and Directories to analyse", nargs='+')
+    parser.add_argument("--resume", action="store_true",
+                        help="Read in the report file and continue where we left off")
+    parser.add_argument('Files', nargs='+',
+                        help="Files and Directories to analyse")
     return parser.parse_args()
 
 
