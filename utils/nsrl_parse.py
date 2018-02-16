@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-from __future__ import division, absolute_import, with_statement, print_function
+from __future__ import (absolute_import, division, print_function,
+                        with_statement)
+
 import argparse
-import os
 import csv
 import math
+import os
 import struct
 import sys
+
 from tqdm import tqdm
 
 

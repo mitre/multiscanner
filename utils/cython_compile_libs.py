@@ -1,13 +1,18 @@
 #!/bin/env python
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import os
-import sys
 import shutil
+import sys
+
 from pyximport.pyxbuild import pyx_to_dll
+
 WD = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 LIBS = os.path.join(WD, 'libs')
 # Adds the libs directory to the path
 sys.path.append(LIBS)
+
 import common
 
 

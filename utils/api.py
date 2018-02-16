@@ -38,26 +38,28 @@ TODO:
 * Add doc strings to functions
 '''
 from __future__ import print_function
-import os
-import sys
-import time
-import hashlib
+
 import codecs
 import configparser
+import hashlib
 import json
 import multiprocessing
-import subprocess
+import os
 import queue
 import shutil
+import subprocess
+import sys
+import time
+import zipfile
 from datetime import datetime
-from flask_cors import CORS
-from flask import Flask, jsonify, make_response, request, abort
+
+import rarfile
+import requests
+from flask import Flask, abort, jsonify, make_response, request
 from flask.json import JSONEncoder
+from flask_cors import CORS
 from jinja2 import Markup
 from six import PY3
-import rarfile
-import zipfile
-import requests
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -69,11 +71,14 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
+import common
+import elasticsearch_storage
 import multiscanner
 import sql_driver as database
-import elasticsearch_storage
-import common
+from celery_worker import multiscanner_celery, ssdeep_compare_celery
+from ssdeep_analytics import SSDeepAnalytic
 from utils.pdf_generator import create_pdf_document
+
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -123,9 +128,6 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
 
-# Needs api_config in order to function properly
-from celery_worker import multiscanner_celery, ssdeep_compare_celery
-from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__

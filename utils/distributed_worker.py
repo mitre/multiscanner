@@ -2,19 +2,22 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import argparse
-import os
-import configparser
 import codecs
+import configparser
+import multiprocessing
+import os
+import queue
 import sys
 import time
-import multiprocessing
-import queue
-from celery import Celery
+from builtins import *
+
+from future import standard_library
+
+standard_library.install_aliases()
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Adds the libs directory to the path
@@ -25,6 +28,7 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 
 import multiscanner
 from common import parse_config
+
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"

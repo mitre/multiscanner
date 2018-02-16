@@ -2,21 +2,29 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import argparse
-import os
-import threading
 import multiprocessing
-import time
+import os
 import queue
-from watchdog.observers import Observer
+import threading
+import time
+from builtins import *
+
+from future import standard_library
+
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
+standard_library.install_aliases()
+
 #Append .. to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import multiscanner
+
 
 class DirWatcher(FileSystemEventHandler):
     def __init__(self, work_queue):

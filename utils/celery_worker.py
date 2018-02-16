@@ -4,12 +4,16 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import os
-import sys
 import codecs
 import configparser
+import os
+import sys
 from datetime import datetime
 from socket import gethostname
+
+from celery import Celery
+from celery.schedules import crontab
+
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,14 +26,13 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 # Add the analytics dir to the sys.path. Allows import of ssdeep_analytics
 if os.path.join(MS_WD, 'analytics') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
-import multiscanner
+
 import common
+import multiscanner
 import sql_driver as database
 from celery_batches import Batches
 from ssdeep_analytics import SSDeepAnalytic
 
-from celery import Celery
-from celery.schedules import crontab
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
