@@ -6,10 +6,12 @@ NAME = "test_2"
 REQUIRES = ["test_1"]
 DEFAULTCONF = {'a': 1, 'b': 2}
 
+
 def check(conf=DEFAULTCONF):
     if None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []

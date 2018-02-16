@@ -18,10 +18,12 @@ def test_loadModule():
     m = multiscanner.load_module('test_1', [os.path.join(CWD, "modules")])
     assert isinstance(m, types.ModuleType)
 
+
 def test_fail_loadModule():
     """Ensure _loadModule works"""
     m = multiscanner.load_module('notathing', [os.path.join(CWD, "modules")])
     assert m is None
+
 
 class _runmod_tests(object):
     @classmethod
@@ -83,6 +85,7 @@ class Test_runModule_test_2(_runmod_tests):
         self.m.DEFAULTCONF['replacement path'] = 'X:\\'
         self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
         assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
+
 
 class test_start_module_threads(_runmod_tests):
     def setup(self):

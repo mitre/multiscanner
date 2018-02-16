@@ -8,6 +8,7 @@ NAME = "test_subscan"
 def check():
     return True
 
+
 def scan(filelist):
     results = []
 

@@ -9,6 +9,7 @@ import multiscanner
 sys.path.append(os.path.join(CWD, '..', 'libs'))
 import common
 
+
 class _runmulti_tests(object):
     @classmethod
     def setup_class(cls):
@@ -35,6 +36,7 @@ class Test_multiscan(_runmulti_tests):
         for f in self.filelist:
             assert f in self.report
             assert f in self.report_m['Files']
+
 
 class Test_main(_runmulti_tests):
     def setup(self):
