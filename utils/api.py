@@ -75,8 +75,6 @@ import common
 import elasticsearch_storage
 import multiscanner
 import sql_driver as database
-from celery_worker import multiscanner_celery, ssdeep_compare_celery
-from ssdeep_analytics import SSDeepAnalytic
 from utils.pdf_generator import create_pdf_document
 
 
@@ -128,6 +126,10 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
 
+# TODO: fix this mess
+# Needs api_config in order to function properly
+from celery_worker import multiscanner_celery, ssdeep_compare_celery
+from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
