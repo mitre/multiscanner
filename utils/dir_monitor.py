@@ -121,7 +121,9 @@ def _main():
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
     observer = start_observer(args.Directory, work_queue, args.recursive)
-    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
+    ms_process = multiprocessing.Process(
+        target=multiscanner_process,
+        args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
     ms_process.start()
     try:
         while True:
@@ -136,9 +138,12 @@ def _main():
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
-    parser.add_argument("-c", "--config", help="The config file to use", required=False, default=multiscanner.CONFIG)
-    parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files", required=False, default=120, type=int)
-    parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False, default=100, type=int)
+    parser.add_argument("-c", "--config", help="The config file to use", required=False,
+                        default=multiscanner.CONFIG)
+    parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
+                        required=False, default=120, type=int)
+    parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,
+                        default=100, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively watch for files to scan")
     parser.add_argument("--delete", action="store_true", help="Delete files once scanned")
     parser.add_argument('Directory', help="Directory to monitor for files")

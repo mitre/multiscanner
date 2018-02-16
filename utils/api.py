@@ -815,7 +815,8 @@ def files_get_sha256_helper(sha256, raw=None):
     if raw == 't' or raw == 'y' or raw == '1':
         response = make_response(fh_content)
         response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
-        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
+        # better way to include fname?
+        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)
     else:
         # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
         rawname = sha256 + '.bin'

@@ -113,7 +113,9 @@ class GenericPDF(object):
                                               textTransform='uppercase',
                                               alignment=TA_RIGHT))
 
-            banner = Paragraph(self.span_text(self.bold_text('TLP:' + self.tlp_color), bgcolor='black'), self.style['banner_style'])
+            banner = Paragraph(
+                self.span_text(self.bold_text('TLP:' + self.tlp_color), bgcolor='black'),
+                self.style['banner_style'])
             w, h = banner.wrap(doc.width, doc.topMargin)
             banner.drawOn(canvas, doc.leftMargin, doc.height + doc.topMargin + (h + 12 * mm))
             w, h = banner.wrap(doc.width, doc.bottomMargin)

@@ -92,7 +92,9 @@ def _main():
     work_queue = multiprocessing.Queue()
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
-    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, multiscanner_config, args.delete, exit_signal))
+    ms_process = multiprocessing.Process(
+            target=multiscanner_process,
+            args=(work_queue, multiscanner_config, args.delete, exit_signal))
     ms_process.start()
 
     # Start message pickup task
