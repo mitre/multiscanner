@@ -654,7 +654,8 @@ def get_maec_report(task_id):
         maec_report = requests.get(
             '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
         )
-    except:
+    except Exception as e:
+        # TODO: log exception
         return jsonify({'Error': 'No MAEC report found for that task!'})
     # raw JSON
     response = make_response(jsonify(maec_report.json()))
@@ -748,7 +749,8 @@ def get_notes(task_id):
     try:
         for hit in response:
             hit['_source']['text'] = Markup.escape(hit['_source']['text'])
-    except:
+    except Exception as e:
+        # TODO: log exception
         pass
     return jsonify(response)
 

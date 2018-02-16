@@ -22,7 +22,7 @@ def main():
         import pefile
         filepath = pefile.__file__[:-1]
         filelist.append(filepath)
-    except:
+    except ImportError:
         print('pefile not installed...')
     for filename in filelist:
         if filename.endswith('.py'):
@@ -34,7 +34,8 @@ def main():
                 print('ERROR:', filename, 'failed')
             try:
                 os.remove(filename[:-2] + 'c')
-            except:
+            except Exception as e:
+                # TODO: log exception
                 pass
 
     # Cleanup build dirs
