@@ -182,7 +182,8 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
     if not conf:
         try:
             conf = mod.DEFAULTCONF
-        except:
+        except Exception as e:
+            # TODO: log exception
             pass
 
     required = None
@@ -365,7 +366,8 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                     try:
                         conf = mod.DEFAULTCONF
                         conf.update(config[modname])
-                    except:
+                    except Exception as e:
+                        # TODO: log exception
                         conf = config[modname]
                     # Remove _load_default from config
                     if '_load_default' in conf:
@@ -377,7 +379,8 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
             if not conf:
                 try:
                     conf = mod.DEFAULTCONF
-                except:
+                except Exception as e:
+                    # TODO: log exception
                     pass
             thread = _Thread(
                 target=_run_module,
@@ -409,7 +412,8 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
                 if mod:
                     try:
                         conf = mod.DEFAULTCONF
-                    except:
+                    except Exception as e:
+                        # TODO: log exception
                         continue
                     ConfNeedsWrite = True
                     Config.add_section(modname)
@@ -448,7 +452,8 @@ def _rewrite_config(ModuleList, Config, filepath=CONFIG):
             if mod:
                 try:
                     conf = mod.DEFAULTCONF
-                except:
+                except Exception as e:
+                    # TODO: log exception
                     continue
                 Config.add_section(modname)
                 for key in conf:
@@ -985,7 +990,8 @@ def _main():
         # For windows compatibility
         try:
             username = os.getlogin()
-        except:
+        except Exception as e:
+            # TODO: log exception
             username = os.getenv('USERNAME')
 
         results.append((
