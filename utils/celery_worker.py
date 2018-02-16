@@ -73,6 +73,7 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
+
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Executes every morning at 2:00 a.m.
@@ -80,6 +81,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
     )
+
 
 def celery_task(files, config=multiscanner.CONFIG):
     '''
@@ -170,6 +172,7 @@ def multiscanner_celery(requests, *args, **kwargs):
         }
 
     celery_task(files)
+
 
 @app.task()
 def ssdeep_compare_celery():

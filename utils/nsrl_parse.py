@@ -71,5 +71,6 @@ def _main():
     args = _parse_args()
     parse_nsrl(args.NSRLFile, output_dir=args.output)
 
+
 if __name__ == '__main__':
     _main()

@@ -105,11 +105,13 @@ def _main():
     print("Waiting for MultiScanner to exit...")
     ms_process.join()
 
+
 def _parse_args():
     parser = argparse.ArgumentParser(description='Run MultiScanner tasks via celery')
     parser.add_argument("-c", "--config", help="The config file to use", required=False, default=CONFIG)
     parser.add_argument("--delete", action="store_true", help="Delete files once scanned")
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     _main()

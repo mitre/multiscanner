@@ -144,5 +144,6 @@ def _parse_args():
     parser.add_argument('Directory', help="Directory to monitor for files")
     return parser.parse_args()
 
+
 if __name__ == '__main__':
     _main()

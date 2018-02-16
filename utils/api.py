@@ -164,6 +164,7 @@ batch_interval = api_config['api']['batch_interval']
 # Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
 delete_after_scan = api_config['api'].get('delete_after_scan', False)
 
+
 def multiscanner_process(work_queue, exit_signal):
     '''Not used in distributed mode.
     '''
