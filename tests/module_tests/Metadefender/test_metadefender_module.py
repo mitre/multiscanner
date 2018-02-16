@@ -69,7 +69,7 @@ def mocked_requests_post_sample_failed_w_msg(*args, **kwargs):
     would return on a submission that failed due to the
     server being unavailable
     '''
-    json_resp = json.dumps({'err':  MSG_SERVER_UNAVAILABLE})
+    json_resp = json.dumps({'err': MSG_SERVER_UNAVAILABLE})
     response = MockResponse(500, json_resp)
     return response
 
@@ -92,7 +92,7 @@ def mocked_requests_get_sample_200_success(*args, **kwargs):
     '''
     file_200_resp = os.path.join(CWD, FILE_200_COMPLETE_REPORT)
     with open(file_200_resp, 'r') as jsonfile:
-        json_resp=jsonfile.read().replace('\n', '')
+        json_resp = jsonfile.read().replace('\n', '')
     response = MockResponse(200, json_resp)
     return response
 
@@ -114,7 +114,7 @@ def mocked_requests_get_sample_200_in_progress(*args, **kwargs):
     '''
     file_200_resp = os.path.join(CWD, FILE_200_INCOMPLETE_REPORT)
     with open(file_200_resp, 'r') as jsonfile:
-        json_resp=jsonfile.read().replace('\n', '')
+        json_resp = jsonfile.read().replace('\n', '')
     response = MockResponse(200, json_resp)
     return response
 
@@ -262,7 +262,7 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_scan_complete_success')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
-                                                 conf = self.create_conf_short_timeout())
+                                                 conf=self.create_conf_short_timeout())
         self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
             self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_SUCCESS)
@@ -276,7 +276,7 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_scan_timeout_scan_in_progress')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
-                                                 conf = self.create_conf_short_timeout())
+                                                 conf=self.create_conf_short_timeout())
         self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
             self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_TIMEOUT)

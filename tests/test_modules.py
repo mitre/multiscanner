@@ -58,7 +58,7 @@ class Test_runModule_test_2(_runmod_tests):
         self.m = multiscanner.load_module('test_2', [multiscanner.MODULEDIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
-        self.threadDict['test_1'].ret = ([('a','a'), ('C:\\c','c')], {})
+        self.threadDict['test_1'].ret = ([('a', 'a'), ('C:\\c', 'c')], {})
         self.global_module_interface = multiscanner._GlobalModuleInterface()
 
     def teardown(self):

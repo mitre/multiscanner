@@ -14,7 +14,7 @@ def test_valid_reports_string():
 def test_valid_reports_python():
     reportlist = [([('file', 'result')], {'Name': 'Test', 'Type': 'Test'})]
     r = multiscanner.parse_reports(reportlist, python=True)
-    assert r == {"file":{"Test":"result"}}
+    assert r == {"file": {"Test": "result"}}
 
 def test_valid_utf8_string():
     reportlist = [([('file', '안녕하세요')], {'Name': 'Test', 'Type': 'Test'})]
@@ -34,4 +34,4 @@ def test_invalid_utf8_string():
 def test_invalid_utf8_python():
     reportlist = [([('file', '\x97안녕하세요')], {'Name': 'Test', 'Type': 'Test'})]
     r = multiscanner.parse_reports(reportlist, python=True)
-    assert r == {"file":{"Test":"\x97안녕하세요"}} or r == {"file":{"Test":u"\ufffd안녕하세요"}}
+    assert r == {"file": {"Test": "\x97안녕하세요"}} or r == {"file": {"Test": u"\ufffd안녕하세요"}}

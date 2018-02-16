@@ -24,13 +24,13 @@ TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 DB_CONF = Database.DEFAULTCONF
 DB_CONF['db_name'] = TEST_DB_PATH
 
-## If you want to test with an actual postgres DB server,
-## uncomment the following 5 lines and change values accordingly:
-#DB_CONF['db_name'] = 'testdb'
-#DB_CONF['db_type'] = 'postgresql'
-#DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
-#DB_CONF['username'] = 'dbusername'
-#DB_CONF['password'] = 'dbpassword'
+# If you want to test with an actual postgres DB server,
+# uncomment the following 5 lines and change values accordingly:
+# DB_CONF['db_name'] = 'testdb'
+# DB_CONF['db_type'] = 'postgresql'
+# DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
+# DB_CONF['username'] = 'dbusername'
+# DB_CONF['password'] = 'dbpassword'
 
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
