@@ -5,7 +5,7 @@ import json
 import mock
 try:
     from StringIO import StringIO as BytesIO
-except:
+except ImportError:
     from io import BytesIO
 import unittest
 

@@ -47,7 +47,8 @@ class Test_main(_runmulti_tests):
         try:
             os.remove('.tmpfile.ini')
             os.remove('tmp_report.json')
-        except:
+        except Exception as e:
+            # TODO: log exception
             pass
 
     def test_basic_main(self):
