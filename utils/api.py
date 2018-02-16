@@ -114,6 +114,7 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
+# TODO: Why does this multiscanner.common instead of just common?
 api_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'api')
 api_config_object.read(api_config_file)
 if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
