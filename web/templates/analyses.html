@@ -33,10 +33,14 @@
       },
       columnDefs: [
         {
+          targets: 2,
+          data: 3,
+        },
+        {
           targets: 3,
           searchable: false,
           orderable: false,
-          data: 0,
+          data: null,
           className: "text-center delete",
           "render": function ( data, type, full, meta ) {
             // Add Delete column buttons
@@ -188,8 +192,8 @@
       <thead>
         <tr>
           <th width="5%">Task ID</th>
-          <th width="75%">Sample</th>
-          <th width="14%">Task Status</th>
+          <th width="72%">Sample</th>
+          <th width="17%">Timestamp</th>
           <th class="text-center" width="6%">Delete</th>
         </tr>
       </thead>
