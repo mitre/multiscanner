@@ -20,33 +20,36 @@ fi
 curl -k https://bootstrap.pypa.io/get-pip.py | python
 pip install --upgrade -r $DIR/requirements.txt
 
-
 #Code to compile and install yara
-YARA_VER=3.5.0
+YARA_VER=3.7.1
+YARA_PY_VER=3.7.0
+JANSSON_VER=2.11
 read -p "Compile yara $YARA_VER? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   #Because apparently the one in the repos does not work...
-  curl -L https://github.com/akheron/jansson/archive/v2.10.tar.gz | tar -xz
-  cd jansson-2.10
+  curl -L https://github.com/akheron/jansson/archive/v$JANSSON_VER.tar.gz | tar -xz
+  cd jansson-$JANSSON_VER
   autoreconf -fi
   ./configure --prefix=/usr
   make install
   cd ..
-  rm -rf jansson-2.10
+  rm -rf jansson-$JANSSON_VER
   ln -s /usr/lib/libjansson.so.4 /lib64/libjansson.so.4
   #We get yara-python as well
-  git clone -b v$YARA_VER https://github.com/VirusTotal/yara-python.git
-  cd yara-python
-  git clone -b v$YARA_VER https://github.com/VirusTotal/yara.git
-  cd yara
+  # git clone -b v$YARA_VER https://github.com/VirusTotal/yara-python.git
+  curl -L https://github.com/VirusTotal/yara-python/archive/v$YARA_PY_VER.tar.gz | tar -xz
+  cd yara-python-$YARA_PY_VER
+  # git clone -b v$YARA_VER https://github.com/VirusTotal/yara.git
+  curl -L https://github.com/VirusTotal/yara/archive/v$YARA_VER.tar.gz | tar -xz
+  cd yara-$YARA_VER
   ./bootstrap.sh
-  ./configure --prefix=/usr --enable-magic --enable-cuckoo --with-crypto
+  ./configure --prefix=/usr --enable-magic --enable-cuckoo --enable-dotnet --with-crypto
   make && make install
   cd ../
   python setup.py build --dynamic-linking
   python setup.py install
   cd ../
-  rm -rf yara-python
+  rm -rf yara-python-$YARA_PY_VER
   ln -s /usr/lib/libyara.so.3 /lib64/libyara.so.3
 fi
 
