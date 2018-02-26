@@ -20,7 +20,7 @@ import sys
 import tempfile
 import threading
 import time
-from builtins import *
+from builtins import *  # noqa: F401,F403
 
 from future import standard_library
 standard_library.install_aliases()
@@ -46,7 +46,7 @@ CONFIG = os.path.join(MS_WD, "config.ini")
 # The directory where the modules are kept
 MODULEDIR = os.path.join(MS_WD, "modules")
 
-import common
+import common   # noqa: F401
 import storage
 from common import (basename, convert_encoding, load_module, parse_config,
                     parseDir, parseFileList, queue2list)

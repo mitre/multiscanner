@@ -12,7 +12,7 @@ import queue
 import sys
 import threading
 import time
-from builtins import *
+from builtins import *  # noqa: F401,F403
 
 from future import standard_library
 

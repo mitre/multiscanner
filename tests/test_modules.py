@@ -76,19 +76,19 @@ class Test_runModule_test_2(_runmod_tests):
     def test_results_1(self):
         self.result = multiscanner._run_module(
             'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', 'b'), ('C:\\c', True), ('/d/d', '/d/d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
+        assert self.result == ([('a', True), ('b', 'b'), ('C:\\c', True), ('/d/d', '/d/d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})   # noqa: E501
 
     def test_replacepath_linux(self):
         self.m.DEFAULTCONF['replacement path'] = '/tmp'
         self.result = multiscanner._run_module(
             'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', '/tmp/b'), ('C:\\c', True), ('/d/d', '/tmp/d')], {'Name': 'test_2', 'Include': True, 'Type': 'Test'})
+        assert self.result == ([('a', True), ('b', '/tmp/b'), ('C:\\c', True), ('/d/d', '/tmp/d')], {'Name': 'test_2', 'Include': True, 'Type': 'Test'})    # noqa: E501
 
     def test_replacepath_windows(self):
         self.m.DEFAULTCONF['replacement path'] = 'X:\\'
         self.result = multiscanner._run_module(
             'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
+        assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})  # noqa: E501
 
 
 class test_start_module_threads(_runmod_tests):
