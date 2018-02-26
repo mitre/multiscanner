@@ -5,6 +5,7 @@
     -   id: trailing-whitespace
     -   id: check-merge-conflict
     -   id: detect-private-key
+    -   id: mixed-line-ending
     -   id: flake8
         args:
         - --ignore=E126,E127,E128,E402
