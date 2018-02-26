@@ -7,5 +7,5 @@
     -   id: detect-private-key
     -   id: flake8
         args:
-        - --ignore=E126,E127,E128
+        - --ignore=E126,E127,E128,E402
         - --max-line-length=120
