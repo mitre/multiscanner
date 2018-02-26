@@ -28,6 +28,7 @@ def load_module(name, path):
     path - A list of dirs to search
     """
     try:
+        # NOTE: deprecated in 3.3
         (fname, pathname, description) = imp.find_module(name, path)
         loaded_mod = imp.load_module(name, fname, pathname, description)
     except Exception as e:

@@ -4,6 +4,9 @@ A test module which tests that config handling works
 TYPE = "Test"
 NAME = "test_subscan"
 
+# Overwritten in multiscanner
+multiscanner = None
+
 
 def check():
     return True
