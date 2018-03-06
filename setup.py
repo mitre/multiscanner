@@ -59,6 +59,6 @@ setup(
         'pymongo',
     ],
     entry_points={
-        'console_scripts': ['multiscanner=multiscanner.multiscanner:_main']
+        'console_scripts': ['multiscanner=multiscanner:_main']
     }
 )
