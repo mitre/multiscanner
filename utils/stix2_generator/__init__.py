@@ -96,7 +96,7 @@ def extract_file_cuckoo(dropped_file):
 
     Args:
         dropped_file: A dict from the "dropped" list from the "Cuckoo Sandbox"
-            report.
+            portion of the report.
 
     Returns:
         ``stix2.Indicator`` with a pattern that matches the file by name or
@@ -135,10 +135,13 @@ def extract_file_cuckoo(dropped_file):
                                                md5_value)
         )
 
-    return stix2.Indicator(**{
-        'labels': labels,
-        'pattern': create_sti2_observation_expression(dropped_pattern, 'OR')
-    })
+    if dropped_pattern:
+        return stix2.Indicator(**{
+            'labels': labels,
+            'pattern': create_sti2_observation_expression(dropped_pattern, 'OR')
+        })
+    else:
+        return None
 
 
 def extract_http_requests_cuckoo(marks_list, severity):
@@ -210,8 +213,10 @@ def parse_json_report_to_stix2_bundle(report):
                     signature.get('severity', 1)
                 ))
         for dropped in c.get('dropped', []):
-            if dropped and ('sha256', 'md5', 'sha1') in dropped:
-                all_objects.append(extract_file_cuckoo(dropped))
+            if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1')):
+                ind = extract_file_cuckoo(dropped)
+                if ind:
+                    all_objects.append(ind)
 
     # Extract information from file submission and create Indicator
     submission_pattern = []
