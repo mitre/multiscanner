@@ -42,6 +42,11 @@ if [[ $prompt == "y" ]]; then
   # git clone -b v$YARA_VER https://github.com/VirusTotal/yara.git
   curl -L https://github.com/VirusTotal/yara/archive/v$YARA_VER.tar.gz | tar -xz
   cd yara-$YARA_VER
+  # TEMPORARY work around for yara/libtool/centos7 issue
+  # Add AC_CONFIG_AUX_DIR to configure.ac if not already there
+  grep -q -F 'AC_CONFIG_AUX_DIR([build-aux])' configure.ac || sed -i'' -e 's/AM_INIT_AUTOMAKE/AC_CONFIG_AUX_DIR([build-aux])\
+\
+AM_INIT_AUTOMAKE/g' configure.ac
   ./bootstrap.sh
   ./configure --prefix=/usr --enable-magic --enable-cuckoo --enable-dotnet --with-crypto
   make && make install
