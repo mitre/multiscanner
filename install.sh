@@ -58,6 +58,18 @@ AM_INIT_AUTOMAKE/g' configure.ac
   ln -s /usr/lib/libyara.so.3 /lib64/libyara.so.3
 fi
 
+read -p "Download yararules.com signatures? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules
+  echo You can update these signatures by running cd $DIR/etc/yarasigs/Yara-Rules \&\& git pull
+fi
+
+read -p "Download SupportIntelligence's Icewater yara signatures? <y/N> " prompt
+if [[ $prompt == "y" ]]; then
+  git clone --depth 1 https://github.com/SupportIntelligence/Icewater.git $DIR/etc/yarasigs/Icewater
+  echo You can update these signatures by running cd $DIR/etc/yarasigs/Icewater \&\& git pull
+fi
+
 read -p "Download TrID? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   mkdir -p /opt/trid
@@ -84,18 +96,6 @@ read -p "Download FLOSS? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   curl -f --retry 3 https://s3.amazonaws.com/build-artifacts.floss.flare.fireeye.com/travis/linux/dist/floss > /opt/floss
   chmod 755 /opt/floss
-fi
-
-read -p "Download yararules.com signatures? <y/N> " prompt
-if [[ $prompt == "y" ]]; then
-  git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules
-  echo You can update these signatures by running cd $DIR/etc/yarasigs/Yara-Rules \&\& git pull
-fi
-
-read -p "Download SupportIntelligence's Icewater yara signatures? <y/N> " prompt
-if [[ $prompt == "y" ]]; then
-  git clone --depth 1 https://github.com/SupportIntelligence/Icewater.git $DIR/etc/yarasigs/Icewater
-  echo You can update these signatures by running cd $DIR/etc/yarasigs/Icewater \&\& git pull
 fi
 
 read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
