@@ -497,6 +497,8 @@
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/maec";
       } else if (this.id == 'getPDF') {
         window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/pdf";
+      } else if (this.id == 'getSTIX2') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/stix2?pretty=true";
       }
     });
   });
@@ -537,6 +539,7 @@
         <li id="getSample"><a href="#">Sample</a></li>
         <li id="getMAEC"><a href="#">MAEC</a></li>
         <li id="getPDF"><a href="#">PDF</a></li>
+        <li id="getSTIX2"><a href="#">STIX2</a></li>
       </ul>
     </div>
   </div>

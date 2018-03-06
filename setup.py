@@ -47,7 +47,8 @@ setup(
         'pyclamd',
         'python-magic',
         'requests',
-        'ssdeep',
+        # Required for STIX2 content
+        'stix2',
         # Required by PDF
         'reportlab',
         # Required by API

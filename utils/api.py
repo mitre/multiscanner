@@ -25,6 +25,7 @@ PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
 DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
 GET /api/v1/tasks/<task_id>/pdf ---> Receive PDF report
+GET /api/v1/tasks/<task_id>/stix2?pretty={t|f} ---> Receive STIX2 Bundle from report
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
@@ -74,6 +75,7 @@ import sql_driver as database
 import elasticsearch_storage
 import common
 from utils.pdf_generator import create_pdf_document
+from utils.stix2_generator import parse_json_report_to_stix2_bundle
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -895,6 +897,35 @@ def get_pdf_report(task_id):
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
+    return response
+
+
+@app.route('/api/v1/tasks/<task_id>/stix2', methods=['GET'])
+def get_stix2_bundle_from_report(task_id):
+    '''
+    Generates a STIX2 Bundle with indicators generated of a JSON report.
+    '''
+    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
+
+    report_dict, success = get_report_dict(task_id)
+
+    if formatting == 't' or formatting == 'y' or formatting == '1':
+        formatting = True
+    else:
+        formatting = False
+
+    if not success:
+        return jsonify(report_dict)
+
+    # If the report has no key/value pairs that we can use to create
+    # STIX representations of this data. The default behavior is to return
+    # an empty bundle.
+    bundle = parse_json_report_to_stix2_bundle(report_dict)
+
+    # Setting pretty=True can be an expensive operation!
+    response = make_response(bundle.serialize(pretty=formatting))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = 'attachment; filename=%s_bundle_stix2.json' % task_id
     return response
 
 

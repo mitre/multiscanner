@@ -10,9 +10,10 @@ pefile
 pyclamd
 python-magic
 requests
-ssdeep
 tika
 yara-python
+#Required for STIX2 content
+stix2
 #Required for PDF
 reportlab
 #Required by API
