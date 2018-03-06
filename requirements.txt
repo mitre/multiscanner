@@ -10,6 +10,7 @@ pefile
 pyclamd
 python-magic
 requests
+ssdeep
 tika
 yara-python
 #Required for STIX2 content
