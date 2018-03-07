@@ -1,7 +1,13 @@
 # Testing #
-Running the MultiScanner test suite is fairly straight forward. We use the [pytest framework](https://docs.pytest.org/en/latest/), which you can install by running ```$ pip install pytest```.
+Running the MultiScanner test suite is fairly straight forward. We use the [pytest framework](https://docs.pytest.org/en/latest/), which you can install by running:
+```
+$ pip install pytest
+```
 
-After that, simply cd into the top level multiscanner directory and run the command: ```$ pytest```
+After that, simply cd into the top level multiscanner directory and run the command: 
+```
+$ pytest
+```
 
 This will automatically find all the tests in the tests/ directory and run them. We encourage developers of new modules and users to contribute to our testing suite!
 
@@ -28,19 +34,23 @@ Firefox to the latest version.
 1. Remove old version of Firefox.
 
   ```
-  $ yum remove firefox
+  # yum remove firefox
   ```
-
-2. Download latest version of Firefox.
-
+  
+2. You may need to install these dependencies for Firefox:
   ```
-  $ cd /usr/local
-  $ curl -L http://ftp.mozilla.org/pub/firefox/releases/58.0/linux-x86_64/en-US/firefox-58.0.tar.bz2 | tar -xjf
+  # yum install -y gtk3 glib-devel glib pango pango-devel
   ```
-
-3. Add symlink to bin dir.
+3. Download latest version of Firefox.
 
   ```
-  $ ln -s /usr/local/firefox/firefox /usr/bin/firefox
+  # cd /usr/local
+  # curl -L http://ftp.mozilla.org/pub/firefox/releases/58.0/linux-x86_64/en-US/firefox-58.0.tar.bz2 | tar -xjf
+  ```
+
+4. Add symlink to bin dir.
+
+  ```
+  # ln -s /usr/local/firefox/firefox /usr/bin/firefox
   ```
 
