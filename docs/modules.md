@@ -30,7 +30,7 @@ This module submits a file to a Cuckoo Sandbox cluster for analysis
 ### [ExifToolsScan] ###
 This module scans the file with Exif tools and returns the results.
 
-- **remove-entry** - A python list of ExifTool results that should not be included in the report. File system level attributes are not useful and stripped out 
+- **remove-entry** - A python list of ExifTool results that should not be included in the report. File system level attributes are not useful and stripped out
 
 ### [FireeyeScan] ###
 This module uses a FireEye AX to scan the files. It uses the Malware Repository feature to automatically scan files. This may not be the best way but it does work. It will copy the files to be scanned to the mounted share folders.

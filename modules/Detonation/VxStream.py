@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
-import json
 import time
 # from common import basename
-from collections import Counter
 from boltons.iterutils import remap
 
 
@@ -66,14 +64,16 @@ EMPTY_STR_TO_OBJ = {
 }
 EMPTY_STR_TO_LS = {
     'runtime': [
-        'targets',],
+        'targets', ],
     'hybridanalysis': [
         'targets',
-        'dropped',],
+        'dropped', ],
 }
 
 # we could use the full path of the keys
 # known to cause issues
+
+
 def visit(path, key, value):
     if value == '':
         if key in EMPTY_STR_TO_OBJ['runtime'] or \
@@ -99,10 +99,11 @@ def visit(path, key, value):
         return key, float(value)
     return key, value
 
+
 def post_to_vxstream(f_name, environment_id,
         submit_url, apikey, secret, runtime, verify):
     with open(f_name, 'rb') as f:
-        files = { 'file': f }
+        files = {'file': f}
         data = {
             'apikey': apikey,
             'secret': secret,
@@ -136,7 +137,7 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
     except requests.exceptions.HTTPError as err:
         print(err)
 
-        
+
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
     user_agent = {'User-agent': 'VxStream Sandbox'}
     params = {'apikey': apikey, 'secret': secret, 'environmentId': environment_id, 'type': type_}
@@ -208,13 +209,16 @@ def scan(filelist, conf=DEFAULTCONF):
                 if report:
                     # Drop some additional values from report
                     for field in ['strings', 'signatures_chronology',
-                        'imageprocessing', 'multiscan']:
+                                  'imageprocessing', 'multiscan']:
                         try:
                             report['analysis']['final'].pop(field)
                         except KeyError:
                             pass
                     # Add the link to Web Report
-                    report['analysis']['final']['web_report'] = '<a href="{}/sample/{}?environmentId={}" target="_blank">View the report in VxStream</a>'.format(conf['BASE URL'], file_sha256, conf['Environment ID'])
+                    report['analysis']['final']['web_report'] = (
+                        '<a href="{base_url}/sample/{file_sha256}?environmentId={env_id}" target="_blank">'
+                        'View the report in VxStream</a>'
+                    ).format(base_url=conf['BASE URL'], file_sha256=file_sha256, env_id=conf['Environment ID'])
                     resultlist.append((fname, report.get('analysis', {}).get('final')))
                     tasks.remove((fname, file_sha256))
 

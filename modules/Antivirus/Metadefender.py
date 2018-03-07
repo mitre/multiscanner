@@ -17,10 +17,8 @@ Notes on special configuration options:
 '''
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
-import json
 import time
 from common import basename
-from collections import Counter
 
 __author__ = "Julian Feild"
 __license__ = "MPL 2.0"
@@ -59,6 +57,7 @@ STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Failure'
 STATUS_PENDING = 'Pending'
 STATUS_TIMEOUT = 'Timeout'
+
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
@@ -101,7 +100,7 @@ def _parse_scan_result(response):
         # result, so we have to check the output for a progress percentage.
         # No results could mean that MD simply hasn't begun processing so
         # we don't want to mark the scan as failed
-        if prog_percent == None:
+        if prog_percent is None:
             is_complete = False
             overall_status = STATUS_PENDING
             msg = 'Scan results not found; Metadefender has likely not started analysis yet'
@@ -138,10 +137,11 @@ def _parse_scan_result(response):
             msg = 'No data received from Metadefender'
         engine_results = []
 
-    scan_result = {'overall_status': overall_status,
-                   'msg': msg,
-                   'engine_results': engine_results
-                  }
+    scan_result = {
+        'overall_status': overall_status,
+        'msg': msg,
+        'engine_results': engine_results
+    }
     return (is_complete, scan_result)
 
 
@@ -162,15 +162,15 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
         }
     '''
     with open(fname, "rb") as sample:
-            # TODO - send file in chunks if file size > some threshold.
-            # Due to MD's API, we would have to split the file up manually
-            # and perform several POSTS
-            headers = {'content-type': 'application/json',
-                       'user_agent': user_agent,
-                       'filename': basename(fname)}
-            if api_key:
-                headers['apikey'] = api_key
-            request = requests.post(scan_url, data=sample, headers=headers)
+        # TODO - send file in chunks if file size > some threshold.
+        # Due to MD's API, we would have to split the file up manually
+        # and perform several POSTS
+        headers = {'content-type': 'application/json',
+                   'user_agent': user_agent,
+                   'filename': basename(fname)}
+        if api_key:
+            headers['apikey'] = api_key
+        request = requests.post(scan_url, data=sample, headers=headers)
     resp_status_code = request.status_code
     resp_json = None
     if resp_status_code == requests.codes.ok:
@@ -186,12 +186,13 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
         except (ValueError, AttributeError):
             error_msg = MD_HTTP_ERR_CODES.get(resp_status_code, UNKNOWN_ERROR)
 
-
-    submission_response = {'status_code': resp_status_code,
-                           'scan_id': scan_id,
-                           'error': error_msg
-                          }
+    submission_response = {
+        'status_code': resp_status_code,
+        'scan_id': scan_id,
+        'error': error_msg
+    }
     return submission_response
+
 
 def _retrieve_scan_results(results_url, scan_id, api_key=None):
     '''
@@ -205,8 +206,9 @@ def _retrieve_scan_results(results_url, scan_id, api_key=None):
     headers = None
     if api_key:
         headers = {'apikey': api_key}
-    scan_output = requests.get(results_url+scan_id, headers=headers)
+    scan_output = requests.get(results_url + scan_id, headers=headers)
     return scan_output
+
 
 def scan(filelist, conf=DEFAULTCONF):
     '''
@@ -246,11 +248,11 @@ def scan(filelist, conf=DEFAULTCONF):
             if task_id is not None:
                 tasks.append((fname, str(task_id)))
             else:
-                #TODO Do something here?
+                # TODO Do something here?
                 pass
         else:
             err_msg = submission_resp['error']
-            print('%s: %s not submitted: Code: %d, Message: %s' \
+            print('%s: %s not submitted: Code: %d, Message: %s'
                   % (NAME, basename(fname), resp_status_code, err_msg))
 
     # Wait for tasks to finish
@@ -272,7 +274,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #Log timeout
+                        # Log timeout
                         if scan_result['overall_status'] == STATUS_PENDING:
                             scan_result['overall_status'] = STATUS_TIMEOUT
                         resultlist.append((fname, scan_result))

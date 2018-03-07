@@ -50,7 +50,7 @@ The web application runs on [Flask](http://flask.pocoo.org/), uses [Bootstrap](h
 The REST API is also powered by Flask and served via Apache. It has an underlying PostgreSQL database in order to facilitate task tracking. Additionally, it acts as a gateway to the backend ElasticSearch document store. Searches entered into the web UI will be routed through the REST API and passed to the ElasticSearch cluster. This abstracts the complexity of querying ElasticSearch and gives the user a simple web interface to work with.
 
 ### Task Queue ###
-We use Celery as our distributed task queue. 
+We use Celery as our distributed task queue.
 
 ### Task Tracking ###
 PostgreSQL is our task management database. It is here that we keep track of scan times, samples, and the status of tasks (pending, complete, failed).

@@ -6,31 +6,34 @@ import os
 import sys
 import time
 from common import parseDir
-from operator import itemgetter
 
 __authors__ = "Nick Beede, Drew Bonasera"
 __license__ = "MPL 2.0"
 
 TYPE = "Signature"
 NAME = "Yara"
-DEFAULTCONF = {"ruledir":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
-    "fileextensions":[".yar", ".yara", ".sig"],
-    "ignore-tags":["TLPRED"],
+DEFAULTCONF = {
+    "ruledir": os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'yarasigs'),
+    "fileextensions": [".yar", ".yara", ".sig"],
+    "ignore-tags": ["TLPRED"],
     'includes': False,
     'ENABLED': True
-    }
-    
+}
+
 try:
     import yara
-except:
+except ImportError:
     print("yara-python module not installed...")
     yara = False
+
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
     if not yara:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     ruleDir = conf["ruledir"]
@@ -46,7 +49,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 ruleset[full_path] = full_path
                 break
 
-    #Ran into a weird issue with file locking, this fixes it
+    # Ran into a weird issue with file locking, this fixes it
     goodtogo = False
     i = 0
     yararules = None
@@ -66,7 +69,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     matches = []
     for m in filelist:
-        #Ran into a weird issue with file locking, this fixes it
+        # Ran into a weird issue with file locking, this fixes it
         goodtogo = False
         i = 0
         while not goodtogo and i < 5:
@@ -79,7 +82,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 i += 1
         try:
             hit = yararules.match(data=f.read())
-        except:
+        except Exception as e:
+            # TODO: log exception
             continue
         finally:
             f.close()
@@ -88,10 +92,10 @@ def scan(filelist, conf=DEFAULTCONF):
             for h in hit:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
                     hit_dict = {
-                        'meta'      : h.meta,
-                        'namespace' : h.namespace,
-                        'rule'      : h.rule,
-                        'tags'      : h.tags,
+                        'meta': h.meta,
+                        'namespace': h.namespace,
+                        'rule': h.rule,
+                        'tags': h.tags,
                     }
                     try:
                         h_key = '{}:{}'.format(hit_dict['namespace'].split('/')[-1], hit_dict['rule'])
@@ -100,7 +104,6 @@ def scan(filelist, conf=DEFAULTCONF):
                     hdict[h_key] = hit_dict
             matches.append((m, hdict))
 
-            
     metadata = {}
     rulelist = list(ruleset)
     rulelist.sort()
@@ -108,4 +111,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Rules"] = rulelist
     return (matches, metadata)
-

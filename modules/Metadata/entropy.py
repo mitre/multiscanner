@@ -27,7 +27,7 @@ def scan(filelist, conf=DEFAULTCONF):
         with open(fname, 'rb') as f:
             text = f.read()
         chars, lns = Counter(text), float(len(text))
-        result = -sum(count/lns * math.log(count/lns, 2) for count in chars.values())
+        result = -sum(count / lns * math.log(count / lns, 2) for count in chars.values())
         results.append((fname, result))
 
     metadata = {}

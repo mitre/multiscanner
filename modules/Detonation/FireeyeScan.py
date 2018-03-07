@@ -4,9 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import os
 import time
-import csv
 import shutil
-import sys
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -14,19 +12,21 @@ __license__ = "MPL 2.0"
 TYPE = "Detonation"
 NAME = "FireEye"
 DEFAULTCONF = {
-"fireeye images":["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
-#"cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
-"ENABLED":False,
-"good path":"good",
-"base path":"/mnt/fireeyeshare/",
-"bad path":"bad",
-"src path":"src"}
+    "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp2", "winxp-sp3"],
+    # "cheatsheet":os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'fireeyecheatsheet'),
+    "ENABLED": False,
+    "good path": "good",
+    "base path": "/mnt/fireeyeshare/",
+    "bad path": "bad",
+    "src path": "src"}
+
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
 
+
 def scan(filelist, conf=DEFAULTCONF):
-    #cheatsheet = conf["cheatsheet"]
+    # cheatsheet = conf["cheatsheet"]
     base = conf["base path"]
     FEGood = conf["good path"]
     FEBad = conf["bad path"]
@@ -71,4 +71,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     return (resultlist, metadata)
-

@@ -4,14 +4,14 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import pyclamd
-except:
+except ImportError:
     print("pyclamd module not installed...")
     pyclamd = None
 
 __author__ = 'Mike Long'
 __license__ = "MPL 2.0"
 
-DEFAULTCONF ={
+DEFAULTCONF = {
     "ENABLED": True,
 }
 
@@ -28,19 +28,21 @@ def _connect_clam():
     try:
         clamScanner = pyclamd.ClamdUnixSocket()
         clamScanner.ping()
-    except:
+    except ConnectionError:
         clamScanner = pyclamd.ClamdNetworkSocket()
         try:
             clamScanner.ping()
-        except:
+        except ConnectionError:
             raise ValueError("Unable to connect to clamd")
     return clamScanner
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
     try:
         clamScanner = _connect_clam()
-    except:
+    except Exception as e:
+        # TODO: log exception
         return None
 
     # Scan each file from filelist for virus

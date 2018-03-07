@@ -12,13 +12,20 @@ __pycache__/
 *.py[cod]
 *.swp
 *.swo
+
 # C extensions
 *.so
 *.dll
+
 #PyCharm
 .idea
-#Keys dir
+
+# VSCode
+.vscode/
+
+# Keys dir
 keys/
+
 # Distribution / packaging
 .Python
 env/
@@ -35,14 +42,17 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
 # PyInstaller
 # Usually these files are written by a python script from a template
 # before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
@@ -50,18 +60,25 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+.pytest_cache/
+
 # Translations
 *.mo
 *.pot
+
 # Django stuff:
 *.log
+
 # Sphinx documentation
 docs/_build/
+
 # PyBuilder
 target/
+
 # Sqlite DB
 sqlite.db
 task_db
 testing.db
+
 # Tmp Upload Dir
 utils/tmp/

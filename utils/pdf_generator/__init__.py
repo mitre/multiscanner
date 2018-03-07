@@ -1,4 +1,5 @@
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import (division, absolute_import, with_statement,
+                        print_function, unicode_literals)
 
 import json
 import os
@@ -104,7 +105,8 @@ def create_pdf_document(WD, report):
 
     gen_pdf.line_break()
 
-    mitigation_recommendation = gen_pdf.section('Mitigation Recommendations', pdf_components.get('mitigation_recommendations', ''), gen_pdf.style)
+    mitigation_recommendation = gen_pdf.section(
+        'Mitigation Recommendations', pdf_components.get('mitigation_recommendations', ''), gen_pdf.style)
 
     for mr in mitigation_recommendation:
         gen_pdf.pdf_list.append(mr)

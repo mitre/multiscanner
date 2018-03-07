@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(CWD))
 # import elasticsearch_storage
 from elasticsearch_storage import ElasticSearchStorage
 
-TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}
+TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}    # noqa: E501
 TEST_ID = '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6'
 TEST_NOTE_ID = 'eba3d3de-1a7e-4018-8fb3-a4635b4b7ab1'
 TEST_TS = "2017-09-26T16:48:05.395004"
@@ -51,7 +51,9 @@ class TestES(unittest.TestCase):
 
         report_args, report_kwargs = mock_index.call_args_list[0]
         self.assertEqual(report_kwargs['parent'], TEST_ID)
-        self.assertEqual(report_kwargs['body']['libmagic'], 'ASCII text, with very long lines, with no line terminators')
+        self.assertEqual(
+            report_kwargs['body']['libmagic'],
+            'ASCII text, with very long lines, with no line terminators')
         self.assertEqual(report_kwargs['pipeline'], 'dedot')
 
         self.assertIn(TEST_ID, resp)
@@ -71,7 +73,7 @@ class TestES(unittest.TestCase):
 
     @mock.patch('elasticsearch_storage.helpers')
     def test_search(self, mock_helpers):
-        mock_helpers.scan.return_value = [{'sort': [417], '_type': 'report', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt'}, '_parent': TEST_ID, '_id': TEST_ID}]
+        mock_helpers.scan.return_value = [{'sort': [417], '_type': 'report', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt'}, '_parent': TEST_ID, '_id': TEST_ID}]     # noqa: E501
         resp = self.handler.search('test')
 
         args, kwargs = mock_helpers.scan.call_args_list[0]
@@ -144,7 +146,7 @@ class TestES(unittest.TestCase):
 
     @mock.patch.object(Elasticsearch, 'search')
     def test_get_notes(self, mock_search):
-        resp = self.handler.get_notes(TEST_ID)
+        self.handler.get_notes(TEST_ID)
 
         self.assertEqual(mock_search.call_count, 1)
         args, kwargs = mock_search.call_args_list[0]
@@ -156,7 +158,7 @@ class TestES(unittest.TestCase):
 
     @mock.patch.object(Elasticsearch, 'get')
     def test_get_note(self, mock_get):
-        resp = self.handler.get_note(TEST_ID, TEST_ID)
+        self.handler.get_note(TEST_ID, TEST_ID)
 
         self.assertEqual(mock_get.call_count, 1)
         args, kwargs = mock_get.call_args_list[0]

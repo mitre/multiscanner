@@ -36,5 +36,7 @@ pathlib
 pytest
 mock
 selenium
+#Requred by dev
+pre-commit
 #Required by utils
 tqdm

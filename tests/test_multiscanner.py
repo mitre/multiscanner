@@ -9,6 +9,7 @@ import multiscanner
 sys.path.append(os.path.join(CWD, '..', 'libs'))
 import common
 
+
 class _runmulti_tests(object):
     @classmethod
     def setup_class(cls):
@@ -24,7 +25,8 @@ class _runmulti_tests(object):
 
 class Test_multiscan(_runmulti_tests):
     def setup(self):
-        self.result = multiscanner.multiscan(self.filelist, recursive=False, configregen=False, configfile='.tmpfile.ini')
+        self.result = multiscanner.multiscan(
+            self.filelist, recursive=False, configregen=False, configfile='.tmpfile.ini')
         self.report = multiscanner.parse_reports(self.result, includeMetadata=False, python=True)
         self.report_m = multiscanner.parse_reports(self.result, includeMetadata=True, python=True)
 
@@ -36,6 +38,7 @@ class Test_multiscan(_runmulti_tests):
             assert f in self.report
             assert f in self.report_m['Files']
 
+
 class Test_main(_runmulti_tests):
     def setup(self):
         sys.argv = ['']
@@ -44,7 +47,8 @@ class Test_main(_runmulti_tests):
         try:
             os.remove('.tmpfile.ini')
             os.remove('tmp_report.json')
-        except:
+        except Exception as e:
+            # TODO: log exception
             pass
 
     def test_basic_main(self):

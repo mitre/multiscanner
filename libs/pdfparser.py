@@ -1512,4 +1512,3 @@ def TestPythonVersion(enforceMaximumVersion=False, enforceMinimumVersion=False):
 if __name__ == '__main__':
     TestPythonVersion()
     Main()
-

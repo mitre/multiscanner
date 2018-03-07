@@ -2,19 +2,22 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import argparse
-import os
-import configparser
 import codecs
+import configparser
+import multiprocessing
+import os
+import queue
 import sys
 import time
-import multiprocessing
-import queue
-from celery import Celery
+from builtins import *  # noqa: F401,F403
+
+from future import standard_library
+
+standard_library.install_aliases()
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Adds the libs directory to the path
@@ -25,6 +28,7 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 
 import multiscanner
 from common import parse_config
+
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -82,20 +86,18 @@ def _main():
     args = _parse_args()
     # Pull config options
     conf = _read_conf(args.config)
-    broker = conf['distributed']['broker']
-    database = conf['distributed']['database']
     multiscanner_config = conf['worker']['multiscanner_config']
-    storage_config = conf['worker']['storage_config']
 
     # Start worker task
     work_queue = multiprocessing.Queue()
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
-    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, multiscanner_config, args.delete, exit_signal))
+    ms_process = multiprocessing.Process(
+            target=multiscanner_process,
+            args=(work_queue, multiscanner_config, args.delete, exit_signal))
     ms_process.start()
 
     # Start message pickup task
-
     try:
         while True:
             time.sleep(60)
@@ -105,11 +107,13 @@ def _main():
     print("Waiting for MultiScanner to exit...")
     ms_process.join()
 
+
 def _parse_args():
     parser = argparse.ArgumentParser(description='Run MultiScanner tasks via celery')
     parser.add_argument("-c", "--config", help="The config file to use", required=False, default=CONFIG)
     parser.add_argument("--delete", action="store_true", help="Delete files once scanned")
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     _main()

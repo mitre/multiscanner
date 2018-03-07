@@ -1,5 +1,5 @@
 # Analytics #
-Enabling analytics and advanced queries is the primary advantage of running 
+Enabling analytics and advanced queries is the primary advantage of running
 several tools against a sample, extracting as much information as possible, and
 storing the output in a common datastore.
 
@@ -28,7 +28,7 @@ based on the ssdeep hash.
 
 ### Elasticsearch ###
 When possible, it can be effective to push work to the Elasticsearch cluster
-which support horizontal scaling. For the ssdeep comparison, Elasticsearch 
+which support horizontal scaling. For the ssdeep comparison, Elasticsearch
 [NGram  Tokenizers](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html)
 are used to compute 7-grams of the chunk and double-chunk portions
 of the ssdeep hash as described here [[2]](http://www.intezer.com/intezer-community-tip-ssdeep-comparisons-with-elasticsearch/).

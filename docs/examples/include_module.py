@@ -1,11 +1,13 @@
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import (division, absolute_import, with_statement,
+                        print_function, unicode_literals)
 
 TYPE = "Example"
 NAME = "include example"
 REQUIRES = ["libmagic", "MD5"]
 DEFAULTCONF = {
     'ENABLED': True,
-    }
+}
+
 
 def check(conf=DEFAULTCONF):
     # If the config disabled the module don't run
@@ -15,6 +17,7 @@ def check(conf=DEFAULTCONF):
     if None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     # Define our results array
