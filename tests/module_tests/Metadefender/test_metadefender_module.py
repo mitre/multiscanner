@@ -32,10 +32,12 @@ MSG_SERVER_UNAVAILABLE = 'Server unavailable, try again later'
 FILE_200_COMPLETE_REPORT = 'retrieval_responses/200_found_complete.json'
 FILE_200_INCOMPLETE_REPORT = 'retrieval_responses/200_found_incomplete.json'
 
+
 class MockResponse(object):
     '''
     This class mocks a requests.Response object
     '''
+
     def __init__(self, status_code, response_string):
         self.status_code = status_code
         self.response_string = response_string
@@ -47,12 +49,15 @@ class MockResponse(object):
         # isn't valid JSON
         return json.loads(self.response_string)
 
+
 def generate_scan_id(filename):
     return filename + '_scan_ID'
 
 # ---------------------------------------------------------------------
 #  Mock Requests methods for sample submission
 # ---------------------------------------------------------------------
+
+
 def mocked_requests_post_sample_submitted(*args, **kwargs):
     '''
     Mocks the requests.post method. Returns what Metadefender
@@ -63,15 +68,17 @@ def mocked_requests_post_sample_submitted(*args, **kwargs):
     response = MockResponse(200, json_resp)
     return response
 
+
 def mocked_requests_post_sample_failed_w_msg(*args, **kwargs):
     '''
     Mocks the requests.post method. Returns what Metadefender
     would return on a submission that failed due to the
     server being unavailable
     '''
-    json_resp = json.dumps({'err':  MSG_SERVER_UNAVAILABLE})
+    json_resp = json.dumps({'err': MSG_SERVER_UNAVAILABLE})
     response = MockResponse(500, json_resp)
     return response
+
 
 def mocked_requests_post_sample_failed_no_msg(*args, **kwargs):
     '''
@@ -85,6 +92,8 @@ def mocked_requests_post_sample_failed_no_msg(*args, **kwargs):
 # ---------------------------------------------------------------------
 #  Mock Requests methods for scan retrieval
 # ---------------------------------------------------------------------
+
+
 def mocked_requests_get_sample_200_success(*args, **kwargs):
     '''
     Mocks the requests.get method. Returns what Metadefender
@@ -92,9 +101,10 @@ def mocked_requests_get_sample_200_success(*args, **kwargs):
     '''
     file_200_resp = os.path.join(CWD, FILE_200_COMPLETE_REPORT)
     with open(file_200_resp, 'r') as jsonfile:
-        json_resp=jsonfile.read().replace('\n', '')
+        json_resp = jsonfile.read().replace('\n', '')
     response = MockResponse(200, json_resp)
     return response
+
 
 def mocked_requests_get_sample_200_not_found(*args, **kwargs):
     '''
@@ -106,6 +116,7 @@ def mocked_requests_get_sample_200_not_found(*args, **kwargs):
     response = MockResponse(200, json_resp)
     return response
 
+
 def mocked_requests_get_sample_200_in_progress(*args, **kwargs):
     '''
     Mocks the requests.get method. Returns what Metadefender
@@ -114,11 +125,13 @@ def mocked_requests_get_sample_200_in_progress(*args, **kwargs):
     '''
     file_200_resp = os.path.join(CWD, FILE_200_INCOMPLETE_REPORT)
     with open(file_200_resp, 'r') as jsonfile:
-        json_resp=jsonfile.read().replace('\n', '')
+        json_resp = jsonfile.read().replace('\n', '')
     response = MockResponse(200, json_resp)
     return response
 
 # Unit test class
+
+
 class MetadefenderTest(unittest.TestCase):
 
     def setUp(self):
@@ -126,7 +139,6 @@ class MetadefenderTest(unittest.TestCase):
         for fname in RANDOM_INPUT_FILES:
             with open(fname, 'wb') as fout:
                 fout.write(os.urandom(1024))
-
 
     def tearDown(self):
         # Delete all the files we created
@@ -144,6 +156,7 @@ class MetadefenderTest(unittest.TestCase):
     # This section tests the logic that interprets Metadefender's
     # possible responses to sample submission requests
     # ---------------------------------------------------------------------
+
     @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
     def test_submit_sample_success(self, mock_get):
         '''
@@ -262,11 +275,10 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_scan_complete_success')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
-                                                 conf = self.create_conf_short_timeout())
+                                                 conf=self.create_conf_short_timeout())
         self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
             self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_SUCCESS)
-
 
     @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_in_progress)
     @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
@@ -276,10 +288,11 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_scan_timeout_scan_in_progress')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
-                                                 conf = self.create_conf_short_timeout())
+                                                 conf=self.create_conf_short_timeout())
         self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
             self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_TIMEOUT)
+
 
 if __name__ == "__main__":
     unittest.main()

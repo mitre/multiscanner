@@ -16,21 +16,23 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "ExifTool"
-#These are overwritten by the config file
+# These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
-#Entries to be removed from the final results
+# Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
-DEFAULTCONF = {'cmdline':["-t"], 
-    "path":"C:\\exiftool.exe", 
-    "key":KEY, 
-    'host':HOST, 
-    "replacement path":PATHREPLACE, 
-    'remove-entry':REMOVEENTRY,
+DEFAULTCONF = {
+    'cmdline': ["-t"],
+    "path": "C:\\exiftool.exe",
+    "key": KEY,
+    'host': HOST,
+    "replacement path": PATHREPLACE,
+    'remove-entry': REMOVEENTRY,
     'ENABLED': True
-    }
+}
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
@@ -39,18 +41,19 @@ def check(conf=DEFAULTCONF):
         if 'replacement path' in conf:
             del conf['replacement path']
         return True
-    
+
     if SSH:
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
     elif SSH:
         local = False
-        
+
     cmdline = conf["cmdline"]
     results = []
     output = ""
@@ -63,14 +66,14 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmd)
-            returnval = 0
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
-            returnval = e.returncode
+            e.returncode
     else:
         try:
             output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     output = output.decode("utf-8", errors="ignore")
@@ -87,22 +90,24 @@ def scan(filelist, conf=DEFAULTCONF):
                     data = {}
                 fname = row[0][9:]
                 if re.match('[A-Za-z]:/', fname):
-                    #why exif tools, whyyyyyyyy
+                    # why exif tools, whyyyyyyyy
                     fname = fname.replace('/', '\\')
                 continue
-        except:
+        except Exception as e:
+            # TODO: log exception
             pass
         try:
             if row[0] not in conf['remove-entry']:
                 data[row[0]] = row[1]
-        except:
+        except Exception as e:
+            # TODO: log exception
             continue
     if data:
         results.append((fname, data))
         data = {}
     reader = None
-    
-    #Gather metadata
+
+    # Gather metadata
     metadata = {}
     output = output.replace('\r', '')
     reader = output.split('\n')
@@ -110,8 +115,7 @@ def scan(filelist, conf=DEFAULTCONF):
         row = row.split('\t')
         if row and row[0] == "ExifTool Version Number":
             metadata["Program version"] = row[1]
-            break	
+            break
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
-    return (results, metadata)	
-
+    return (results, metadata)

@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import magic
-except:
+except ImportError:
     print("python-magic module not installed...")
     magic = False
 
@@ -14,9 +14,10 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "libmagic"
 DEFAULTCONF = {
-    'magicfile':None,
+    'magicfile': None,
     'ENABLED': True
-    }
+}
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
@@ -26,11 +27,13 @@ def check(conf=DEFAULTCONF):
     else:
         return False
 
+
 def scan(filelist, conf=DEFAULTCONF):
     if conf['magicfile']:
         try:
             maaagic = magic.Magic(magic_file=conf['magicfile'])
-        except:
+        except Exception as e:
+            # TODO: log exception
             print("ERROR: Failed to use magic file", conf['magicfile'])
             maaagic = magic.Magic()
     else:

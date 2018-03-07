@@ -24,18 +24,18 @@ TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 DB_CONF = Database.DEFAULTCONF
 DB_CONF['db_name'] = TEST_DB_PATH
 
-## If you want to test with an actual postgres DB server,
-## uncomment the following 5 lines and change values accordingly:
-#DB_CONF['db_name'] = 'testdb'
-#DB_CONF['db_type'] = 'postgresql'
-#DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
-#DB_CONF['username'] = 'dbusername'
-#DB_CONF['password'] = 'dbpassword'
+# If you want to test with an actual postgres DB server,
+# uncomment the following 5 lines and change values accordingly:
+# DB_CONF['db_name'] = 'testdb'
+# DB_CONF['db_type'] = 'postgresql'
+# DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
+# DB_CONF['username'] = 'dbusername'
+# DB_CONF['password'] = 'dbpassword'
 
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'timestamp': None, 'sample_id': None}
-TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
+TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}  # noqa: E501
 
 
 def drop_db_table(db_eng):

@@ -41,7 +41,7 @@ file.
 Default modules have the option to be run locally or via SSH. The development team
 runs MultiScanner on a Linux host and hosts the majority of analytical tools on
 a separate Windows machine. The SSH server used in this environment is freeSSHd
-from <http://www.freesshd.com/>. 
+from <http://www.freesshd.com/>.
 
 A network share accessible to both the MultiScanner and the Analytic Machines is
 required for the multi-machine setup. Once configured, the network share path must

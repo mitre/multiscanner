@@ -13,9 +13,13 @@ functions:
     delete: Given a report_id (a sha256 hash), delete the
         specified report.
 '''
-from storage import Storage
+import json
 from uuid import uuid4
+
 from pymongo import MongoClient
+
+from storage import Storage
+
 
 class MongoStorage(Storage):
     '''

@@ -16,20 +16,21 @@ __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "McAfee"
-#These are overwritten by the config file
-#SSH Key
+# These are overwritten by the config file
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {
-    "path":"C:\\vscl-w32-604-e\\scan.exe", 
-    "key":KEY, 
-    "cmdline":["/ALL"], 
-    'host':HOST, 
-    "replacement path":PATHREPLACE,
+    "path": "C:\\vscl-w32-604-e\\scan.exe",
+    "key": KEY,
+    "cmdline": ["/ALL"],
+    'host': HOST,
+    "replacement path": PATHREPLACE,
     'ENABLED': True
-    }
+}
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
@@ -39,6 +40,7 @@ def check(conf=DEFAULTCONF):
     else:
         return False
 
+
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
@@ -47,30 +49,30 @@ def scan(filelist, conf=DEFAULTCONF):
         host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
-    #Fixes list2cmd so we can actually quote things...
+    # Fixes list2cmd so we can actually quote things...
     subprocess.list2cmdline = list2cmdline
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmdline.append('"' + item + '"')
-    
-    #Create full command line
+
+    # Create full command line
     cmdline.insert(0, path)
-    
+
     output = ""
     if local:
         try:
             output = subprocess.check_output(cmdline)
-            returnval = 0
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
-            returnval = e.returncode
+            e.returncode
     else:
         try:
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
-    #Parse output
+    # Parse output
     output = output.decode("utf-8")
     virusresults = re.findall("([^\n\r]+) ... Found: ([^\n\r]+)", output, re.MULTILINE)
     metadata = {}
@@ -84,6 +86,5 @@ def scan(filelist, conf=DEFAULTCONF):
         verinfo = re.search("Dat set version: (\d+) created (\w+ (?:\d|\d\d) \d\d\d\d)", output)
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
-    
-    return (virusresults, metadata)	
 
+    return (virusresults, metadata)

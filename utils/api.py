@@ -18,7 +18,7 @@ DELETE /api/v1/tasks/<task_id> ----> delete task_id
 GET /api/v1/tasks/search/ ---> receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> receive list of most all reports for matching samples
 GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ----> download the Cuckoo MAEC 5.0 report, if it exists 
+GET /api/v1/tasks/<task_id>/maec ----> download the Cuckoo MAEC 5.0 report, if it exists
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
 POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
@@ -38,26 +38,28 @@ TODO:
 * Add doc strings to functions
 '''
 from __future__ import print_function
-import os
-import sys
-import time
-import hashlib
+
 import codecs
 import configparser
+import hashlib
 import json
 import multiprocessing
-import subprocess
+import os
 import queue
 import shutil
+import subprocess
+import sys
+import time
+import zipfile
 from datetime import datetime
-from flask_cors import CORS
-from flask import Flask, jsonify, make_response, request, abort
+
+import rarfile
+import requests
+from flask import Flask, abort, jsonify, make_response, request
 from flask.json import JSONEncoder
+from flask_cors import CORS
 from jinja2 import Markup
 from six import PY3
-import rarfile
-import zipfile
-import requests
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -69,11 +71,12 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
+import common
+import elasticsearch_storage
 import multiscanner
 import sql_driver as database
-import elasticsearch_storage
-import common
 from utils.pdf_generator import create_pdf_document
+
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -111,6 +114,7 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
+# TODO: Why does this multiscanner.common instead of just common?
 api_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'api')
 api_config_object.read(api_config_file)
 if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
@@ -123,6 +127,7 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     conffile.close()
 api_config = multiscanner.common.parse_config(api_config_object)
 
+# TODO: fix this mess
 # Needs api_config in order to function properly
 from celery_worker import multiscanner_celery, ssdeep_compare_celery
 from ssdeep_analytics import SSDeepAnalytic
@@ -138,7 +143,7 @@ for handler in storage_handler.loaded_storage:
         break
 
 ms_config_object = configparser.SafeConfigParser()
-ms_config_object.optionxform = str 
+ms_config_object.optionxform = str
 ms_configfile = multiscanner.CONFIG
 ms_config_object.read(ms_configfile)
 ms_config = common.parse_config(ms_config_object)
@@ -161,6 +166,7 @@ batch_size = api_config['api']['batch_size']
 batch_interval = api_config['api']['batch_interval']
 # Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
 delete_after_scan = api_config['api'].get('delete_after_scan', False)
+
 
 def multiscanner_process(work_queue, exit_signal):
     '''Not used in distributed mode.
@@ -187,10 +193,10 @@ def multiscanner_process(work_queue, exit_signal):
                 continue
 
         filelist = [item[0] for item in metadata_list]
-        #modulelist = [item[5] for item in metadata_list]
+        # modulelist = [item[5] for item in metadata_list]
         resultlist = multiscanner.multiscan(
             filelist, configfile=multiscanner.CONFIG
-            #module_list
+            # module_list
         )
         results = multiscanner.parse_reports(resultlist, python=True)
 
@@ -281,7 +287,7 @@ def search(params, get_all=False):
     if sample_id:
         task_id = db.exists(sample_id)
         if task_id:
-            return { 'TaskID' : task_id }
+            return {'TaskID': task_id}
         else:
             return TASK_NOT_FOUND
 
@@ -604,7 +610,7 @@ def _add_links(report_dict):
     return report_dict
 
 
-#TODO: should we move these helper functions to separate file?
+# TODO: should we move these helper functions to separate file?
 def _linkify(s, url, new_tab=True):
     '''
     Return string s as HTML a tag with href pointing to url.
@@ -651,7 +657,8 @@ def get_maec_report(task_id):
         maec_report = requests.get(
             '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
         )
-    except:
+    except Exception as e:
+        # TODO: log exception
         return jsonify({'Error': 'No MAEC report found for that task!'})
     # raw JSON
     response = make_response(jsonify(maec_report.json()))
@@ -745,7 +752,8 @@ def get_notes(task_id):
     try:
         for hit in response:
             hit['_source']['text'] = Markup.escape(hit['_source']['text'])
-    except:
+    except Exception as e:
+        # TODO: log exception
         pass
     return jsonify(response)
 
@@ -812,7 +820,8 @@ def files_get_sha256_helper(sha256, raw=None):
     if raw == 't' or raw == 'y' or raw == '1':
         response = make_response(fh_content)
         response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
-        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)  # better way to include fname?
+        # better way to include fname?
+        response.headers['Content-Disposition'] = 'inline; filename={}.bin'.format(sha256)
     else:
         # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
         rawname = sha256 + '.bin'
@@ -855,11 +864,11 @@ def run_ssdeep_compare():
         if DISTRIBUTED:
             # Publish task to Celery
             ssdeep_compare_celery.delay()
-            return make_response(jsonify({ 'Message': 'Success' }))
+            return make_response(jsonify({'Message': 'Success'}))
         else:
             ssdeep_analytic = SSDeepAnalytic()
             ssdeep_analytic.ssdeep_compare()
-            return make_response(jsonify({ 'Message': 'Success' }))
+            return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
@@ -874,7 +883,7 @@ def run_ssdeep_group():
     try:
         ssdeep_analytic = SSDeepAnalytic()
         groups = ssdeep_analytic.ssdeep_group()
-        return make_response(jsonify({ 'groups': groups }))
+        return make_response(jsonify({'groups': groups}))
     except Exception as e:
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),

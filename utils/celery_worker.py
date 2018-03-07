@@ -4,12 +4,16 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import os
-import sys
 import codecs
 import configparser
+import os
+import sys
 from datetime import datetime
 from socket import gethostname
+
+from celery import Celery
+from celery.schedules import crontab
+
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,14 +26,13 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 # Add the analytics dir to the sys.path. Allows import of ssdeep_analytics
 if os.path.join(MS_WD, 'analytics') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
-import multiscanner
+
 import common
+import multiscanner
 import sql_driver as database
 from celery_batches import Batches
 from ssdeep_analytics import SSDeepAnalytic
 
-from celery import Celery
-from celery.schedules import crontab
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
@@ -70,6 +73,7 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
+
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Executes every morning at 2:00 a.m.
@@ -77,6 +81,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
     )
+
 
 def celery_task(files, config=multiscanner.CONFIG):
     '''
@@ -97,7 +102,6 @@ def celery_task(files, config=multiscanner.CONFIG):
     for file_ in files:
         original_filename = files[file_]['original_filename']
         task_id = files[file_]['task_id']
-        file_hash = files[file_]['file_hash']
         metadata = files[file_]['metadata']
         # Get the Scan Config that the task was run with and
         # add it to the task metadata
@@ -168,6 +172,7 @@ def multiscanner_celery(requests, *args, **kwargs):
         }
 
     celery_task(files)
+
 
 @app.task()
 def ssdeep_compare_celery():

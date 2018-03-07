@@ -19,7 +19,7 @@ DEFAULTCONF = {
     'hash_list': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'hash_list'),
     'offsets': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):
@@ -52,10 +52,10 @@ def scan(filelist, conf=DEFAULTCONF):
     md5_data = dict(REQUIRES[1][0])
 
     results = []
-    i=0
+    i = 0
     for filename, sha1 in sha1_data:
         offset_val = int(sha1[0:5], 16)
-        offset_handle.seek(offset_val*12)
+        offset_handle.seek(offset_val * 12)
         pointer, count = struct.unpack('QI', offset_handle.read(12))
         hash_list.seek(pointer)
         for _ in range(0, count):

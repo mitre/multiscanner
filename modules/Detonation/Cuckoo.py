@@ -22,19 +22,25 @@ DEFAULTCONF = {
     "maec": False,
 }
 
+
 def fetch_report_json(report_url):
     report = requests.get(report_url)
     if report.status_code == 200:
         return report.json()
     return {}
 
+
 def normalize_url(url):
+    """Removes trailing '/' from url.
+    """
     if url.endswith('/'):
-        return url
-    return url + '/'
+        return url[:-1]
+    return url
+
 
 def check(conf=DEFAULTCONF):
     return conf["ENABLED"]
+
 
 def scan(filelist, conf=DEFAULTCONF):
     resultlist = []
@@ -47,8 +53,14 @@ def scan(filelist, conf=DEFAULTCONF):
     report_url = api_url + 'tasks/report/'
     view_url = api_url + 'tasks/view/'
     delete_url = api_url + 'tasks/delete/'
-    maec_report_url = '<a href="' + api_url + '/v1/tasks/report/{task_id}/maec" target="_blank"' + '>View the Cuckoo MAEC report</a>'
-    web_report_url = '<a href="' + web_url + 'analysis/{task_id}/summary/" target="_blank"' + '>View the report in Cuckoo</a>'
+    maec_report_url = (
+        '<a href="{api_url}/v1/tasks/report/{{task_id}}/maec" target="_blank">'
+        'View the Cuckoo MAEC report</a>'
+    ).format(api_url=api_url)
+    web_report_url = (
+        '<a href="{web_url}/analysis/{{task_id}}/summary/" target="_blank">'
+        'View the report in Cuckoo</a>'
+    ).format(web_url=web_url)
 
     for fname in filelist:
         with open(fname, "rb") as sample:
@@ -60,20 +72,20 @@ def scan(filelist, conf=DEFAULTCONF):
         if task_id is not None:
             tasks.append((fname, str(task_id)))
         else:
-            #TODO Do something here?
+            # TODO Do something here?
             pass
 
     # Wait for tasks to finish
     task_status = {}
     while tasks:
         for fname, task_id in tasks[:]:
-            status = requests.get(view_url+task_id).json()['task']['status']
+            status = requests.get(view_url + task_id).json()['task']['status']
 
             # TODO - if we don't find a report, should we add (fname, {}) or
             # just skip fname?
             # If we have a report
             if status == 'reported':
-                report = fetch_report_json(report_url+task_id)
+                report = fetch_report_json(report_url + task_id)
                 if conf['maec']:
                     report['info']['maec report'] = maec_report_url.format(task_id=task_id)
                     # maec_report = fetch_report_json(
@@ -86,7 +98,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 resultlist.append((fname, report))
                 tasks.remove((fname, task_id))
                 if conf['delete tasks']:
-                    requests.get(delete_url+task_id)
+                    requests.get(delete_url + task_id)
 
             # Check for dead tasks
             elif status == 'running':
@@ -94,12 +106,12 @@ def scan(filelist, conf=DEFAULTCONF):
                     task_status[task_id] = time.time() + conf['timeout'] + conf['running timeout']
                 else:
                     if time.time() > task_status[task_id]:
-                        #TODO Log timeout
+                        # TODO Log timeout
                         tasks.remove((fname, task_id))
 
             # If there is an unknown status
             elif status not in ['pending', 'processing', 'finished', 'completed', 'running']:
-                #TODO Log errors better
+                # TODO Log errors better
                 tasks.remove((fname, task_id))
         time.sleep(15)
 

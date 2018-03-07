@@ -6,12 +6,12 @@ Set of analytics based on ssdeep hash.
 - compare
     Simple implementation of ssdeep comparisions using a few optimizations
     described at the links below
-    
+
     https://www.virusbulletin.com/virusbulletin/2015/11/optimizing-ssdeep-use-scale
     http://www.intezer.com/intezer-community-tip-ssdeep-comparisons-with-elasticsearch/
-    
+
     Designed to be run on a regular basis (e.g., nightly).
-    
+
     For each sample that has not run ssdeep analytic, search for samples where
     ssdeep.compare > 0 based on chunksize, chunk 7grams, and double-chunk
     7grams. Update sample with any matches and mark ssdeep analytic as having
@@ -21,14 +21,14 @@ Set of analytics based on ssdeep hash.
     Returns SHA256 hashes of samples grouped based on ssdeep hash.
 '''
 
-import sys
-import os
 import argparse
-import requests
-import json
-import ssdeep
 import configparser
+import json
+import os
+import sys
 from pprint import pprint
+
+import ssdeep
 
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
@@ -36,9 +36,9 @@ if os.path.join(MS_WD, 'storage') not in sys.path:
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
-import multiscanner
 import common
 import elasticsearch_storage
+import multiscanner
 
 
 class SSDeepAnalytic:
@@ -63,7 +63,7 @@ class SSDeepAnalytic:
         # probably not ideal...
         self.es = es_handler.es
         self.index = conf['ElasticSearchStorage']['index']
-        self.doc_type= 'sample'
+        self.doc_type = 'sample'
 
         self.debug = debug
 
@@ -75,7 +75,7 @@ class SSDeepAnalytic:
             'query': {
                 'bool': {
                     'must': [
-                        { 'match': { 'ssdeep.analyzed': 'false' }}
+                        {'match': {'ssdeep.analyzed': 'false'}}
                     ]
                 }
             }
@@ -151,15 +151,15 @@ class SSDeepAnalytic:
             # this bool condition isn't working how I expect
             #   if we have already updated the match dictionary to
             #   include a hit, don't rerun it for the inverse
-                            # {
-                            #     'bool': {
-                            #         'must_not': {
-                            #             'exists': {
-                            #                 'field': 'ssdeep.matches.' + new_sha256
-                            #             }
-                            #         }
-                            #     }
-                            # }
+            #                 {
+            #                      'bool': {
+            #                          'must_not': {
+            #                              'exists': {
+            #                                  'field': 'ssdeep.matches.' + new_sha256
+            #                              }
+            #                          }
+            #                      }
+            #                 }
 
             opti_page = self.es.search(
                 self.index,
@@ -182,14 +182,14 @@ class SSDeepAnalytic:
                             opti_hit_src.get('SHA256'),
                             result)
 
-                    msg = { 'doc': { 'ssdeep': { 'matches': { opti_sha256: result } } } }
+                    msg = {'doc': {'ssdeep': {'matches': {opti_sha256: result}}}}
                     self.es.update(
                         index=self.index,
                         doc_type=self.doc_type,
                         id=new_ssdeep_hit.get('_id'),
                         body=json.dumps(msg))
 
-                    msg = { 'doc': { 'ssdeep': { 'matches': { new_sha256: result } } } }
+                    msg = {'doc': {'ssdeep': {'matches': {new_sha256: result}}}}
                     self.es.update(
                         index=self.index,
                         doc_type=self.doc_type,
@@ -200,7 +200,7 @@ class SSDeepAnalytic:
                     opti_page = self.es.scroll(scroll_id=opti_sid, scroll='2m')
 
             # analytic has run against sample, set ssdeep.analyzed = true
-            msg = { 'doc': { 'ssdeep': { 'analyzed': 'true'} } }
+            msg = {'doc': {'ssdeep': {'analyzed': 'true'}}}
             self.es.update(
                 index=self.index,
                 doc_type=self.doc_type,
@@ -228,7 +228,7 @@ class SSDeepAnalytic:
         records = {}
         while len(page['hits']['hits']) > 0:
             for hit in page['hits']['hits']:
-                hit_src = hit.get('_source') 
+                hit_src = hit.get('_source')
                 records[hit_src.get('SHA256')] = hit_src.get('ssdeep', {}) \
                                                         .get('matches', {})
             sid = page['_scroll_id']

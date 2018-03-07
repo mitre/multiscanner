@@ -16,31 +16,34 @@ __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
 NAME = "TrID"
-#These are overwritten by the config file
-#Hostname, port, username
+# These are overwritten by the config file
+# Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
-#SSH Key
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
-DEFAULTCONF = {"path":'/opt/trid/trid',
-    'ENABLED': True, 
-    "key":KEY, 
-    "cmdline":['-r:3'], 
-    'host':HOST, 
-    "replacement path":PATHREPLACE
-    }
+DEFAULTCONF = {
+    "path": '/opt/trid/trid',
+    'ENABLED': True,
+    "key": KEY,
+    "cmdline": ['-r:3'],
+    'host': HOST,
+    "replacement path": PATHREPLACE
+}
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
         return False
-    if os.path.isfile(conf["path"]) :
+    if os.path.isfile(conf["path"]):
         del conf['replacement path']
         return True
     elif SSH:
         return True
     else:
         return False
+
 
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
@@ -50,7 +53,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     cmdline = [conf["path"]]
     cmdline.extend(conf["cmdline"])
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmdline.append('"' + item + '"')
 
@@ -58,19 +61,18 @@ def scan(filelist, conf=DEFAULTCONF):
     if local:
         try:
             output = subprocess.check_output(cmdline)
-            returnval = 0
-        except subprocess.CalledProcessError as e: 
+        except subprocess.CalledProcessError as e:
             output = e.output
-            #returnval = e.returncode
 
     else:
         host, port, user = conf["host"]
         try:
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
-        except:
+        except Exception as e:
+            # TODO: log exeption
             return None
-    
-    #Parse output
+
+    # Parse output
     output = output.decode("utf-8")
     output = output.replace('\r', '')
     output = output.split('\n')
@@ -82,14 +84,14 @@ def scan(filelist, conf=DEFAULTCONF):
             fname = line[6:]
             fresults[fname] = []
             continue
-            
+
         elif line.startswith('Collecting data from file: '):
             fname = line[27:]
             fresults[fname] = []
             continue
-            
+
         if fname:
-            virusresults = re.findall("\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line) 
+            virusresults = re.findall("\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line)
             if virusresults:
                 confidence, exnt, ftype = virusresults[0]
                 fresults[fname].append([confidence, ftype, exnt])
@@ -100,4 +102,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

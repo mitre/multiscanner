@@ -12,16 +12,18 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "SHA256"
 
+
 def check():
     return True
 
+
 def scan(filelist):
     results = []
-    
+
     for fname in filelist:
         goodtogo = False
         i = 0
-        #Ran into a weird issue with file locking, this fixes it
+        # Ran into a weird issue with file locking, this fixes it
         while not goodtogo and i < 5:
             try:
                 results.append((fname, hashfile(fname, hashlib.sha256())))
@@ -30,10 +32,9 @@ def scan(filelist):
                 print('SHA256:', e)
                 time.sleep(3)
                 i += 1
-                
+
     metadata = {}
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

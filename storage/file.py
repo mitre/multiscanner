@@ -1,7 +1,8 @@
-import storage
+import codecs
 import gzip
 import json
-import codecs
+
+import storage
 
 
 class File(storage.Storage):
@@ -34,10 +35,14 @@ class File(storage.Storage):
                     if metadata:
                         writedata = {'Files': writedata, 'Metadata': metadata}
                     if self.config['gzip'] is True:
-                        self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf8', 'replace'))
+                        self.file_handle.write(
+                            json.dumps(writedata, sort_keys=True, separators=(',', ':'),
+                            ensure_ascii=False).encode('utf8', 'replace'))
                         self.file_handle.write(b'\n')
                     else:
-                        self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+                        self.file_handle.write(
+                            json.dumps(writedata, sort_keys=True, separators=(',', ':'),
+                            ensure_ascii=False))
                         self.file_handle.write('\n')
                     i = 0
                     writedata = {}
@@ -45,17 +50,25 @@ class File(storage.Storage):
                 if metadata:
                         writedata = {'Files': writedata, 'Metadata': metadata}
                 if self.config['gzip'] is True:
-                    self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf8', 'replace'))
+                    self.file_handle.write(
+                        json.dumps(writedata, sort_keys=True, separators=(',', ':'),
+                        ensure_ascii=False).encode('utf8', 'replace'))
                     self.file_handle.write(b'\n')
                 else:
-                    self.file_handle.write(json.dumps(writedata, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+                    self.file_handle.write(
+                        json.dumps(writedata, sort_keys=True, separators=(',', ':'),
+                        ensure_ascii=False))
                     self.file_handle.write('\n')
         else:
             if self.config['gzip'] is True:
-                self.file_handle.write(json.dumps(results, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf8', 'replace'))
+                self.file_handle.write(
+                    json.dumps(results, sort_keys=True, separators=(',', ':'),
+                    ensure_ascii=False).encode('utf8', 'replace'))
                 self.file_handle.write(b'\n')
             else:
-                self.file_handle.write(json.dumps(results, sort_keys=True, separators=(',', ':'), ensure_ascii=False))
+                self.file_handle.write(
+                    json.dumps(results, sort_keys=True, separators=(',', ':'),
+                    ensure_ascii=False))
                 self.file_handle.write('\n')
 
     def teardown(self):
