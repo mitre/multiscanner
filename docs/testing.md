@@ -19,4 +19,28 @@ Additional information about geckodriver setup can be found
 If pytest is unable to find Firefox or geckodriver, the front-end tests will be skipped. This is indicated by a
 's' in the pytest output.
 
-Tests have been run successfullly on macOS and Ubuntu 14.04, 16.04. There are known issues with CentOS 7.
+Tests have been run successfullly with Firefox 58 and geckodriver 0.19.1 on macOS and Ubuntu 14.04, 16.04.
+
+### CentOS ###
+The Firefox version available in the base repo is too far out-of-date to be compatible with the tests. Manually update
+Firefox to the latest version.
+
+1. Remove old version of Firefox.
+
+  ```
+  $ yum remove firefox
+  ```
+
+2. Download latest version of Firefox.
+
+  ```
+  $ cd /usr/local
+  $ curl -L http://ftp.mozilla.org/pub/firefox/releases/58.0/linux-x86_64/en-US/firefox-58.0.tar.bz2 | tar -xjf
+  ```
+
+3. Add symlink to bin dir.
+
+  ```
+  $ ln -s /usr/local/firefox/firefox /usr/bin/firefox
+  ```
+
