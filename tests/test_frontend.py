@@ -66,7 +66,6 @@ class TestBase(LiveServerTestCase):
 
     def setUp(self):
         """Set up test driver"""
-        #self.driver = webdriver.Chrome()
         opts = Options()
         opts.add_argument('-headless')
         self.driver = webdriver.Firefox(firefox_options=opts)
@@ -81,7 +80,6 @@ class TestBase(LiveServerTestCase):
 
 
 class TestSubmission(TestBase):
-
 
     def _add_files(self, files):
         for fname in files:
@@ -180,6 +178,6 @@ class TestSubmission(TestBase):
         time.sleep(1)
         assert url_for('tasks') in self.driver.current_url
 
-    #def test_search_functionality(self):
-    #    """Test something about the search functionality.
-    #    """
+    # def test_search_functionality(self):
+    #     """Test something about the search functionality.
+    #     """
