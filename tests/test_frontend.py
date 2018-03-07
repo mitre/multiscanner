@@ -98,12 +98,17 @@ class TestSubmission(TestBase):
 
     def _successful_submission(self):
         val = self.driver.find_element(By.CLASS_NAME, 'progress-bar')
+        print('Progress bar: ' + str(val.text))
         return 'Submitted' in val.text
 
     def test_single_file_submission(self):
         """Test that a user is able to submit a single file.
         """
         self._add_files(['1.txt'])
+
+        # Click seems to happen too quickly with a single file
+        # Is there a way to wait for?
+        time.sleep(1)
 
         # submit file
         self.driver.find_element_by_id('btn-scan').click()
@@ -114,6 +119,10 @@ class TestSubmission(TestBase):
         """Test that a user is able to submit multiple files.
         """
         self._add_files(['1.txt', '2.txt', '3.txt'])
+
+        # Not clear all files are getting uploaded
+        # Add similar wait from single file submission
+        time.sleep(1)
 
         # submit files
         self.driver.find_element_by_id('btn-scan').click()
