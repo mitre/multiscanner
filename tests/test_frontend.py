@@ -4,6 +4,8 @@ import requests
 import sys
 import time
 
+import pytest
+
 from flask import Flask, url_for
 from flask_testing import LiveServerTestCase
 from mocks import get_free_server_port, start_mock_server
@@ -31,6 +33,13 @@ proxies = {
   "http": None,
   "https": None,
 }
+
+try:
+    opts = Options()
+    opts.add_argument('-headless')
+    driver = webdriver.Firefox(firefox_options=opts)
+except Exception as e:
+    pytestmark = pytest.mark.skip
 
 test_submitter_name = 'John Doe'
 test_submitter_email = 'jdoe@local.domain'
