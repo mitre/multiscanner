@@ -167,8 +167,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     results[original_filename]['Scan Time'] = scan_time
     results[original_filename]['Metadata'] = metadata
 
-    raise Exception('FOO!')
-
     # Update the task DB to reflect that the task is done
     db.update_task(
         task_id=task_id,
