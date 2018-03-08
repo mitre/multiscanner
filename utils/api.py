@@ -905,17 +905,17 @@ def get_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
     '''
-    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
-
     report_dict, success = get_report_dict(task_id)
+
+    if not success:
+        return jsonify(report_dict)
+
+    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
 
     if formatting == 't' or formatting == 'y' or formatting == '1':
         formatting = True
     else:
         formatting = False
-
-    if not success:
-        return jsonify(report_dict)
 
     # If the report has no key/value pairs that we can use to create
     # STIX representations of this data. The default behavior is to return
