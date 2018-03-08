@@ -4,16 +4,12 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import codecs
-import configparser
 import os
 import sys
+import codecs
+import configparser
 from datetime import datetime
 from socket import gethostname
-
-from celery import Celery
-from celery.schedules import crontab
-
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Append .. to sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,13 +22,13 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 # Add the analytics dir to the sys.path. Allows import of ssdeep_analytics
 if os.path.join(MS_WD, 'analytics') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
-
-import common
 import multiscanner
+import common
 import sql_driver as database
-from celery_batches import Batches
 from ssdeep_analytics import SSDeepAnalytic
 
+from celery import Celery, Task
+from celery.schedules import crontab
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
@@ -73,7 +69,6 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
-
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Executes every morning at 2:00 a.m.
@@ -82,12 +77,62 @@ def setup_periodic_tasks(sender, **kwargs):
         ssdeep_compare_celery.s(),
     )
 
+class MultiScannerTask(Task):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        print('Task #{} failed'.format(args[2]))
+        print('Traceback info:\n{}'.format(einfo))
 
-def celery_task(files, config=multiscanner.CONFIG):
+        # Initialize the connection to the task DB
+        db.init_db()
+
+        scan_time = datetime.now().isoformat()
+
+        # Update the task DB with the failure
+        db.update_task(
+            task_id=args[2],
+            task_status='Failed',
+            timestamp=scan_time,
+        )
+
+
+@app.task(base=MultiScannerTask)
+def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG):
     '''
-    Run multiscanner on the given file and store the results in the storage
-    handler(s) specified in the storage configuration file.
+    Queue up multiscanner tasks
+
+    Usage:
+    from celery_worker import multiscanner_celery
+    multiscanner_celery.delay(full_path, original_filename, task_id, metdata,
+                              hashed_filename, metadata, config)
     '''
+
+    def on_failure(self, *args, **kwargs):
+        print('This task failed!')
+
+        # Initialize the connection to the task DB
+        db.init_db()
+
+        scan_time = datetime.now().isoformat()
+
+        # Update the task DB with the failure
+        db.update_task(
+            task_id=task_id,
+            task_status='Failed',
+            timestamp=scan_time,
+        )
+
+    # Initialize the connection to the task DB
+    db.init_db()
+
+    files = {}
+    print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+    files[file_] = {
+        'original_filename': original_filename,
+        'task_id': task_id,
+        'file_hash': file_hash,
+        'metadata': metadata,
+    }
+
     # Get the storage config
     storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
@@ -97,82 +142,46 @@ def celery_task(files, config=multiscanner.CONFIG):
 
     scan_time = datetime.now().isoformat()
 
-    # Loop through files in a way compatible with Py 2 and 3, and won't be
-    # affected by changing keys to original filenames
-    for file_ in files:
-        original_filename = files[file_]['original_filename']
-        task_id = files[file_]['task_id']
-        metadata = files[file_]['metadata']
-        # Get the Scan Config that the task was run with and
-        # add it to the task metadata
-        scan_config_object = configparser.SafeConfigParser()
-        scan_config_object.optionxform = str
-        scan_config_object.read(config)
-        full_conf = common.parse_config(scan_config_object)
-        sub_conf = {}
-        for key in full_conf:
-            if key == 'main':
-                continue
-            sub_conf[key] = {}
-            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
-        results[file_]['Scan Metadata'] = {}
-        results[file_]['Scan Metadata']['Worker Node'] = gethostname()
-        results[file_]['Scan Metadata']['Scan Config'] = sub_conf
+    # Get the Scan Config that the task was run with and
+    # add it to the task metadata
+    scan_config_object = configparser.SafeConfigParser()
+    scan_config_object.optionxform = str
+    scan_config_object.read(config)
+    full_conf = common.parse_config(scan_config_object)
+    sub_conf = {}
+    for key in full_conf:
+        if key == 'main':
+            continue
+        sub_conf[key] = {}
+        sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+    results[file_]['Scan Metadata'] = {}
+    results[file_]['Scan Metadata']['Worker Node'] = gethostname()
+    results[file_]['Scan Metadata']['Scan Config'] = sub_conf
 
-        # Use the original filename as the value for the filename
-        # in the report (instead of the tmp path assigned to the file
-        # by the REST API)
-        results[original_filename] = results[file_]
-        del results[file_]
+    # Use the original filename as the value for the filename
+    # in the report (instead of the tmp path assigned to the file
+    # by the REST API)
+    results[original_filename] = results[file_]
+    del results[file_]
 
-        results[original_filename]['Scan Time'] = scan_time
-        results[original_filename]['Metadata'] = metadata
+    results[original_filename]['Scan Time'] = scan_time
+    results[original_filename]['Metadata'] = metadata
 
-        # Update the task DB to reflect that the task is done
-        db.update_task(
-            task_id=task_id,
-            task_status='Complete',
-            timestamp=scan_time,
-        )
+    raise Exception('FOO!')
+
+    # Update the task DB to reflect that the task is done
+    db.update_task(
+        task_id=task_id,
+        task_status='Complete',
+        timestamp=scan_time,
+    )
 
     # Save the reports to storage
     storage_handler.store(results, wait=False)
     storage_handler.close()
+    print('Completed Task #{}'.format(task_id))
 
     return results
-
-
-@app.task(base=Batches, flush_every=api_config['batch_size'], flush_interval=api_config['batch_interval'])
-def multiscanner_celery(requests, *args, **kwargs):
-    '''
-    Queue up multiscanner tasks and then run a batch of them at a time for
-    better performance.
-
-    Usage:
-    from celery_worker import multiscanner_celery
-    multiscanner_celery.delay(full_path, original_filename, task_id, metdata,
-                              hashed_filename, config)
-    '''
-    # Initialize the connection to the task DB
-    db.init_db()
-
-    files = {}
-    for request in requests:
-        file_ = request.args[0]
-        original_filename = request.args[1]
-        task_id = request.args[2]
-        file_hash = request.args[3]
-        metadata = request.args[4]
-        # print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
-        files[file_] = {
-            'original_filename': original_filename,
-            'task_id': task_id,
-            'file_hash': file_hash,
-            'metadata': metadata,
-        }
-
-    celery_task(files)
-
 
 @app.task()
 def ssdeep_compare_celery():
