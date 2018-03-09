@@ -15,7 +15,10 @@ def create_stix2_bundle(objects):
         A ``stix2.Bundle`` instance.
 
     '''
-    return stix2.Bundle(objects=objects)
+    if objects:
+        return stix2.Bundle(objects=objects)
+    else:
+        return stix2.Bundle()
 
 
 def join_stix2_comparison_expression(comp_exps, obs_operator):
@@ -144,14 +147,13 @@ def extract_file_cuckoo(dropped_file):
         return None
 
 
-def extract_http_requests_cuckoo(marks_list, severity):
+def extract_http_requests_cuckoo(signature):
     '''
     Process Cuckoo http signatures obtained from analysis.
 
     Args:
-        marks_list: A list of http marks from the "signatures" list in the
-            "Cuckoo Sandbox" report.
-        severity: The severity score from the "signatures". (range 1 to 3)
+        signature: A dict from the "signatures" list from the "Cuckoo Sandbox"
+            portion of the report.
 
     Returns:
         list: Containing ``stix2.Indicator`` with a pattern that matches the
@@ -161,15 +163,19 @@ def extract_http_requests_cuckoo(marks_list, severity):
     indicators = []
     labels = []
 
-    if severity <= 2:
+    if signature.get('severity', 1) <= 2:
         labels.extend(['benign', 'anomalous-activity'])
     else:
         labels.append('anomalous-activity')
 
-    for ioc_mark in marks_list:
+    for ioc_mark in signature.get('marks', []):
         ioc = ioc_mark.get('ioc', '')
         if ioc:
-            url_value = ioc.split()[1]
+            url_value = ioc.split()
+            if len(url_value) > 1:
+                url_value = url_value[1]
+            else:
+                url_value = url_value[0]
             ioc_pattern = create_sti2_observation_expression(
                 create_stix2_comparison_expression('url:value', '=', url_value)
             )
@@ -204,19 +210,18 @@ def parse_json_report_to_stix2_bundle(report):
 
     cuckoo = r.get('Cuckoo Sandbox', {})
 
-    for c in cuckoo:  # Use this block to extract further content from cuckoo
-        for signature in c.get('signatures', []):
-            if ('description' in signature
-                    and 'HTTP request' in signature.get('description', '')):
-                all_objects.extend(extract_http_requests_cuckoo(
-                    signature.get('marks', []),
-                    signature.get('severity', 1)
-                ))
-        for dropped in c.get('dropped', []):
-            if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1')):
-                ind = extract_file_cuckoo(dropped)
-                if ind:
-                    all_objects.append(ind)
+    for signature in cuckoo.get('signatures', []):
+        if ('description' in signature
+                and 'HTTP request' in signature.get('description', '')):
+            all_objects.extend(extract_http_requests_cuckoo(signature))
+        elif ('description' in signature
+                and 'Potentially malicious URLs' in signature.get('description', '')):
+            all_objects.extend(extract_http_requests_cuckoo(signature))
+    for dropped in cuckoo.get('dropped', []):
+        if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1')):
+            ind = extract_file_cuckoo(dropped)
+            if ind:
+                all_objects.append(ind)
 
     # Extract information from file submission and create Indicator
     submission_pattern = []
