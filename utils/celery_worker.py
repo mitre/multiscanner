@@ -155,7 +155,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     total_modules = 0
     for key in sub_conf:
         total_modules += 1
-        if sub_conf[key]['ENABLED'] == True:
+        if sub_conf[key]['ENABLED'] is True:
             total_enabled += 1
 
     results[file_]['Scan Metadata'] = {}
