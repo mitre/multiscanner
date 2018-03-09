@@ -10,7 +10,7 @@ TYPE = "MachineLearning"
 NAME = "MaliciousMacroBot"
 REQUIRES = ['libmagic']
 DEFAULTCONF = {
-    'ENABLED': True
+    'ENABLED': False
     }
 
 try:
