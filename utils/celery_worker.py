@@ -29,6 +29,9 @@ from ssdeep_analytics import SSDeepAnalytic
 
 from celery import Celery, Task
 from celery.schedules import crontab
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
 
 DEFAULTCONF = {
     'protocol': 'pyamqp',
@@ -89,8 +92,8 @@ class MultiScannerTask(Task):
         When a task fails, update the task DB with a "Failed"
         status. Dump a traceback to local logs
         '''
-        print('Task #{} failed'.format(args[2]))
-        print('Traceback info:\n{}'.format(einfo))
+        logger.error('Task #{} failed'.format(args[2]))
+        logger.error('Traceback info:\n{}'.format(einfo))
 
         # Initialize the connection to the task DB
         db.init_db()
@@ -119,7 +122,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     db.init_db()
 
     files = {}
-    print('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+    logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
     files[file_] = {
         'original_filename': original_filename,
         'task_id': task_id,
@@ -184,10 +187,9 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     # Save the reports to storage
     storage_handler.store(results, wait=False)
     storage_handler.close()
-    print('Completed Task #{}'.format(task_id))
+    logger.info('Completed Task #{}'.format(task_id))
 
     return results
-
 
 @app.task()
 def ssdeep_compare_celery():
@@ -203,4 +205,5 @@ def ssdeep_compare_celery():
 
 
 if __name__ == '__main__':
+    logger.debug('Initializing celery worker...')
     app.start()
