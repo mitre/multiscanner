@@ -80,7 +80,15 @@ def setup_periodic_tasks(sender, **kwargs):
 
 
 class MultiScannerTask(Task):
+    '''
+    Class of tasks that defines call backs to handle signals
+    from celery
+    '''
     def on_failure(self, exc, task_id, args, kwargs, einfo):
+        '''
+        When a task fails, update the task DB with a "Failed"
+        status. Dump a traceback to local logs
+        '''
         print('Task #{} failed'.format(args[2]))
         print('Traceback info:\n{}'.format(einfo))
 
