@@ -50,9 +50,11 @@
       ],
       rowCallback: function( row, data, index ) {
         if (data[2] == "Complete") {
-          tr_class = ""
+          tr_class = "";
+        } else if (data[2] == "Failed") {
+            tr_class = " danger";
         } else {
-          tr_class = " warning"
+          tr_class = " warning";
         }
         $(row).addClass("task-row" + tr_class);
         $(row).attr('data-href', '/report/' + data[0]);
