@@ -188,6 +188,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
 
     return results
 
+
 @app.task()
 def ssdeep_compare_celery():
     '''
