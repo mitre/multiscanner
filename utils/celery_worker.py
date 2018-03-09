@@ -69,6 +69,7 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
 app.conf.timezone = worker_config.get('tz')
 db = database.Database(config=db_config)
 
+
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Executes every morning at 2:00 a.m.
@@ -76,6 +77,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
     )
+
 
 class MultiScannerTask(Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -105,22 +107,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     multiscanner_celery.delay(full_path, original_filename, task_id, metdata,
                               hashed_filename, metadata, config)
     '''
-
-    def on_failure(self, *args, **kwargs):
-        print('This task failed!')
-
-        # Initialize the connection to the task DB
-        db.init_db()
-
-        scan_time = datetime.now().isoformat()
-
-        # Update the task DB with the failure
-        db.update_task(
-            task_id=task_id,
-            task_status='Failed',
-            timestamp=scan_time,
-        )
-
     # Initialize the connection to the task DB
     db.init_db()
 
