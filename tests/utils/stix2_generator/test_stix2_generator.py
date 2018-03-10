@@ -4,17 +4,19 @@ import sys
 
 import stix2
 
+'''Test module for STIX2 content generation methods'''
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).rstrip('\\tests\\utils')
+MODULE_TEST_DIR = os.path.dirname(CWD)
+TEST_DIR = os.path.dirname(MODULE_TEST_DIR)
+MS_WD = os.path.dirname(TEST_DIR)
 
-sys.path.insert(0, os.path.dirname(CWD))
 
 # Allow import of stix2_generator
-if os.path.join(MS_WD, 'utils\\stix2_generator') not in sys.path:
+if os.path.join(MS_WD, 'utils') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'utils'))
-    sys.path.insert(0, os.path.join(MS_WD, 'utils\\stix2_generator'))
-
+# Use multiscanner in ../
+sys.path.insert(0, os.path.dirname(CWD))
 
 import stix2_generator
 
@@ -105,7 +107,7 @@ def test_extract_file_cuckoo():
     ]
     extracted_indicator_expressions = []
 
-    with open('sample_report.json') as sample_report:
+    with open(os.path.join(CWD, 'sample_report.json')) as sample_report:
         sample_json = json.load(sample_report)
         r = sample_json.get('Report', {})
         cuckoo = r.get('Cuckoo Sandbox', {})
@@ -137,7 +139,7 @@ def test_extract_http_requests_cuckoo():
     ]
     extracted_indicator_expressions = []
 
-    with open('sample_report.json') as sample_report:
+    with open(os.path.join(CWD, 'sample_report.json')) as sample_report:
         sample_json = json.load(sample_report)
         r = sample_json.get('Report', {})
         cuckoo = r.get('Cuckoo Sandbox', {})
@@ -177,7 +179,7 @@ def test_parse_json_report_to_stix2_bundle():
     ]
     extracted_indicator_expressions = []
 
-    with open('sample_report.json') as sample_report:
+    with open(os.path.join(CWD, 'sample_report.json')) as sample_report:
         sample_json = json.load(sample_report)
         bundle = stix2_generator.parse_json_report_to_stix2_bundle(sample_json)
 
