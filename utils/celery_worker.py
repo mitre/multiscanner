@@ -137,7 +137,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
-    resultlist = multiscanner.multiscan(list(files),
+    resultlist = multiscanner.multiscan(
+        list(files),
         configfile=config,
         module_list=module_list
     )
