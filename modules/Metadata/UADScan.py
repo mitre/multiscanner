@@ -1,3 +1,13 @@
+'''
+Metadata module for the CyberSoft Universal Atomic Disintegrator (UAD) tool;
+a part of the VFind Security Toolkit (VSTK). This module performs filetype
+identification and expansion.
+
+More information about these tools can be found at:
+    https://www.cybersoft.com/products/vstk/
+    https://www.cybersoft.com/support/training/
+'''
+
 import os
 import re
 import sys
@@ -45,10 +55,7 @@ def scan(filelist, conf=DEFAULTCONF):
 			if int(item[0]) == 0:
 				continue
 
-			try:
-				multiscanner.scan_file(item[1], input_file)
-			except:
-				pass
+			multiscanner.scan_file(item[1], input_file)
 
 		results += re.findall("^0: Name: (.+)\n^\d+: Type: (.+)$", output, re.MULTILINE)
 

@@ -1,3 +1,22 @@
+'''
+Antivirus module for the CyberSoft VFind anti-malware scanner;
+a part of the VFind Security Toolkit (VSTK).
+
+More information about these tools can be found at:
+    https://www.cybersoft.com/products/vstk/
+    https://www.cybersoft.com/support/training/
+
+Configuration options:
+    `vstk_home' - path to your VSTK installation directory
+    `uad_cmdline' - additional command line options for UAD (filetype identification + metadata)
+    `vfind_cmdline' - additional command line options for VFind
+
+Additional notes:
+    The UAD tool is run a second time here instead of using data directly from the UADScan metadata 
+    module. This is done for simplicity and should not adversely effect performance. Note that UAD
+    does not perform file expansion again when used in this module.
+'''
+
 import os
 import re
 import sys
