@@ -29,7 +29,7 @@ TYPE = "Antivirus"
 NAME = "VFind"
 
 DEFAULTCONF = {
-	"ENABLED": True,
+	"ENABLED": False,
 	"vstk_home": "/opt/vstk",
 	"uad_cmdline": [],
 	"vfind_cmdline": []

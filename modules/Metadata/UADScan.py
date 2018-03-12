@@ -20,7 +20,7 @@ TYPE = "Metadata"
 NAME = "UAD"
 
 DEFAULTCONF = {
-	"ENABLED": True,
+	"ENABLED": False,
 	"vstk_home": "/opt/vstk",
 	"cmdline": []
 }
