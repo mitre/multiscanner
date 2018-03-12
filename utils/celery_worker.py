@@ -146,17 +146,15 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     scan_config_object.read(config)
     full_conf = common.parse_config(scan_config_object)
     sub_conf = {}
+    # Count number of modules enabled out of total possible
+    # and add it to the Scan Metadata
+    total_enabled = 0
+    total_modules = 0
     for key in full_conf:
         if key == 'main':
             continue
         sub_conf[key] = {}
         sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
-
-    # Count number of modules enabled out of total possible
-    # and add it to the Scan Metadata
-    total_enabled = 0
-    total_modules = 0
-    for key in sub_conf:
         total_modules += 1
         if sub_conf[key]['ENABLED'] is True:
             total_enabled += 1
