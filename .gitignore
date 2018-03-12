@@ -1,6 +1,8 @@
 #Local config
 config.ini
 storage.ini
+api_config.ini
+web_config.ini
 
 #Default report location
 report.json
@@ -41,6 +43,7 @@ var/
 pip-log.txt
 pip-delete-this-directory.txt
 # Unit test / coverage reports
+.pytest_cache
 htmlcov/
 .tox/
 .coverage
