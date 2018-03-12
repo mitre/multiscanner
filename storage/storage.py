@@ -2,22 +2,29 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import codecs
 import configparser
+import inspect
 import os
 import sys
 import threading
-import inspect
+from builtins import *  # noqa: F401,F403
+
+from future import standard_library
+
+standard_library.install_aliases()
+
 STORAGE_DIR = os.path.dirname(__file__)
 MS_WD = os.path.dirname(STORAGE_DIR)
+CONFIG = os.path.join(MS_WD, "storage.ini")
+
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
+
 import common
-CONFIG = os.path.join(MS_WD, "storage.ini")
 
 
 class ThreadCounter(object):
@@ -134,8 +141,7 @@ class StorageHandler(object):
         self.loaded_storage = loaded_storage
 
     def store(self, dictionary, wait=True):
-        """
-        Takes a dictionary and stores it in each of the active storage modules. If wait is False a thread object is returned.
+        """Stores dictionary in active storage module. If wait is False, a thread object is returned.
         """
         if wait:
             self._store_thread(dictionary)
@@ -202,7 +208,7 @@ def _rewrite_config(storage_classes, config_object, filepath):
         config_object.add_section(class_name)
         for key in conf:
             config_object.set(class_name, key, str(conf[key]))
-    
+
     conffile = codecs.open(filepath, 'w', 'utf-8')
     config_object.write(conffile)
     conffile.close()
@@ -225,8 +231,9 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
         if module in config_object:
             continue
         try:
-            conf = storage_classes[module].DEFAULTCONF
-        except:
+            conf = module.DEFAULTCONF
+        except Exception as e:
+            # TODO: log exception
             continue
         ConfNeedsWrite = True
         config_object.add_section(module)

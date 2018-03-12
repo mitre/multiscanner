@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, with_statement, print_function
 import sys
 import os
 import types
-import configparser
 import mock
 import time
 
@@ -19,10 +18,12 @@ def test_loadModule():
     m = multiscanner.load_module('test_1', [os.path.join(CWD, "modules")])
     assert isinstance(m, types.ModuleType)
 
+
 def test_fail_loadModule():
     """Ensure _loadModule works"""
     m = multiscanner.load_module('notathing', [os.path.join(CWD, "modules")])
     assert m is None
+
 
 class _runmod_tests(object):
     @classmethod
@@ -59,7 +60,7 @@ class Test_runModule_test_2(_runmod_tests):
         self.m = multiscanner.load_module('test_2', [multiscanner.MODULEDIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
-        self.threadDict['test_1'].ret = ([('a','a'), ('C:\\c','c')], {})
+        self.threadDict['test_1'].ret = ([('a', 'a'), ('C:\\c', 'c')], {})
         self.global_module_interface = multiscanner._GlobalModuleInterface()
 
     def teardown(self):
@@ -68,22 +69,27 @@ class Test_runModule_test_2(_runmod_tests):
 
     def test_no_requires(self):
         del self.threadDict['test_1']
-        self.result = multiscanner._run_module('test_2', self.m, self.filelist, self.threadDict, self.global_module_interface)
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.filelist, self.threadDict, self.global_module_interface)
         assert self.result is None
 
     def test_results_1(self):
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', 'b'), ('C:\\c', True), ('/d/d', '/d/d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        assert self.result == ([('a', True), ('b', 'b'), ('C:\\c', True), ('/d/d', '/d/d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})   # noqa: E501
 
     def test_replacepath_linux(self):
         self.m.DEFAULTCONF['replacement path'] = '/tmp'
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', '/tmp/b'), ('C:\\c', True), ('/d/d', '/tmp/d')], {'Name': 'test_2', 'Include': True, 'Type': 'Test'})
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        assert self.result == ([('a', True), ('b', '/tmp/b'), ('C:\\c', True), ('/d/d', '/tmp/d')], {'Name': 'test_2', 'Include': True, 'Type': 'Test'})    # noqa: E501
 
     def test_replacepath_windows(self):
         self.m.DEFAULTCONF['replacement path'] = 'X:\\'
-        self.result = multiscanner._run_module('test_2', self.m, self.files, self.threadDict, self.global_module_interface)
-        assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})
+        self.result = multiscanner._run_module(
+            'test_2', self.m, self.files, self.threadDict, self.global_module_interface)
+        assert self.result == ([('a', True), ('b', 'X:\\b'), ('C:\\c', True), ('/d/d', 'X:\\d')], {'Type': 'Test', 'Name': 'test_2', 'Include': True})  # noqa: E501
+
 
 class test_start_module_threads(_runmod_tests):
     def setup(self):
@@ -95,7 +101,8 @@ class test_start_module_threads(_runmod_tests):
         self.global_module_interface._cleanup()
 
     def test_all_started(self):
-        ThreadList = multiscanner._start_module_threads(self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
+        ThreadList = multiscanner._start_module_threads(
+            self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started

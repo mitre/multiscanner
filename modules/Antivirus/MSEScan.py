@@ -4,7 +4,6 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import os
 import subprocess
-import re
 import sys
 from common import list2cmdline
 from common import sshconnect
@@ -16,19 +15,20 @@ __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
 NAME = "Microsoft Security Essentials"
-#These are overwritten by the config file
-#SSH Key
+# These are overwritten by the config file
+# SSH Key
 KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
-#Replacement path for SSH connections
+# Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
-DEFAULTCONF = {"path":"C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe", 
-    "key":KEY, 
-    "cmdline":["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"], 
-    'host':HOST, 
-    "replacement path":PATHREPLACE,
+DEFAULTCONF = {
+    "path": "C:\\Program Files\\Microsoft Security Client\\MpCmdRun.exe",
+    "key": KEY,
+    "cmdline": ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"],
+    'host': HOST,
+    "replacement path": PATHREPLACE,
     'ENABLED': True
-    }
+}
 
 
 def check(conf=DEFAULTCONF):
@@ -48,33 +48,33 @@ def scan(filelist, conf=DEFAULTCONF):
         host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
-    
-    #Fixes list2cmd so we can actually quote things...
+
+    # Fixes list2cmd so we can actually quote things...
     subprocess.list2cmdline = list2cmdline
-    #Create full command line
+    # Create full command line
     cmdline.insert(0, path)
 
     resultlist = []
     try:
         client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
-    except:
+    except Exception as e:
+        # TODO: log exception
         return None
 
-    #Generate scan option
+    # Generate scan option
     for item in filelist:
         cmd = cmdline[:]
         cmd.append('"' + item + '"')
-    
-        #print(repr(cmd))
-        #print(repr(list2cmdline(cmd)))
+
+        # print(repr(cmd))
+        # print(repr(list2cmdline(cmd)))
         output = ""
         if local:
             try:
                 output = subprocess.check_output(cmd)
-                returnval = 0
-            except subprocess.CalledProcessError as e: 
+            except subprocess.CalledProcessError as e:
                 output = e.output
-                returnval = e.returncode
+                e.returncode
         else:
             try:
                 stdin, stdout, stderr = client.exec_command(list2cmdline(cmd))
@@ -82,33 +82,35 @@ def scan(filelist, conf=DEFAULTCONF):
             except Exception as e:
                 return None
 
-        #Parse output
+        # Parse output
         output = output.decode("utf-8")
-        #print(output)
-        
+        # print(output)
+
         if "<===========================LIST OF DETECTED THREATS==========================>" not in output:
-            #resultlist.append((item, {"malicious": False, "raw_output": output}))
+            # resultlist.append((item, {"malicious": False, "raw_output": output}))
             continue
 
-        #res = {"malicious": True, "raw_output": output, "threats": []}
+        # res = {"malicious": True, "raw_output": output, "threats": []}
 
         while '----------------------------- Threat information ------------------------------' in output:
-            _, _, output = output.partition('----------------------------- Threat information ------------------------------')
+            _, _, output = output.partition(
+                    '----------------------------- Threat information ------------------------------')
             output = output.lstrip()
 
-            block, _, _ = output.partition('-------------------------------------------------------------------------------')
+            block, _, _ = output.partition(
+                '-------------------------------------------------------------------------------')
 
-            #print(block)
+            # print(block)
             lines = block.split('\n')
             threat_name = lines[0].partition(':')[2].strip()
-            #threat = {"threat": threat_name, "resources": []}
-            #for line in lines[2:]:
-            #	if not ':' in line:
-            #		continue
-            #	kind, _, path = line.partition(':')
-            #	threat['resources'].append({kind.strip(): path.strip()})
+            # threat = {"threat": threat_name, "resources": []}
+            # for line in lines[2:]:
+            #     if not ':' in line:
+            #         continue
+            #     kind, _, path = line.partition(':')
+            #     threat['resources'].append({kind.strip(): path.strip()})
 
-            #res['threats'].append(threat)
+            # res['threats'].append(threat)
 
         resultlist.append((item, threat_name))
 

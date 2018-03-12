@@ -2,21 +2,30 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
-from future import standard_library
-standard_library.install_aliases()
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals, with_statement)
+
 import argparse
-import os
-import threading
 import multiprocessing
-import time
+import os
 import queue
-from watchdog.observers import Observer
+import sys
+import threading
+import time
+from builtins import *  # noqa: F401,F403
+
+from future import standard_library
+
 from watchdog.events import FileSystemEventHandler
-#Append .. to sys.path
+from watchdog.observers import Observer
+
+standard_library.install_aliases()
+
+# Append .. to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import multiscanner
+
 
 class DirWatcher(FileSystemEventHandler):
     def __init__(self, work_queue):
@@ -72,7 +81,7 @@ def start_observer(directory, work_queue, recursive=False):
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = multiscanner.common.get_storage_config_path(config)
+    storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)
@@ -113,7 +122,9 @@ def _main():
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
     observer = start_observer(args.Directory, work_queue, args.recursive)
-    ms_process = multiprocessing.Process(target=multiscanner_process, args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
+    ms_process = multiprocessing.Process(
+        target=multiscanner_process,
+        args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
     ms_process.start()
     try:
         while True:
@@ -128,13 +139,17 @@ def _main():
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
-    parser.add_argument("-c", "--config", help="The config file to use", required=False, default=multiscanner.CONFIG)
-    parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files", required=False, default=120, type=int)
-    parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False, default=100, type=int)
+    parser.add_argument("-c", "--config", help="The config file to use", required=False,
+                        default=multiscanner.CONFIG)
+    parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
+                        required=False, default=120, type=int)
+    parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,
+                        default=100, type=int)
     parser.add_argument("-r", "--recursive", action="store_true", help="Recursively watch for files to scan")
     parser.add_argument("--delete", action="store_true", help="Delete files once scanned")
     parser.add_argument('Directory', help="Directory to monitor for files")
     return parser.parse_args()
+
 
 if __name__ == '__main__':
     _main()

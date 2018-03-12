@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import pefile
-except:
+except ImportError:
     print("pefile module not installed...")
     pefile = False
 
@@ -18,13 +18,10 @@ try:
         'crits': pehash.crits,
         'pehashng': pehash.pehashng,
     }
-except:
+except ImportError:
     print("pehash module not installed...")
     pehash = False
 
-from common import hashfile
-import hashlib
-import time
 import sys
 
 PY3 = False
@@ -42,6 +39,7 @@ DEFAULTCONF = {
     'ENABLED': True,
 }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED'] or \
        not pefile or \
@@ -49,6 +47,7 @@ def check(conf=DEFAULTCONF):
        None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
@@ -73,4 +72,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

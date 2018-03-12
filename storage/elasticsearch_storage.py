@@ -1,13 +1,14 @@
 '''
 Storage module that will interact with elasticsearch.
 '''
+import json
 import os
+import re
 from datetime import datetime
 from uuid import uuid4
+
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
-import re
-import json
 
 import storage
 
@@ -86,7 +87,6 @@ class ElasticSearchStorage(storage.Storage):
             port=self.port
         )
 
-
         # Create the index if it doesn't exist
         es_indices = self.es.indices
         # Add the template for Cuckoo
@@ -97,37 +97,21 @@ class ElasticSearchStorage(storage.Storage):
                 name=ES_TEMPLATE_NAME,
                 body=json.dumps(template)
             )
-        if not es_indices.exists(self.index):
+
+        # Try to create the index, pass if it exists
+        try:
             es_indices.create(self.index)
+        except TransportError:
+            pass
 
-        # Create parent-child mappings if don't exist yet
-        mappings = es_indices.get_mapping(index=self.index)[self.index]['mappings'].keys()
-        if self.doc_type not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type=self.doc_type, body={
-                '_parent': {
-                    'type': 'sample'
-                }
-            })
-        if 'note' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='note', body={
-                '_parent': {
-                    'type': 'sample'
-                },
-                'properties': {
-                    'timestamp': {
-                        'type': 'date',
-                    }
-                }
-            })
-
-        if 'sample' not in mappings:
-            es_indices.put_mapping(index=self.index, doc_type='sample', body={
-                'properties': {
-                    'filename': {
-                        'type': 'text'
-                    }
-                }
-            })
+        # Set the total fields limit
+        try:
+            es_indices.put_settings(
+                index=self.index,
+                body={'index.mapping.total_fields.limit': ES_MAX},
+            )
+        except TransportError:
+            pass
 
         # Create de-dot preprocessor if doesn't exist yet
         try:
@@ -155,7 +139,7 @@ class ElasticSearchStorage(storage.Storage):
                         }
                     }
                     dedot(ctx);"""
-                }
+            }
             self.es.ingest.put_pipeline(id='dedot', body={
                 'description': 'Replace dots in field names with underscores.',
                 'processors': [
@@ -328,13 +312,11 @@ class ElasticSearchStorage(storage.Storage):
         '''Run a Query String query and return a list of sample_ids associated
         with the matches. Run the query against all document types.
         '''
-        print(search_type)
         if search_type == 'advanced':
             query = self.build_query(query_string)
         else:
             es_reserved_chars_re = '([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
             query_string = re.sub(es_reserved_chars_re, r'\\\g<1>', query_string)
-            print(query_string)
             if search_type == 'default':
                 query = self.build_query("*" + query_string + "*")
             elif search_type == 'exact':
@@ -372,7 +354,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=sample_id, body=script
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def remove_tag(self, sample_id, tag):
@@ -393,7 +376,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=sample_id, body=script
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def get_tags(self):
@@ -414,7 +398,7 @@ class ElasticSearchStorage(storage.Storage):
         result = self.es.search(
             index=self.index, doc_type='sample', body=script
         )
-        return result['aggregations']['tags_agg']
+        return result['aggregations']['tags_agg']['buckets']
 
     def get_notes(self, sample_id, search_after=None):
         query = {
@@ -456,13 +440,14 @@ class ElasticSearchStorage(storage.Storage):
                 id=note_id, parent=sample_id
             )
             return result
-        except:
+        except Exception as e:
+            # TODO: log exception
             return None
 
     def add_note(self, sample_id, data):
         data['timestamp'] = datetime.now().isoformat()
-        result = self.es.create(
-            index=self.index, doc_type='note', id=uuid4(), body=data,
+        result = self.es.index(
+            index=self.index, doc_type='note', body=data,
             parent=sample_id
         )
         if result['result'] == 'created':
@@ -497,7 +482,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=report_id
             )
             return True
-        except:
+        except Exception as e:
+            # TODO: log exception
             return False
 
     def teardown(self):

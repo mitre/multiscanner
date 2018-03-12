@@ -41,7 +41,7 @@ file.
 Default modules have the option to be run locally or via SSH. The development team
 runs MultiScanner on a Linux host and hosts the majority of analytical tools on
 a separate Windows machine. The SSH server used in this environment is freeSSHd
-from <http://www.freesshd.com/>. 
+from <http://www.freesshd.com/>.
 
 A network share accessible to both the MultiScanner and the Analytic Machines is
 required for the multi-machine setup. Once configured, the network share path must
@@ -77,6 +77,10 @@ Results is a dictionary object where each key is a filename of a scanned file.
 
 `multiscanner.config_init(filepath)` will create a default configuration file at
 the location defined by filepath.
+
+Distributed MultiScanner
+------------------------
+MultiScanner is also part of a distributed, scalable file analysis framework, complete with distributed task management, web interface, REST API, and report storage. Please set [Distributed Multiscanner](<docs/distributed_multiscanner.md>) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/docker_standalone.md>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
 
 Other Reading
 -------------

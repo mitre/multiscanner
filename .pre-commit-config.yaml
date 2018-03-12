@@ -1,0 +1,12 @@
+-   repo: git@github.com:pre-commit/pre-commit-hooks
+    sha: v1.2.0
+    hooks:
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-merge-conflict
+    -   id: detect-private-key
+    -   id: mixed-line-ending
+    -   id: flake8
+        args:
+        - --ignore=E126,E127,E128,E402
+        - --max-line-length=120

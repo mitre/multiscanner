@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from builtins import *
+from __future__ import (absolute_import, division, print_function,
+                        with_statement)
 import argparse
 import codecs
-import os
 import csv
 import math
+import os
 import struct
 import sys
+
 from tqdm import tqdm
 
 
@@ -73,9 +74,15 @@ def parse_nsrl(input_file, output_dir):
                     offset.seek(offset_val * 12)
                     offset.write(struct.pack('Q', output.tell()))
                     last = offset_val
+<<<<<<< HEAD
                 output.write(line[0].lower()+'\t')
                 output.write(line[1].lower()+'\t')
                 output.write(line[3]+'\n')
+=======
+                output.write(line[0].lower() + '\t')
+                output.write(line[1].lower() + '\t')
+                output.write(line[3])
+>>>>>>> 89a346c3b3ec8a65b850dc492deb1ab07b339454
                 count += 1
 
 
@@ -89,6 +96,7 @@ def _parse_args():
 def _main():
     args = _parse_args()
     parse_nsrl(args.NSRLFile, output_dir=args.output)
+
 
 if __name__ == '__main__':
     _main()

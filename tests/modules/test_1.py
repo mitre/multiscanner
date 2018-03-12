@@ -4,8 +4,10 @@ A test module which requires no config and the result is the filename
 TYPE = "Test"
 NAME = "test_1"
 
+
 def check():
     return True
+
 
 def scan(filelist):
     results = []

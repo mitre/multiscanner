@@ -12,16 +12,18 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "MD5"
 
+
 def check():
     return True
 
+
 def scan(filelist):
     results = []
-    
+
     for fname in filelist:
         goodtogo = False
         i = 0
-        #Ran into a weird issue with file locking, this fixes it
+        # Ran into a weird issue with file locking, this fixes it
         while not goodtogo and i < 5:
             try:
                 results.append((fname, hashfile(fname, hashlib.md5())))
@@ -36,4 +38,3 @@ def scan(filelist):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-

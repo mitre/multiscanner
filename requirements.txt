@@ -3,6 +3,7 @@ future
 configparser
 #Required by modules
 bitstring
+boltons
 git+https://github.com/knowmalware/pehash.git#egg=pehash
 mmbot
 paramiko
@@ -14,15 +15,28 @@ requests
 ssdeep
 tika
 yara-python
+#Required for PDF
+reportlab
 #Required by API
 flask
+psycopg2
+rarfile
 sqlalchemy
 sqlalchemy-utils
+sqlalchemy-datatables
 #Required by storage modules
-elasticsearch
+elasticsearch>=5.0.0,<6.0.0
 pymongo
+#Required for distributed
+celery
+flask_cors
 #Required by tests
+Flask-Testing
+pathlib
 pytest
 mock
+selenium
+#Requred by dev
+pre-commit
 #Required by utils
 tqdm

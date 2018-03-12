@@ -7,7 +7,6 @@ import sys
 import json
 import magic
 import unittest
-import time
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,18 +24,19 @@ TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 DB_CONF = Database.DEFAULTCONF
 DB_CONF['db_name'] = TEST_DB_PATH
 
-## If you want to test with an actual postgres DB server,
-## uncomment the following 5 lines and change values accordingly:
-#DB_CONF['db_name'] = 'testdb'
-#DB_CONF['db_type'] = 'postgresql'
-#DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
-#DB_CONF['username'] = 'dbusername'
-#DB_CONF['password'] = 'dbpassword'
+# If you want to test with an actual postgres DB server,
+# uncomment the following 5 lines and change values accordingly:
+# DB_CONF['db_name'] = 'testdb'
+# DB_CONF['db_type'] = 'postgresql'
+# DB_CONF['host_string'] = 'dbserver.hostname.or.ip'
+# DB_CONF['username'] = 'dbusername'
+# DB_CONF['password'] = 'dbpassword'
 
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
-TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'report_id': None}
-TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}
+TEST_TASK = {'task_id': 1, 'task_status': 'Pending', 'timestamp': None, 'sample_id': None}
+TEST_REPORT = {'MD5': '96b47da202ddba8d7a6b91fecbf89a41', 'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f', 'libmagic': 'a /bin/python script text executable', 'filename': '/opt/other_file'}  # noqa: E501
+
 
 def drop_db_table(db_eng):
     '''
@@ -49,18 +49,20 @@ def drop_db_table(db_eng):
 class TestTaskSerialization(unittest.TestCase):
     def setUp(self):
         self.task = Task(
-            task_id = 1,
-            task_status = 'Pending',
-            report_id = None
+            task_id=1,
+            task_status='Pending',
+            sample_id=None
         )
 
     def test_task_dict_serialization(self):
         self.assertDictEqual(TEST_TASK, self.task.to_dict())
 
     def test_task_json_serialization(self):
-        self.assertEqual(
-            json.dumps(TEST_TASK), self.task.to_json()
-        )
+        task_serialized = json.dumps(TEST_TASK)
+        self.assertIn('"task_id": 1', task_serialized)
+        self.assertIn('"task_status": "Pending"', task_serialized)
+        self.assertIn('"timestamp": null', task_serialized)
+        self.assertIn('"sample_id": null', task_serialized)
 
     def tearDown(self):
         pass
@@ -90,7 +92,7 @@ class TestTaskAdd(unittest.TestCase):
         resp = self.sql_db.add_task(
             task_id=task_id,
             task_status='Pending',
-            report_id=None
+            sample_id=None,
         )
         self.assertEqual(resp, task_id)
 
@@ -98,7 +100,7 @@ class TestTaskAdd(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestTaskManipulation(unittest.TestCase):
@@ -107,7 +109,6 @@ class TestTaskManipulation(unittest.TestCase):
         self.sql_db.init_db()
         self.sql_db.add_task(
             task_status='Pending',
-            report_id=None
         )
 
     def test_add_second_task(self):
@@ -118,16 +119,16 @@ class TestTaskManipulation(unittest.TestCase):
         resp = self.sql_db.get_task(task_id=1)
         self.assertEqual(resp.task_id, 1)
         self.assertEqual(resp.task_status, 'Pending')
-        self.assertEqual(resp.report_id, None)
+        self.assertEqual(resp.sample_id, None)
+        self.assertEqual(resp.timestamp, None)
 
     def test_update_task(self):
         resp = self.sql_db.update_task(
             task_id=1,
             task_status='Complete',
-            report_id =  '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'
         )
         self.assertDictEqual(resp, self.sql_db.get_task(1).to_dict())
-        self.assertDictEqual(resp, {'task_id': 1, 'task_status': 'Complete', 'report_id': '88d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f'})
+        self.assertDictEqual(resp, {'task_id': 1, 'sample_id': None, 'task_status': 'Complete', 'timestamp': None})
 
     def test_delete_task(self):
         deleted = self.sql_db.delete_task(task_id=1)
@@ -139,46 +140,46 @@ class TestTaskManipulation(unittest.TestCase):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestGetAllTasks(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
         self.sql_db.init_db()
-        for i in range(0,3):
+        for i in range(0, 3):
             self.sql_db.add_task()
             i += 1
 
     def test_get_all_tasks(self):
         expected_response = [
-            {'task_id': i, 'task_status': 'Pending', 'report_id': None} for i in range(1,4)
+            {'task_id': i, 'sample_id': None, 'task_status': 'Pending', 'timestamp': None} for i in range(1, 4)
         ]
         resp = self.sql_db.get_all_tasks()
-        for i in range(0,3):
+        for i in range(0, 3):
             self.assertDictEqual(expected_response[i], resp[i])
 
     def tearDown(self):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
 
 
 class TestStressTest(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
         self.sql_db.init_db()
-        for i in range(0,1000):
+        for i in range(0, 1000):
             self.sql_db.add_task()
             i += 1
 
     def test_get_all_tasks(self):
-        for i in range(1,1000):
+        for i in range(1, 1000):
             self.sql_db.get_task(task_id=i)
 
     def tearDown(self):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
         else:
-            drop_db_table(self.sql_db._get_db_engine())
+            drop_db_table(self.sql_db.db_engine)
