@@ -60,21 +60,6 @@ with open(TEST_FULL_PATH, 'r') as f:
     TEST_FILE_HASH = hashlib.sha256(f.read().encode('utf-8')).hexdigest()
 TEST_METADATA = {}
 TEST_CONFIG = multiscanner.CONFIG
-FOO_CONFIG = {
-    'main': {
-        'api-config': 'foo',
-        'web-config': 'bar',
-        'storage-config': 'baz',
-    },
-    'libmagic': True,
-    'entropy': True,
-    'mmbot': False,
-    'NSRL': False,
-    'fileextensions': False,
-    'officemeta': False,
-    'ssdeep': False,
-}
-
 
 TEST_REPORT = {
     'MD5': '96b47da202ddba8d7a6b91fecbf89a41',
