@@ -109,7 +109,7 @@ class MultiScannerTask(Task):
 
 
 @app.task(base=MultiScannerTask)
-def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG):
+def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG, module_list=None):
     '''
     Queue up multiscanner tasks
 
@@ -134,7 +134,10 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
-    resultlist = multiscanner.multiscan(list(files), configfile=config)
+    resultlist = multiscanner.multiscan(list(files),
+        configfile=config,
+        module_list=module_list
+    )
     results = multiscanner.parse_reports(resultlist, python=True)
 
     scan_time = datetime.now().isoformat()
