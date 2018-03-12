@@ -351,6 +351,12 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
+
+            # If the module is disabled we don't mess with it further to prevent spamming errors on screen
+            if modname in config:
+                if not config[modname].get('ENABLED', True):
+                    continue
+
             moddir = os.path.dirname(module)
             mod = load_module(os.path.basename(module).split('.')[0], [moddir])
             if not mod:
