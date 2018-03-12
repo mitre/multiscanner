@@ -19,16 +19,31 @@ if os.path.join(MS_WD, 'utils') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'utils'))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.append(os.path.join(MS_WD, 'libs'))
+
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
 
-import elasticsearch
-elasticsearch.client.IndicesClient.exists_template = mock.MagicMock(return_value=True)
-elasticsearch.client.IngestClient.get_pipeline = mock.MagicMock(return_value=True)
-
+import common
 import celery_worker
 import multiscanner
 from sql_driver import Database
+
+
+# Get a subset of simple modules to run in testing
+# the celery worker
+MODULEDIR = os.path.join(MS_WD, "modules")
+MODULE_LIST = common.parseDir(MODULEDIR, recursive=True)
+DESIRED_MODULES = [
+    'entropy.py',
+    'MD5.py',
+    'SHA1.py',
+    'SHA256.py',
+    'libmagic.py',
+    'ssdeep.py'
+]
+MODULES_TO_TEST = [i for e in DESIRED_MODULES for i in MODULE_LIST if e in i]
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
@@ -113,15 +128,43 @@ class TestCeleryCase(CeleryTestCase):
         mock_delay.assert_called_once()
         self.assertEqual(result, TEST_REPORT)
 
-    # TODO: patch storage_handler.store(result)
+    # Patch storage_handler.store(result) inside the celery_worker module
+    # prevents indexing test reports into ES or other side effects
     @mock.patch('celery_worker.multiscanner.storage.StorageHandler')
     def test_delay_method(self, MockStorageHandler):
+        expected_entropy = 2.0
+        expected_MD5 = 'ba1f2511fc30423bdbb183fe33f3dd0f'
+        expected_SHA1 = 'a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0'
+        expected_SHA256 = '181210f8f9c779c26da1d9b2075bde0127302ee0e3fca38c9a83f5b1dd8e5d3b'
+        expected_libmagic = 'ASCII text'
+
+        # run the multiscanner celery worker on our test file
         result = celery_worker.multiscanner_celery(
             file_=TEST_FULL_PATH,
             original_filename=TEST_ORIGINAL_FILENAME,
             task_id=1,
             file_hash=TEST_FILE_HASH,
             metadata=TEST_METADATA,
-            config=FOO_CONFIG
+            module_list=MODULES_TO_TEST
         )
-        print(result)
+
+        self.assertEqual(
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('entropy'),
+            expected_entropy
+        )
+        self.assertEqual(
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('MD5'),
+            expected_MD5
+        )
+        self.assertEqual(
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('SHA1'),
+            expected_SHA1
+        )
+        self.assertEqual(
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('SHA256'),
+            expected_SHA256
+        )
+        self.assertEqual(
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('libmagic'),
+            expected_libmagic
+        )
