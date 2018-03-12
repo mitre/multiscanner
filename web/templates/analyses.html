@@ -33,11 +33,7 @@
       },
       columnDefs: [
         {
-          targets: 2,
-          data: 3,
-        },
-        {
-          targets: 3,
+          targets: 4,
           searchable: false,
           orderable: false,
           data: null,
@@ -50,9 +46,11 @@
       ],
       rowCallback: function( row, data, index ) {
         if (data[2] == "Complete") {
-          tr_class = ""
+          tr_class = "";
+        } else if (data[2] == "Failed") {
+            tr_class = " danger";
         } else {
-          tr_class = " warning"
+          tr_class = " warning";
         }
         $(row).addClass("task-row" + tr_class);
         $(row).attr('data-href', '/report/' + data[0]);
@@ -192,7 +190,8 @@
       <thead>
         <tr>
           <th width="5%">Task ID</th>
-          <th width="72%">Sample</th>
+          <th width="60%">Sample</th>
+          <th width="12%">Task Status</th>
           <th width="17%">Timestamp</th>
           <th class="text-center" width="6%">Delete</th>
         </tr>
