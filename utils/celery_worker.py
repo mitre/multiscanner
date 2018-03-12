@@ -124,21 +124,14 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     # Initialize the connection to the task DB
     db.init_db()
 
-    files = {}
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
-    files[file_] = {
-        'original_filename': original_filename,
-        'task_id': task_id,
-        'file_hash': file_hash,
-        'metadata': metadata,
-    }
 
     # Get the storage config
     storage_conf = multiscanner.common.get_config_path(config, 'storage')
     storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscanner.multiscan(
-        list(files),
+        [file_],
         configfile=config,
         module_list=module_list
     )
