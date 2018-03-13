@@ -164,6 +164,10 @@
     margin-bottom: 20px;
 }
 
+#report-container {
+    clear: left;
+}
+
 #report-container .row {
     margin-bottom: 10px;
 }
