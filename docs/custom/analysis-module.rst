@@ -21,7 +21,7 @@ The check() function tests whether or not the scan function should be run.
 
 scan()
 ^^^^^^
-The scan() function performs the analytic and returns the results. 
+The scan() function performs the analytic and returns the results.
 
 **Inputs:** There are two supported argument sets with this function: ``scan(filelist)`` and ``scan(filelist, conf=DEFAULTCONF)``. If a module has a global variable DEFAULTCONF, the second argument set is required.
 

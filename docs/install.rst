@@ -1,7 +1,7 @@
 Installation
 ============
 
-Installation information for the different components of MultiScanner is provided below. To get an idea of how the system works without going through the full process of setting up the distributed architecture, refer to the section on :ref:`standalone-docker-installation`. 
+Installation information for the different components of MultiScanner is provided below. To get an idea of how the system works without going through the full process of setting up the distributed architecture, refer to the section on :ref:`standalone-docker-installation`.
 
 The Docker standalone system is less scalable, robust, and feature-rich, but it enables easy stand up the web UI, the REST API, and an Elasticsearch node, allowing users to quickly see how the system works. The standalone container is intended as an introduction to the system and its capabilities, but is not designed for operational use.
 
@@ -12,7 +12,7 @@ Python 3.6 is recommended. Compatibility with Python 2.7+ and 3.4+ is supported 
 
 An installer script is included in the project (`install.sh <https://github.com/mitre/multiscanner/blob/feature-celery/install.sh>`_), which installs the prerequisites on most systems.
 
-Currently, MultiScanner is deployed with Ansible, and we're working to support distributed architecture deployment via Docker. 
+Currently, MultiScanner is deployed with Ansible, and we're working to support distributed architecture deployment via Docker.
 
 Installing Ansible
 ------------------
@@ -30,7 +30,7 @@ Installing Analytic Machines
 
 Default modules have the option of being run locally or via SSH. The development team
 runs MultiScanner on a Linux host and hosts the majority of analytical tools on
-a separate Windows machine. The SSH server used in this environment is `freeSSHd <http://www.freesshd.com/>`_. 
+a separate Windows machine. The SSH server used in this environment is `freeSSHd <http://www.freesshd.com/>`_.
 
 A network share accessible to both the MultiScanner and the analytic machines is
 required for the multi-machine setup. Once configured, the network share path must
@@ -55,19 +55,19 @@ To use the Multiscanner web UI, also add the following::
     http.cors.allow-origin: "<yourOrigin>"
 
 ..
-	
+
 .. _module-config:
-	
+
 Module Configuration
 --------------------
 
 Modules are intended to be quickly written and incorporated into the framework. Note that:
 
-* A finished module must be placed in the modules folder before it can be used. 
+* A finished module must be placed in the modules folder before it can be used.
 
 * The configuration file does not need to be manually updated.
 
-* Modules are configured within the configuration file, `config.ini <https://github.com/mitre/multiscanner/blob/feature-celery/docker_utils/config.ini>`_. 
+* Modules are configured within the configuration file, `config.ini <https://github.com/mitre/multiscanner/blob/feature-celery/docker_utils/config.ini>`_.
 
 Parameters common to all modules are listed in the next section, and module-specific parameters (for core and analysis modules that have parameters) are listed in the subsequent sections. See :ref:`analysis-modules` for information about *all* current modules.
 
