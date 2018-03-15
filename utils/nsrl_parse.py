@@ -74,15 +74,9 @@ def parse_nsrl(input_file, output_dir):
                     offset.seek(offset_val * 12)
                     offset.write(struct.pack('Q', output.tell()))
                     last = offset_val
-<<<<<<< HEAD
-                output.write(line[0].lower()+'\t')
-                output.write(line[1].lower()+'\t')
-                output.write(line[3]+'\n')
-=======
                 output.write(line[0].lower() + '\t')
                 output.write(line[1].lower() + '\t')
                 output.write(line[3])
->>>>>>> 89a346c3b3ec8a65b850dc492deb1ab07b339454
                 count += 1
 
 
