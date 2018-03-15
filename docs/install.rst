@@ -85,7 +85,7 @@ Parameter             Description
 *cmdline*             An array of command line options to be passed to the executable.
 *host*                The hostname, port, and username of the machine that will be SSH’d into to run the analytic if the executable is not present on the local machine.
 *key*                 The SSH key to be used to SSH into the host.
-*replacement path*    If the main config is set to copy the scanned files this will be what it replaces the path with. It should be where the network share is mounted. 
+*replacement path*    If the main config is set to copy the scanned files this will be what it replaces the path with. It should be where the network share is mounted.
 *ENABLED*             When set to false, the module will not run.
 ====================  =============================
 
@@ -145,7 +145,7 @@ Parameter             Description
 ====================  =============================
 *API URL*             The URL to the API server.
 *fireeye images*      A Python list of the VMs in fireeye. These are used to generate where to copy the files.
-*username*            Username on the FireEye AX. 
+*username*            Username on the FireEye AX.
 *password*            Password for the FireEye AX.
 *info level*          Options are concise, normal, and extended.
 *timeout*             The maximum time a sample will run.
@@ -189,7 +189,7 @@ Parameter             Description
 *offsets*             A file that contains the pointers into hash_list file. This is necessary to speed up searching of the NSRL database file.
 ====================  =============================
 
-**[PEFile]** - extracts out feature information from EXE files. 
+**[PEFile]** - extracts out feature information from EXE files.
 
 * The module uses `pefile <https://code.google.com/p/pefile/>`_ which is currently not available for Python 3.
 
@@ -203,7 +203,7 @@ Parameter             Description
 *remove-entry*        A Python list of Tika results that should not be included in the report.
 ====================  =============================
 
-**[TrID]** - runs `TrID <http://mark0.net/soft-trid-e.html>`_ against a file. 
+**[TrID]** - runs `TrID <http://mark0.net/soft-trid-e.html>`_ against a file.
 
 * The module definition file must be in the same folder as the executable malware sample.
 
@@ -261,12 +261,22 @@ Running this command will generate a lot of output and take some time. The syste
 
     api_1      |  * Running on http://0.0.0.0:8080/ (Press CTRL+C to quit)
 
-.. note::  THIS CONTAINER IS NOT DESIGNED FOR PRODUCTION USE. This is simply a primer for using MultiScanner's web interface. The MultiScanner framework is highly scalable and distributed, but it requires a full install. Currently, we support installing the distributed system via Ansible. More information about that process can be found here: `<https://github.com/mitre/multiscanner-ansible>`_.
-	
-.. note:: The latest versions of docker and docker-compose are assumed to be installed. Installation guides are here: https://docs.docker.com/engine/installation/ and here: https://docs.docker.com/compose/install/
+.. note::
 
-.. note:: Because this docker container runs two web applications and an Elasticsearch node, there is a fairly high requirement for computing power (RAM). We recommend running this on a machine with at least 4GB of RAM.
+  We are assuming that you are already running latest version of docker and have the latest version of docker-compose installed on your machine. Guides on how to do that are `here <https://docs.docker.com/engine/installation/>`__. and `here <https://docs.docker.com/compose/install/>`__.
 
-.. note:: This container will only be reachable and functionable on localhost.
+.. note::
 
-.. note:: The docker-compose.yml file must be edited in four places if the system is installed behind a proxy. First, uncomment `lines 18-20 <https://github.com/mitre/multiscanner/blob/feature-celery/docker-compose.yml#L18>`_ and `lines 35-37 <https://github.com/mitre/multiscanner/blob/feature-celery/docker-compose.yml#L35>`_. Next, uncomment `lines 25-28 <https://github.com/mitre/multiscanner/blob/feature-celery/docker-compose.yml#L25>`_ and set the correct proxy variables. Finally, do the same thing in `lines 42-45 <https://github.com/mitre/multiscanner/blob/feature-celery/docker-compose.yml#L42>`_. The docker-compose.yml file has comments to make clear where to make these changes.
+  Since this docker container runs two web applications and an ElasticSearch node, there is a fairly high requirement for RAM / computing power. We'd recommend running this on a machine with at least 4GB of RAM.
+
+.. warning::
+
+  THIS CONTAINER IS NOT DESIGNED FOR PRODUCTION USE. This is simply a primer for using MultiScanner's web interface. Users should not run this in production or at scale. The MultiScanner framework is highly scalable and distributed, but that requires a full install. Currently, we support installing the distributed system via ansible. More information about that process can be found in `this repo <https://github.com/mitre/multiscanner-ansible>`_.
+
+.. note::
+
+  This container will only be reachable / functioning on localhost.
+
+.. note::
+
+  Additionally, if you are installing this system behind a proxy, you must edit the docker-compose.yml file in four places. First, uncomment `lines 18-20 <../docker-compose.yml#L18>`_ and `lines 35-37 <../docker-compose.yml#L35>`_. Next, uncomment `lines 25-28 <../docker-compose.yml#L25>`_ and set the correct proxy variables there. Finally, do the same thing in `lines 42-45 <../docker-compose.yml#L42>`_. The docker-compose.yml file has comments to make clear where to make these changes.

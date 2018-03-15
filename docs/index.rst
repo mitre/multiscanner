@@ -8,10 +8,11 @@ MultiScanner
 
 .. toctree::
    :maxdepth: 2
-   
+
    overview
    arch
    use-cases
    install
    use/index
    custom/index
+   testing
