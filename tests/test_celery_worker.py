@@ -1,14 +1,19 @@
-import os
-import shutil
-import sys
-import json
-import mock
 import hashlib
+import os
+import sys
+import unittest
+
+import mock
+import multiscanner
+
+import celery_worker
+import common
+from sql_driver import Database
+
 try:
     from StringIO import StringIO as BytesIO
 except ImportError:
     from io import BytesIO
-import unittest
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -24,12 +29,6 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 
 # Use multiscanner in ../
 sys.path.insert(0, os.path.dirname(CWD))
-
-import common
-import celery_worker
-import multiscanner
-from sql_driver import Database
-
 
 # Get a subset of simple modules to run in testing
 # the celery worker
@@ -52,7 +51,7 @@ if os.path.exists(TEST_DB_PATH):
 DB_CONF = Database.DEFAULTCONF
 DB_CONF['db_name'] = TEST_DB_PATH
 
-## Metadata about test file
+# Metadata about test file
 TEST_FULL_PATH = os.path.join(CWD, 'files/123.txt')
 TEST_ORIGINAL_FILENAME = TEST_FULL_PATH.split('/')[-1]
 TEST_TASK_ID = 1
