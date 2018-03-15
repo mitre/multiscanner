@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import (absolute_import, division, print_function,
                         with_statement)
+
 import argparse
 import codecs
 import csv
@@ -11,10 +12,10 @@ import sys
 
 from tqdm import tqdm
 
-
 PY3 = False
 if sys.version_info[:1] == (3,):
     PY3 = True
+
 
 def count_lines(path):
     lines = 0
@@ -33,6 +34,7 @@ def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
                             dialect=dialect, **kwargs)
     for row in csv_reader:
         # decode UTF-8 back to Unicode, cell by cell:
+        # TODO: Is this py3 compatible?
         yield [unicode(cell, 'utf-8') for cell in row]
 
 
