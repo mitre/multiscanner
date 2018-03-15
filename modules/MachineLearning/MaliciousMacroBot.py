@@ -11,12 +11,12 @@ NAME = "MaliciousMacroBot"
 REQUIRES = ['libmagic']
 DEFAULTCONF = {
     'ENABLED': False
-    }
+}
 
 try:
     from mmbot import MaliciousMacroBot
     has_mmbot = True
-except:
+except ImportError as e:
     print("mmbot module not installed...")
     has_mmbot = False
 

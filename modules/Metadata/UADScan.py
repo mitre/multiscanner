@@ -10,7 +10,6 @@ More information about these tools can be found at:
 
 import os
 import re
-import sys
 import subprocess
 
 __author__ = "Alec Hussey"
@@ -20,48 +19,53 @@ TYPE = "Metadata"
 NAME = "UAD"
 
 DEFAULTCONF = {
-	"ENABLED": False,
-	"vstk_home": "/opt/vstk",
-	"cmdline": []
+    "ENABLED": False,
+    "vstk_home": "/opt/vstk",
+    "cmdline": []
 }
 
+
 def check(conf=DEFAULTCONF):
-	if not conf['ENABLED']:
-		return False
-	if not os.path.isdir(conf['vstk_home']):
-		return False
-	return True
+    if not conf['ENABLED']:
+        return False
+    if not os.path.isdir(conf['vstk_home']):
+        return False
+    return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
-	results = []
-	command = [os.path.join(conf['vstk_home'], "bin/uad"), "-k", "-t", multiscanner.write_dir]
+    results = []
+    # TODO: is this how we want to expose these multiscanner interface?
+    command = [os.path.join(conf['vstk_home'], "bin/uad"), "-k", "-t", multiscanner.write_dir]  # noqa F821
 
-	for input_file in filelist:
-		command2 = command[:]
-		command2.append(input_file)
+    for input_file in filelist:
+        command2 = command[:]
+        command2.append(input_file)
 
-		try:
-			output = subprocess.check_output(command2)
-			output = output.decode("utf-8", errors="replace")
-		except subprocess.CalledProcessError as error:
-			return None
+        try:
+            output = subprocess.check_output(command2)
+            output = output.decode("utf-8", errors="replace")
+        except subprocess.CalledProcessError as error:
+            return None
 
-		# find and submit expanded files for scanning
-		components = re.findall("^(\d+): Tmpfile: (.+)$", output, re.MULTILINE)
+        # find and submit expanded files for scanning
+        components = re.findall("^(\d+): Tmpfile: (.+)$", output, re.MULTILINE)
 
-		for item in components:
-			# skip base level items to avoid rescanning files already expanded
-			# this happens when passing in a component to a new instance of UAD
-			if int(item[0]) == 0:
-				continue
+        for item in components:
+            # skip base level items to avoid rescanning files already expanded
+            # this happens when passing in a component to a new instance of UAD
+            if int(item[0]) == 0:
+                continue
 
-			multiscanner.scan_file(item[1], input_file)
+            # TODO: is this how we want to expose the multiscanner interface?
+            # TODO: is there a max recursion depth?
+            multiscanner.scan_file(item[1], input_file) # noqa F821
 
-		results += re.findall("^0: Name: (.+)\n^\d+: Type: (.+)$", output, re.MULTILINE)
+        results += re.findall("^0: Name: (.+)\n^\d+: Type: (.+)$", output, re.MULTILINE)
 
-	metadata = {
-		"Type": TYPE,
-		"Name": NAME
-	}
+    metadata = {
+        "Type": TYPE,
+        "Name": NAME
+    }
 
-	return (results, metadata)
+    return (results, metadata)

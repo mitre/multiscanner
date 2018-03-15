@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import json
+
 import mimetypes
 
 __author__ = 'Austin West'
@@ -13,7 +13,7 @@ NAME = 'fileextensions'
 REQUIRES = ['libmagic', 'Tika', 'TrID', 'vtsearch']
 DEFAULTCONF = {
     'ENABLED': True
-    }
+}
 
 EXTENSION_BLACKLIST = [
     '.virus',
@@ -94,12 +94,12 @@ def _get_tridresults(results, fname):
     # pull out all the possible extensions. Then,
     # make them all lowercase and de-duplicate them.
     triddict = dict(results)
-    result = []  
+    result = []
     for tridresult in triddict.get(fname):
         result.append(tridresult[2].lower())
     # make trid results unique
     result = list(set(result))
-    return result 
+    return result
 
 
 def _get_vtresults(results, fname):
@@ -114,7 +114,7 @@ def _get_vtresults(results, fname):
             if extension not in EXTENSION_BLACKLIST:
                 result.append(extension)
     result = list(set(result))
-    return result 
+    return result
 
 
 def _convert_libmagic_to_extension(libmagicresult):

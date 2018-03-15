@@ -4,13 +4,10 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 try:
     import pyimpfuzzy
-except:
+except ImportError as e:
     print("pyimpfuzzy module not installed...")
     pyimpfuzzy = False
 
-from common import hashfile
-import hashlib
-import time
 import sys
 
 PY3 = False
@@ -28,12 +25,14 @@ DEFAULTCONF = {
     'ENABLED': True,
 }
 
+
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED'] or \
        not pyimpfuzzy or \
        None in REQUIRES:
         return False
     return True
+
 
 def scan(filelist, conf=DEFAULTCONF):
     results = []
@@ -63,4 +62,3 @@ def scan(filelist, conf=DEFAULTCONF):
     metadata["Type"] = TYPE
     metadata["Include"] = False
     return (results, metadata)
-
