@@ -2,7 +2,9 @@
 Storage module that will interact with elasticsearch in a simple way.
 """
 from uuid import uuid4
-from elasticsearch import Elasticsearch, helpers
+
+from elasticsearch import Elasticsearch
+
 import storage
 
 
@@ -50,7 +52,7 @@ class BasicElasticSearchStorage(storage.Storage):
                 }
             )
 
-        result = helpers.bulk(self.es, report_list)
+        # result = helpers.bulk(self.es, report_list)
         return report_id_list
 
     def teardown(self):
@@ -70,7 +72,7 @@ class BasicElasticSearchStorage(storage.Storage):
                 dictionary[new_key] = dictionary[key]
                 del dictionary[key]
                 if not self.warned_renamed:
-                    print('WARNING: Some keys had a . in their name which was replaced with a _' )
+                    print('WARNING: Some keys had a . in their name which was replaced with a _')
                     self.warned_renamed = True
         return dictionary
 
