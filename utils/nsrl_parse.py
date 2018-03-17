@@ -35,7 +35,7 @@ def unicode_csv_reader(unicode_csv_data, dialect=csv.excel, **kwargs):
     for row in csv_reader:
         # decode UTF-8 back to Unicode, cell by cell:
         # TODO: Is this py3 compatible?
-        yield [unicode(cell, 'utf-8') for cell in row]
+        yield [unicode(cell, 'utf-8') for cell in row]  # noqa: F821; protected by PY3 check
 
 
 def utf_8_encoder(unicode_csv_data):
