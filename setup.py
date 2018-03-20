@@ -29,7 +29,7 @@ for directory in to_walk:
 
 setup(
     name='multiscanner',
-    version='1.0.0',
+    version='1.1.1',
     url='https://github.com/MITRECND/multiscanner',
     license='MPL 2.0',
     author='Drew Bonasera',
