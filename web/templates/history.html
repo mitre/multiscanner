@@ -40,7 +40,7 @@
           className: "text-center delete",
           "render": function ( data, type, full, meta ) {
             // Add Delete column buttons
-            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data + '"><span class="glyphicon glyphicon-remove"></span></button>';
+            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data[0] + '"><span class="glyphicon glyphicon-remove"></span></button>';
           },
         }
       ],
