@@ -7,6 +7,8 @@ import re
 from datetime import datetime
 from uuid import uuid4
 
+import curator
+
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
 
@@ -488,3 +490,17 @@ class ElasticSearchStorage(storage.Storage):
 
     def teardown(self):
         pass
+
+    def delete_index(self, index_prefix='metricbeat-', days=7):
+        '''
+        Delete index equal to or older than days.
+        '''
+        try:
+            ilo = curator.IndexList(self.es)
+            ilo.filter_by_regex(kind='prefix', value=index_prefix)
+            ilo.filter_by_age(source='name', direction='older', timestring='%Y.%m.%d', unit='days', unit_count=days)
+            delete_indices = curator.DeleteIndices(ilo)
+            delete_indices.do_action()
+        except Exception as e:
+            # TODO: log exception
+            return False

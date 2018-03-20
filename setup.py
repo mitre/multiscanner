@@ -57,6 +57,7 @@ setup(
         'sqlalchemy-utils',
         # Required by storage modules
         'elasticsearch',
+        'elasticsearch-curator',
         'pymongo',
     ],
     entry_points={
