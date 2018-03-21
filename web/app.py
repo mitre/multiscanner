@@ -15,6 +15,7 @@ DEFAULTCONF = {
     'HOST': "localhost",
     'PORT': 8000,
     'API_LOC': "http://localhost:8080",
+    'FLOWER_LOC': "http://localhost:5555",
     'DEBUG': False,
     'METADATA_FIELDS': [
         "Submitter Name",
@@ -52,6 +53,7 @@ app.config.from_object(conf_tuple)
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html', api_loc=app.config['API_LOC'],
+                           flower_loc=app.config['FLOWER_LOC'],
                            metadata_fields=app.config['METADATA_FIELDS'])
 
 
@@ -59,6 +61,7 @@ def index():
 def tasks():
     if request.method == 'POST':
         return render_template('analyses.html', api_loc=app.config['API_LOC'],
+                               flower_loc=app.config['FLOWER_LOC'],
                                search_term=request.form['search_term'],
                                search_type=request.form['search_type_buttons'])
     else:
@@ -70,23 +73,39 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           api_loc=app.config['API_LOC'], search_term=term,
-                           tags=app.config['TAGS'])
+                           api_loc=app.config['API_LOC'],
+                           flower_loc=app.config['FLOWER_LOC'],
+                           search_term=term, tags=app.config['TAGS'])
 
 
 @app.route('/history', methods=['GET', 'POST'])
 def history():
     if request.method == 'POST':
         return render_template('history.html', api_loc=app.config['API_LOC'],
+                               flower_loc=app.config['FLOWER_LOC'],
                                search_term=request.form['search_term'],
                                search_type=request.form['search_type_buttons'])
     else:
-        return render_template('history.html', api_loc=app.config['API_LOC'])
+        return render_template('history.html', api_loc=app.config['API_LOC'],
+                               flower_loc=app.config['FLOWER_LOC'])
 
 
 @app.route('/analytics', methods=['GET'])
 def analytics():
-    return render_template('analytics.html', api_loc=app.config['API_LOC'])
+    return render_template('analytics.html', api_loc=app.config['API_LOC'],
+                           flower_loc=app.config['FLOWER_LOC'])
+
+
+@app.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html', api_loc=app.config['API_LOC'],
+                           flower_loc=app.config['FLOWER_LOC'])
+
+
+@app.route('/system-health', methods=['GET'])
+def system_health():
+    return render_template('system-health.html', api_loc=app.config['API_LOC'],
+                           flower_loc=app.config['FLOWER_LOC'])
 
 
 if __name__ == "__main__":
