@@ -11,8 +11,8 @@ Tools are incorporated by creating modules that run in the MultiScanner framewor
 
 Modules are designed to be quickly written and easily incorporated into the framework.
 Currently written and maintained modules are related to malware analytics, but the framework is not limited to that
-scope. For a list of modules you can look in [modules](modules), descriptions and config
-options can be found in [docs/modules.md](docs/modules.md)
+scope. For a list of modules you can look in [modules/](modules), descriptions and config
+options can be found on the [Analysis Modules](<docs/use/use-analysis-mods.rst>) page.
 
 Requirements
 ------------
@@ -54,13 +54,13 @@ Module Writing
 --------------
 Modules are intended to be quickly written and incorporated into the framework.
 A finished module must be placed in the modules folder before it can be used. The
-configuration file does not need to be manually updated. See [docs/module\_writing.md](<docs/module_writing.md>)
+configuration file does not need to be manually updated. See [Developing an Analysis Module](<docs/custom/analysis-module.rst>)
 for more information.
 
 Module Configuration
 --------------------
 Modules are configured within the configuration file, config.ini. See
-[docs/modules.md](<docs/modules.md>) for more information.
+the [Analysis Modules](<docs/use/use-analysis-mods.rst>) page for more information.
 
 Python API
 ----------
@@ -80,7 +80,7 @@ the location defined by filepath.
 
 Distributed MultiScanner
 ------------------------
-MultiScanner is also part of a distributed, scalable file analysis framework, complete with distributed task management, web interface, REST API, and report storage. Please set [Distributed Multiscanner](<docs/distributed_multiscanner.md>) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/docker_standalone.md>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
+MultiScanner is also part of a distributed, scalable file analysis framework, complete with distributed task management, web interface, REST API, and report storage. Please see [Architecture](<docs/arch.rst>) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/install.rst#standalone-docker-installation>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
 
 Other Reading
 -------------

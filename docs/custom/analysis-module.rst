@@ -2,7 +2,7 @@ Developing an Analysis Module
 =============================
 
 Modules are intended to be quickly written and incorporated into the MultiScanner framework. A module must be in the modules folder for it to be used on the next run. The configuration file does not need to be manually updated.
- 
+
 See this :ref:`example`.
 
 Mandatory Functions
@@ -25,7 +25,7 @@ The scan() function performs the analytic and returns the results.
 
 **Inputs:** There are two supported argument sets with this function: ``scan(filelist)`` and ``scan(filelist, conf=DEFAULTCONF)``. If a module has a global variable DEFAULTCONF, the second argument set is required.
 
-**Outputs:** There are two return values of the scan() function: Results and Metadata (i.e., ``return (Results, Metadata)``).  
+**Outputs:** There are two return values of the scan() function: Results and Metadata (i.e., ``return (Results, Metadata)``).
 
 - **Results** is a list of tuples, the tuple values being the filename and the corresponding scan results (e.g.,``[("file1.exe", "Executable"), ("file2.jpg", "Picture")]``).
 
