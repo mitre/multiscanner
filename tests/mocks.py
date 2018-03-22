@@ -7,6 +7,7 @@ import requests
 
 # https://realpython.com/blog/python/testing-third-party-apis-with-mock-servers/
 
+
 class MockHTTPServerRequestHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
@@ -48,12 +49,14 @@ class MockHTTPServerRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(response_content.encode('utf-8'))
         return
 
+
 def get_free_server_port():
     s = socket.socket(socket.AF_INET, type=socket.SOCK_STREAM)
     s.bind(('localhost', 0))
     address, port = s.getsockname()
     s.close()
     return port
+
 
 def start_mock_server(port=8080):
     mock_server = HTTPServer(('localhost', port), MockHTTPServerRequestHandler)

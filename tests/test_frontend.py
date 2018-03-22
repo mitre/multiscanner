@@ -1,4 +1,3 @@
-import json
 import os
 import requests
 import sys
@@ -6,7 +5,7 @@ import time
 
 import pytest
 
-from flask import Flask, url_for
+from flask import url_for
 from flask_testing import LiveServerTestCase
 from mocks import get_free_server_port, start_mock_server
 from pathlib import Path
@@ -30,8 +29,8 @@ sys.path.insert(0, os.path.dirname(CWD))
 from app import app as flask_app
 
 proxies = {
-  "http": None,
-  "https": None,
+    "http": None,
+    "https": None,
 }
 
 try:

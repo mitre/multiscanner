@@ -112,7 +112,8 @@ class MultiScannerTask(Task):
 
 
 @app.task(base=MultiScannerTask)
-def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, config=multiscanner.CONFIG, module_list=None):
+def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
+                        config=multiscanner.CONFIG, module_list=None):
     '''
     Queue up multiscanner tasks
 
@@ -124,7 +125,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     # Initialize the connection to the task DB
     db.init_db()
 
-    logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('='*48, '\n', file_hash, original_filename))
+    logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
     storage_conf = multiscanner.common.get_config_path(config, 'storage')
@@ -188,6 +189,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata, 
     logger.info('Completed Task #{}'.format(task_id))
 
     return results
+
 
 @app.task()
 def ssdeep_compare_celery():

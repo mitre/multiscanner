@@ -37,6 +37,7 @@ pytest
 mock
 selenium
 #Requred by dev
+flake8
 pre-commit
 #Required by utils
 tqdm
