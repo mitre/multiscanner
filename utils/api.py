@@ -211,8 +211,8 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]] = results[item[0]]
             del results[item[0]]
 
-            results[item[1]]['Scan Time'] = scan_time
-            results[item[1]]['Metadata'] = item[4]
+            results[item[1]]['Scan Metadata'] = item[4]
+            results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
 
             db.update_task(
                 task_id=item[2],

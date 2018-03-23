@@ -166,6 +166,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     results[file_]['Scan Metadata']['Modules Enabled'] = '{} / {}'.format(
         total_enabled, total_modules
     )
+    results[file_]['Scan Metadata']['Scan Time'] = scan_time
 
     # Use the original filename as the value for the filename
     # in the report (instead of the tmp path assigned to the file
@@ -173,7 +174,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     results[original_filename] = results[file_]
     del results[file_]
 
-    results[original_filename]['Scan Time'] = scan_time
     results[original_filename]['Metadata'] = metadata
 
     # Update the task DB to reflect that the task is done
