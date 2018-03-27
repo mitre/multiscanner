@@ -70,7 +70,7 @@ def test_create_observation_expression():
         '198.51.100.1/32'
     )
 
-    observation_exp = stix2_generator.create_sti2_observation_expression(
+    observation_exp = stix2_generator.create_stix2_observation_expression(
         comparison_exp
     )
 
@@ -92,7 +92,7 @@ def test_create_observation_expression_list():
 
     all_comparison_exp = [comparison_exp_1, comparison_exp_2]
 
-    observation_exp = stix2_generator.create_sti2_observation_expression(
+    observation_exp = stix2_generator.create_stix2_observation_expression(
         all_comparison_exp, 'OR'
     )
 
