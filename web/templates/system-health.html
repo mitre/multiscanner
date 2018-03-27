@@ -1,5 +1,14 @@
 {% extends "layout.html" %}
 
-<html>
-System Health
-</html>
+{% block title %}System Health{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">System Health</h1>
+    <p align="center">
+      <iframe class="embed-responsive-item" src="http://{{ kibana_loc }}/app/kibana#/dashboard/Metricbeat-system-overview?embed=true&_g=()" height="800" width="100%"</iframe>
+    </p>
+  </div>
+</div>
+{% endblock %}

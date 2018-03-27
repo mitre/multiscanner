@@ -16,6 +16,7 @@ DEFAULTCONF = {
     'PORT': 8000,
     'API_LOC': "http://localhost:8080",
     'FLOWER_LOC': "http://localhost:5555",
+    'KIBANA_LOC': "http://localhost:5601",
     'DEBUG': False,
     'METADATA_FIELDS': [
         "Submitter Name",
@@ -105,7 +106,8 @@ def about():
 
 @app.route('/system-health', methods=['GET'])
 def system_health():
-    return render_template('system-health.html')
+    return render_template('system-health.html',
+                           kibana_loc=app.config['KIBANA_LOC'])
 
 
 if __name__ == "__main__":
