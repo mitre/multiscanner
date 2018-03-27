@@ -33,7 +33,7 @@ def join_stix2_comparison_expression(comp_exps, obs_operator):
         str: Containing the full observation expression joined by the specified
             operator.
 
-    Example:
+    Examples:
         >>> join_stix2_comparison_expression(
         ...     ['ipv4-addr:value = \\'198.51.100.1/32\\'',
         ...     'ipv4-addr:value = \\'203.0.113.33/32\\''], 'OR')
@@ -56,6 +56,11 @@ def create_stix2_comparison_expression(lhs, op, rhs):
     Returns:
         str: Containing the comparison expression.
 
+    Examples:
+        >>> create_stix2_comparison_expression('ipv4-addr:value', '=',
+        ... '198.51.100.1/32')
+        'ipv4-addr:value = \'198.51.100.1/32\''
+
     References:
         For more information on STIX2 patterning visit
         http://docs.oasis-open.org/cti/stix/v2.0/cs01/part5-stix-patterning/stix-v2.0-cs01-part5-stix-patterning.html
@@ -64,7 +69,7 @@ def create_stix2_comparison_expression(lhs, op, rhs):
     return '{lhs} {op} \'{rhs}\''.format(lhs=lhs, op=op, rhs=rhs)
 
 
-def create_sti2_observation_expression(comp_exps, obs_operator=None):
+def create_stix2_observation_expression(comp_exps, obs_operator=None):
     '''
     Given comparison expression(s) create an observation expression.
 
@@ -77,6 +82,10 @@ def create_sti2_observation_expression(comp_exps, obs_operator=None):
     Returns:
         A STIX2 comparison expression pattern.
 
+    Examples:
+        >>> create_stix2_observation_expression('ipv4-addr:value = \\'198.51.100.1/32\\'')
+        '[ ipv4-addr:value = \'198.51.100.1/32\' ]'
+
     References:
         For more information on STIX2 patterning visit
         http://docs.oasis-open.org/cti/stix/v2.0/cs01/part5-stix-patterning/stix-v2.0-cs01-part5-stix-patterning.html
@@ -88,26 +97,30 @@ def create_sti2_observation_expression(comp_exps, obs_operator=None):
                                       join_stix2_comparison_expression(
                                           comp_exps, obs_operator
                                       ))
-    elif len(comp_exps) == 1:
+    elif isinstance(comp_exps, list) and len(comp_exps) == 1:
         return '[ {pattern} ]'.format(pattern=comp_exps[0])
     return '[ {pattern} ]'.format(pattern=comp_exps)
 
 
-def extract_file_cuckoo(dropped_file):
+def extract_file_cuckoo(dropped_file, custom_labels=None):
     '''
     Process a Cuckoo dropped file obtained from analysis.
 
     Args:
         dropped_file: A dict from the "dropped" list from the "Cuckoo Sandbox"
             portion of the report.
+        custom_labels: A list of labels to attach into generated Indicators.
 
     Returns:
         ``stix2.Indicator`` with a pattern that matches the file by name or
             a variety of hashes.
 
     '''
-    labels = ['benign']
+    labels = ['multiscanner']
     dropped_pattern = []
+
+    if custom_labels:
+        labels.extend(custom_labels)
 
     file_name = dropped_file.get('filepath', '')
     sha1_value = dropped_file.get('sha1', '')
@@ -141,19 +154,20 @@ def extract_file_cuckoo(dropped_file):
     if dropped_pattern:
         return stix2.Indicator(**{
             'labels': labels,
-            'pattern': create_sti2_observation_expression(dropped_pattern, 'OR')
+            'pattern': create_stix2_observation_expression(dropped_pattern, 'OR')
         })
     else:
         return None
 
 
-def extract_http_requests_cuckoo(signature):
+def extract_http_requests_cuckoo(signature, custom_labels=None):
     '''
     Process Cuckoo http signatures obtained from analysis.
 
     Args:
         signature: A dict from the "signatures" list from the "Cuckoo Sandbox"
             portion of the report.
+        custom_labels: A list of labels to attach into generated Indicators.
 
     Returns:
         list: Containing ``stix2.Indicator`` with a pattern that matches the
@@ -161,12 +175,10 @@ def extract_http_requests_cuckoo(signature):
 
     '''
     indicators = []
-    labels = []
+    labels = ['multiscanner']
 
-    if signature.get('severity', 1) <= 2:
-        labels.extend(['benign', 'anomalous-activity'])
-    else:
-        labels.append('anomalous-activity')
+    if custom_labels:
+        labels.extend(custom_labels)
 
     for ioc_mark in signature.get('marks', []):
         ioc = ioc_mark.get('ioc', '')
@@ -176,7 +188,7 @@ def extract_http_requests_cuckoo(signature):
                 url_value = url_value[1]
             else:
                 url_value = url_value[0]
-            ioc_pattern = create_sti2_observation_expression(
+            ioc_pattern = create_stix2_observation_expression(
                 create_stix2_comparison_expression('url:value', '=', url_value)
             )
             indicators.append(stix2.Indicator(**{
@@ -187,7 +199,7 @@ def extract_http_requests_cuckoo(signature):
     return indicators
 
 
-def parse_json_report_to_stix2_bundle(report):
+def parse_json_report_to_stix2_bundle(report, custom_labels=None):
     '''
     Creates a STIX2 bundle from a multiscanner JSON report. This is achieved
     on a best effort approach and does not intend to capture all possible
@@ -195,13 +207,14 @@ def parse_json_report_to_stix2_bundle(report):
 
     Args:
         report: The dict representation of a multiscanner report.
+        custom_labels: A list of labels to attach into generated Indicators.
 
     Returns:
         ``stix2.Bundle`` with Indicators generated from the report.
 
     Notes:
         There might be more content present in the report that may not
-        be represented as STIX simply because neccessary logic to process
+        be represented as STIX simply because necessary logic to process
         that content is missing.
 
     '''
@@ -213,18 +226,23 @@ def parse_json_report_to_stix2_bundle(report):
     for signature in cuckoo.get('signatures', []):
         if ('description' in signature
                 and 'HTTP request' in signature.get('description', '')):
-            all_objects.extend(extract_http_requests_cuckoo(signature))
+            all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
         elif ('description' in signature
                 and 'Potentially malicious URLs' in signature.get('description', '')):
-            all_objects.extend(extract_http_requests_cuckoo(signature))
+            all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
     for dropped in cuckoo.get('dropped', []):
         if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1')):
-            ind = extract_file_cuckoo(dropped)
+            ind = extract_file_cuckoo(dropped, custom_labels)
             if ind:
                 all_objects.append(ind)
 
     # Extract information from file submission and create Indicator
     submission_pattern = []
+    labels = ['multiscanner']
+
+    if custom_labels:
+        labels.extend(custom_labels)
+
     file_name = r.get('filename', '')
     sha1_value = r.get('SHA1', '')
     sha256_value = r.get('SHA256', '')
@@ -255,9 +273,9 @@ def parse_json_report_to_stix2_bundle(report):
 
     if submission_pattern:
         all_objects.append(stix2.Indicator(**{
-            'labels': ['benign'],
-            'pattern': create_sti2_observation_expression(submission_pattern,
-                                                          'OR')
+            'labels': labels,
+            'pattern': create_stix2_observation_expression(submission_pattern,
+                                                           'OR')
         }))
 
     return create_stix2_bundle(all_objects)
