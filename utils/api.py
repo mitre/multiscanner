@@ -904,6 +904,8 @@ def get_pdf_report(task_id):
 def get_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
+
+    custom labels must be comma-separated.
     '''
     report_dict, success = get_report_dict(task_id)
 
