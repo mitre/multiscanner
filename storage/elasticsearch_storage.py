@@ -486,5 +486,23 @@ class ElasticSearchStorage(storage.Storage):
             # TODO: log exception
             return False
 
+    def delete_by_task_id(self, task_id):
+        query = {
+            "query": {
+                "term": {
+                    "Scan Metadata.Task ID": task_id
+                }
+            }
+        }
+
+        try:
+            self.es.delete_by_query(
+                index=self.index, doc_type=self.doc_type, body=query
+            )
+            return True
+        except Exception as e:
+            # TODO: log exception
+            return False
+
     def teardown(self):
         pass

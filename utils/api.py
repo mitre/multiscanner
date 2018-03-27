@@ -213,6 +213,7 @@ def multiscanner_process(work_queue, exit_signal):
 
             results[item[1]]['Scan Metadata'] = item[4]
             results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
+            results[item[1]]['Scan Metadata']['Task ID'] = item[2]
 
             db.update_task(
                 task_id=item[2],
@@ -344,12 +345,12 @@ def get_task(task_id):
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
-
-    Note: This removes the task from the task database, but the report remains
-        in Elasticsearch.
     '''
-    result = db.delete_task(task_id)
-    if not result:
+    es_result = handler.delete_by_task_id(task_id)
+    if not es_result:
+        abort(HTTP_NOT_FOUND)
+    sql_result = db.delete_task(task_id)
+    if not sql_result:
         abort(HTTP_NOT_FOUND)
     return jsonify({'Message': 'Deleted'})
 

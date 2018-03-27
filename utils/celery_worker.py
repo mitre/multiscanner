@@ -160,21 +160,20 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
         if sub_conf[key]['ENABLED'] is True:
             total_enabled += 1
 
-    results[file_]['Scan Metadata'] = {}
+    results[file_]['Scan Metadata'] = metadata
     results[file_]['Scan Metadata']['Worker Node'] = gethostname()
     results[file_]['Scan Metadata']['Scan Config'] = sub_conf
     results[file_]['Scan Metadata']['Modules Enabled'] = '{} / {}'.format(
         total_enabled, total_modules
     )
     results[file_]['Scan Metadata']['Scan Time'] = scan_time
+    results[file_]['Scan Metadata']['Task ID'] = task_id
 
     # Use the original filename as the value for the filename
     # in the report (instead of the tmp path assigned to the file
     # by the REST API)
     results[original_filename] = results[file_]
     del results[file_]
-
-    results[original_filename]['Metadata'] = metadata
 
     # Update the task DB to reflect that the task is done
     db.update_task(
