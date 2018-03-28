@@ -165,12 +165,6 @@ class TestTaskUpdateCase(APITestCase):
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def test_delete_nonexistent_task(self):
-        expected_response = api.TASK_NOT_FOUND
-        resp = self.app.delete('/api/v1/tasks/2')
-        self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
-        self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
-
 
 class TestTaskDeleteCase(APITestCase):
     def setUp(self):
@@ -179,13 +173,17 @@ class TestTaskDeleteCase(APITestCase):
         # populate the DB w/ a task
         post_file(self.app)
 
-    def test_delete_task(self):
+    @mock.patch('api.handler')
+    def test_delete_task(self, mock_handler):
+        mock_handler.delete_by_task_id.return_value = True
         expected_response = {'Message': 'Deleted'}
         resp = self.app.delete('/api/v1/tasks/1')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    def test_delete_nonexistent_task(self):
+    @mock.patch('api.handler')
+    def test_delete_nonexistent_task(self, mock_handler):
+        mock_handler.delete_by_task_id.return_value = False
         expected_response = api.TASK_NOT_FOUND
         resp = self.app.delete('/api/v1/tasks/2')
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
