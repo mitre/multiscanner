@@ -134,7 +134,25 @@ from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
-db.init_db()
+# Sleep and retry until database connection is successful
+db_sleep_time = 5  # wait this many seconds between tries
+db_num_retries = 20  # max number of times to retry
+for x in range(0, db_num_retries):
+    try:
+        db.init_db()
+    except Exception as excinfo:
+        db_error = excinfo
+        print("Can't connect to task database; retrying...")
+    else:
+        db_error = None
+
+    if db_error:
+        time.sleep(db_sleep_time)
+    else:
+        break
+if db_error:
+    print(db_error)
+    exit()
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)

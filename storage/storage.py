@@ -10,6 +10,7 @@ import configparser
 import inspect
 import os
 import sys
+import time
 import threading
 from builtins import *  # noqa: F401,F403
 
@@ -128,16 +129,34 @@ class StorageHandler(object):
 
         # Call setup for each enabled storage
         loaded_storage = []
-        for storage_name in storage_classes:
-            storage = storage_classes[storage_name]
-            if storage.config['ENABLED'] is True:
-                try:
-                    if storage.setup():
-                        loaded_storage.append(storage)
-                except Exception as e:
-                    print('ERROR:', 'storage', storage_name, 'failed to load.', e)
-        if loaded_storage == []:
-            raise RuntimeError('No storage classes loaded')
+        # Sleep and retry until storage setup is successful
+        sleep_time = 5  # wait this many seconds between tries
+        num_retries = 20  # max number of times to retry
+        for x in range(0, num_retries):
+            for storage_name in storage_classes:
+                storage = storage_classes[storage_name]
+                if storage.config['ENABLED'] is True:
+                    try:
+                        if storage.setup():
+                            loaded_storage.append(storage)
+                    except Exception as e:
+                        storage_error = e
+                        print('ERROR:', 'storage', storage_name, 'failed to load.')
+
+            if loaded_storage == []:
+                print('No storage classes loaded; retrying...')
+            else:
+                storage_error = None
+
+            if storage_error:
+                time.sleep(sleep_time)
+            else:
+                break
+
+        if storage_error:
+            print(storage_error)
+            exit()
+
         self.loaded_storage = loaded_storage
 
     def store(self, dictionary, wait=True):

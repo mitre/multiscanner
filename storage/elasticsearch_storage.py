@@ -2,6 +2,7 @@
 Storage module that will interact with elasticsearch.
 '''
 import json
+import logging
 import os
 import re
 from datetime import datetime
@@ -86,6 +87,10 @@ class ElasticSearchStorage(storage.Storage):
             hosts=self.hosts,
             port=self.port
         )
+
+        # Reduce traceback output from the elasticsearch module
+        es_logger = logging.getLogger('elasticsearch')
+        es_logger.setLevel(logging.ERROR)
 
         # Create the index if it doesn't exist
         es_indices = self.es.indices
