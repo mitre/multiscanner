@@ -6,83 +6,73 @@ Introduction
 ------------
 MultiScanner is a file analysis framework that assists the user in evaluating a set
 of files by automatically running a suite of tools for the user and aggregating the output.
-Tools can be custom built python scripts, web APIs, software running on another machine, etc.
+Tools can be custom built Python scripts, web APIs, software running on another machine, etc.
 Tools are incorporated by creating modules that run in the MultiScanner framework.
 
 Modules are designed to be quickly written and easily incorporated into the framework.
 Currently written and maintained modules are related to malware analytics, but the framework is not limited to that
-scope. For a list of modules you can look in [modules/](modules), descriptions and config
-options can be found on the [Analysis Modules](<docs/use/use-analysis-mods.rst>) page.
+scope. For a list of modules you can look in [modules/](modules). Descriptions and config
+options can be found on the [Analysis Modules](http://multiscanner.readthedocs.io/en/latest/use/use-analysis-mods.html) page.
 
-Requirements
-------------
-Python 3.6 is recommended. Compatibility with 2.7+ and
-3.4+ is supported but not as thoroughly maintained and tested. Please submit an issue
-or a pull request fixing any issues found with other versions of Python.
+MultiScanner also supports a distributed workflow for sample storage, analysis, and
+report viewing. This functionality includes a web interface, a REST API, a distributed
+file system (GlusterFS), distributed report storage / searching (Elasticsearch), and
+distributed task management (Celery / RabbitMQ). Please see [Architecture](http://multiscanner.readthedocs.io/en/latest/arch.html) for more details.
 
+Usage
+-----
 
-An installer script is included in the project [install.sh](<install.sh>), which
-installs the prerequisites on most systems.
+MultiScanner can be used as a command-line interface, a Python API, or a
+distributed system with a web interface. See the documentation for more detailed
+information on [installation](http://multiscanner.readthedocs.io/en/latest/install.html) and [usage](http://multiscanner.readthedocs.io/en/latest/use/index.html).
 
-Installation
-------------
-### MultiScanner ###
-If you're running on a RedHat or Debian based linux distribution you should try and run
-[install.sh](<install.sh>). Otherwise the required python packages are defined in
-[requirements.txt](<requirements.txt>).
+### Command-Line ###
 
-MultiScanner must have a configuration file to run. Generate the MultiScanner default
-configuration by running `python multiscanner.py init` after cloning the repository.
-This command can be used to rewrite the configuration file to its default state or,
-if new modules have been written, to add their configuration to the configuration
-file.
+Install Python (2.7 or 3.4+) if you haven't already.
 
-### Analytic Machine ###
-Default modules have the option to be run locally or via SSH. The development team
-runs MultiScanner on a Linux host and hosts the majority of analytical tools on
-a separate Windows machine. The SSH server used in this environment is freeSSHd
-from <http://www.freesshd.com/>.
+Then run the following (substituting the actual file you want to scan for `<file>`):
 
-A network share accessible to both the MultiScanner and the Analytic Machines is
-required for the multi-machine setup. Once configured, the network share path must
-be identified in the configuration file, config.ini. To do this, set the `copyfilesto`
-option under `[main]` to be the mount point on the system running MultiScanner.
-Modules can have a `replacement path` option, which is the network share mount point
-on the analytic machine.
+``` bash
+$ git clone https://github.com/mitre/multiscanner.git
+$ cd multiscanner
+$ sudo -HE ./install.sh
+$ python multiscanner.py init
+$ python multiscanner.py <file>
+```
 
-Module Writing
---------------
-Modules are intended to be quickly written and incorporated into the framework.
-A finished module must be placed in the modules folder before it can be used. The
-configuration file does not need to be manually updated. See [Developing an Analysis Module](<docs/custom/analysis-module.rst>)
-for more information.
+If you are not on a RedHat or Debian based Linux distribution, install pip if
+you haven't already. Then run the following instead of the `install.sh` script:
 
-Module Configuration
---------------------
-Modules are configured within the configuration file, config.ini. See
-the [Analysis Modules](<docs/use/use-analysis-mods.rst>) page for more information.
+``` bash
+$ pip install -r requirements.txt
+```
 
-Python API
-----------
-MultiScanner can be incorporated as a module in another projects. Below is a simple
-example of how to import MultiScanner into a Python script.
+### Python API ###
 
 ``` python
 import multiscanner
-output = multiscanner.multiscan(FileList)
-Results = multiscanner.parse_reports(output, python=True)
+multiscanner.config_init(filepath)
+output = multiscanner.multiscan(file_list)
+results = multiscanner.parse_reports(output, python=True)
 ```
 
-Results is a dictionary object where each key is a filename of a scanned file.
+### Web Interface ###
 
-`multiscanner.config_init(filepath)` will create a default configuration file at
-the location defined by filepath.
+Install the latest versions of [Docker](https://docs.docker.com/engine/installation/)
+and [Docker Compose](https://docs.docker.com/compose/install/) if you haven't already.
 
-Distributed MultiScanner
-------------------------
-MultiScanner is also part of a distributed, scalable file analysis framework, complete with distributed task management, web interface, REST API, and report storage. Please see [Architecture](<docs/arch.rst>) for more details. Additionally, we distribute a standalone Docker container with the base set of features (web UI, REST API, ElasticSearch node) as an introduction to the capabilities of this Distributed MultiScanner. See [here](<docs/install.rst#standalone-docker-installation>) for more details. (*Note*: this standalone container should not be used in production, it is simply a primer on what a full installation would look like).
+``` bash
+$ git clone https://github.com/mitre/multiscanner.git
+$ cd multiscanner
+$ docker-compose up
+```
 
-Other Reading
+You may have to wait a while until all the services are up and running, but then you
+can use the web interface by going to `http://localhost:8000` in your web browser.
+
+*Note*: this should not be used in production; it is simply an introduction to what a
+full installation would look like. See [here](http://multiscanner.readthedocs.io/en/latest/install.html#standalone-docker-installation) for more details.
+
+Documentation
 -------------
-For more information on module configuration or writing modules check the
-[docs](<docs>) folder.
+For more information, see the [full documentation](http://multiscanner.readthedocs.io/) on ReadTheDocs.

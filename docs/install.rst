@@ -99,6 +99,8 @@ Running this command will generate a lot of output and take some time. The syste
 
     api_1      |  * Running on http://0.0.0.0:8080/ (Press CTRL+C to quit)
 
+Now you can go to the web interface at ``http://localhost:8000``.
+
 .. note::
 
   We are assuming that you are already running latest version of docker and have the latest version of docker-compose installed on your machine. Guides on how to do that are `here <https://docs.docker.com/engine/installation/>`__. and `here <https://docs.docker.com/compose/install/>`__.
