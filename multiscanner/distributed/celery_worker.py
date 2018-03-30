@@ -7,7 +7,6 @@ from the utils/ directory.
 import codecs
 import configparser
 import os
-import sys
 from datetime import datetime
 from socket import gethostname
 
@@ -15,24 +14,12 @@ from celery import Celery, Task
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Append .. to sys path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# Add the storage dir to the sys.path. Allows import of sql_driver module
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-# Add the libs dir to the sys.path. Allows import of common, celery_batches modules
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
-# Add the analytics dir to the sys.path. Allows import of ssdeep_analytics
-if os.path.join(MS_WD, 'analytics') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
-
-import common
-import elasticsearch_storage
-import multiscanner
-import sql_driver as database
-from ssdeep_analytics import SSDeepAnalytic
+from multiscanner import CONFIG as MS_CONFIG
+from multiscanner import multiscan, parse_reports
+from multiscanner.common import utils
+from multiscanner.storage import storage
+from multiscanner.storage import sql_driver as database
+from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
 
 logger = get_task_logger(__name__)
@@ -50,7 +37,7 @@ DEFAULTCONF = {
 
 config_object = configparser.SafeConfigParser()
 config_object.optionxform = str
-configfile = common.get_config_path(multiscanner.CONFIG, 'api')
+configfile = utils.get_config_path(MS_CONFIG, 'api')
 config_object.read(configfile)
 
 if not config_object.has_section('celery') or not os.path.isfile(configfile):
@@ -61,7 +48,7 @@ if not config_object.has_section('celery') or not os.path.isfile(configfile):
     conffile = codecs.open(configfile, 'w', 'utf-8')
     config_object.write(conffile)
     conffile.close()
-config = common.parse_config(config_object)
+config = utils.parse_config(config_object)
 api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
@@ -126,7 +113,7 @@ class MultiScannerTask(Task):
 
 @app.task(base=MultiScannerTask)
 def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
-                        config=multiscanner.CONFIG, module_list=None):
+                        config=MS_CONFIG, module_list=None):
     '''
     Queue up multiscanner tasks
 
@@ -141,15 +128,15 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
-    storage_conf = multiscanner.common.get_config_path(config, 'storage')
-    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+    storage_conf = utils.get_config_path(config, 'storage')
+    storage_handler = storage.StorageHandler(configfile=storage_conf)
 
-    resultlist = multiscanner.multiscan(
+    resultlist = multiscan(
         [file_],
         configfile=config,
         module_list=module_list
     )
-    results = multiscanner.parse_reports(resultlist, python=True)
+    results = parse_reports(resultlist, python=True)
 
     scan_time = datetime.now().isoformat()
 
@@ -158,7 +145,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     scan_config_object = configparser.SafeConfigParser()
     scan_config_object.optionxform = str
     scan_config_object.read(config)
-    full_conf = common.parse_config(scan_config_object)
+    full_conf = utils.parse_config(scan_config_object)
     sub_conf = {}
     # Count number of modules enabled out of total possible
     # and add it to the Scan Metadata

@@ -5,7 +5,6 @@ import codecs
 import configparser
 import json
 import os
-import sys
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -17,11 +16,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import aliased, sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
+from multiscanner import MS_WD
 
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
+# MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
 
 Base = declarative_base()
 Session = sessionmaker()

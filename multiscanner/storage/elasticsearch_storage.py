@@ -12,10 +12,8 @@ import curator
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
 
-import storage
-
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+from multiscanner import MS_WD
+from multiscanner.storage import storage
 
 METADATA_FIELDS = [
     'MD5',

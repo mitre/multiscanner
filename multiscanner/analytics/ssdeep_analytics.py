@@ -24,35 +24,28 @@ Set of analytics based on ssdeep hash.
 import argparse
 import configparser
 import json
-import os
 import sys
 from pprint import pprint
 
 import ssdeep
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-if MS_WD not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD))
-
-import common
-import elasticsearch_storage
-import multiscanner
+from multiscanner import CONFIG as MS_CONFIG
+from multiscanner.common import utils
+from multiscanner.storage import storage
 
 
 class SSDeepAnalytic:
 
     def __init__(self, debug=False):
-        storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
+        storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
         config_object = configparser.SafeConfigParser()
         config_object.optionxform = str
         config_object.read(storage_conf)
-        conf = common.parse_config(config_object)
-        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+        conf = utils.parse_config(config_object)
+        storage_handler = storage.StorageHandler(configfile=storage_conf)
         es_handler = None
         for handler in storage_handler.loaded_storage:
-            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
                 es_handler = handler
                 break
 

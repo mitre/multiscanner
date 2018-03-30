@@ -2,7 +2,7 @@ import codecs
 import gzip
 import json
 
-import storage
+from multiscanner.storage import storage
 
 
 class File(storage.Storage):

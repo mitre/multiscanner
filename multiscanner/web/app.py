@@ -4,12 +4,9 @@ import configparser
 from flask import Flask, render_template, request
 import os
 import re
-import sys
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if MS_WD not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD))
-import multiscanner
+from multiscanner import CONFIG as MS_CONFIG
+from multiscanner.common import utils
 
 DEFAULTCONF = {
     'HOST': "localhost",
@@ -36,7 +33,7 @@ app = Flask(__name__)
 # Finagle Flask to read config from .ini file instead of .py file
 web_config_object = configparser.SafeConfigParser()
 web_config_object.optionxform = str
-web_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'web')
+web_config_file = utils.get_config_path(MS_CONFIG, 'web')
 web_config_object.read(web_config_file)
 if not web_config_object.has_section('web') or not os.path.isfile(web_config_file):
     # Write default config
@@ -46,7 +43,7 @@ if not web_config_object.has_section('web') or not os.path.isfile(web_config_fil
     conffile = codecs.open(web_config_file, 'w', 'utf-8')
     web_config_object.write(conffile)
     conffile.close()
-web_config = multiscanner.common.parse_config(web_config_object)['web']
+web_config = utils.parse_config(web_config_object)['web']
 conf_tuple = namedtuple('WebConfig', web_config.keys())(*web_config.values())
 app.config.from_object(conf_tuple)
 

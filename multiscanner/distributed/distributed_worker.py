@@ -11,23 +11,15 @@ import configparser
 import multiprocessing
 import os
 import queue
-import sys
 import time
 from builtins import *  # noqa: F401,F403
 
 from future import standard_library
-
 standard_library.install_aliases()
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Adds the libs directory to the path
-if MS_WD not in sys.path:
-    sys.path.append(MS_WD)
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-
-import multiscanner
-from common import parse_config
+from multiscanner import multiscan, parse_reports
+from multiscanner.common import utils
+from multiscanner.storage import storage
 
 
 __author__ = "Drew Bonasera"
@@ -39,8 +31,8 @@ CONFIG = os.path.join(os.path.dirname(__file__), 'distconf.ini')
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = multiscanner.common.get_config_path(config, 'storage')
-    storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+    storage_conf = utils.get_config_path(config, 'storage')
+    storage_handler = storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)
         try:
@@ -60,8 +52,8 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
             else:
                 continue
 
-        resultlist = multiscanner.multiscan(filelist, configfile=config)
-        results = multiscanner.parse_reports(resultlist, python=True)
+        resultlist = multiscan(filelist, configfile=config)
+        results = parse_reports(resultlist, python=True)
         if delete:
             for file_name in results:
                 os.remove(file_name)
@@ -79,7 +71,7 @@ def _read_conf(file_path):
     conf.optionxform = str
     with codecs.open(file_path, 'r', encoding='utf-8') as fp:
         conf.readfp(fp)
-    return parse_config(conf)
+    return utils.parse_config(conf)
 
 
 def _main():

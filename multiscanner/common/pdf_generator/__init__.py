@@ -7,7 +7,7 @@ import os
 from reportlab.lib import colors, units
 from reportlab.platypus import TableStyle
 
-from utils.pdf_generator import generic_pdf
+from . import generic_pdf
 
 
 def create_pdf_document(WD, report):

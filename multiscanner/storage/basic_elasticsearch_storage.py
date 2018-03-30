@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from elasticsearch import Elasticsearch
 
-import storage
+from multiscanner.storage import storage
 
 
 class BasicElasticSearchStorage(storage.Storage):

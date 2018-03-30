@@ -49,7 +49,6 @@ import os
 import queue
 import shutil
 import subprocess
-import sys
 import time
 import zipfile
 from datetime import datetime
@@ -62,22 +61,17 @@ from flask_cors import CORS
 from jinja2 import Markup
 from six import PY3
 
-MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-if os.path.join(MS_WD, 'analytics') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
-if MS_WD not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD))
+# TODO: Move MS_WD to module level
+# MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# if MS_WD not in sys.path:
+#     sys.path.insert(0, os.path.join(MS_WD))
 
-import common
-import elasticsearch_storage
-import multiscanner
-import sql_driver as database
-from utils.pdf_generator import create_pdf_document
-from utils.stix2_generator import parse_json_report_to_stix2_bundle
+from multiscanner import CONFIG as MS_CONFIG
+# TODO: Why do we need to parseDir(MODULEDIR) multiple times?
+from multiscanner import MODULEDIR, MS_WD, multiscan
+from multiscanner.common import utils, pdf_generator, stix2_generator
+from multiscanner.storage import elasticsearch_storage, StorageHandler
+from multiscanner.storage import sql_driver as database
 
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
@@ -117,7 +111,7 @@ app.json_encoder = CustomJSONEncoder
 api_config_object = configparser.SafeConfigParser()
 api_config_object.optionxform = str
 # TODO: Why does this multiscanner.common instead of just common?
-api_config_file = multiscanner.common.get_config_path(multiscanner.CONFIG, 'api')
+api_config_file = utils.get_config_path(MS_CONFIG, 'api')
 api_config_object.read(api_config_file)
 if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
     # Write default config
@@ -127,28 +121,28 @@ if not api_config_object.has_section('api') or not os.path.isfile(api_config_fil
     conffile = codecs.open(api_config_file, 'w', 'utf-8')
     api_config_object.write(conffile)
     conffile.close()
-api_config = multiscanner.common.parse_config(api_config_object)
+api_config = utils.parse_config(api_config_object)
 
 # TODO: fix this mess
 # Needs api_config in order to function properly
-from celery_worker import multiscanner_celery, ssdeep_compare_celery
-from ssdeep_analytics import SSDeepAnalytic
+from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
+from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
 db.init_db()
 
-storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
-storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
+storage_handler = StorageHandler(configfile=storage_conf)
 for handler in storage_handler.loaded_storage:
     if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
         break
 
 ms_config_object = configparser.SafeConfigParser()
 ms_config_object.optionxform = str
-ms_configfile = multiscanner.CONFIG
+ms_configfile = MS_CONFIG
 ms_config_object.read(ms_configfile)
-ms_config = common.parse_config(ms_config_object)
+ms_config = utils.parse_config(ms_config_object)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
@@ -196,11 +190,11 @@ def multiscanner_process(work_queue, exit_signal):
 
         filelist = [item[0] for item in metadata_list]
         # modulelist = [item[5] for item in metadata_list]
-        resultlist = multiscanner.multiscan(
-            filelist, configfile=multiscanner.CONFIG
+        resultlist = multiscan(
+            filelist, configfile=MS_CONFIG
             # module_list
         )
-        results = multiscanner.parse_reports(resultlist, python=True)
+        results = utils.parse_reports(resultlist, python=True)
 
         scan_time = datetime.now().isoformat()
 
@@ -258,13 +252,13 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
+    files = utils.parseDir(MODULEDIR, True)
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
     ms_config = configparser.SafeConfigParser()
     ms_config.optionxform = str
-    ms_config.read(multiscanner.CONFIG)
+    ms_config.read(MS_CONFIG)
     modules = {}
     for module in module_names:
         try:
@@ -419,7 +413,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
                                   task_id, f_name, metadata,
-                                  config=multiscanner.CONFIG)
+                                  config=MS_CONFIG)
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))
@@ -471,7 +465,7 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key]
-            files = multiscanner.parseDir(multiscanner.MODULEDIR, True)
+            files = utils.parseDir(MODULEDIR, True)
             modules = []
             for f in files:
                 split = os.path.splitext(os.path.basename(f))
@@ -891,7 +885,7 @@ def get_pdf_report(task_id):
     if not success:
         return jsonify(report_dict)
 
-    pdf = create_pdf_document(MS_WD, report_dict)
+    pdf = pdf_generator.create_pdf_document(MS_WD, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
@@ -925,7 +919,7 @@ def get_stix2_bundle_from_report(task_id):
     # If the report has no key/value pairs that we can use to create
     # STIX representations of this data. The default behavior is to return
     # an empty bundle.
-    bundle = parse_json_report_to_stix2_bundle(report_dict, custom_labels)
+    bundle = stix2_generator.parse_json_report_to_stix2_bundle(report_dict, custom_labels)
 
     # Setting pretty=True can be an expensive operation!
     response = make_response(bundle.serialize(pretty=formatting))

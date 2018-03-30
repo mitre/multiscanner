@@ -9,22 +9,20 @@ import codecs
 import configparser
 import inspect
 import os
-import sys
 import threading
 from builtins import *  # noqa: F401,F403
 
 from future import standard_library
-
 standard_library.install_aliases()
 
+from multiscanner import CONFIG as MS_CONFIG
+from multiscanner.common import utils
+
+# TODO: Is this a good default storage location?
 STORAGE_DIR = os.path.dirname(__file__)
-MS_WD = os.path.dirname(STORAGE_DIR)
-CONFIG = os.path.join(MS_WD, "storage.ini")
-
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-
-import common
+storage_config_object = configparser.SafeConfigParser()
+storage_config_object.optionxform = str
+storage_config_file = utils.get_config_path(MS_CONFIG, 'storage')
 
 
 class ThreadCounter(object):
@@ -80,7 +78,7 @@ class Storage(object):
 
 
 class StorageHandler(object):
-    def __init__(self, configfile=CONFIG, config=None, configregen=False):
+    def __init__(self, configfile=storage_config_file, config=None, configregen=False):
         self.storage_lock = threading.Lock()
         self.storage_counter = ThreadCounter()
         # Load all storage classes
@@ -96,7 +94,7 @@ class StorageHandler(object):
 
             config_object.read(configfile)
             if config:
-                file_conf = common.parse_config(config_object)
+                file_conf = utils.parse_config(config_object)
                 for key in config:
                     if key not in file_conf:
                         file_conf[key] = config[key]
@@ -105,7 +103,7 @@ class StorageHandler(object):
                         file_conf[key].update(config[key])
                 config = file_conf
             else:
-                config = common.parse_config(config_object)
+                config = utils.parse_config(config_object)
         else:
             if config is None:
                 config = {}
@@ -250,7 +248,7 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
 
 def _get_storage_classes(dir_path=STORAGE_DIR):
     storage_classes = {}
-    dir_list = common.parseDir(dir_path, recursive=True)
+    dir_list = utils.parseDir(dir_path, recursive=True)
     dir_list.remove(os.path.join(dir_path, 'storage.py'))
     dir_list.remove(os.path.join(dir_path, '__init__.py'))
     dir_list.remove(os.path.join(dir_path, 'sql_driver.py'))
@@ -258,7 +256,7 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
         if filename.endswith('.py'):
             modname = os.path.basename(filename[:-3])
             moddir = os.path.dirname(filename)
-            mod = common.load_module(os.path.basename(modname), [moddir])
+            mod = utils.load_module(os.path.basename(modname), [moddir])
             if not mod:
                 print(filename, 'not a valid storage module...')
                 continue
