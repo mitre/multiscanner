@@ -6,9 +6,7 @@ import os
 import subprocess
 import sys
 import re
-from common import list2cmdline
-from common import sshexec
-from common import SSH
+from multiscanner.common.utils import list2cmdline, sshexec, SSH
 subprocess.list2cmdline = list2cmdline
 
 __author__ = "Drew Bonasera"

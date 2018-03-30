@@ -5,7 +5,7 @@ from __future__ import division, absolute_import, with_statement, print_function
 import os
 import sys
 import time
-from common import parseDir
+from multiscanner.common.utils import parseDir
 
 __authors__ = "Nick Beede, Drew Bonasera"
 __license__ = "MPL 2.0"

@@ -2,9 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-from common import hashfile
 import hashlib
 import time
+from multiscanner.common.utils import hashfile
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"

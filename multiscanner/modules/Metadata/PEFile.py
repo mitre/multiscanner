@@ -25,7 +25,7 @@ import binascii
 import struct
 import sys
 from time import strftime, localtime
-from common import convert_encoding
+from multiscanner.common.utils import convert_encoding
 
 PY3 = False
 if sys.version_info > (3,):

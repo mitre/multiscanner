@@ -5,7 +5,7 @@ from __future__ import division, absolute_import, with_statement, print_function
 import requests
 import json
 import time
-from common import basename
+from multiscanner.common.utils import basename
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"

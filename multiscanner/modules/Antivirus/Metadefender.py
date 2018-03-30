@@ -18,7 +18,7 @@ Notes on special configuration options:
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import requests
 import time
-from common import basename
+from multiscanner.common.utils import basename
 
 __author__ = "Julian Feild"
 __license__ = "MPL 2.0"

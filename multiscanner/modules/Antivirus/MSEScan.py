@@ -5,9 +5,7 @@ from __future__ import division, absolute_import, with_statement, print_function
 import os
 import subprocess
 import sys
-from common import list2cmdline
-from common import sshconnect
-from common import SSH
+from multiscanner.common.utils import list2cmdline, sshconnect, SSH
 subprocess.list2cmdline = list2cmdline
 
 __author__ = "Michael Limiero"
