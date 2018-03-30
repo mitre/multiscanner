@@ -1,13 +1,7 @@
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(__file__))
-
-from . import multiscanner
+# -*- coding: utf-8 -*-
 
 __version__ = '1.1.1'
 
-common = multiscanner.common
-multiscan = multiscanner.multiscan
-parse_reports = multiscanner.parse_reports
-config_init = multiscanner.config_init
+from multiscanner import (
+    analytics, common, distributed, modules, storage, web
+)
