@@ -3,8 +3,6 @@ RESTful API
 
 The RESTful API is provided by a Flask app that supports the following operations:
 
-.. tabularcolumns:: |p{2cm}|p{6cm}|p{7cm}|
-
 ====== ======================================= =======================================
 Method URI                                     Description
 ====== ======================================= =======================================
@@ -21,7 +19,7 @@ DELETE /api/v1/tasks/<task_id>                 Delete task_id
 GET    /api/v1/tasks/search/                   Receive list of most recent report for matching samples
 GET    /api/v1/tasks/search/history            Receive list of most all reports for matching samples
 GET    /api/v1/tasks/<task_id>/file?raw={t|f}  Download sample, defaults to passwd protected zip
-GET    /api/v1/tasks/<task_id>/maec            Download the Cuckoo MAEC 5.0 report, if it exists 
+GET    /api/v1/tasks/<task_id>/maec            Download the Cuckoo MAEC 5.0 report, if it exists
 GET    /api/v1/tasks/<task_id>/notes           Receive list of this tasks notes
 POST   /api/v1/tasks/<task_id>/notes           Add a note to task
 PUT    /api/v1/tasks/<task_id>/notes/<note_id> Edit a note

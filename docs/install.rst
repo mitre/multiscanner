@@ -64,8 +64,6 @@ MultiScanner and its modules are configured within the configuration file, confi
 The following parameters configure MultiScanner itself, and go in the ``[main]``
 section of the config file.
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
-
 ====================  =============================
 Parameter             Description
 ====================  =============================

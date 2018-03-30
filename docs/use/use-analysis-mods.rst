@@ -5,7 +5,6 @@ Analysis Modules
 
 The analysis modules currently available in MultiScanner are listed by catagory below.
 
-.. tabularcolumns:: |p{4cm}|p{11cm}|
 
 =================================  ========================================
 AV Scans
@@ -14,30 +13,27 @@ AVG 2014                           Scans sample with AVG 2014 anti-virus
 ClamAVScan                         Scans sample with ClamAV
 McAfeeScan                         Scans sample with McAfee AntiVirus Command Line
 Microsoft Security Essentials      Scans sample with Microsoft Security Essentials
-:ref:`Metadefender <mod-metadef>`  Interacts with OPSWAT Metadefender Core 4 Version 3.x, polling Metadefender for scan results.
-:ref:`vtsearch <mod-vtsearch>`     Searches VirusTotal for sample’s hash and downloads the report if available
+`Metadefender <#metadefender>`__   Interacts with OPSWAT Metadefender Core 4 Version 3.x, polling Metadefender for scan results.
+`vtsearch <#vtsearch>`__           Searches VirusTotal for sample’s hash and downloads the report if available
 VFind                              Runs the CyberSoft VFind anti-malware scanner, part of the `VFind Security Toolkit <https://www.cybersoft.com/products/vstk/>`_.
 =================================  ========================================
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 =============================  ========================================
 Database
 =============================  ========================================
-:ref:`NSRL <mod-nsrl>`         Looks up a hash in the `National Software Reference Library <https://www.nist.gov/software-quality-group/national-software-reference-library-nsrl>`_.
+`NSRL <#nsrl>`__               Looks up a hash in the `National Software Reference Library <https://www.nist.gov/software-quality-group/national-software-reference-library-nsrl>`_.
 =============================  ========================================
 
-.. tabularcolumns:: |p{4cm}|p{11cm}|
 
 ===================================  ========================================
 Sandbox Detonation
 ===================================  ========================================
-:ref:`Cuckoo Sandbox <mod-cuckoo>`   Submits a sample to Cuckoo Sandbox cluster for analysis.
-:ref:`FireEye API <mod-fireeye>`     Detonates the sample in FireEye AX via FireEye's API.
-:ref:`VxStream <mod-vxstream>`       Submits a file to a VxStream Sandbox cluster for analysis.
+`Cuckoo Sandbox <#cuckoo>`__         Submits a sample to Cuckoo Sandbox cluster for analysis.
+`FireEye API <#fireeyeapi>`__        Detonates the sample in FireEye AX via FireEye's API.
+`VxStream <#vxstream>`__             Submits a file to a VxStream Sandbox cluster for analysis.
 ===================================  ========================================
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 =============================  ========================================
 Machine Learning
@@ -45,36 +41,34 @@ Machine Learning
 MaliciousMacroBot              Triage office files with `MaliciousMacroBot <https://github.com/egaus/MaliciousMacroBot>`_.
 =============================  ========================================
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================================  ========================================
 Metadata
 ====================================  ========================================
 entropy                               Calculates the Shannon entropy of a file.
-:ref:`ExifToolsScan <mod-exiftools>`  Scans sample with Exif tools and returns the results.
+`ExifToolsScan <#exiftoolsscan>`__    Scans sample with Exif tools and returns the results.
 fileextensions                        Determines possible file extensions for a file.
-:ref:`floss <mod-floss>`              FireEye Labs Obfuscated String Solver uses static analysis techniques to deobfuscate strings from malware binaries. [floss]|
-:ref:`impfuzzy <mod-impfuzzy>`        Calculates a fuzzy hash using ssdeep on Windows PE imports.
-:ref:`libmagic <mod-libmagic>`        Runs libmagic against the files to identify filetype.
+`floss <#floss>`__                    FireEye Labs Obfuscated String Solver uses static analysis techniques to deobfuscate strings from malware binaries.
+`impfuzzy <#impfuzzy>`__              Calculates a fuzzy hash using ssdeep on Windows PE imports.
+`libmagic <#libmagic>`__              Runs libmagic against the files to identify filetype.
 MD5                                   Generates the MD5 hash of the sample.
-:ref:`officemeta <mod-officemeta>`    Extracts metadata from Microsoft Office documents.
-:ref:`pdfinfo <mod-pdfinfo>`          Extracts feature information from PDF files using `pdf-parser <http://blog.didierstevens.com/programs/pdf-tools/>`_.
-:ref:`PEFile <mod-pefile>`            Extracts features from EXE files.
-pehasher                              Computes pehash values using a variety of algorithms: totalhase, anymaster, anymaster_v1_0_1, endgame, crits, and pehashng.|
+`officemeta <#officemeta>`__          Extracts metadata from Microsoft Office documents.
+`pdfinfo <#pdfinfo>`__                Extracts feature information from PDF files using `pdf-parser <http://blog.didierstevens.com/programs/pdf-tools/>`_.
+`PEFile <#pefile>`__                  Extracts features from EXE files.
+pehasher                              Computes pehash values using a variety of algorithms: totalhase, anymaster, anymaster_v1_0_1, endgame, crits, and pehashng.
 SHA1                                  Generates the SHA1 hash of the sample.
 SHA256                                Generates the SHA256 hash of the sample.
-:ref:`ssdeep <mod-ssdeeper>`          Generates context triggered piecewise hashes (CTPH) for files. More information can be found on the `ssdeep website <http://ssdeep.sourceforge.net/>`_.
-:ref:`Tika <mod-tika>`                Extracts metadata from the sample using `Tika <https://tika.apache.org/)>`__.
-:ref:`TrID <mod-trid>`                Runs `TrID <http://mark0.net/soft-trid-e.html)>`__ against a file.
+`ssdeep <#ssdeeper>`__                Generates context triggered piecewise hashes (CTPH) for files. More information can be found on the `ssdeep website <http://ssdeep.sourceforge.net/>`_.
+`Tika <#tika>`__                      Extracts metadata from the sample using `Tika <https://tika.apache.org/>`__.
+`TrID <#trid>`__                      Runs `TrID <http://mark0.net/soft-trid-e.html>`__ against a file.
 UAD                                   Runs the CyberSoft Universal Atomic Disintegrator (UAD) tool, part of the `VFind Security Toolkit <https://www.cybersoft.com/products/vstk/>`_.
 ====================================  ========================================
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 =============================  ========================================
 Signatures
 =============================  ========================================
-:ref:`YaraScan <mod-yara>`     Scans the sample with Yara and returns the results.
+`YaraScan <#yarascan>`__       Scans the sample with Yara and returns the results.
 =============================  ========================================
 
 Configuration Options
@@ -87,8 +81,6 @@ Common Parameters
 
 The parameters below may be used by all modules.
 
-.. tabularcolumns:: |p{3cm}|p{12cm}|
-
 ====================  =============================
 Parameter             Description
 ====================  =============================
@@ -100,13 +92,9 @@ Parameter             Description
 **ENABLED**             When set to false, the module will not run.
 ====================  =============================
 
-.. _mod-cuckoo:
-
 [Cuckoo]
 ^^^^^^^^
 This module submits a file to a Cuckoo Sandbox cluster for analysis.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -119,13 +107,9 @@ Parameter             Description
 **maec**                When set to True, a `MAEC <https://maecproject.github.io>`_ JSON-based report is added to Cuckoo JSON report. **NOTE**: Cuckoo needs MAEC reporting enabled to produce results.
 ====================  =============================
 
-.. _mod-exiftools:
-
 [ExifToolsScan]
 ^^^^^^^^^^^^^^^
 This module scans the file with Exif tools and returns the results.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -133,13 +117,9 @@ Parameter             Description
 **remove-entry**        A Python list of ExifTool results that should not be included in the report. File system level attributes are not useful and stripped out.
 ====================  =============================
 
-.. _mod-fireeye:
-
 [FireEyeAPI]
 ^^^^^^^^^^^^^
 This module detonates the sample in FireEye AX via FireEye's API. This "API" version replaces the "FireEye Scan" module.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -155,25 +135,17 @@ Parameter             Description
 **application id**      For AX Series appliances (7.7 and higher) and CM Series appliances that manage AX Series appliances (7.7 and higher), setting the application value to -1 allows the AX Series appliance to choose the application. For other appliances, setting the application value to 0 allows the AX Series appliance to choose the application.
 ====================  =============================
 
-.. _mod-floss:
-
 [floss]
-^^^^^^^^^^^^
+^^^^^^^
 This module extracts ASCII, UTF-8, stack and obfuscated strings from executable files. More information about module configuration can be found at the `flare-floss <https://github.com/fireeye/flare-floss/blob/master/doc/usage.md>`_ documentation.
-
-.. _mod-impfuzzy:
 
 [impfuzzy]
 ^^^^^^^^^^
 This module calculates a fuzzy hash using ssdeep where Windows PE imports is the input. This strategy was originally described in a `blog post <http://blog.jpcert.or.jp/2016/05/classifying-mal-a988.html>`_ from JPCERT/CC.
 
-.. _mod-libmagic:
-
 [libmagic]
 ^^^^^^^^^^
 This module runs libmagic against the files.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -181,14 +153,10 @@ Parameter             Description
 **magicfile**           The path to the compiled magic file you wish to use. If None it will use the default one.
 ====================  =============================
 
-.. _mod-metadef:
-
 [Metadefender]
 ^^^^^^^^^^^^^^
 
 This module runs Metadefender against the files.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 =======================  =============================
 Parameter                Description
@@ -200,14 +168,10 @@ Parameter                Description
 **user agent**            Metadefender user agent string, refer to your Metadefender server configuration for this value. Default is "user agent".
 =======================  =============================
 
-.. _mod-nsrl:
-
 [NSRL]
 ^^^^^^
 
 This module looks up hashes in the NSRL database. These two parameters are automatically generated. Users must run nsrl_parse.py tool in the utils/ directory before using this module.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -216,39 +180,27 @@ Parameter             Description
 **offsets**             A file that contains the pointers into hash_list file. This is necessary to speed up searching of the NSRL database file.
 ====================  =============================
 
-.. _mod-officemeta:
-
 [officemeta]
 ^^^^^^^^^^^^
 This module extracts metadata from Microsoft Office documents.
 
 **Note**: This module does not support `OOXML <https://en.wikipedia.org/wiki/Office_Open_XML>`_ documents (e.g., docx, pptx, xlsx).
 
-.. _mod-pdfinfo:
-
 [pdfinfo]
 ^^^^^^^^^
 This module extracts out feature information from PDF files. It uses `pdf-parser <http://blog.didierstevens.com/programs/pdf-tools/>`_.
-
-.. _mod-pefile:
 
 [PEFile]
 ^^^^^^^^
 This module extracts out feature information from EXE files. It uses `pefile <https://code.google.com/p/pefile/>`_ which is currently not available for python 3.
 
-.. _mod-ssdeeper:
-
 [ssdeeper]
 ^^^^^^^^^^
 This module generates context triggered piecewise hashes (CTPH) for the files. More information can be found on the `ssdeep website <http://ssdeep.sourceforge.net/>`_.
 
-.. _mod-tika:
-
 [Tika]
 ^^^^^^
 This module extracts metadata from the file using `Tika <https://tika.apache.org/>`_. For configuration of the module see the `tika-python <https://github.com/chrismattmann/tika-python/blob/master/README.md>`_ documentation.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -256,19 +208,13 @@ Parameter             Description
 **remove-entry**        A Python list of Tika results that should not be included in the report.
 ====================  =============================
 
-.. _mod-trid:
-
 [TrID]
 ^^^^^^
 This module runs `TrID <http://mark0.net/soft-trid-e.html>`_ against the files. The definition file should be in the same folder as the executable.
 
-.. _mod-vtsearch:
-
 [vtsearch]
 ^^^^^^^^^^
 This module searches `virustotal <https://www.virustotal.com/>`_ for the files hash and download the report if available.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -276,13 +222,9 @@ Parameter             Description
 **apikey**              Public/private api key. Can optionally make it a list and the requests will be distributed across them. This is useful when two groups with private api keys want to share the load and reports.
 ====================  =============================
 
-.. _mod-vxstream:
-
 [VxStream]
 ^^^^^^^^^^
 This module submits a file to a VxStream Sandbox cluster for analysis.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description
@@ -297,13 +239,9 @@ Parameter             Description
 **running timeout**     An additional timeout, if a task is in the running state this many seconds past ``timeout``, the task is considered failed.
 ====================  =============================
 
-.. _mod-yara:
-
 [YaraScan]
 ^^^^^^^^^^
 This module scans the files with yara and returns the results. You will need yara-python installed for this module.
-
-.. tabularcolumns:: |p{3cm}|p{12cm}|
 
 ====================  =============================
 Parameter             Description

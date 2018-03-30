@@ -103,18 +103,18 @@ Click on a row in the list to go to that report, and click the red "X" button to
 Searching
 ---------
 
-Reports can be searched from any page, with a few options. You can search Analyses to get the most recent scan per file, or search History to get all scans recorded for each file. 
+Reports can be searched from any page, with a few options. You can search Analyses to get the most recent scan per file, or search History to get all scans recorded for each file.
 
 .. image:: ../img/Selection_015.png
    :align: center
    :scale: 50 %
    :alt: Navbar Search
 
-* Use the "Default" search type to have wildcards automatically appended to the beginning and end of your search term. 
+* Use the "Default" search type to have wildcards automatically appended to the beginning and end of your search term.
 
-* Use the "Exact" search type to search automatically append quotes and search for the exact phrase. 
+* Use the "Exact" search type to search automatically append quotes and search for the exact phrase.
 
-* Use the "Advanced" search type to search with the full power of Lucene query string syntax. Nothing will be automatically appended and you will need to escape any reserved characters yourself. 
+* Use the "Advanced" search type to search with the full power of Lucene query string syntax. Nothing will be automatically appended and you will need to escape any reserved characters yourself.
 
 When you click on a search result, the search term will be highlighted on the Report page and the report will be expanded and automatically scrolled to the first match.
 
@@ -193,4 +193,6 @@ The Analytics page displays various pieces of advanced analysis. For now, this i
    :alt: Analytics Page
 ..
 
- The table lists samples, with those that have very similar ssdeep hashes grouped together. Other analytics will be added in the future. For more information, see the :ref:`analytics` section.
+ The table lists samples, with those that have very similar ssdeep hashes grouped together. Other analytics will be added in the future. For more information, see the `analytics`_ section.
+
+.. _analytics: analytics
