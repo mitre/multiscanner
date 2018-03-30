@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 import json
 import mock
 try:
@@ -9,25 +8,15 @@ except ImportError:
     from io import BytesIO
 import unittest
 
-
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Allow import of api.py
-if os.path.join(MS_WD, 'utils') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'utils'))
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-# Use multiscanner in ../
-sys.path.insert(0, os.path.dirname(CWD))
+from multiscanner.distributed import api
+from multiscanner.storage.sql_driver import Database
 
 import elasticsearch
 elasticsearch.client.IndicesClient.exists_template = mock.MagicMock(return_value=True)
 elasticsearch.client.IngestClient.get_pipeline = mock.MagicMock(return_value=True)
-
-import api
-from sql_driver import Database
-
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
 if os.path.exists(TEST_DB_PATH):
@@ -200,7 +189,7 @@ class TestReportCase(APITestCase):
             task_status='Complete',
         )
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_get_report(self, mock_handler):
         mock_handler.get_report.return_value = TEST_REPORT
         expected_response = {'Report': TEST_REPORT}
@@ -214,8 +203,8 @@ class TestReportCase(APITestCase):
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    @mock.patch('api.db')
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_search_analyses(self, mock_handler, mock_db):
         mock_handler.search.return_value = [1]
         self.app.get('/api/v1/tasks/search?search[value]=other_file')
@@ -228,8 +217,8 @@ class TestReportCase(APITestCase):
         self.assertEqual(dbargs[0]['search[value]'], 'other_file')
         self.assertEqual(dbargs[1], [1])
 
-    @mock.patch('api.db')
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_search_history(self, mock_handler, mock_db):
         mock_handler.search.return_value = [1]
         self.app.get('/api/v1/tasks/search/history?search[value]=other_file')
@@ -254,14 +243,14 @@ class TestTagsNotesCase(APITestCase):
             task_status='Complete',
         )
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_add_tags(self, mock_handler):
         self.app.post('/api/v1/tasks/1/tags', data={'tag': 'foo'})
 
         args, kwargs = mock_handler.add_tag.call_args_list[0]
         self.assertEqual(args[1], 'foo')
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_remove_tags(self, mock_handler):
         self.app.delete('/api/v1/tasks/1/tags', data={'tag': 'foo'})
 
@@ -269,7 +258,7 @@ class TestTagsNotesCase(APITestCase):
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
         self.assertEqual(args[1], 'foo')
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_add_notes(self, mock_handler):
         self.app.post('/api/v1/tasks/1/notes', data={'text': 'foo'})
 
@@ -277,7 +266,7 @@ class TestTagsNotesCase(APITestCase):
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
         self.assertEqual(args[1]['text'], 'foo')
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_edit_notes(self, mock_handler):
         self.app.put('/api/v1/tasks/1/notes/1', data={'text': 'bar'})
 
@@ -286,7 +275,7 @@ class TestTagsNotesCase(APITestCase):
         self.assertEqual(args[1], '1')
         self.assertEqual(args[2], 'bar')
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_remove_notes(self, mock_handler):
         self.app.delete('/api/v1/tasks/1/notes/1')
 

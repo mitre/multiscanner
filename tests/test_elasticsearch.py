@@ -2,7 +2,6 @@
 Module for testing the Elasticsearch datastore.
 '''
 import os
-import sys
 import mock
 import unittest
 
@@ -12,14 +11,7 @@ from elasticsearch.client import IndicesClient, IngestClient
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Allow import of elasticsearch_storage
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-# Use multiscanner in ../
-sys.path.insert(0, os.path.dirname(CWD))
-
-# import elasticsearch_storage
-from elasticsearch_storage import ElasticSearchStorage
+from multiscanner.storage.elasticsearch_storage import ElasticSearchStorage
 
 TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}    # noqa: E501
 TEST_ID = '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6'
@@ -37,7 +29,7 @@ class TestES(unittest.TestCase):
         self.handler.setup()
 
     @mock.patch.object(Elasticsearch, 'index')
-    @mock.patch('elasticsearch_storage.helpers')
+    @mock.patch('multiscanner.storage.elasticsearch_storage.helpers')
     def test_store(self, mock_helpers, mock_index):
         mock_helpers.bulk.return_value = (1, [])
         resp = self.handler.store(TEST_MS_OUTPUT)
@@ -71,7 +63,7 @@ class TestES(unittest.TestCase):
 
         mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='sample')
 
-    @mock.patch('elasticsearch_storage.helpers')
+    @mock.patch('multiscanner.storage.elasticsearch_storage.helpers')
     def test_search(self, mock_helpers):
         mock_helpers.scan.return_value = [{'sort': [417], '_type': 'report', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt'}, '_parent': TEST_ID, '_id': TEST_ID}]     # noqa: E501
         resp = self.handler.search('test')

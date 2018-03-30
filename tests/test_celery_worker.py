@@ -6,9 +6,9 @@ import unittest
 import mock
 import multiscanner
 
-import celery_worker
-import common
-from sql_driver import Database
+from multiscanner.common import utils
+from multiscanner.distributed import celery_worker
+from multiscanner.storage.sql_driver import Database
 
 try:
     from StringIO import StringIO as BytesIO
@@ -32,8 +32,7 @@ sys.path.insert(0, os.path.dirname(CWD))
 
 # Get a subset of simple modules to run in testing
 # the celery worker
-MODULEDIR = os.path.join(MS_WD, "modules")
-MODULE_LIST = common.parseDir(MODULEDIR, recursive=True)
+MODULE_LIST = utils.parseDir(multiscanner.MODULEDIR, recursive=True)
 DESIRED_MODULES = [
     'entropy.py',
     'MD5.py',
@@ -98,7 +97,7 @@ class TestCeleryCase(CeleryTestCase):
     def test_base(self):
         self.assertEqual(True, True)
 
-    @mock.patch('celery_worker.multiscanner_celery')
+    @mock.patch('multiscanner.distributed.celery_worker.multiscanner_celery')
     def test_success(self, mock_delay):
         mock_delay.return_value = TEST_REPORT
         result = celery_worker.multiscanner_celery(
@@ -114,7 +113,7 @@ class TestCeleryCase(CeleryTestCase):
 
     # Patch storage_handler.store(result) inside the celery_worker module
     # prevents indexing test reports into ES or other side effects
-    @mock.patch('celery_worker.multiscanner.storage.StorageHandler')
+    @mock.patch('multiscanner.distributed.celery_worker.storage.StorageHandler')
     def test_delay_method(self, MockStorageHandler):
         expected_entropy = 2.0
         expected_MD5 = 'ba1f2511fc30423bdbb183fe33f3dd0f'

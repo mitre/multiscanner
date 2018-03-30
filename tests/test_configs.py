@@ -6,13 +6,14 @@ import tempfile
 # Makes sure we use the multiscanner in ../
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(CWD))
+
 import multiscanner
-sys.path.append(os.path.join(CWD, '..', 'libs'))
-import common
+from multiscanner.common import utils
+
 multiscanner.MODULEDIR = os.path.join(CWD, "modules")
 
 module_list = [os.path.join(CWD, 'modules', 'test_conf.py')]
-filelist = common.parseDir(os.path.join(CWD, 'files'))
+filelist = utils.parseDir(os.path.join(CWD, 'files'))
 
 
 def test_no_config():

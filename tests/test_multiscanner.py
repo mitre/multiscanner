@@ -6,8 +6,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(CWD))
 import multiscanner
 
-sys.path.append(os.path.join(CWD, '..', 'libs'))
-import common
+from multiscanner.common import utils
 
 
 class _runmulti_tests(object):
@@ -15,7 +14,7 @@ class _runmulti_tests(object):
     def setup_class(cls):
         cls.real_mod_dir = multiscanner.MODULEDIR
         multiscanner.MODULEDIR = os.path.join(CWD, "modules")
-        cls.filelist = common.parseDir(os.path.join(CWD, 'files'))
+        cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
         multiscanner.CONFIG = '.tmpfile.ini'
 
     @classmethod

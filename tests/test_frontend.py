@@ -1,6 +1,5 @@
 import os
 import requests
-import sys
 import time
 
 import pytest
@@ -16,17 +15,8 @@ from selenium.webdriver.firefox.options import Options
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Allow import of app.py
-if os.path.join(MS_WD, 'web') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'web'))
-# Allow import of sql_driver
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-# use multiscanner in ../
-sys.path.insert(0, os.path.dirname(CWD))
-
 # get the flask web app
-from app import app as flask_app
+from multiscanner.web.app import app as flask_app
 
 proxies = {
     "http": None,

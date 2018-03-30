@@ -9,19 +9,19 @@ import time
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(CWD))
 import multiscanner
-sys.path.append(os.path.join(CWD, '..', 'libs'))
-import common
+
+from multiscanner.common import utils
 
 
 def test_loadModule():
     """Ensure _loadModule works"""
-    m = multiscanner.load_module('test_1', [os.path.join(CWD, "modules")])
+    m = utils.load_module('test_1', [os.path.join(CWD, "modules")])
     assert isinstance(m, types.ModuleType)
 
 
 def test_fail_loadModule():
     """Ensure _loadModule works"""
-    m = multiscanner.load_module('notathing', [os.path.join(CWD, "modules")])
+    m = utils.load_module('notathing', [os.path.join(CWD, "modules")])
     assert m is None
 
 
@@ -30,7 +30,7 @@ class _runmod_tests(object):
     def setup_class(cls):
         cls.real_mod_dir = multiscanner.MODULEDIR
         multiscanner.MODULEDIR = os.path.join(CWD, "modules")
-        cls.filelist = common.parseDir(os.path.join(CWD, 'files'))
+        cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
         cls.files = ['a', 'b', 'C:\\c', '/d/d']
         cls.threadDict = {}
 
@@ -41,7 +41,7 @@ class _runmod_tests(object):
 
 class Test_runModule_test_1(_runmod_tests):
     def setup(self):
-        m = multiscanner.load_module('test_1', [multiscanner.MODULEDIR])
+        m = utils.load_module('test_1', [multiscanner.MODULEDIR])
         global_module_interface = multiscanner._GlobalModuleInterface()
         self.result = multiscanner._run_module('test_1', m, self.filelist, self.threadDict, global_module_interface)
         global_module_interface._cleanup()
@@ -57,7 +57,7 @@ class Test_runModule_test_1(_runmod_tests):
 
 class Test_runModule_test_2(_runmod_tests):
     def setup(self):
-        self.m = multiscanner.load_module('test_2', [multiscanner.MODULEDIR])
+        self.m = utils.load_module('test_2', [multiscanner.MODULEDIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
         self.threadDict['test_1'].ret = ([('a', 'a'), ('C:\\c', 'c')], {})
@@ -102,7 +102,7 @@ class test_start_module_threads(_runmod_tests):
 
     def test_all_started(self):
         ThreadList = multiscanner._start_module_threads(
-            self.filelist, common.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
+            self.filelist, utils.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started
