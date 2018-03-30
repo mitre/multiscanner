@@ -27,31 +27,11 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-PY3 = False
-if sys.version_info < (2, 7) or sys.version_info > (4,):
-    print("WARNING: You're running an untested version of python")
-elif sys.version_info > (3,):
-    PY3 = True
+from multiscanner import PY3, raw_input, MS_WD, CONFIG, MODULEDIR
+from .storage import storage
+from .common.utils import (basename, convert_encoding, load_module,
+                    parse_config, parseDir, parseFileList, queue2list)
 
-if PY3:
-    raw_input = input
-
-# Gets the directory that this file is in
-MS_WD = os.path.dirname(os.path.abspath(__file__))
-# Adds the libs directory to the path
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-
-# The default config file
-CONFIG = os.path.join(MS_WD, "config.ini")
-
-# The directory where the modules are kept
-MODULEDIR = os.path.join(MS_WD, "modules")
-
-import common   # noqa: F401
-import storage
-from common import (basename, convert_encoding, load_module, parse_config,
-                    parseDir, parseFileList, queue2list)
 
 # The default configuration options for the main script
 DEFAULTCONF = {
