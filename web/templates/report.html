@@ -487,6 +487,21 @@
       }
     });
 
+    // Handle deleting report
+    $('#delete-btn').click(function(event) {
+      $.ajax({
+        url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}",
+        type: 'DELETE',
+        success: function(data, status) {
+          $('#report-container').empty();
+          $('#report-container').html('<div class="row col-md-6 col-md-offset-3"><div class="panel panel-success"><div class="panel-heading"><h3 class="panel-title">Success!</h3></div><div class="panel-body"><h4>' + data.Message + '</h4></div></div></div>');
+        },
+        error: function(data, status) {
+            $('#report-tags').after('<div class="row col-md-6 col-md-offset-3"><div class="panel panel-danger"><div class="panel-heading"><h3 class="panel-title">Error!</h3></div><div class="panel-body"><h4>Task could not be deleted.</h4></div></div></div>');
+        }
+      });
+    });
+
     // Handle download dropdown
     $('ul.dropdown-menu li').click(function(e) {
       if (this.id == 'getJson') {
@@ -520,13 +535,17 @@
       <button class="btn btn-primary" type="button" title="Collapse all subfields"><span class="glyphicon glyphicon-minus-sign"></span>&nbsp;Collapse All
       </button>
     </div>
-    <div class="col-md-6" id="search-report">
+    <div class="col-md-5" id="search-report">
       <div class="input-group">
         <input type="text" class="form-control" placeholder="Search within this report">
         <span class="input-group-btn">
           <button class="btn btn-primary" type="button" id="search-report-btn"><span class="glyphicon glyphicon-search"></span></button>
         </span>
       </div>
+    </div>
+    <div class="dropdown col-md-1" id="delete-btn">
+      <button class="btn btn-danger dropdown-toggle" type="button" data-toggle="dropdown" title="Delete report"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete
+      </button>
     </div>
     <div class="dropdown col-md-2" id="dl-dropdown">
       <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" title="Download report in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download
@@ -541,7 +560,7 @@
     </div>
   </div>
   <div class="row" id="report-tags">
-    <div class="col-md-6 col-md-offset-3">
+    <div class="col-md-5 col-md-offset-3">
       <label for="tags" class="pull-left">Tags</label>
       <span>
         <input type="text" id="tags" class="form-control">

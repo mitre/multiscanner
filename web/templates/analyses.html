@@ -40,7 +40,7 @@
           className: "text-center delete",
           "render": function ( data, type, full, meta ) {
             // Add Delete column buttons
-            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data + '"><span class="glyphicon glyphicon-remove"></span></button>';
+            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data[0] + '"><span class="glyphicon glyphicon-remove"></span></button>';
           },
         }
       ],
@@ -86,10 +86,10 @@
               $('td').filter(function() {
                 return this.innerHTML === t_id;
               }).parent().remove();
-              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><strong>Success!</strong> <span>' + data.Message + '</span></div>');
             },
             error: function(data, status) {
-              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><a href="javascript:;" class="close" data-dismiss="alert">&times;</a><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+                $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
             }
           });
         });

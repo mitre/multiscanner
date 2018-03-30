@@ -41,6 +41,7 @@
     position: absolute;
     right: 20px;
     z-index: 1;
+    min-width: 25em;
 }
 
 #scan-form {
@@ -162,6 +163,10 @@
 
 .container {
     margin-bottom: 20px;
+}
+
+#report-container {
+    clear: left;
 }
 
 #report-container .row {
