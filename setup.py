@@ -22,7 +22,7 @@ def recursive_dir_list(path, exclude=['.pyc', '__pycache__']):
     return ret
 
 
-to_walk = ['docs', 'etc', 'libs', 'modules', 'storage', 'utils']
+to_walk = ['docs', 'etc']
 data_files = []
 for directory in to_walk:
     data_files.extend(recursive_dir_list(directory))
@@ -62,6 +62,6 @@ setup(
         'pymongo',
     ],
     entry_points={
-        'console_scripts': ['multiscanner=multiscanner:_main']
+        'console_scripts': ['multiscanner=multiscanner.multiscanner:_main']
     }
 )
