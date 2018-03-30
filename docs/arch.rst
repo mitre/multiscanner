@@ -5,7 +5,7 @@ High-level Architecture
 -----------------------
 There are seven primary components of the MultiScanner architecture, as described below and illustrated in the associated diagram.
 
-.. figure:: img/arch1.png
+.. figure:: _static/img/arch1.png
    :align: center
    :scale: 45 %
    :alt: MultiScanner Architecture
@@ -50,7 +50,7 @@ Complete Workflow
 -----------------
 Each step of the MultiScanner workflow is described below the diagram.
 
-.. figure:: img/arch2.png
+.. figure:: _static/img/arch2.png
    :align: center
    :scale: 50 %
    :alt: MultiScanner Workflow
