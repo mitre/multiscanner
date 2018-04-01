@@ -14,7 +14,8 @@ before_install:
 install:
   - yes "" | sudo -HE ./install.sh
   - pip install -r requirements.txt
-  - python multiscanner.py init
+  - pip install .
+  - multiscanner init
 script:
   - flake8 --exit-zero .
   - pytest
