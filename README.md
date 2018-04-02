@@ -37,11 +37,26 @@ $ git clone https://github.com/mitre/multiscanner.git
 $ cd multiscanner
 $ sudo -HE ./install.sh
 $ python multiscanner.py init
+```
+
+This will generate a default configuration for you. Check `config.ini` to see what
+modules are enabled. See [Configuration](http://multiscannerdocs.readthedocs.io/en/latest/install.html#configuration) for more information.
+
+Now you can scan a file (substituting the actual file you want to scan for `<file>`):
+
+``` bash
 $ python multiscanner.py <file>
 ```
 
-If you are not on a RedHat or Debian based Linux distribution, install pip if
-you haven't already. Then run the following instead of the `install.sh` script:
+You can run the following to get a list of all of MultiScanner's command-line options:
+
+``` bash
+$ python multiscanner.py --help
+```
+
+**Note**: If you are not on a RedHat or Debian based Linux distribution, instead of
+running the `install.sh` script, install pip (if you haven't already) and run the
+following:
 
 ``` bash
 $ pip install -r requirements.txt
