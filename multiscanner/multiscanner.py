@@ -27,10 +27,11 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-from multiscanner import PY3, raw_input, MS_WD, CONFIG, MODULEDIR
-from .storage import storage
-from .common.utils import (basename, convert_encoding, load_module,
-                    parse_config, parseDir, parseFileList, queue2list)
+from multiscanner.common.utils import (basename, convert_encoding, load_module,
+                                       parse_config, parseDir, parseFileList,
+                                       queue2list)
+from multiscanner.config import PY3, raw_input, MS_WD, CONFIG, MODULEDIR
+from multiscanner.storage import storage
 
 
 # The default configuration options for the main script
