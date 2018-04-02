@@ -1,6 +1,6 @@
 from __future__ import print_function
 import os
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 
 def recursive_dir_list(path, exclude=['.pyc', '__pycache__']):
@@ -34,8 +34,7 @@ setup(
     license='MPL 2.0',
     author='Drew Bonasera',
     author_email='',
-    packages=['multiscanner'],
-    package_dir={'multiscanner': '.'},
+    packages=find_packages(),
     package_data={'multiscanner': data_files},
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
     install_requires=[
