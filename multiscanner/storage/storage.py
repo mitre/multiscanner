@@ -20,9 +20,6 @@ from multiscanner.common import utils
 
 # TODO: Is this a good default storage location?
 STORAGE_DIR = os.path.dirname(__file__)
-storage_config_object = configparser.SafeConfigParser()
-storage_config_object.optionxform = str
-storage_config_file = utils.get_config_path(MS_CONFIG, 'storage')
 
 
 class ThreadCounter(object):
@@ -78,7 +75,7 @@ class Storage(object):
 
 
 class StorageHandler(object):
-    def __init__(self, configfile=storage_config_file, config=None, configregen=False):
+    def __init__(self, configfile=MS_CONFIG, config=None, configregen=False):
         self.storage_lock = threading.Lock()
         self.storage_counter = ThreadCounter()
         # Load all storage classes
@@ -86,6 +83,7 @@ class StorageHandler(object):
 
         # Read in config
         if configfile:
+            configfile = utils.get_config_path(MS_CONFIG, 'storage')
             config_object = configparser.SafeConfigParser()
             config_object.optionxform = str
             # Regen the config if needed or wanted
