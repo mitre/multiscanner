@@ -22,10 +22,10 @@ def recursive_dir_list(path, exclude=['.pyc', '__pycache__']):
     return ret
 
 
-to_walk = ['docs', 'etc']
-data_files = []
-for directory in to_walk:
-    data_files.extend(recursive_dir_list(directory))
+# to_walk = ['docs', 'etc', 'multiscanner/storage/templates', 'multiscanner/web/static', 'multiscanner/web/templates']
+# data_files = []
+# for directory in to_walk:
+#     data_files.extend(recursive_dir_list(directory))
 
 setup(
     name='multiscanner',
@@ -35,7 +35,9 @@ setup(
     author='Drew Bonasera',
     author_email='',
     packages=find_packages(),
-    package_data={'multiscanner': data_files},
+    package_dir={'multiscanner': 'multiscanner'},
+    # package_data={'multiscanner': data_files},
+    include_package_data=True,
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
     install_requires=[
         'future',

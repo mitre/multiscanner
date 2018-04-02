@@ -25,7 +25,7 @@ METADATA_FIELDS = [
 ]
 
 ES_MAX = 2147483647
-ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'elasticsearch_template.json')
+ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'templates', 'elasticsearch_template.json')
 ES_TEMPLATE_NAME = 'multiscanner_template'
 
 
