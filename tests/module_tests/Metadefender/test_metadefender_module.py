@@ -5,23 +5,12 @@ Unit test for the Metadefender module
 '''
 import unittest
 import os
-import sys
 import mock
 import json
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-MODULE_TEST_DIR = os.path.dirname(CWD)
-TEST_DIR = os.path.dirname(MODULE_TEST_DIR)
-MS_WD = os.path.dirname(TEST_DIR)
 
-# Fix imports
-if os.path.join(MS_WD, 'modules') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'modules/Antivirus'))
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
-sys.path.insert(0, os.path.dirname(CWD))
-
-import Metadefender
+from multiscanner.modules.Antivirus import Metadefender
 
 RANDOM_INPUT_FILES = ['input1', 'input2', 'input3']
 

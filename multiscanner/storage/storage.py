@@ -15,7 +15,7 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-from multiscanner import CONFIG as MS_CONFIG
+from ..multiscanner import CONFIG as MS_CONFIG
 from multiscanner.common import utils
 
 # TODO: Is this a good default storage location?
