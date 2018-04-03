@@ -34,7 +34,7 @@ setup(
     license='MPL 2.0',
     author='Drew Bonasera',
     author_email='',
-    packages=find_packages(),
+    packages=find_packages(exclude=('tests*',)),
     package_dir={'multiscanner': 'multiscanner'},
     # package_data={'multiscanner': data_files},
     include_package_data=True,
