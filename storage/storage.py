@@ -141,10 +141,12 @@ class StorageHandler(object):
                             loaded_storage.append(storage)
                     except Exception as e:
                         storage_error = e
-                        print('ERROR:', 'storage', storage_name, 'failed to load.')
+                        print('ERROR:', 'storage', storage_name, 'failed to load.', e)
 
             if loaded_storage == []:
-                print('No storage classes loaded; retrying...')
+                print('ERROR: No storage classes loaded.')
+                if x < num_retries:
+                    print('Retrying...')
             else:
                 storage_error = None
 
@@ -154,7 +156,6 @@ class StorageHandler(object):
                 break
 
         if storage_error:
-            print(storage_error)
             exit()
 
         self.loaded_storage = loaded_storage

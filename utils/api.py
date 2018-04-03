@@ -142,17 +142,15 @@ for x in range(0, db_num_retries):
         db.init_db()
     except Exception as excinfo:
         db_error = excinfo
-        print("Can't connect to task database; retrying...")
-    else:
-        db_error = None
-
-    if db_error:
-        time.sleep(db_sleep_time)
+        print("ERROR: Can't connect to task database.", excinfo)
     else:
         break
-if db_error:
-    print(db_error)
-    exit()
+
+    if db_error:
+        if x == db_num_retries - 1:
+            exit()
+        print("Retrying...")
+        time.sleep(db_sleep_time)
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
