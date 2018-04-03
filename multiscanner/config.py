@@ -8,9 +8,6 @@ if sys.version_info < (2, 7) or sys.version_info > (4,):
 elif sys.version_info > (3,):
     PY3 = True
 
-if PY3:
-    raw_input = input
-
 # Gets the directory that this file is in
 # TODO: Add this as configuration option
 MS_WD = os.path.dirname(os.path.abspath(__file__))

@@ -30,7 +30,7 @@ standard_library.install_aliases()
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_config, parseDir, parseFileList,
                                        queue2list)
-from multiscanner.config import PY3, raw_input, MS_WD, CONFIG, MODULEDIR
+from multiscanner.config import PY3, MS_WD, CONFIG, MODULEDIR
 from multiscanner.storage import storage
 
 
@@ -847,7 +847,7 @@ def _init(args):
     # Initialize configuration file
     if os.path.isfile(args.config):
         print('Warning:', args.config, 'already exists, overwriting will destroy changes')
-        answer = raw_input('Do you wish to overwrite the configuration file [y/N]:')
+        answer = input('Do you wish to overwrite the configuration file [y/N]:')
         if answer == 'y':
             config_init(args.config)
             print('Configuration file initialized at', args.config)
@@ -869,7 +869,7 @@ def _init(args):
     config = _get_main_config(Config)
     if os.path.isfile(config["storage-config"]):
         print('Warning:', config["storage-config"], 'already exists, overwriting will destroy changes')
-        answer = raw_input('Do you wish to overwrite the configuration file [y/N]:')
+        answer = input('Do you wish to overwrite the configuration file [y/N]:')
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
             print('Storage configuration file initialized at', config["storage-config"])

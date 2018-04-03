@@ -3,7 +3,7 @@
 __version__ = '1.1.1'
 
 from multiscanner.config import (               # noqa F401
-    PY3, raw_input, MS_WD, CONFIG, MODULEDIR
+    PY3, MS_WD, CONFIG, MODULEDIR
 )
 
 from multiscanner.multiscanner import (         # noqa F401
