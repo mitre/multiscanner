@@ -33,14 +33,5 @@ pymongo
 #Required for distributed
 celery
 flask_cors
-#Required by tests
-Flask-Testing
-pathlib
-pytest
-mock
-selenium
-#Requred by dev
-flake8
-pre-commit
 #Required by utils
 tqdm
