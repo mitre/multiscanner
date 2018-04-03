@@ -1,5 +1,5 @@
 {
-    "template": "multiscanner_reports",
+    "index_patterns": "multiscanner_reports",
     "settings": {
         "index": {
             "mapping.coerce": true,
@@ -21,8 +21,14 @@
         }
     },
     "mappings": {
-        "sample": {
+        "doc": {
             "properties": {
+                "doc_type": {
+                    "type": "join",
+                    "relations": {
+                        "sample": ["report", "note"]
+                    }
+                },
                 "filename": {"type": "text"},
                 "ssdeep": {
                     "properties": {
@@ -37,15 +43,7 @@
                         },
                         "ssdeep_hash": {"type": "keyword"}
                     }
-                }
-            }
-        },
-        "report": {
-            "_parent": {"type": "sample"}
-        },
-        "note": {
-            "_parent": {"type": "sample"},
-            "properties": {
+                },
                 "timestamp": {"type": "date"}
             }
         }

@@ -71,7 +71,7 @@ class ElasticSearchStorage(storage.Storage):
         'host': 'localhost',
         'port': 9200,
         'index': 'multiscanner_reports',
-        'doc_type': 'report',
+        'doc_type': 'doc',
     }
 
     def setup(self):
@@ -125,7 +125,7 @@ class ElasticSearchStorage(storage.Storage):
             dedot = False
         if not dedot:
             script = {
-                "inline": """void dedot(def field) {
+                "source": """void dedot(def field) {
                         if (field != null && field instanceof HashMap) {
                             ArrayList replacelist = new ArrayList();
                             for (String key : field.keySet()) {
@@ -167,12 +167,13 @@ class ElasticSearchStorage(storage.Storage):
             except KeyError:
                 sample_id = uuid4()
             # Store metadata with the sample, not the report
-            sample = {'filename': filename, 'tags': []}
+            sample = {'doc_type': 'sample', 'filename': filename, 'tags': []}
             for field in METADATA_FIELDS:
                 if field in report[filename]:
                     if len(report[filename][field]) != 0:
                         sample[field] = report[filename][field]
                     del report[filename][field]
+            report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
 
             # If there is Cuckoo results in the report, some
             # cleanup is needed for the report
@@ -208,19 +209,23 @@ class ElasticSearchStorage(storage.Storage):
             # Store report; let ES autogenerate the ID so we can save it with the sample
             try:
                 report_result = self.es.index(index=self.index, doc_type=self.doc_type,
-                                              body=report[filename], parent=sample_id,
-                                              pipeline='dedot')
+                                              body=report[filename],
+                                              pipeline='dedot', routing=sample_id)
             except (TransportError, UnicodeEncodeError) as e:
                 # If fail, index empty doc instead
                 print('Failed to index that report!\n{}'.format(e))
                 report_body_fail = {
+                    'doc_type': {
+                        'name': 'report',
+                        'parent': sample_id,
+                    },
                     'ERROR': 'Failed to index the full report in Elasticsearch',
                 }
                 if 'Scan Time' in report[filename]:
                     report_body_fail['Scan Time'] = report[filename]['Scan Time']
                 report_result = self.es.index(index=self.index, doc_type=self.doc_type,
                                               body=report_body_fail,
-                                              parent=sample_id, pipeline='dedot')
+                                              pipeline='dedot', routing=sample_id)
 
             report_id = report_result.get('_id')
             sample['report_id'] = report_id
@@ -230,7 +235,7 @@ class ElasticSearchStorage(storage.Storage):
                 {
                     '_op_type': 'create',
                     '_index': self.index,
-                    '_type': 'sample',
+                    '_type': 'doc',
                     '_id': sample_id,
                     '_source': sample,
                     'pipeline': 'dedot'
@@ -253,7 +258,7 @@ class ElasticSearchStorage(storage.Storage):
                     {
                         '_op_type': 'update',
                         '_index': self.index,
-                        '_type': 'sample',
+                        '_type': 'doc',
                         '_id': sample_id,
                         'doc': {'report_id': rid},
                         'pipeline': 'dedot'
@@ -272,13 +277,9 @@ class ElasticSearchStorage(storage.Storage):
             "query": {
                 "bool": {
                     "must": [
-                        {"has_parent": {
-                            "parent_type": "sample",
-                            "query": {
-                                "term": {
-                                    "_id": sample_id
-                                }
-                            }
+                        {"parent_id": {
+                            "type": "report",
+                            "id": sample_id
                         }},
                         {
                             "term": {
@@ -297,7 +298,7 @@ class ElasticSearchStorage(storage.Storage):
             result_report = result_search['hits']['hits'][0]
 
             result_sample = self.es.get(
-                index=self.index, doc_type='sample',
+                index=self.index, doc_type=self.doc_type,
                 id=sample_id
             )
             del result_sample['_source']['report_id']
@@ -335,17 +336,17 @@ class ElasticSearchStorage(storage.Storage):
 
         matches = []
         for r in result:
-            if r['_type'] == 'sample':
+            if r['_source']['doc_type'] == 'sample':
                 field = '_id'
             else:
-                field = '_parent'
+                field = '_routing'
             matches.append(r[field])
         return tuple(set(matches))
 
     def add_tag(self, sample_id, tag):
         script = {
             "script": {
-                "inline": "ctx._source.tags.add(params.tag)",
+                "source": "ctx._source.tags.add(params.tag)",
                 "lang": "painless",
                 "params": {
                     "tag": tag
@@ -355,7 +356,7 @@ class ElasticSearchStorage(storage.Storage):
 
         try:
             result = self.es.update(
-                index=self.index, doc_type='sample',
+                index=self.index, doc_type=self.doc_type,
                 id=sample_id, body=script
             )
             return result
@@ -366,7 +367,7 @@ class ElasticSearchStorage(storage.Storage):
     def remove_tag(self, sample_id, tag):
         script = {
             "script": {
-                "inline": """def i = ctx._source.tags.indexOf(params.tag);
+                "source": """def i = ctx._source.tags.indexOf(params.tag);
                     if (i > -1) { ctx._source.tags.remove(i); }""",
                 "lang": "painless",
                 "params": {
@@ -377,7 +378,7 @@ class ElasticSearchStorage(storage.Storage):
 
         try:
             result = self.es.update(
-                index=self.index, doc_type='sample',
+                index=self.index, doc_type=self.doc_type,
                 id=sample_id, body=script
             )
             return result
@@ -401,20 +402,16 @@ class ElasticSearchStorage(storage.Storage):
         }
 
         result = self.es.search(
-            index=self.index, doc_type='sample', body=script
+            index=self.index, doc_type=self.doc_type, body=script
         )
         return result['aggregations']['tags_agg']['buckets']
 
     def get_notes(self, sample_id, search_after=None):
         query = {
             "query": {
-                "has_parent": {
-                    "type": "sample",
-                    "query": {
-                        "match": {
-                            "_id": sample_id
-                        }
-                    }
+                "parent_id": {
+                    "type": "note",
+                    "id": sample_id
                 }
             },
             "sort": [
@@ -424,7 +421,7 @@ class ElasticSearchStorage(storage.Storage):
                     }
                 },
                 {
-                    "_uid": {
+                    "_id": {
                         "order": "desc"
                     }
                 }
@@ -434,15 +431,15 @@ class ElasticSearchStorage(storage.Storage):
             query['search_after'] = search_after
 
         result = self.es.search(
-            index=self.index, doc_type='note', body=query
+            index=self.index, doc_type=self.doc_type, body=query
         )
         return result
 
     def get_note(self, sample_id, note_id):
         try:
             result = self.es.get(
-                index=self.index, doc_type='note',
-                id=note_id, parent=sample_id
+                index=self.index, doc_type=self.doc_type,
+                id=note_id, routing=sample_id
             )
             return result
         except Exception as e:
@@ -450,10 +447,11 @@ class ElasticSearchStorage(storage.Storage):
             return None
 
     def add_note(self, sample_id, data):
+        data['doc_type'] = {'name': 'note', 'parent': sample_id}
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.index(
-            index=self.index, doc_type='note', body=data,
-            parent=sample_id
+            index=self.index, doc_type=self.doc_type, body=data,
+            routing=sample_id
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])
@@ -466,8 +464,8 @@ class ElasticSearchStorage(storage.Storage):
             }
         }
         result = self.es.update(
-            index=self.index, doc_type='note', id=note_id,
-            body=partial_doc, parent=sample_id
+            index=self.index, doc_type=self.doc_type, id=note_id,
+            body=partial_doc, routing=sample_id
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])
@@ -475,8 +473,8 @@ class ElasticSearchStorage(storage.Storage):
 
     def delete_note(self, sample_id, note_id):
         result = self.es.delete(
-            index=self.index, doc_type='note', id=note_id,
-            parent=sample_id
+            index=self.index, doc_type=self.doc_type, id=note_id,
+            routing=sample_id
         )
         return result
 
