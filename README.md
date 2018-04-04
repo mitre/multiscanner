@@ -40,7 +40,7 @@ $ python multiscanner.py init
 ```
 
 This will generate a default configuration for you. Check `config.ini` to see what
-modules are enabled. See [Configuration](http://multiscannerdocs.readthedocs.io/en/latest/install.html#configuration) for more information.
+modules are enabled. See [Configuration](http://multiscanner.readthedocs.io/en/latest/install.html#configuration) for more information.
 
 Now you can scan a file (substituting the actual file you want to scan for `<file>`):
 
