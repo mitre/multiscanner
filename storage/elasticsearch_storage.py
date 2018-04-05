@@ -277,7 +277,7 @@ class ElasticSearchStorage(storage.Storage):
                         }},
                         {
                             "term": {
-                                "Scan Time": ts
+                                "Scan Metadata.Scan Time": ts
                             }
                         }
                     ]
