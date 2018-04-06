@@ -70,11 +70,11 @@ class TestES(unittest.TestCase):
         self.assertEqual(kwargs['body']['query']['bool']['must'][1]['term']['Scan Time'], TEST_TS)
         self.assertEqual(kwargs['doc_type'], ElasticSearchStorage.DEFAULTCONF['doc_type'])
 
-        mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='doc')
+        mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='_doc')
 
     @mock.patch('elasticsearch_storage.helpers')
     def test_search(self, mock_helpers):
-        mock_helpers.scan.return_value = [{'sort': [417], '_type': 'doc', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt', 'doc_type': {'name': 'report', 'parent': TEST_ID}}, '_id': TEST_ID}]     # noqa: E501
+        mock_helpers.scan.return_value = [{'sort': [417], '_type': '_doc', '_routing': TEST_ID, '_index': 'multiscanner_reports', '_score': None, '_source': {'libmagic': 'ASCII text, with very long lines, with no line terminators', 'filename': 'test.txt', 'doc_type': {'name': 'report', 'parent': TEST_ID}}, '_id': TEST_ID}]     # noqa: E501
         resp = self.handler.search('test')
 
         args, kwargs = mock_helpers.scan.call_args_list[0]
@@ -93,7 +93,7 @@ class TestES(unittest.TestCase):
         body = str(kwargs['body'])
 
         self.assertEqual(mock_update.call_count, 1)
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(sample_id, TEST_ID)
         assert 'ctx._source.tags.add(params.tag)' in body
         assert "'tag': 'foo'" in body
@@ -108,7 +108,7 @@ class TestES(unittest.TestCase):
         body = str(kwargs['body'])
 
         self.assertEqual(mock_update.call_count, 1)
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(sample_id, TEST_ID)
         assert 'ctx._source.tags.remove(' in body
         assert "'tag': 'foo'" in body
@@ -140,7 +140,7 @@ class TestES(unittest.TestCase):
         query = kwargs['body']
         doc_type = kwargs['doc_type']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(query['aggs']['tags_agg']['terms']['field'], 'tags.keyword')
         self.assertEqual(resp[0], tag_1)
         self.assertEqual(resp[1], tag_2)
@@ -154,7 +154,7 @@ class TestES(unittest.TestCase):
         doc_type = kwargs['doc_type']
         query = kwargs['body']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(query['query']['parent_id']['type'], 'note')
         self.assertEqual(query['query']['parent_id']['id'], TEST_ID)
 
@@ -168,7 +168,7 @@ class TestES(unittest.TestCase):
         sample_id = kwargs['routing']
         note_id = kwargs['id']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(sample_id, TEST_ID)
         self.assertEqual(note_id, TEST_ID)
 
@@ -184,7 +184,7 @@ class TestES(unittest.TestCase):
         parent = kwargs['routing']
         body = kwargs['body']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)
         self.assertEqual(body['text'], 'foo')
         self.assertEqual(mock_get.call_count, 1)
@@ -202,10 +202,10 @@ class TestES(unittest.TestCase):
         body = kwargs['body']
         print(body)
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)
         self.assertEqual(note_id, TEST_NOTE_ID)
-        self.assertEqual(body['doc']['text'], 'foo')
+        self.assertEqual(body['_doc']['text'], 'foo')
 
     @mock.patch.object(Elasticsearch, 'delete')
     def test_delete_note(self, mock_delete):
@@ -217,7 +217,7 @@ class TestES(unittest.TestCase):
         parent = kwargs['routing']
         note_id = kwargs['id']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)
         self.assertEqual(note_id, TEST_NOTE_ID)
 
@@ -230,7 +230,7 @@ class TestES(unittest.TestCase):
         doc_type = kwargs['doc_type']
         report_id = kwargs['id']
 
-        self.assertEqual(doc_type, 'doc')
+        self.assertEqual(doc_type, '_doc')
         self.assertEqual(report_id, TEST_ID)
 
     def tearDown(self):

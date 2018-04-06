@@ -71,7 +71,7 @@ class ElasticSearchStorage(storage.Storage):
         'host': 'localhost',
         'port': 9200,
         'index': 'multiscanner_reports',
-        'doc_type': 'doc',
+        'doc_type': '_doc',
     }
 
     def setup(self):
@@ -235,7 +235,7 @@ class ElasticSearchStorage(storage.Storage):
                 {
                     '_op_type': 'create',
                     '_index': self.index,
-                    '_type': 'doc',
+                    '_type': self.doc_type,
                     '_id': sample_id,
                     '_source': sample,
                     'pipeline': 'dedot'
@@ -258,7 +258,7 @@ class ElasticSearchStorage(storage.Storage):
                     {
                         '_op_type': 'update',
                         '_index': self.index,
-                        '_type': 'doc',
+                        '_type': self.doc_type,
                         '_id': sample_id,
                         'doc': {'report_id': rid},
                         'pipeline': 'dedot'
@@ -459,10 +459,11 @@ class ElasticSearchStorage(storage.Storage):
 
     def edit_note(self, sample_id, note_id, text):
         partial_doc = {
-            "doc": {
+            'doc': {
                 "text": text
             }
         }
+        print(partial_doc)
         result = self.es.update(
             index=self.index, doc_type=self.doc_type, id=note_id,
             body=partial_doc, routing=sample_id
