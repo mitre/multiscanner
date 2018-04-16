@@ -73,6 +73,8 @@ class ElasticSearchStorage(storage.Storage):
         'port': 9200,
         'index': 'multiscanner_reports',
         'doc_type': 'report',
+        'metricbeat_enabled': True,
+        'metricbeat_rollover_days': 7,
     }
 
     def setup(self):
@@ -491,7 +493,7 @@ class ElasticSearchStorage(storage.Storage):
     def teardown(self):
         pass
 
-    def delete_index(self, index_prefix='metricbeat-', days=7):
+    def delete_index(self, index_prefix, days):
         '''
         Delete index equal to or older than days.
         '''
