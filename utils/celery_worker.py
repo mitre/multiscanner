@@ -88,7 +88,7 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # Delete old metricbeat indices
     # Executes every morning at 3:00 a.m.
-    storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
+    storage_conf_path = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
     storage_conf = multiscanner.common.parse_config(storage_conf_path)
     metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
     if metricbeat_enabled:
