@@ -88,10 +88,14 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # Delete old metricbeat indices
     # Executes every morning at 3:00 a.m.
-    sender.add_periodic_task(
-        crontab(hour=3, minute=0),
-        metricbeat_rollover.s(),
-    )
+    storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
+    storage_conf = multiscanner.common.parse_config(storage_conf_path)
+    metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+    if metricbeat_enabled:
+        sender.add_periodic_task(
+            crontab(hour=3, minute=0),
+            metricbeat_rollover.s(),
+        )
 
 
 class MultiScannerTask(Task):
@@ -214,14 +218,26 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover(days=7, config=multiscanner.CONFIG):
+def metricbeat_rollover(days, config=multiscanner.CONFIG):
     '''
     Clean up old Elastic Beats indices
     '''
     try:
         # Get the storage config
-        storage_conf = multiscanner.common.get_config_path(config, 'storage')
-        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
+        storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
+        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf_path)
+        storage_conf = multiscanner.common.parse_config(storage_conf_path)
+
+        metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+
+        if not metricbeat_enabled:
+            logger.debug('Metricbeat logging not enbaled, exiting...')
+            return
+
+        if not days:
+            days = storage_conf.get('metricbeat_rollover_days')
+        if not days:
+            raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
 
         # Find Elastic storage
         for handler in storage_handler.loaded_storage:
