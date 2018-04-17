@@ -25,6 +25,7 @@ PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
 DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
 GET /api/v1/tasks/<task_id>/report?d={t|f}---> receive report in JSON, set d=t to download
 GET /api/v1/tasks/<task_id>/pdf ---> Receive PDF report
+GET /api/v1/tasks/<task_id>/stix2?pretty={t|f}&custom_labels={string} ---> Receive STIX2 Bundle from report
 POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 GET /api/v1/analytics/ssdeep_compare---> Run ssdeep.compare analytic
@@ -76,6 +77,7 @@ import elasticsearch_storage
 import multiscanner
 import sql_driver as database
 from utils.pdf_generator import create_pdf_document
+from utils.stix2_generator import parse_json_report_to_stix2_bundle
 
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
@@ -211,8 +213,9 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]] = results[item[0]]
             del results[item[0]]
 
-            results[item[1]]['Scan Time'] = scan_time
-            results[item[1]]['Metadata'] = item[4]
+            results[item[1]]['Scan Metadata'] = item[4]
+            results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
+            results[item[1]]['Scan Metadata']['Task ID'] = item[2]
 
             db.update_task(
                 task_id=item[2],
@@ -344,12 +347,12 @@ def get_task(task_id):
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
-
-    Note: This removes the task from the task database, but the report remains
-        in Elasticsearch.
     '''
-    result = db.delete_task(task_id)
-    if not result:
+    es_result = handler.delete_by_task_id(task_id)
+    if not es_result:
+        abort(HTTP_NOT_FOUND)
+    sql_result = db.delete_task(task_id)
+    if not sql_result:
         abort(HTTP_NOT_FOUND)
     return jsonify({'Message': 'Deleted'})
 
@@ -892,6 +895,42 @@ def get_pdf_report(task_id):
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
+    return response
+
+
+@app.route('/api/v1/tasks/<task_id>/stix2', methods=['GET'])
+def get_stix2_bundle_from_report(task_id):
+    '''
+    Generates a STIX2 Bundle with indicators generated of a JSON report.
+
+    custom labels must be comma-separated.
+    '''
+    report_dict, success = get_report_dict(task_id)
+
+    if not success:
+        return jsonify(report_dict)
+
+    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
+    custom_labels = request.args.get('custom_labels', default='', type=str).split(",")
+
+    if formatting == 't' or formatting == 'y' or formatting == '1':
+        formatting = True
+    else:
+        formatting = False
+
+    # If list is empty or any entry in the list is empty -> clear labels
+    if custom_labels or all(custom_labels) is False:
+        custom_labels = []
+
+    # If the report has no key/value pairs that we can use to create
+    # STIX representations of this data. The default behavior is to return
+    # an empty bundle.
+    bundle = parse_json_report_to_stix2_bundle(report_dict, custom_labels)
+
+    # Setting pretty=True can be an expensive operation!
+    response = make_response(bundle.serialize(pretty=formatting))
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = 'attachment; filename=%s_bundle_stix2.json' % task_id
     return response
 
 
