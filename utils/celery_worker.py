@@ -29,6 +29,7 @@ if os.path.join(MS_WD, 'analytics') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
 
 import common
+import elasticsearch_storage
 import multiscanner
 import sql_driver as database
 from ssdeep_analytics import SSDeepAnalytic
@@ -78,11 +79,23 @@ db = database.Database(config=db_config)
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
+    # Run ssdeep match analytic
     # Executes every morning at 2:00 a.m.
     sender.add_periodic_task(
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
     )
+
+    # Delete old metricbeat indices
+    # Executes every morning at 3:00 a.m.
+    storage_conf_path = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
+    storage_conf = multiscanner.common.parse_config(storage_conf_path)
+    metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+    if metricbeat_enabled:
+        sender.add_periodic_task(
+            crontab(hour=3, minute=0),
+            metricbeat_rollover.s(),
+        )
 
 
 class MultiScannerTask(Task):
@@ -202,6 +215,43 @@ def ssdeep_compare_celery():
     '''
     ssdeep_analytic = SSDeepAnalytic()
     ssdeep_analytic.ssdeep_compare()
+
+
+@app.task()
+def metricbeat_rollover(days, config=multiscanner.CONFIG):
+    '''
+    Clean up old Elastic Beats indices
+    '''
+    try:
+        # Get the storage config
+        storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
+        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf_path)
+        storage_conf = multiscanner.common.parse_config(storage_conf_path)
+
+        metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+
+        if not metricbeat_enabled:
+            logger.debug('Metricbeat logging not enbaled, exiting...')
+            return
+
+        if not days:
+            days = storage_conf.get('metricbeat_rollover_days')
+        if not days:
+            raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
+
+        # Find Elastic storage
+        for handler in storage_handler.loaded_storage:
+            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+                ret = handler.delete_index(index_prefix='metricbeat', days=days)
+
+                if ret is False:
+                    logger.warn('Metricbeat Roller failed')
+                else:
+                    logger.info('Metricbeat indices older than {} days deleted'.format(days))
+    except Exception as e:
+        logger.warn(e)
+    finally:
+        storage_handler.close()
 
 
 if __name__ == '__main__':
