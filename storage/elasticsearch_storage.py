@@ -73,7 +73,6 @@ class ElasticSearchStorage(storage.Storage):
         'host': 'localhost',
         'port': 9200,
         'index': 'multiscanner_reports',
-        'doc_type': '_doc',
         'metricbeat_enabled': True,
         'metricbeat_rollover_days': 7,
     }
@@ -86,7 +85,7 @@ class ElasticSearchStorage(storage.Storage):
         self.hosts = host_list
         self.port = self.config['port']
         self.index = self.config['index']
-        self.doc_type = self.config['doc_type']
+        self.doc_type = '_doc'
         self.es = Elasticsearch(
             hosts=self.hosts,
             port=self.port
