@@ -8,6 +8,8 @@ import re
 from datetime import datetime
 from uuid import uuid4
 
+import curator
+
 from elasticsearch import Elasticsearch, helpers
 from elasticsearch.exceptions import TransportError
 
@@ -72,6 +74,8 @@ class ElasticSearchStorage(storage.Storage):
         'port': 9200,
         'index': 'multiscanner_reports',
         'doc_type': '_doc',
+        'metricbeat_enabled': True,
+        'metricbeat_rollover_days': 7,
     }
 
     def setup(self):
@@ -283,7 +287,7 @@ class ElasticSearchStorage(storage.Storage):
                         }},
                         {
                             "term": {
-                                "Scan Time": ts
+                                "Scan Metadata.Scan Time": ts
                             }
                         }
                     ]
@@ -490,5 +494,37 @@ class ElasticSearchStorage(storage.Storage):
             # TODO: log exception
             return False
 
+    def delete_by_task_id(self, task_id):
+        query = {
+            "query": {
+                "term": {
+                    "Scan Metadata.Task ID": task_id
+                }
+            }
+        }
+
+        try:
+            self.es.delete_by_query(
+                index=self.index, doc_type=self.doc_type, body=query
+            )
+            return True
+        except Exception as e:
+            # TODO: log exception
+            return False
+
     def teardown(self):
         pass
+
+    def delete_index(self, index_prefix, days):
+        '''
+        Delete index equal to or older than days.
+        '''
+        try:
+            ilo = curator.IndexList(self.es)
+            ilo.filter_by_regex(kind='prefix', value=index_prefix)
+            ilo.filter_by_age(source='name', direction='older', timestring='%Y.%m.%d', unit='days', unit_count=days)
+            delete_indices = curator.DeleteIndices(ilo)
+            delete_indices.do_action()
+        except Exception as e:
+            # TODO: log exception
+            return False

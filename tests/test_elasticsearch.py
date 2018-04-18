@@ -67,7 +67,7 @@ class TestES(unittest.TestCase):
         self.assertEqual(kwargs['index'], ElasticSearchStorage.DEFAULTCONF['index'])
         self.assertEqual(kwargs['body']['query']['bool']['must'][0]['parent_id']['type'], 'report')
         self.assertEqual(kwargs['body']['query']['bool']['must'][0]['parent_id']['id'], TEST_ID)
-        self.assertEqual(kwargs['body']['query']['bool']['must'][1]['term']['Scan Time'], TEST_TS)
+        self.assertEqual(kwargs['body']['query']['bool']['must'][1]['term']['Scan Metadata.Scan Time'], TEST_TS)
         self.assertEqual(kwargs['doc_type'], ElasticSearchStorage.DEFAULTCONF['doc_type'])
 
         mock_get.assert_any_call(index=ElasticSearchStorage.DEFAULTCONF['index'], id=TEST_ID, doc_type='_doc')

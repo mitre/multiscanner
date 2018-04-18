@@ -29,6 +29,7 @@ if os.path.join(MS_WD, 'analytics') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'analytics'))
 
 import common
+import elasticsearch_storage
 import multiscanner
 import sql_driver as database
 from ssdeep_analytics import SSDeepAnalytic
@@ -78,11 +79,23 @@ db = database.Database(config=db_config)
 
 @app.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
+    # Run ssdeep match analytic
     # Executes every morning at 2:00 a.m.
     sender.add_periodic_task(
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
     )
+
+    # Delete old metricbeat indices
+    # Executes every morning at 3:00 a.m.
+    storage_conf_path = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
+    storage_conf = multiscanner.common.parse_config(storage_conf_path)
+    metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+    if metricbeat_enabled:
+        sender.add_periodic_task(
+            crontab(hour=3, minute=0),
+            metricbeat_rollover.s(),
+        )
 
 
 class MultiScannerTask(Task):
@@ -160,21 +173,20 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
         if sub_conf[key]['ENABLED'] is True:
             total_enabled += 1
 
-    results[file_]['Scan Metadata'] = {}
+    results[file_]['Scan Metadata'] = metadata
     results[file_]['Scan Metadata']['Worker Node'] = gethostname()
     results[file_]['Scan Metadata']['Scan Config'] = sub_conf
     results[file_]['Scan Metadata']['Modules Enabled'] = '{} / {}'.format(
         total_enabled, total_modules
     )
+    results[file_]['Scan Metadata']['Scan Time'] = scan_time
+    results[file_]['Scan Metadata']['Task ID'] = task_id
 
     # Use the original filename as the value for the filename
     # in the report (instead of the tmp path assigned to the file
     # by the REST API)
     results[original_filename] = results[file_]
     del results[file_]
-
-    results[original_filename]['Scan Time'] = scan_time
-    results[original_filename]['Metadata'] = metadata
 
     # Update the task DB to reflect that the task is done
     db.update_task(
@@ -202,6 +214,43 @@ def ssdeep_compare_celery():
     '''
     ssdeep_analytic = SSDeepAnalytic()
     ssdeep_analytic.ssdeep_compare()
+
+
+@app.task()
+def metricbeat_rollover(days, config=multiscanner.CONFIG):
+    '''
+    Clean up old Elastic Beats indices
+    '''
+    try:
+        # Get the storage config
+        storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
+        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf_path)
+        storage_conf = multiscanner.common.parse_config(storage_conf_path)
+
+        metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+
+        if not metricbeat_enabled:
+            logger.debug('Metricbeat logging not enbaled, exiting...')
+            return
+
+        if not days:
+            days = storage_conf.get('metricbeat_rollover_days')
+        if not days:
+            raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
+
+        # Find Elastic storage
+        for handler in storage_handler.loaded_storage:
+            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+                ret = handler.delete_index(index_prefix='metricbeat', days=days)
+
+                if ret is False:
+                    logger.warn('Metricbeat Roller failed')
+                else:
+                    logger.info('Metricbeat indices older than {} days deleted'.format(days))
+    except Exception as e:
+        logger.warn(e)
+    finally:
+        storage_handler.close()
 
 
 if __name__ == '__main__':
