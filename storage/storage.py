@@ -127,26 +127,53 @@ class StorageHandler(object):
                 else:
                     storage_classes[storage_name].config = config[storage_name]
 
-        # Call setup for each enabled storage
-        loaded_storage = []
+        self.storage_classes = storage_classes
+        self.loaded_storage = {}
+
+        # Setup each enabled storage
+        self.load_modules()
+
+    def load_modules(self, required_module=""):
+        """ Call setup for each enabled storage module. Specify a required module
+        to retry until that module is loaded.
+
+        Returns:
+            The required storage module, or all loaded modules if none specified.
+        """
+        # Check if required module is already loaded
+        if required_module != "":
+            for module in self.loaded_storage:
+                if module.__class__.__name__ == required_module:
+                    return module
+
         # Sleep and retry until storage setup is successful
         sleep_time = 5  # wait this many seconds between tries
         num_retries = 20  # max number of times to retry
         for x in range(0, num_retries):
-            for storage_name in storage_classes:
-                storage = storage_classes[storage_name]
+            for storage_name in self.storage_classes:
+                storage = self.storage_classes[storage_name]
+                if storage_name in self.loaded_storage:  # already loaded
+                    continue
+
                 if storage.config['ENABLED'] is True:
                     try:
                         if storage.setup():
-                            loaded_storage.append(storage)
+                            self.loaded_storage[storage_name] = storage
                     except Exception as e:
                         storage_error = e
                         print('ERROR:', 'storage', storage_name, 'failed to load.', e)
 
-            if loaded_storage == []:
+            if not self.loaded_storage:
                 print('ERROR: No storage classes loaded.')
                 if x < num_retries:
                     print('Retrying...')
+            elif required_module:
+                if required_module in self.loaded_storage:
+                    storage_error = None
+                else:
+                    print('WARNING: Required storage {} not loaded.'.format(required_module))
+                    if x < num_retries:
+                        print('Retrying...')
             else:
                 storage_error = None
 
@@ -156,9 +183,15 @@ class StorageHandler(object):
                 break
 
         if storage_error:
-            exit()
+            if required_module:
+                sys.exit('ERROR: {} module not loaded!'.format(required_module))
+            else:
+                sys.exit('ERROR: No storage module loaded!')
 
-        self.loaded_storage = loaded_storage
+        if required_module:
+            return self.loaded_storage.get(required_module, None)
+        else:
+            return self.loaded_storage
 
     def store(self, dictionary, wait=True):
         """Stores dictionary in active storage module. If wait is False, a thread object is returned.
@@ -175,7 +208,7 @@ class StorageHandler(object):
         self.storage_counter.add()
         self.storage_lock.acquire()
         thread_list = []
-        for storage in self.loaded_storage:
+        for storage in self.loaded_storage.values():
             t = threading.Thread(target=storage.store, args=(dict(dictionary),))
             t.daemon = False
             t.start()
@@ -191,14 +224,14 @@ class StorageHandler(object):
         """
         self.storage_counter.wait()
         thread_list = []
-        for storage in self.loaded_storage:
+        for storage in self.loaded_storage.values():
             t = threading.Thread(target=storage.teardown)
             t.daemon = False
             t.start()
             thread_list.append(t)
         for t in thread_list:
             t.join()
-        self.loaded_storage = []
+        self.loaded_storage = {}
 
     def is_done(self, wait=False):
         if wait:

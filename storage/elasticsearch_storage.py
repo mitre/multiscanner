@@ -336,7 +336,7 @@ class ElasticSearchStorage(storage.Storage):
 
         matches = []
         for r in result:
-            if r['_source']['doc_type'] == 'sample':
+            if r.get('_source', {}).get('doc_type', {}) == 'sample':
                 field = '_id'
             else:
                 field = '_routing'

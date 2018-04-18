@@ -37,7 +37,6 @@ if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import common
-import elasticsearch_storage
 import multiscanner
 
 
@@ -50,11 +49,7 @@ class SSDeepAnalytic:
         config_object.read(storage_conf)
         conf = common.parse_config(config_object)
         storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-        es_handler = None
-        for handler in storage_handler.loaded_storage:
-            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-                es_handler = handler
-                break
+        es_handler = storage_handler.load_modules('ElasticSearchStorage')
 
         if not es_handler:
             print('[!] ERROR: This analytic only works with ES stroage module.')

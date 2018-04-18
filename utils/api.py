@@ -72,7 +72,6 @@ if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import common
-import elasticsearch_storage
 import multiscanner
 import sql_driver as database
 from utils.pdf_generator import create_pdf_document
@@ -148,15 +147,14 @@ for x in range(0, db_num_retries):
 
     if db_error:
         if x == db_num_retries - 1:
-            exit()
+            sys.exit()
         print("Retrying...")
         time.sleep(db_sleep_time)
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-for handler in storage_handler.loaded_storage:
-    if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-        break
+handler = storage_handler.load_modules('ElasticSearchStorage')
+
 
 ms_config_object = configparser.SafeConfigParser()
 ms_config_object.optionxform = str

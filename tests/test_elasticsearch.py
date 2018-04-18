@@ -205,7 +205,7 @@ class TestES(unittest.TestCase):
         self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)
         self.assertEqual(note_id, TEST_NOTE_ID)
-        self.assertEqual(body['_doc']['text'], 'foo')
+        self.assertEqual(body['doc']['text'], 'foo')
 
     @mock.patch.object(Elasticsearch, 'delete')
     def test_delete_note(self, mock_delete):
