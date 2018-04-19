@@ -330,6 +330,9 @@
       {% if search_term %}
       scrollToHighlight();
       {% endif %}
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ' + jqXHR.responseJSON["Message"] + '</h3>');
     });
   }
 
