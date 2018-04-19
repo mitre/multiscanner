@@ -693,7 +693,11 @@ def get_report_dict(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        return {'Report': handler.get_report(task.sample_id, task.timestamp)}, True
+        result = handler.get_report(task.sample_id, task.timestamp)
+        if result:
+            return {'Report': result}, True
+        else:
+            return {'Report': 'Error occurred in ElasticSearch'}, False
     elif task.task_status == 'Pending':
         return {'Report': 'Task still pending'}, False
     else:
