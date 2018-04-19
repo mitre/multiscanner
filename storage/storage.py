@@ -149,6 +149,7 @@ class StorageHandler(object):
         # Sleep and retry until storage setup is successful
         sleep_time = 5  # wait this many seconds between tries
         num_retries = 20  # max number of times to retry
+        storage_error = None
         for x in range(0, num_retries):
             for storage_name in self.storage_classes:
                 storage = self.storage_classes[storage_name]
