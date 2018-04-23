@@ -6,24 +6,17 @@
 <script src="/static/js/bootstrap-tagsinput.min.js"></script>
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript">
-  var expanders = null,
-  collapsers = null;
-
-  function getVersion() {
-    return 'awesome sauce';
-  }
-
-</script>
 {% endblock %}
 
 {% block title %}About{% endblock %}
 
 {% block content %}
 
-<div>
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
     <h1 class="text-center">Version</h1>
-    <script>getVersion();</script>
+    <div class="text-center">Multiscanner: v{{ version }}</div>
+  </div>
 </div>
 
 {% endblock %}

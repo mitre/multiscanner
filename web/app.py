@@ -101,7 +101,8 @@ def analytics():
 
 @app.route('/about', methods=['GET'])
 def about():
-    return render_template('about.html')
+    return render_template('about.html',
+                           version=multiscanner.__version__)
 
 
 @app.route('/system-health', methods=['GET'])
