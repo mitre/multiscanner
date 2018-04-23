@@ -22,6 +22,12 @@ STORAGE_DIR = os.path.dirname(__file__)
 MS_WD = os.path.dirname(STORAGE_DIR)
 CONFIG = os.path.join(MS_WD, "storage.ini")
 
+DEFAULTCONF = {
+    'retry_time': 5,  # Number of seconds to wait between retrying to connect to storage
+    'retry_num': 20,  # Number of times to retry to connect to storage
+}
+
+
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
 
@@ -93,6 +99,7 @@ class StorageHandler(object):
             config_object.optionxform = str
             # Regen the config if needed or wanted
             if configregen or not os.path.isfile(configfile):
+                _write_main_config(config_object)
                 _rewrite_config(storage_classes, config_object, configfile)
 
             config_object.read(configfile)
@@ -113,6 +120,9 @@ class StorageHandler(object):
                 for storage_name in storage_classes:
                     config[storage_name] = {}
             config['_load_default'] = True
+
+        self.sleep_time = config.get('main', {}).get('retry_time', DEFAULTCONF['retry_time'])
+        self.num_retries = config.get('main', {}).get('retry_num', DEFAULTCONF['retry_num'])
 
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
@@ -147,10 +157,8 @@ class StorageHandler(object):
                     return module
 
         # Sleep and retry until storage setup is successful
-        sleep_time = 5  # wait this many seconds between tries
-        num_retries = 20  # max number of times to retry
         storage_error = None
-        for x in range(0, num_retries):
+        for x in range(0, self.num_retries):
             for storage_name in self.storage_classes:
                 storage = self.storage_classes[storage_name]
                 if storage_name in self.loaded_storage:  # already loaded
@@ -166,20 +174,20 @@ class StorageHandler(object):
 
             if not self.loaded_storage:
                 print('ERROR: No storage classes loaded.')
-                if x < num_retries:
+                if x < self.num_retries:
                     print('Retrying...')
             elif required_module:
                 if required_module in self.loaded_storage:
                     storage_error = None
                 else:
                     print('WARNING: Required storage {} not loaded.'.format(required_module))
-                    if x < num_retries:
+                    if x < self.num_retries:
                         print('Retrying...')
             else:
                 storage_error = None
 
             if storage_error:
-                time.sleep(sleep_time)
+                time.sleep(self.sleep_time)
             else:
                 break
 
@@ -248,10 +256,20 @@ def config_init(filepath, overwrite=False, storage_classes=None):
     config_object = configparser.SafeConfigParser()
     config_object.optionxform = str
     if overwrite or not os.path.isfile(filepath):
+        _write_main_config(config_object)
         _rewrite_config(storage_classes, config_object, filepath)
     else:
         config_object.read(filepath)
+        _write_main_config(config_object)
         _write_missing_config(config_object, filepath, storage_classes=storage_classes)
+
+
+def _write_main_config(config_object):
+    if not config_object.has_section('main'):
+        # Write default config
+        config_object.add_section('main')
+        for key in DEFAULTCONF:
+            config_object.set('main', key, str(DEFAULTCONF[key]))
 
 
 def _rewrite_config(storage_classes, config_object, filepath):
