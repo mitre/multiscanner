@@ -45,6 +45,15 @@
             <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
             <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
             <li {% if request.path == '/analytics' %} class="active" {% endif %}><a href="/analytics">Analytics</a></li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="/system">System
+              <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="/about">About</a></li>
+                <li><a href="/system-health">System Health</a></li>
+                <li><a target="_blank" href="{{ flower_loc }}">Task Queue</a></li>
+              </ul>
+            </li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
             {% if request.path not in ['/analyses', '/history'] %}
