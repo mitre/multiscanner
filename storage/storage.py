@@ -34,6 +34,10 @@ if os.path.join(MS_WD, 'libs') not in sys.path:
 import common
 
 
+class StorageNotLoadedError(Exception):
+    pass
+
+
 class ThreadCounter(object):
     def __init__(self):
         self.lock = threading.Lock()
@@ -148,7 +152,7 @@ class StorageHandler(object):
         to retry until that module is loaded.
 
         Returns:
-            The required storage module, or all loaded modules if none specified.
+            All loaded modules.
         """
         # Check if required module is already loaded
         if required_module != "":
@@ -171,6 +175,8 @@ class StorageHandler(object):
                     except Exception as e:
                         storage_error = e
                         print('ERROR:', 'storage', storage_name, 'failed to load.', e)
+                elif storage_name == required_module and storage.config['ENABLED'] is False:
+                    raise StorageNotLoadedError('{} module is required but not loaded!'.format(required_module))
 
             if not self.loaded_storage:
                 print('ERROR: No storage classes loaded.')
@@ -193,14 +199,20 @@ class StorageHandler(object):
 
         if storage_error:
             if required_module:
-                sys.exit('ERROR: {} module not loaded!'.format(required_module))
+                raise StorageNotLoadedError('{} module not loaded!'.format(required_module))
             else:
-                sys.exit('ERROR: No storage module loaded!')
+                raise StorageNotLoadedError('No storage module loaded!')
 
-        if required_module:
-            return self.loaded_storage.get(required_module, None)
-        else:
-            return self.loaded_storage
+        return self.loaded_storage
+
+    def load_required_module(self, required_module=""):
+        """Ensure the required module is loaded.
+
+        Returns:
+            The required storage module.
+        """
+        self.load_modules()
+        return self.loaded_storage.get(required_module, None)
 
     def store(self, dictionary, wait=True):
         """Stores dictionary in active storage module. If wait is False, a thread object is returned.

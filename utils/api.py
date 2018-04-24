@@ -136,8 +136,17 @@ from ssdeep_analytics import SSDeepAnalytic
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
 # Sleep and retry until database connection is successful
-db_sleep_time = 5  # wait this many seconds between tries
-db_num_retries = 20  # max number of times to retry
+try:
+    # wait this many seconds between tries
+    db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_sleep_time = database.Database.DEFAULTCONF['retry_time']
+try:
+    # max number of times to retry
+    db_num_retries = int(api_config_object.get('Database', 'retry_num'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_num_retries = database.Database.DEFAULTCONF['retry_num']
+
 for x in range(0, db_num_retries):
     try:
         db.init_db()
@@ -149,13 +158,13 @@ for x in range(0, db_num_retries):
 
     if db_error:
         if x == db_num_retries - 1:
-            sys.exit()
+            raise multiscanner.storage.storage.StorageNotLoadedError()
         print("Retrying...")
         time.sleep(db_sleep_time)
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-handler = storage_handler.load_modules('ElasticSearchStorage')
+handler = storage_handler.load_required_module('ElasticSearchStorage')
 
 
 ms_config_object = configparser.SafeConfigParser()
