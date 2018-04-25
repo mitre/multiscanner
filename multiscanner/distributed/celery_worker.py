@@ -75,8 +75,8 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # Delete old metricbeat indices
     # Executes every morning at 3:00 a.m.
-    storage_conf_path = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
-    storage_conf = multiscanner.common.parse_config(storage_conf_path)
+    storage_conf_path = utils.get_config_path(MS_CONFIG, 'storage')
+    storage_conf = utils.parse_config(storage_conf_path)
     metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
     if metricbeat_enabled:
         sender.add_periodic_task(
@@ -204,15 +204,15 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover(days, config=multiscanner.CONFIG):
+def metricbeat_rollover(days, config=MS_CONFIG):
     '''
     Clean up old Elastic Beats indices
     '''
     try:
         # Get the storage config
-        storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
-        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf_path)
-        storage_conf = multiscanner.common.parse_config(storage_conf_path)
+        storage_conf_path = utils.get_config_path(config, 'storage')
+        storage_handler = storage.StorageHandler(configfile=storage_conf_path)
+        storage_conf = utils.parse_config(storage_conf_path)
 
         metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
 
@@ -227,7 +227,7 @@ def metricbeat_rollover(days, config=multiscanner.CONFIG):
 
         # Find Elastic storage
         for handler in storage_handler.loaded_storage:
-            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
+            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
                 ret = handler.delete_index(index_prefix='metricbeat', days=days)
 
                 if ret is False:

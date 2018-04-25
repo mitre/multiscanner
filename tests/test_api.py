@@ -162,7 +162,7 @@ class TestTaskDeleteCase(APITestCase):
         # populate the DB w/ a task
         post_file(self.app)
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_delete_task(self, mock_handler):
         mock_handler.delete_by_task_id.return_value = True
         expected_response = {'Message': 'Deleted'}
@@ -170,7 +170,7 @@ class TestTaskDeleteCase(APITestCase):
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
 
-    @mock.patch('api.handler')
+    @mock.patch('multiscanner.distributed.api.handler')
     def test_delete_nonexistent_task(self, mock_handler):
         mock_handler.delete_by_task_id.return_value = False
         expected_response = api.TASK_NOT_FOUND

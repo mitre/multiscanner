@@ -1,24 +1,13 @@
 import json
 import os
-import sys
 
 import stix2
 
 '''Test module for STIX2 content generation methods'''
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-MODULE_TEST_DIR = os.path.dirname(CWD)
-TEST_DIR = os.path.dirname(MODULE_TEST_DIR)
-MS_WD = os.path.dirname(TEST_DIR)
 
-
-# Allow import of stix2_generator
-if os.path.join(MS_WD, 'utils') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'utils'))
-# Use multiscanner in ../
-sys.path.insert(0, os.path.dirname(CWD))
-
-import stix2_generator
+from multiscanner.common import stix2_generator
 
 
 def test_create_empty_bundle():
