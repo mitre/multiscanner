@@ -18,10 +18,10 @@ from uuid import uuid4
 
 from pymongo import MongoClient
 
-from storage import Storage
+from multiscanner.storage import storage
 
 
-class MongoStorage(Storage):
+class MongoStorage(storage.Storage):
     '''
     Subclass of Storage. Allows user to interact
     with backend Mongo database

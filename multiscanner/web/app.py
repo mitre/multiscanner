@@ -6,6 +6,7 @@ import os
 import re
 
 from multiscanner import CONFIG as MS_CONFIG
+from multiscanner import __version__
 from multiscanner.common import utils
 
 DEFAULTCONF = {
@@ -99,7 +100,7 @@ def analytics():
 @app.route('/about', methods=['GET'])
 def about():
     return render_template('about.html',
-                           version=multiscanner.__version__)
+                           version=__version__)
 
 
 @app.route('/system-health', methods=['GET'])
