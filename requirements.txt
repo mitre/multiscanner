@@ -4,6 +4,7 @@ configparser
 #Required by modules
 bitstring
 boltons
+git+https://github.com/endgameinc/ember.git#egg=ember
 git+https://github.com/knowmalware/pehash.git#egg=pehash
 mmbot
 paramiko
