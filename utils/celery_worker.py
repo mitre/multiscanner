@@ -135,6 +135,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     multiscanner_celery.delay(full_path, original_filename, task_id,
                               hashed_filename, metadata, config, module_list)
     '''
+
     # Initialize the connection to the task DB
     db.init_db()
 
@@ -163,15 +164,20 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     # Count number of modules enabled out of total possible
     # and add it to the Scan Metadata
     total_enabled = 0
-    total_modules = 0
-    for key in full_conf:
-        if key == 'main':
-            continue
-        sub_conf[key] = {}
-        sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
-        total_modules += 1
-        if sub_conf[key]['ENABLED'] is True:
-            total_enabled += 1
+    total_modules = len(full_conf.keys())
+
+    # Get the count of modules enabled from the module_list
+    # if it exists, else count via the config
+    if module_list:
+        total_enabled = len(module_list)
+    else:
+        for key in full_conf:
+            if key == 'main':
+                continue
+            sub_conf[key] = {}
+            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+            if sub_conf[key]['ENABLED'] is True:
+                total_enabled += 1
 
     results[file_]['Scan Metadata'] = metadata
     results[file_]['Scan Metadata']['Worker Node'] = gethostname()
@@ -188,6 +194,16 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     results[original_filename] = results[file_]
     del results[file_]
 
+    # Save the reports to storage
+    storage_ids = storage_handler.store(results, wait=False)
+    storage_handler.close()
+
+    # Only need to raise ValueError here,
+    # Further cleanup will be handled by the on_failure method
+    # of MultiScannerTask
+    if not storage_ids:
+        raise ValueError('Report failed to index')
+
     # Update the task DB to reflect that the task is done
     db.update_task(
         task_id=task_id,
@@ -195,9 +211,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
         timestamp=scan_time,
     )
 
-    # Save the reports to storage
-    storage_handler.store(results, wait=False)
-    storage_handler.close()
     logger.info('Completed Task #{}'.format(task_id))
 
     return results
