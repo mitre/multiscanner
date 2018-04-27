@@ -130,7 +130,7 @@ def basename(path):
         return split[-1]
 
 
-def parseDir(directory, recursive=False):
+def parseDir(directory, recursive=False, exclude=[]):
     """
     Returns a list of files in a directory.
 
@@ -146,6 +146,9 @@ def parseDir(directory, recursive=False):
             else:
                 continue
         else:
+            if item.split('.')[0] in exclude:
+                continue
+
             if not PY3:
                 filelist.append(item.decode('utf8'))
             else:

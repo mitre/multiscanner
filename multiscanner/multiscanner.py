@@ -457,7 +457,7 @@ def _rewrite_config(ModuleList, Config, filepath=CONFIG):
     conffile.close()
 
 
-def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True)):
+def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True, exclude=["__init__"])):
     """
     Creates a new config file at filepath
 
@@ -540,7 +540,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULEDIR, recursive=True)
+        module_list = parseDir(MODULEDIR, recursive=True, exclude=["__init__"])
     # A dictionary used for the copyfileto parameter
     filedic = {}
     # What will be the config file object
@@ -853,7 +853,7 @@ def _init(args):
             print('Configuration file initialized at', args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULEDIR, recursive=True)
+            ModuleList = parseDir(MODULEDIR, recursive=True, exclude=["__init__"])
             Config = configparser.SafeConfigParser()
             Config.optionxform = str
             Config.read(args.config)
