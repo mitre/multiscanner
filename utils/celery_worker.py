@@ -66,6 +66,13 @@ api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
+storage_config_object = configparser.SafeConfigParser()
+storage_config_object.optionxform = str
+storage_configfile = common.get_config_path(multiscanner.CONFIG, 'storage')
+storage_config_object.read(storage_configfile)
+config = common.parse_config(storage_config_object)
+es_storage_config = config.get('ElasticSearchStorage')
+
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('protocol'),
     worker_config.get('user'),
@@ -88,9 +95,7 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # Delete old metricbeat indices
     # Executes every morning at 3:00 a.m.
-    storage_conf_path = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
-    storage_conf = multiscanner.common.parse_config(storage_conf_path)
-    metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+    metricbeat_enabled = es_storage_config.get('metricbeat_enabled', True)
     if metricbeat_enabled:
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
@@ -223,18 +228,15 @@ def metricbeat_rollover(days, config=multiscanner.CONFIG):
     '''
     try:
         # Get the storage config
-        storage_conf_path = multiscanner.common.get_config_path(config, 'storage')
-        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf_path)
-        storage_conf = multiscanner.common.parse_config(storage_conf_path)
-
-        metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+        storage_handler = multiscanner.storage.StorageHandler(configfile=storage_configfile)
+        metricbeat_enabled = es_storage_config.get('metricbeat_enabled', True)
 
         if not metricbeat_enabled:
             logger.debug('Metricbeat logging not enbaled, exiting...')
             return
 
         if not days:
-            days = storage_conf.get('metricbeat_rollover_days')
+            days = es_storage_config.get('metricbeat_rollover_days')
         if not days:
             raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
 
