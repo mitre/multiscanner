@@ -9,7 +9,7 @@ import sys
 import traceback
 from builtins import *  # noqa 401,403
 
-from office_meta import OfficeParser
+from multiscanner.ext.office_meta import OfficeParser
 
 PY3 = False
 if sys.version_info > (3,):
