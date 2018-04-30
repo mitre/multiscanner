@@ -13,7 +13,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.externals import joblib
 
 
-# TODO: get ES names from config
 ES_HOSTS = [ 
     'ms-es1.localdomain',
     'ms-es2.localdomain',
@@ -52,6 +51,12 @@ def build_feature_dict(report):
         # TODO: not sure whether to make this 0 or None...
         feature_dict['num_pe_imports'] = 0
 
+    try:
+        diff = abs(report['pefile']['sections']['_data\x00\x00\x00']['virt_size'] - report['pefile']['sections']['_data\x00\x00\x00']['size'])
+        feature_dict['diff_virt_size_real'] = diff
+    except Exception as e:
+        feature_dict['diff_virt_size_real'] = 0
+    
     if task_id <= 500:
         feature_dict['malware'] = False
     elif task_id <= 1000:
@@ -93,13 +98,8 @@ def build_classifier():
     # df = pd.read_csv('min_features.csv')
     df = build_feature_dataframe()
 
-    param_grid = {
-        'n_estimators': [1, 10, 100, 1000],
-        'max_features': [1, 2, 3, 4, 5]
-    }
-
     feature_cols = ['cuckoo_duration', 'cuckoo_num_sigs', 'cuckoo_score',
-       'file_entropy', 'num_pe_imports']
+       'file_entropy', 'num_pe_imports', 'diff_virt_size_real']
     X = df.loc[:, feature_cols]
 
     y = df.malware
@@ -107,6 +107,11 @@ def build_classifier():
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     """
+    param_grid = {
+        'n_estimators': [1, 10, 100, 1000],
+        'max_features': [1, 2, 3, 4, 5]
+    }
+
     grid = GridSearchCV(
         RandomForestClassifier(), param_grid,
         cv=5, n_jobs=-1
@@ -116,11 +121,12 @@ def build_classifier():
     print('Performance on test data: {:.4f}'.format(
         grid.score(X_test, y_test)
     ))
+
     """
     forest = RandomForestClassifier(n_estimators=1000, max_features=2)
     forest.fit(X_train, y_train)
 
-    print('Performance of test data: {:.3f}'.format(forest.score(X_test, y_test)))
+    print('Performance on test data: {:.3f}'.format(forest.score(X_test, y_test)))
     print('\n\nFeature importance:')
     i = 0
     for f in X_train.columns:
