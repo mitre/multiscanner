@@ -50,12 +50,15 @@ def build_feature_dict(report):
     except:
         # TODO: not sure whether to make this 0 or None...
         feature_dict['num_pe_imports'] = 0
-
     try:
         diff = abs(report['pefile']['sections']['_data\x00\x00\x00']['virt_size'] - report['pefile']['sections']['_data\x00\x00\x00']['size'])
         feature_dict['diff_virt_size_real'] = diff
     except Exception as e:
         feature_dict['diff_virt_size_real'] = 0
+    try:
+        feature_dict['len_floss_strings'] = len(report['floss']['static_ascii_strings'])
+    except:
+        feature_dict['len_floss_strings'] = 0 
     
     if task_id <= 500:
         feature_dict['malware'] = False
@@ -99,7 +102,7 @@ def build_classifier():
     df = build_feature_dataframe()
 
     feature_cols = ['cuckoo_duration', 'cuckoo_num_sigs', 'cuckoo_score',
-       'file_entropy', 'num_pe_imports', 'diff_virt_size_real']
+       'file_entropy', 'num_pe_imports', 'diff_virt_size_real', 'len_floss_strings']
     X = df.loc[:, feature_cols]
 
     y = df.malware
@@ -112,14 +115,14 @@ def build_classifier():
         'max_features': [1, 2, 3, 4, 5]
     }
 
-    grid = GridSearchCV(
+    forest = GridSearchCV(
         RandomForestClassifier(), param_grid,
         cv=5, n_jobs=-1
     )
-    grid.fit(X_train, y_train)
-    print('Best params: {}'.format(grid.best_params_))
+    forest.fit(X_train, y_train)
+    print('Best params: {}'.format(forest.best_params_))
     print('Performance on test data: {:.4f}'.format(
-        grid.score(X_test, y_test)
+        forest.score(X_test, y_test)
     ))
 
     """
