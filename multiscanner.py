@@ -6,7 +6,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
-__version__ = '1.1.1'
+__version__ = '1.2.0'
 
 import codecs
 import configparser
