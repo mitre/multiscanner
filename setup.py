@@ -29,7 +29,7 @@ for directory in to_walk:
 
 setup(
     name='multiscanner',
-    version='1.1.1',
+    version='1.2.0',
     url='https://github.com/MITRECND/multiscanner',
     license='MPL 2.0',
     author='Drew Bonasera',
@@ -49,6 +49,8 @@ setup(
         'python-magic',
         'requests',
         'ssdeep',
+        # Required for STIX2 content
+        'stix2',
         # Required by PDF
         'reportlab',
         # Required by API

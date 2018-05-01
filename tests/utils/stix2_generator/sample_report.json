@@ -1,0 +1,189 @@
+{
+  "Report": {
+    "Cuckoo Sandbox": {
+      "dropped": [
+        {
+          "crc32": "EDB36492",
+          "filepath": "C:\\Users\\some_user\\AppData\\Local\\Temp\\n2422\\s2429.exe.zip",
+          "md5": "d659e8900ea3fabe425882debed0c494",
+          "name": "1acf42374fb021fd_s2429.exe.zip",
+          "path": "/opt/cuckoo/.cuckoo/storage/analyses/22605/files/1acf42374fb021fd_s2429.exe.zip",
+          "pids": [
+            2272
+          ],
+          "sha1": "388e6816aff442e13cb546cfacd0c1d75b59b5b1",
+          "sha256": "1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110",
+          "sha512": "f7e2de13afe330c96be43320968fc1152ef30562cd5e51a2b60306caffdea50745b1d515112cd09b0aaf1ba33c64bdd835d9999ec01f09aae8dbe01407d98e82",
+          "size": 173228,
+          "ssdeep": "3072:v8O0PPXlpAmOvDtu31DunkJdmAOIAT3B/WAyU98SJ4MWFYAkOymiTG4czJE:kdPP1Cm+OKYdmoqH8SSpkOye4czO",
+          "type": "Zip archive data, at least v2.0 to extract"
+        },
+        {
+          "crc32": "D29343CF",
+          "filepath": "C:\\Users\\some_user\\AppData\\Local\\Temp\\n2422\\s2429.exe",
+          "md5": "13b0085a03720e67fb8c73db3f14609e",
+          "name": "f9449897f9ca99b9_s2429.exe",
+          "path": "/opt/cuckoo/.cuckoo/storage/analyses/22605/files/f9449897f9ca99b9_s2429.exe",
+          "pids": [
+            2272
+          ],
+          "sha1": "ddf811f21e6c066b644d03e6751e16efb0fbecce",
+          "sha256": "f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340",
+          "sha512": "39b95dce14b3eea6f191d4dbaaff87ebbc8f3b6982e7b4ee5ebeed83d3b7397441665f25dec5eb9f8a1f3b12f4ddcd604d5852b781f592488263161c0d620e82",
+          "size": 421056,
+          "ssdeep": "6144:63hJxWjDKn4yTxz12wj/CF6J2Os+WX+ugnZJFNpluJHA4:6RJWDsTxzIwj/CF6FR6+zcO4",
+          "type": "PE32 executable (GUI) Intel 80386 Mono/.Net assembly, for MS Windows"
+        }
+      ],
+      "signatures": [
+        {
+          "description": "This executable is signed",
+          "name": "has_authenticode",
+          "severity": 1
+        },
+        {
+          "description": "Checks amount of memory in system, this can be used to detect virtual machines that have a low amount of memory available",
+          "markcount": 1,
+          "marks": [
+            {
+              "call": {
+                "api": "GlobalMemoryStatusEx",
+                "category": "system",
+                "return_value": 1,
+                "status": 1,
+                "tid": 1156,
+                "time": 1508411224.064626
+              },
+              "cid": 4115,
+              "pid": 2272,
+              "type": "call"
+            }
+          ],
+          "name": "antivm_memory_available",
+          "severity": 1
+        },
+        {
+          "description": "Potentially malicious URLs were found in the process memory dump",
+          "markcount": 3,
+          "marks": [
+            {
+              "category": "url",
+              "description": null,
+              "ioc": "http://ns.adobe.com/xap/1.0/mm/",
+              "type": "ioc"
+            },
+            {
+              "category": "url",
+              "description": null,
+              "ioc": "http://ns.adobe.com/xap/1.0/sType/ResourceRef",
+              "type": "ioc"
+            },
+            {
+              "category": "url",
+              "description": null,
+              "ioc": "http://ns.adobe.com/xap/1.0/",
+              "type": "ioc"
+            }
+          ],
+          "name": "memdump_urls",
+          "severity": 2
+        },
+        {
+          "description": "Performs some HTTP requests",
+          "markcount": 14,
+          "marks": [
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://www.msftncsi.com/ncsi.txt",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?ec38990cc55170ab",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "POST http://tools.google.com/service/update2?cup2key=6:2144477707&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "POST http://tools.google.com/service/update2?cup2key=6:3255292227&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "POST http://tools.google.com/service/update2?cup2key=6:1128284371&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "POST http://tools.google.com/service/update2?cup2key=6:1439439368&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab?075dc50dacf9f2bb",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?31308c2120fea4bc",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?6ecb1b8de9d8006f",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?91c8a9092e8cb67a",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?1390637153eb96bd",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?b16bed41061b4861",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?9a8ede518893069d",
+              "type": "ioc"
+            },
+            {
+              "category": "request",
+              "description": null,
+              "ioc": "GET http://go.microsoft.com/fwlink/?LinkId=544713",
+              "type": "ioc"
+            }
+          ],
+          "name": "network_http",
+          "severity": 2
+        }
+      ]
+    },
+    "MD5": "34303fdb55e5d0f1142bb07eed2064cb",
+    "SHA1": "91fd2d2935aedcb47271b54cd22f8fe3b30c17fd",
+    "SHA256": "90b1e39282dbda2341d91b87ca161afe564b7d3b4f82f25b3f1dce3fa857226c"
+  }
+}

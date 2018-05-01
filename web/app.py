@@ -15,6 +15,8 @@ DEFAULTCONF = {
     'HOST': "localhost",
     'PORT': 8000,
     'API_LOC': "http://localhost:8080",
+    'FLOWER_LOC': "http://localhost:5555",
+    'KIBANA_LOC': "http://localhost:5601",
     'DEBUG': False,
     'METADATA_FIELDS': [
         "Submitter Name",
@@ -49,20 +51,29 @@ conf_tuple = namedtuple('WebConfig', web_config.keys())(*web_config.values())
 app.config.from_object(conf_tuple)
 
 
+@app.context_processor
+def inject_locs():
+    d = {
+        'api_loc': app.config['API_LOC'],
+        'flower_loc': app.config['FLOWER_LOC']
+    }
+    return d
+
+
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', api_loc=app.config['API_LOC'],
+    return render_template('index.html',
                            metadata_fields=app.config['METADATA_FIELDS'])
 
 
 @app.route('/analyses', methods=['GET', 'POST'])
 def tasks():
     if request.method == 'POST':
-        return render_template('analyses.html', api_loc=app.config['API_LOC'],
+        return render_template('analyses.html',
                                search_term=request.form['search_term'],
                                search_type=request.form['search_type_buttons'])
     else:
-        return render_template('analyses.html', api_loc=app.config['API_LOC'])
+        return render_template('analyses.html')
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
@@ -70,23 +81,34 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           api_loc=app.config['API_LOC'], search_term=term,
-                           tags=app.config['TAGS'])
+                           search_term=term, tags=app.config['TAGS'])
 
 
 @app.route('/history', methods=['GET', 'POST'])
 def history():
     if request.method == 'POST':
-        return render_template('history.html', api_loc=app.config['API_LOC'],
+        return render_template('history.html',
                                search_term=request.form['search_term'],
                                search_type=request.form['search_type_buttons'])
     else:
-        return render_template('history.html', api_loc=app.config['API_LOC'])
+        return render_template('history.html')
 
 
 @app.route('/analytics', methods=['GET'])
 def analytics():
-    return render_template('analytics.html', api_loc=app.config['API_LOC'])
+    return render_template('analytics.html')
+
+
+@app.route('/about', methods=['GET'])
+def about():
+    return render_template('about.html',
+                           version=multiscanner.__version__)
+
+
+@app.route('/system-health', methods=['GET'])
+def system_health():
+    return render_template('system-health.html',
+                           kibana_loc=app.config['KIBANA_LOC'])
 
 
 if __name__ == "__main__":
