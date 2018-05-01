@@ -545,6 +545,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     configregen - If True a new config file will be created overwriting the old
     configfile - What config file to use. Can be None.
     config - A dictionary containing the configuration options to be used.
+    module_list - A list of file paths to be used as modules. Each string should end in .py
     """
     # Redirect stdout to stderr
     stdout = sys.stdout
