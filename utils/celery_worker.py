@@ -99,7 +99,7 @@ def setup_periodic_tasks(sender, **kwargs):
     if metricbeat_enabled:
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
-            metricbeat_rollover.s(),
+            metricbeat_rollover.s(days=es_storage_config.get('metricbeat_rollover_days')),
         )
 
 
