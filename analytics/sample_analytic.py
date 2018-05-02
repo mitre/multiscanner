@@ -35,7 +35,7 @@ def build_feature_dict(report):
     try:
         feature_dict['cuckoo_score'] = report['Cuckoo Sandbox']['info']['score']
     except:
-        feature_dict['cuckoo_score'] = 0
+        return None
     try:
         feature_dict['cuckoo_num_sigs'] = len(report['Cuckoo Sandbox']['signatures'])
     except:
@@ -43,13 +43,12 @@ def build_feature_dict(report):
     try:
         feature_dict['cuckoo_duration'] = report['Cuckoo Sandbox']['info']['duration']
     except:
-        feature_dict['cuckoo_duration'] =  0
+        return None
     feature_dict['file_entropy'] = report['entropy']
     try:
         feature_dict['num_pe_imports'] = len(report['pefile']['imports'])
     except:
-        # TODO: not sure whether to make this 0 or None...
-        feature_dict['num_pe_imports'] = 0
+        return None
     try:
         diff = abs(report['pefile']['sections']['_data\x00\x00\x00']['virt_size'] - report['pefile']['sections']['_data\x00\x00\x00']['size'])
         feature_dict['diff_virt_size_real'] = diff
@@ -59,7 +58,7 @@ def build_feature_dict(report):
         feature_dict['len_floss_strings'] = len(report['floss']['static_ascii_strings'])
     except:
         feature_dict['len_floss_strings'] = 0 
-    
+
     if task_id <= 500:
         feature_dict['malware'] = False
     elif task_id <= 1000:
@@ -82,6 +81,7 @@ def build_feature_dataframe():
         index=ES_INDEX,
         doc_type=ES_DOC_TYPE,
     )
+
     for result in report_results:
         if 'ERROR' in result['_source'].keys():
             continue
@@ -93,6 +93,7 @@ def build_feature_dataframe():
             continue
 
     df = pd.DataFrame(data_array)
+    # Write the feature array to a file
     # df.to_csv('min_features.csv')
     return df
 
@@ -109,10 +110,9 @@ def build_classifier():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
-    """
     param_grid = {
-        'n_estimators': [1, 10, 100, 1000],
-        'max_features': [1, 2, 3, 4, 5]
+        'n_estimators': [10, 100, 500, 1000],
+        'max_features': list(range(1, 8))
     }
 
     forest = GridSearchCV(
@@ -136,6 +136,7 @@ def build_classifier():
         print('{}: {:.3f}'.format(f, forest.feature_importances_[i]))
         i += 1
     print('\n')
+    """
 
     return forest
 
@@ -162,6 +163,8 @@ def label_ms_reports(model):
                     feature_dict.get('cuckoo_score'),
                     feature_dict.get('file_entropy'),
                     feature_dict.get('num_pe_imports'),
+                    feature_dict.get('diff_virt_size_real'),
+                    feature_dict.get('len_floss_strings'),
                 ]
             ]
             prediction = model.predict(sample_features)[0]
