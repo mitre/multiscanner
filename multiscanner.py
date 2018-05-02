@@ -847,6 +847,8 @@ def _parse_args():
                         help="The max number of files per report")
     parser.add_argument("-r", "--recursive", action="store_true",
                         help="Recursively parse folders for files to scan")
+    parser.add_argument('-t', '--tag', required=False, metavar="tag", default=None,
+                        help="Tags to include in the report.", action='append')
     parser.add_argument("-z", "--extractzips", action="store_true",
                         help="If any zip files are detected, extract them and scan the contents")
     parser.add_argument("-p", "--password", default="",
@@ -1003,6 +1005,7 @@ def _main():
             # TODO: log exception
             username = os.getenv('USERNAME')
 
+        # Add metadata to the scan
         results.append((
             [],
             {
@@ -1013,6 +1016,19 @@ def _main():
                 "Run by": username
             }
         ))
+
+        # Add tags if present
+        if args.tag:
+            tag_results = []
+            for filename in filelist:
+                tag_results.append((filename, args.tag))
+            results.append((
+                tag_results,
+                {
+                    "Name": "tags",
+                    "Type": "Metadata"
+                }
+            ))
 
         if args.show or not stdout.isatty():
             # TODO: Make this output something readable
