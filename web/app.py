@@ -54,8 +54,8 @@ app.config.from_object(conf_tuple)
 @app.context_processor
 def inject_locs():
     d = {
-        'api_loc': app.config['API_LOC'],
-        'flower_loc': app.config['FLOWER_LOC']
+        'api_loc': app.config.get('API_LOC', DEFAULTCONF['API_LOC']),
+        'flower_loc': app.config.get('FLOWER_LOC', DEFAULTCONF['FLOWER_LOC'])
     }
     return d
 
@@ -63,7 +63,7 @@ def inject_locs():
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html',
-                           metadata_fields=app.config['METADATA_FIELDS'])
+                           metadata_fields=app.config.get('METADATA_FIELDS', {}))
 
 
 @app.route('/analyses', methods=['GET', 'POST'])
@@ -81,7 +81,7 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           search_term=term, tags=app.config['TAGS'])
+                           search_term=term, tags=app.config.get('TAGS', {}))
 
 
 @app.route('/history', methods=['GET', 'POST'])
@@ -108,10 +108,10 @@ def about():
 @app.route('/system-health', methods=['GET'])
 def system_health():
     return render_template('system-health.html',
-                           kibana_loc=app.config['KIBANA_LOC'])
+                           kibana_loc=app.config.get('KIBANA_LOC', DEFAULTCONF['KIBANA_LOC']))
 
 
 if __name__ == "__main__":
-    app.run(debug=app.config['DEBUG'],
-            port=app.config['PORT'],
-            host=app.config['HOST'])
+    app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
+            port=app.config.get('PORT', DEFAULTCONF['PORT']),
+            host=app.config.get('HOST', DEFAULTCONF['HOST']))
