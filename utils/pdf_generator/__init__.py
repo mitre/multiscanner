@@ -84,6 +84,14 @@ def create_pdf_document(WD, report):
         if 'Microsoft Security Essentials' in r:
             av_data.append(['Microsoft Security Essentials', r.get('Microsoft Security Essentials', '')])
 
+        if 'Metadefender' in r:
+            engine_results = r.get('Metadefender', {}).get('engine_results', {})
+            for av in engine_results:
+                threat_found = av.get('threat_found')
+                if not threat_found:
+                    threat_found = 'No threats found'
+                av_data.append([av.get('engine_name'), threat_found])
+
     if file_data:
         gen_pdf.vertical_table(file_data)
 
