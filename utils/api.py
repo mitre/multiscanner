@@ -164,6 +164,8 @@ except KeyError:
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
+batch_size = api_config['api'].get('batch_size', 10)
+batch_interval = api_config['api'].get('batch_interval', 100)
 # Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
 delete_after_scan = api_config['api'].get('delete_after_scan', False)
 
