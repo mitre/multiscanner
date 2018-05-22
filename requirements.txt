@@ -6,6 +6,7 @@ bitstring
 boltons
 git+https://github.com/endgameinc/ember.git#egg=ember
 git+https://github.com/knowmalware/pehash.git#egg=pehash
+lief~=0.8.3
 mmbot
 paramiko
 pefile
