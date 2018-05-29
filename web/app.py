@@ -63,8 +63,8 @@ def inject_locs():
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html',
-                           metadata_fields=app.config['METADATA_FIELDS'],
-                           tags=app.config['TAGS'])
+                           metadata_fields=app.config.get('METADATA_FIELDS', {}),
+                           tags=app.config.get('tags', []))
 
 
 @app.route('/analyses', methods=['GET', 'POST'])
