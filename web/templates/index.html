@@ -1,9 +1,15 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
 <link rel="stylesheet" href="/static/css/fileinput.min.css">
+<script src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
+  var tagNameArray;
+  var tagNames;
+
   function correctSubmitText() {
     var upload_type = $('#upload-opts .btn.active input').val();
     if ($("#filesUpload").fileinput('getFilesCount') > 1) {
@@ -30,6 +36,20 @@
     }
   }
 
+  function addTagsInput(selector) {
+    $(selector).tagsinput({
+      tagClass: 'label label-primary',
+      typeaheadjs: {
+        source: tagNames.ttAdapter()
+      },
+      trimValue: true
+    });
+    $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
+      .attr("title", "Type something and hit the enter key to add a tag.")
+      .attr("data-placement", "left")
+      .tooltip();
+  }
+
   $(document).ready(function() {
     $("#filesUpload").fileinput({
       uploadUrl: "{{ api_loc }}/api/v1/tasks",
@@ -50,6 +70,12 @@
           '    </div>\n' +
           '</div>\n' +
           '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
+          '<div class="form-group-sm tags-group">\n' +
+          '   <label for="{previewId}-Tags" class="col-md-2 control-label">Tags</label>\n' +
+          '   <div class="input-group col-md-10">\n' +
+          '     <input type="text" class="form-control" id="{previewId}-Tags" name="{previewId}-Tags"></input>\n' +
+          '   </div>\n' +
+          '</div>\n' +
           {% for metadata in metadata_fields %}
           '<div class="form-group-sm">\n' +
           {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
@@ -119,7 +145,7 @@
         // Metadata options
         $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
           var key = $(this).children('label').first().html();
-          var val = $(this).find('input').first().val();
+          var val = $(this).find('input.form-control').val();
           obj[key] = val;
         });
         return obj;
@@ -150,17 +176,25 @@
       // Use correct submit button text
       correctSubmitText();
 
+      // Set up tag auto-completion for per-file tags input
+      addTagsInput('#' + previewId + '-Tags');
+
       // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
         $('.metadata-group[data-target=' + previewId + ']').collapse('toggle');
       });
 
       // Populate metadata fields if need be
-      $('#adv-options .metadata-group input').each(function( index, element ) {
+      $('#adv-options .metadata-group:not(.tags-group) input').each(function( index, element ) {
         var field = $(element).attr('id').substring(9);
         var value = $(element).val();
         $('#' + previewId + '-' + field).val(value);
       });
+      $('#adv-options .metadata-group.tags-group .tag').each(function( index, element ) {
+        var value = $(element).text();
+        $('#' + previewId + '-Tags').tagsinput('add', value);
+      });
+
     });
 
     // Bootstrap Toggle Switch (https://www.bootply.com/92189)
@@ -176,6 +210,23 @@
       // Use correct submit button text
       correctSubmitText();
     });
+
+    // Set up tags
+    $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+      $.each(data.tags, function( index, value ) {
+          if (tagNameArray.indexOf(value.key) > -1) {
+          tagNameArray.push(value.key);
+        }
+      });
+      tagNames = new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: tagNameArray
+      });
+      tagNames.initialize();
+
+      addTagsInput('#metadata-Tags');
+    })
 
     // Add options for selecting which modules to run
     //$.get("{{ api_loc }}/api/v1/modules", function(data) {
@@ -194,7 +245,15 @@
       var value = $(this).val();
       $('.file-preview-thumbnails .metadata-group').each(function( index, element ) {
         childId = $(element).attr('data-target') + '-' + field;
-        $(element).find('input[id=' + childId + ']').val(value);
+        if (field == 'Tags') {
+          $('#' + childId).tagsinput('removeAll');
+          var taglist = value.split(",");
+          taglist.forEach(function(elem) {
+            $('#' + childId).tagsinput('add', elem);
+          });
+        } else {
+          $(element).find('input[id=' + childId + ']').val(value);
+        }
       });
     });
 
@@ -268,6 +327,12 @@
           <div id="metadata-opts" class="opt-section">
             <h4>Metadata Fields</h4>
             <div><p><i>(These apply to all files in this submission.)</i></p></div>
+            <div class="form-group metadata-group tags-group">
+              <label for="metadata-Tags" class="col-md-2 control-label">Tags</label>
+              <div class="input-group col-md-10">
+                <input type="text" class="form-control" id="metadata-Tags" name="metadata-Tags"></input>
+              </div>
+            </div>
             {% for metadata in metadata_fields %}
             <div class="form-group metadata-group">
               {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}

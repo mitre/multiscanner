@@ -157,6 +157,11 @@
     border: 2px dashed #ddd;
 }
 
+.tags-group .bootstrap-tagsinput {
+    display: block;
+    text-align: left;
+}
+
 #search_options {
     margin-left: 5px;
 }
