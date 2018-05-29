@@ -950,6 +950,9 @@ def _main():
                     print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
                 parsedlist.remove(fname)
 
+    if not parsedlist:
+        print("ERROR: No valid files found!")
+
     # Resume from report
     if args.resume:
         i = len(parsedlist)
