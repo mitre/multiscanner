@@ -178,6 +178,10 @@
 
       // Set up tag auto-completion for per-file tags input
       addTagsInput('#' + previewId + '-Tags');
+      $('#' + previewId + '-Tags').parent().click(function(e) {
+        // Prevent "File Upload" dialogs when removing a tag
+        e.stopPropagation();
+      })
 
       // Show/hide per file metadata input
       $('#' + previewId + ' .add-metadata').click(function() {
