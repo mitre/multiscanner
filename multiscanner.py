@@ -928,8 +928,7 @@ def _main():
     # Make sure report is not a dir
     if args.json:
         if os.path.isdir(args.json):
-            print('ERROR:', args.json, 'is a directory, a file is expected')
-            return False
+            sys.exit('ERROR:', args.json, 'is a directory, a file is expected')
 
     # Parse the file list
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
@@ -951,7 +950,7 @@ def _main():
                 parsedlist.remove(fname)
 
     if not parsedlist:
-        print("ERROR: No valid files found!")
+        sys.exit("ERROR: No valid files found!")
 
     # Resume from report
     if args.resume:
@@ -959,8 +958,7 @@ def _main():
         try:
             reportfile = codecs.open(args.json, 'r', 'utf-8')
         except Exception as e:
-            print("ERROR: Could not open report file")
-            exit(1)
+            sys.exit("ERROR: Could not open report file")
         for line in reportfile:
             line = json.loads(line)
             for fname in line:
