@@ -7,7 +7,7 @@
 <script src="/static/js/typeahead.bundle.min.js"></script>
 <script src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
-  var tagNameArray;
+  var tagNameArray = {{ tags|safe }};
   var tagNames;
 
   function correctSubmitText() {
@@ -218,7 +218,7 @@
     // Set up tags
     $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
       $.each(data.tags, function( index, value ) {
-          if (tagNameArray.indexOf(value.key) > -1) {
+        if (tagNameArray.indexOf(value.key) > -1) {
           tagNameArray.push(value.key);
         }
       });
