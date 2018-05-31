@@ -82,7 +82,7 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           search_term=term, tags=app.config.get('TAGS', {}))
+                           search_term=term, tags=app.config.get('TAGS', []))
 
 
 @app.route('/history', methods=['GET', 'POST'])
