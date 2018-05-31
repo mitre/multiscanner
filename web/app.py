@@ -63,7 +63,8 @@ def inject_locs():
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html',
-                           metadata_fields=app.config.get('METADATA_FIELDS', {}))
+                           metadata_fields=app.config.get('METADATA_FIELDS', {}),
+                           tags=app.config.get('TAGS', []))
 
 
 @app.route('/analyses', methods=['GET', 'POST'])
@@ -81,7 +82,7 @@ def reports(task_id=1):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,
-                           search_term=term, tags=app.config.get('TAGS', {}))
+                           search_term=term, tags=app.config.get('TAGS', []))
 
 
 @app.route('/history', methods=['GET', 'POST'])
