@@ -187,8 +187,8 @@ except KeyError:
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
-batch_size = api_config['api']['batch_size']
-batch_interval = api_config['api']['batch_interval']
+batch_size = api_config['api'].get('batch_size', 10)
+batch_interval = api_config['api'].get('batch_interval', 100)
 # Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
 delete_after_scan = api_config['api'].get('delete_after_scan', False)
 
@@ -239,6 +239,8 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]]['Scan Metadata'] = item[4]
             results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
             results[item[1]]['Scan Metadata']['Task ID'] = item[2]
+            results[item[1]]['tags'] = results[item[1]]['Scan Metadata']['Tags'].split(',')
+            del results[item[1]]['Scan Metadata']['Tags']
 
             db.update_task(
                 task_id=item[2],

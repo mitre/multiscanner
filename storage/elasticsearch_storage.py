@@ -162,6 +162,7 @@ class ElasticSearchStorage(storage.Storage):
     def store(self, report):
         sample_ids = {}
         sample_list = []
+        sample_tags = {}  # track in case we need to update sample instead of create
 
         for filename in report:
             report[filename]['filename'] = filename
@@ -177,6 +178,7 @@ class ElasticSearchStorage(storage.Storage):
                         sample[field] = report[filename][field]
                     del report[filename][field]
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
+            sample_tags[sample_id] = sample.get('tags', [])
 
             # If there is Cuckoo results in the report, some
             # cleanup is needed for the report
@@ -262,11 +264,14 @@ class ElasticSearchStorage(storage.Storage):
                         '_op_type': 'update',
                         '_index': self.index,
                         '_type': self.doc_type,
-                        '_id': sample_id,
+                        '_id': sid,
                         'doc': {'report_id': rid},
                         'pipeline': 'dedot'
                     }
                 )
+                # Update tags
+                for tag in sample_tags.get(sid, []):
+                    self.add_tag(sid, tag)
 
         result = helpers.bulk(self.es, updates_list, raise_on_error=False)
         return sample_ids
@@ -349,7 +354,8 @@ class ElasticSearchStorage(storage.Storage):
     def add_tag(self, sample_id, tag):
         script = {
             "script": {
-                "source": "ctx._source.tags.add(params.tag)",
+                "inline": """def i = ctx._source.tags.indexOf(params.tag);
+                    if (i == -1) { ctx._source.tags.add(params.tag); }""",
                 "lang": "painless",
                 "params": {
                     "tag": tag

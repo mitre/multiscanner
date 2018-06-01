@@ -16,3 +16,4 @@ MultiScanner
    use/index
    custom/index
    testing
+   presentations

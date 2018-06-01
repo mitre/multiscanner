@@ -116,7 +116,7 @@ def extract_file_cuckoo(dropped_file, custom_labels=None):
             a variety of hashes.
 
     '''
-    labels = ['multiscanner']
+    labels = ['file-hash-watchlist']
     dropped_pattern = []
 
     if custom_labels:
@@ -175,7 +175,7 @@ def extract_http_requests_cuckoo(signature, custom_labels=None):
 
     '''
     indicators = []
-    labels = ['multiscanner']
+    labels = ['url-watchlist']
 
     if custom_labels:
         labels.extend(custom_labels)
@@ -238,7 +238,7 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
 
     # Extract information from file submission and create Indicator
     submission_pattern = []
-    labels = ['multiscanner']
+    labels = ['file-hash-watchlist']
 
     if custom_labels:
         labels.extend(custom_labels)
