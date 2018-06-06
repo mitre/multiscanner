@@ -260,7 +260,7 @@ def _dump_resource_data(name, dir, pe, save):
                 #         self._debug("Adding new file from resource len %d - %s" % (len(data), rname))
                 #         self.added_files.append((rname, data))
                 results = {
-                        "resource_type": x.struct.name.decode('UTF-8', errors='replace'),
+                        "resource_type": x.struct.name,
                         "resource_id": i.id,
                         "language": x.lang,
                         "sub_language": x.sublang,
