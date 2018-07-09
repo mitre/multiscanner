@@ -310,6 +310,8 @@ class ElasticSearchStorage(storage.Storage):
                 id=sample_id
             )
             del result_sample['_source']['report_id']
+            del result_sample['_source']['doc_type']
+            del result_report['_source']['doc_type']
             result = result_report['_source'].copy()
             result.update(result_sample['_source'])
             return result
