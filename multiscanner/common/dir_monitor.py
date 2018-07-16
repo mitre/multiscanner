@@ -19,9 +19,6 @@ standard_library.install_aliases()
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-# Append .. to sys.path
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
 from multiscanner.common import utils
