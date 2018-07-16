@@ -3,21 +3,19 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
 import os
+import logging
 import shutil
-import sys
 
 from pyximport.pyxbuild import pyx_to_dll
 
-WD = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
-LIBS = os.path.join(WD, 'libs')
-# Adds the libs directory to the path
-sys.path.append(LIBS)
+from multiscanner.common import utils
 
-import common
+WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LIBS = os.path.join(WD, 'libs')
 
 
 def main():
-    filelist = common.parseFileList([LIBS], recursive=True)
+    filelist = utils.parseFileList([LIBS], recursive=True)
     try:
         import pefile
         filepath = pefile.__file__[:-1]
@@ -32,11 +30,11 @@ def main():
                 print(filename, 'successful!')
             except Exception as e:
                 print('ERROR:', filename, 'failed')
+                logging.exception(e)
             try:
                 os.remove(filename[:-2] + 'c')
             except Exception as e:
-                # TODO: log exception
-                pass
+                logging.exception(e)
 
     # Cleanup build dirs
     walk = os.walk(LIBS)

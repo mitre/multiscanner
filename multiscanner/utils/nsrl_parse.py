@@ -10,11 +10,8 @@ import os
 import struct
 import sys
 
+import six
 from tqdm import tqdm
-
-PY3 = False
-if sys.version_info[:1] == (3,):
-    PY3 = True
 
 
 def count_lines(path):
@@ -59,7 +56,7 @@ def parse_nsrl(input_file, output_dir):
     print('Starting to parse, this will take a while...', file=sys.stderr)
 
     with codecs.open(input_file, 'r', 'utf-8', errors='replace') as f:
-        if not PY3:
+        if not six.PY3:
             reader = unicode_csv_reader(f)
         else:
             reader = csv.reader(f)
