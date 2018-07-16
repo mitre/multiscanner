@@ -3,42 +3,34 @@ import os
 from setuptools import setup, find_packages
 
 
-def recursive_dir_list(path, exclude=['.pyc', '__pycache__']):
-    ret = []
-    for item in os.listdir(path):
-        fail = False
-        for test in exclude:
-            if item.endswith(test):
-                fail = True
-                continue
-        if fail:
-            continue
-
-        item = os.path.join(path, item)
-        if os.path.isdir(item):
-            ret.extend(recursive_dir_list(item))
-        else:
-            ret.append(item)
-    return ret
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VERSION_FILE = os.path.join(BASE_DIR, 'multiscanner', 'version.py')
 
 
-# to_walk = ['docs', 'etc', 'multiscanner/storage/templates', 'multiscanner/web/static', 'multiscanner/web/templates']
-# data_files = []
-# for directory in to_walk:
-#     data_files.extend(recursive_dir_list(directory))
+def get_version():
+    with open(VERSION_FILE) as f:
+        for line in f.readlines():
+            if line.startswith('__version__'):
+                version = line.split()[-1].strip('\'')
+                return version
+        raise AttributeError('Package does not have a __version__')
+
+
+with open('README.md') as f:
+    long_description = f.read()
 
 setup(
     name='multiscanner',
-    version='1.1.1',
-    url='https://github.com/MITRECND/multiscanner',
+    version=get_version(),
+    url='https://github.com/mitre/multiscanner',
     license='MPL 2.0',
     author='Drew Bonasera',
-    author_email='',
     packages=find_packages(exclude=('tests*',)),
-    package_dir={'multiscanner': 'multiscanner'},
-    # package_data={'multiscanner': data_files},
     include_package_data=True,
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    keywords='malware research analysis scanning framework modular',
     install_requires=[
         'future',
         'configparser',
@@ -51,6 +43,7 @@ setup(
         'requests',
         'ssdeep',
         # Required for STIX2 content
+        'six',
         'stix2',
         # Required by PDF
         'reportlab',
@@ -63,6 +56,14 @@ setup(
         'pymongo',
     ],
     entry_points={
-        'console_scripts': ['multiscanner=multiscanner.multiscanner:_main']
-    }
+        'console_scripts': ['multiscanner=multiscanner.multiscanner:_main'],
+    },
+    extras_require={
+        'dev': ['flake8', 'pre-commit'],
+        'test': ['Flask-Testing', 'mock', 'pathlib', 'pytest', 'selenium'],
+    },
+    classifiers=[
+        'Framework :: MultiScanner',
+        'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
+    ],
 )
