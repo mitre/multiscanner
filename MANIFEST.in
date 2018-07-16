@@ -1,5 +1,8 @@
 graft multiscanner
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
+recursive-exclude multiscanner\tests *
 
 recursive-include docs
+include README.md
+include LICENSE

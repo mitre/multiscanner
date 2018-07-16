@@ -6,8 +6,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
-__version__ = '1.1.1'
-
+import argparse
 import codecs
 import configparser
 import datetime
@@ -27,6 +26,7 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
+import multiscanner
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_config, parseDir, parseFileList,
                                        queue2list)
@@ -534,7 +534,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     # Init some vars
     # If recursive is None we don't parse the file list and take it as is.
-    if recursive is not None:
+    if recursive:
         filelist = parseFileList(Files, recursive=recursive)
     else:
         filelist = Files
@@ -814,9 +814,9 @@ def _parse_args():
     """
     Parses arguments
     """
-    import argparse
     # argparse stuff
-    parser = argparse.ArgumentParser(description="Analyse files against multiple engines")
+    desc = "multiscanner v{} - Analyse files against multiple engines"
+    parser = argparse.ArgumentParser(description=desc.format(multiscanner.__version__))
     parser.add_argument("-c", "--config", required=False, default=CONFIG,
                         help="The config file to use")
     parser.add_argument('-j', '--json', required=False, metavar="filepath", default=None,
@@ -960,7 +960,7 @@ def _main():
         starttime = str(datetime.datetime.now())
 
         # Run the multiscan
-        results = multiscan(filelist, recursive=None, configfile=args.config)
+        results = multiscan(filelist, configfile=args.config)
 
         # We need to read in the config for the parseReports call
         Config = configparser.SafeConfigParser()

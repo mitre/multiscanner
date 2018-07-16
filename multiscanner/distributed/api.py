@@ -68,7 +68,7 @@ from six import PY3
 
 from multiscanner import CONFIG as MS_CONFIG
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULEDIR, MS_WD, multiscan
+from multiscanner import MODULEDIR, MS_WD, multiscan, parse_reports
 from multiscanner.common import utils, pdf_generator, stix2_generator
 from multiscanner.storage import elasticsearch_storage, StorageHandler
 from multiscanner.storage import sql_driver as database
@@ -194,7 +194,7 @@ def multiscanner_process(work_queue, exit_signal):
             filelist, configfile=MS_CONFIG
             # module_list
         )
-        results = utils.parse_reports(resultlist, python=True)
+        results = parse_reports(resultlist, python=True)
 
         scan_time = datetime.now().isoformat()
 
@@ -400,7 +400,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
     '''
     # If option set, or no scan exists for this sample, skip and scan sample again
     # Otherwise, pull latest scan for this sample
-    if (not rescan):
+    if not rescan:
         t_exists = db.exists(f_name)
         if t_exists:
             return t_exists

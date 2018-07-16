@@ -1,5 +1,6 @@
 #Required
 future
+six
 configparser
 #Required by modules
 bitstring

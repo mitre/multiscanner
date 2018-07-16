@@ -25,7 +25,7 @@ setup(
     url='https://github.com/mitre/multiscanner',
     license='MPL 2.0',
     author='Drew Bonasera',
-    packages=find_packages(exclude=('tests*',)),
+    packages=find_packages(exclude=['*.tests']),
     include_package_data=True,
     description='A file analysis framework that allows the user to evaluate a set of files with a set of tools.',
     long_description=long_description,
