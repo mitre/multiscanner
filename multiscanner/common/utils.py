@@ -130,7 +130,7 @@ def basename(path):
         return split[-1]
 
 
-def parseDir(directory, recursive=False, exclude=[]):
+def parseDir(directory, recursive=False, exclude=None):
     """
     Returns a list of files in a directory.
 
@@ -138,6 +138,8 @@ def parseDir(directory, recursive=False, exclude=[]):
     recursive - If true it will recursively find files.
     """
     filelist = []
+    if not exclude:
+        exclude = []
     for item in os.listdir(directory):
         item = os.path.join(directory, item)
         if os.path.isdir(item):
@@ -160,7 +162,8 @@ def parseFileList(FileList, recursive=False):
     """
     Takes a list of files and directories and returns a list of files.
 
-    FileList - A list of files and directories. Files in each directory will be returned
+    FileList - A list of files and directories. Files in each directory will
+        be returned
     recursive - If true it will recursively find files in directories.
     """
     filelist = []
@@ -179,7 +182,8 @@ def parseFileList(FileList, recursive=False):
 
 def chunk_file_list(filelist, cmdlength=7191):
     """
-    Takes the file list and splits it into chunks so windows won't break. Returns a list of lists of strings.
+    Takes the file list and splits it into chunks so windows won't break.
+    Returns a list of lists of strings.
 
     filelist - The list to be chunked
     cmdlength - Max length of all filenames appended to each other
@@ -230,25 +234,31 @@ def hashfile(fname, hasher, blocksize=65536):
     return hasher.hexdigest()
 
 
-def sshconnect(hostname, port=22, username=None, password=None, pkey=None, key_filename=None, timeout=None,
-               allow_agent=True, look_for_keys=True, compress=False, sock=None):
+def sshconnect(hostname, port=22, username=None, password=None, pkey=None,
+               key_filename=None, timeout=None, allow_agent=True,
+               look_for_keys=True, compress=False, sock=None):
     """A wrapper for paramiko, returns a SSHClient after it connects."""
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(hostname, port=port, username=username, password=password, pkey=pkey, key_filename=key_filename,
-        timeout=timeout, allow_agent=allow_agent, look_for_keys=look_for_keys, compress=compress, sock=sock)
+    client.connect(hostname, port=port, username=username, password=password,
+                   pkey=pkey, key_filename=key_filename, timeout=timeout,
+                   allow_agent=allow_agent, look_for_keys=look_for_keys,
+                   compress=compress, sock=sock)
     return client
 
 
 def sessionexec(client, cmd):
-    """Creates a session object and executes a command. Returns the session object"""
+    """Creates a session object and executes a command. Returns the session
+    object"""
     session = client.get_transport().open_session()
     session.exec_command(cmd)
     return session
 
 
-def sshexec(hostname, cmd, port=22, username=None, password=None, key_filename=None):
+def sshexec(hostname, cmd, port=22, username=None, password=None,
+            key_filename=None):
     """Connects and runs a command. Returns the contents of stdin."""
-    client = sshconnect(hostname, port=port, username=username, password=password, key_filename=key_filename)
+    client = sshconnect(hostname, port=port, username=username,
+                        password=password, key_filename=key_filename)
     stdin, stdout, stderr = client.exec_command(cmd)
     return stdout.read()
