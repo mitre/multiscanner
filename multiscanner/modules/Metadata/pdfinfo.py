@@ -3,10 +3,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import hashlib
-import pdfparser
 import math
 import re
 import sys
+
+from multiscanner.ext import pdfparser
+
 PY3 = False
 if sys.version_info > (3,):
     PY3 = True
