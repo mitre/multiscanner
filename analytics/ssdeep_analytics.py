@@ -33,6 +33,8 @@ import ssdeep
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if os.path.join(MS_WD, 'storage') not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD, 'storage'))
+if os.path.join(MS_WD, 'libs') not in sys.path:
+    sys.path.insert(0, os.path.join(MS_WD, 'libs'))
 if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
@@ -49,7 +51,7 @@ class SSDeepAnalytic:
         config_object.read(storage_conf)
         conf = common.parse_config(config_object)
         storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-        es_handler = storage_handler.load_modules('ElasticSearchStorage')
+        es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
             print('[!] ERROR: This analytic only works with ES stroage module.')
@@ -58,7 +60,7 @@ class SSDeepAnalytic:
         # probably not ideal...
         self.es = es_handler.es
         self.index = conf['ElasticSearchStorage']['index']
-        self.doc_type = 'sample'
+        self.doc_type = '_doc'
 
         self.debug = debug
 
