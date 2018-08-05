@@ -73,7 +73,6 @@ if MS_WD not in sys.path:
     sys.path.insert(0, os.path.join(MS_WD))
 
 import common
-import elasticsearch_storage
 import multiscanner
 import sql_driver as database
 from utils.pdf_generator import create_pdf_document
@@ -136,13 +135,37 @@ from ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
-db.init_db()
+# Sleep and retry until database connection is successful
+try:
+    # wait this many seconds between tries
+    db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_sleep_time = database.Database.DEFAULTCONF['retry_time']
+try:
+    # max number of times to retry
+    db_num_retries = int(api_config_object.get('Database', 'retry_num'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_num_retries = database.Database.DEFAULTCONF['retry_num']
+
+for x in range(0, db_num_retries):
+    try:
+        db.init_db()
+    except Exception as excinfo:
+        db_error = excinfo
+        print("ERROR: Can't connect to task database.", excinfo)
+    else:
+        break
+
+    if db_error:
+        if x == db_num_retries - 1:
+            raise multiscanner.storage.storage.StorageNotLoadedError()
+        print("Retrying...")
+        time.sleep(db_sleep_time)
 
 storage_conf = multiscanner.common.get_config_path(multiscanner.CONFIG, 'storage')
 storage_handler = multiscanner.storage.StorageHandler(configfile=storage_conf)
-for handler in storage_handler.loaded_storage:
-    if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-        break
+handler = storage_handler.load_required_module('ElasticSearchStorage')
+
 
 ms_config_object = configparser.SafeConfigParser()
 ms_config_object.optionxform = str
@@ -216,8 +239,8 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]]['Scan Metadata'] = item[4]
             results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
             results[item[1]]['Scan Metadata']['Task ID'] = item[2]
-            results[item[1]]['tags'] = results[item[1]]['Scan Metadata']['Tags'].split(',')
-            del results[item[1]]['Scan Metadata']['Tags']
+            results[item[1]]['tags'] = results[item[1]]['Scan Metadata'].get('Tags', '').split(',')
+            results[item[1]]['Scan Metadata'].pop('Tags', None)
 
             db.update_task(
                 task_id=item[2],
@@ -681,7 +704,11 @@ def get_report_dict(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        return {'Report': handler.get_report(task.sample_id, task.timestamp)}, True
+        result = handler.get_report(task.sample_id, task.timestamp)
+        if result:
+            return {'Report': result}, True
+        else:
+            return {'Report': 'Error occurred in ElasticSearch'}, False
     elif task.task_status == 'Pending':
         return {'Report': 'Task still pending'}, False
     else:

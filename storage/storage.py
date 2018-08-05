@@ -10,6 +10,7 @@ import configparser
 import inspect
 import os
 import sys
+import time
 import threading
 from builtins import *  # noqa: F401,F403
 
@@ -21,10 +22,20 @@ STORAGE_DIR = os.path.dirname(__file__)
 MS_WD = os.path.dirname(STORAGE_DIR)
 CONFIG = os.path.join(MS_WD, "storage.ini")
 
+DEFAULTCONF = {
+    'retry_time': 5,  # Number of seconds to wait between retrying to connect to storage
+    'retry_num': 20,  # Number of times to retry to connect to storage
+}
+
+
 if os.path.join(MS_WD, 'libs') not in sys.path:
     sys.path.append(os.path.join(MS_WD, 'libs'))
 
 import common
+
+
+class StorageNotLoadedError(Exception):
+    pass
 
 
 class ThreadCounter(object):
@@ -92,6 +103,7 @@ class StorageHandler(object):
             config_object.optionxform = str
             # Regen the config if needed or wanted
             if configregen or not os.path.isfile(configfile):
+                _write_main_config(config_object)
                 _rewrite_config(storage_classes, config_object, configfile)
 
             config_object.read(configfile)
@@ -113,6 +125,9 @@ class StorageHandler(object):
                     config[storage_name] = {}
             config['_load_default'] = True
 
+        self.sleep_time = config.get('main', {}).get('retry_time', DEFAULTCONF['retry_time'])
+        self.num_retries = config.get('main', {}).get('retry_num', DEFAULTCONF['retry_num'])
+
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
             if storage_name in config:
@@ -126,19 +141,78 @@ class StorageHandler(object):
                 else:
                     storage_classes[storage_name].config = config[storage_name]
 
-        # Call setup for each enabled storage
-        loaded_storage = []
-        for storage_name in storage_classes:
-            storage = storage_classes[storage_name]
-            if storage.config['ENABLED'] is True:
-                try:
-                    if storage.setup():
-                        loaded_storage.append(storage)
-                except Exception as e:
-                    print('ERROR:', 'storage', storage_name, 'failed to load.', e)
-        if loaded_storage == []:
-            raise RuntimeError('No storage classes loaded')
-        self.loaded_storage = loaded_storage
+        self.storage_classes = storage_classes
+        self.loaded_storage = {}
+
+        # Setup each enabled storage
+        self.load_modules()
+
+    def load_modules(self, required_module=""):
+        """ Call setup for each enabled storage module. Specify a required module
+        to retry until that module is loaded.
+
+        Returns:
+            All loaded modules.
+        """
+        # Check if required module is already loaded
+        if required_module != "":
+            for module in self.loaded_storage:
+                if module.__class__.__name__ == required_module:
+                    return module
+
+        # Sleep and retry until storage setup is successful
+        storage_error = None
+        for x in range(0, self.num_retries):
+            for storage_name in self.storage_classes:
+                storage = self.storage_classes[storage_name]
+                if storage_name in self.loaded_storage:  # already loaded
+                    continue
+
+                if storage.config['ENABLED'] is True:
+                    try:
+                        if storage.setup():
+                            self.loaded_storage[storage_name] = storage
+                    except Exception as e:
+                        storage_error = e
+                        print('ERROR:', 'storage', storage_name, 'failed to load.', e)
+                elif storage_name == required_module and storage.config['ENABLED'] is False:
+                    raise StorageNotLoadedError('{} module is required but not loaded!'.format(required_module))
+
+            if not self.loaded_storage:
+                print('ERROR: No storage classes loaded.')
+                if x < self.num_retries:
+                    print('Retrying...')
+            elif required_module:
+                if required_module in self.loaded_storage:
+                    storage_error = None
+                else:
+                    print('WARNING: Required storage {} not loaded.'.format(required_module))
+                    if x < self.num_retries:
+                        print('Retrying...')
+            else:
+                storage_error = None
+
+            if storage_error:
+                time.sleep(self.sleep_time)
+            else:
+                break
+
+        if storage_error:
+            if required_module:
+                raise StorageNotLoadedError('{} module not loaded!'.format(required_module))
+            else:
+                raise StorageNotLoadedError('No storage module loaded!')
+
+        return self.loaded_storage
+
+    def load_required_module(self, required_module=""):
+        """Ensure the required module is loaded.
+
+        Returns:
+            The required storage module.
+        """
+        self.load_modules()
+        return self.loaded_storage.get(required_module, None)
 
     def store(self, dictionary, wait=True):
         """Stores dictionary in active storage module. If wait is False, a thread object is returned.
@@ -155,7 +229,7 @@ class StorageHandler(object):
         self.storage_counter.add()
         self.storage_lock.acquire()
         thread_list = []
-        for storage in self.loaded_storage:
+        for storage in self.loaded_storage.values():
             t = threading.Thread(target=storage.store, args=(dict(dictionary),))
             t.daemon = False
             t.start()
@@ -171,14 +245,14 @@ class StorageHandler(object):
         """
         self.storage_counter.wait()
         thread_list = []
-        for storage in self.loaded_storage:
+        for storage in self.loaded_storage.values():
             t = threading.Thread(target=storage.teardown)
             t.daemon = False
             t.start()
             thread_list.append(t)
         for t in thread_list:
             t.join()
-        self.loaded_storage = []
+        self.loaded_storage = {}
 
     def is_done(self, wait=False):
         if wait:
@@ -194,10 +268,20 @@ def config_init(filepath, overwrite=False, storage_classes=None):
     config_object = configparser.SafeConfigParser()
     config_object.optionxform = str
     if overwrite or not os.path.isfile(filepath):
+        _write_main_config(config_object)
         _rewrite_config(storage_classes, config_object, filepath)
     else:
         config_object.read(filepath)
+        _write_main_config(config_object)
         _write_missing_config(config_object, filepath, storage_classes=storage_classes)
+
+
+def _write_main_config(config_object):
+    if not config_object.has_section('main'):
+        # Write default config
+        config_object.add_section('main')
+        for key in DEFAULTCONF:
+            config_object.set('main', key, str(DEFAULTCONF[key]))
 
 
 def _rewrite_config(storage_classes, config_object, filepath):
