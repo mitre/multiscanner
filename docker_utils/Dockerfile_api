@@ -9,8 +9,10 @@ COPY ./docker_utils/*.ini /opt/multiscanner/
 WORKDIR /opt/multiscanner
 RUN ./install.sh
 
+RUN pip install .
+
 # Run script
 # The sleep is a workaround to make extra sure that
 # the ElasticSearch container is up before the api
 # attempts to connect to it
-CMD sleep 30; python utils/api.py
+CMD sleep 30; multiscanner-api

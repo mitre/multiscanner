@@ -9,5 +9,7 @@ COPY ./docker_utils/*.ini /opt/multiscanner/
 WORKDIR /opt/multiscanner
 RUN ./install.sh
 
+RUN pip install .
+
 # Run script
-CMD python web/app.py
+CMD multiscanner-web
