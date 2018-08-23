@@ -13,7 +13,7 @@ fi
 #Install requirements for Debian derivatives
 if [ -e /etc/debian_version ]; then
   apt-get update
-  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev
+  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git ibssl-dev unzip libmagic-dev
 fi
 
 #Install requirements for Python
@@ -98,7 +98,7 @@ if [[ $prompt == "y" ]]; then
   chmod 755 /opt/floss
 fi
 
-read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
+read -p "Download NSRL database? This will take ~4GB of disk space. <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   # Download the unique set
   mkdir $DIR/etc/nsrl
@@ -109,8 +109,4 @@ if [[ $prompt == "y" ]]; then
   rm -fr RDS_*
 fi
 
-read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
-if [[ $prompt == "y" ]]; then
-  pip install -e $DIR
-  echo "Make sure users have access to $DIR"
-fi
+pip install $DIR/setup.py
