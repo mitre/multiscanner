@@ -2,11 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
 import os
-import sys
 import subprocess
 import re
+
+from multiscanner.config import CONFIG
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
+
 subprocess.list2cmdline = list2cmdline
 
 __author__ = "Drew Bonasera"
@@ -16,7 +19,7 @@ TYPE = "Metadata"
 NAME = "ExifTool"
 # These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
-KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
+KEY = os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
 # Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",

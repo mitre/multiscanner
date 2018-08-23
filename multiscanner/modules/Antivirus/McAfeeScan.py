@@ -2,11 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
 import os
 import subprocess
 import re
-import sys
+
+from multiscanner.config import CONFIG
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
+
 subprocess.list2cmdline = list2cmdline
 
 __author__ = "Drew Bonasera"
@@ -16,7 +19,7 @@ TYPE = "Antivirus"
 NAME = "McAfee"
 # These are overwritten by the config file
 # SSH Key
-KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
+KEY = os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
