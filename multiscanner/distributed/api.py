@@ -61,14 +61,9 @@ from flask_cors import CORS
 from jinja2 import Markup
 from six import PY3
 
-# TODO: Move MS_WD to module level
-# MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# if MS_WD not in sys.path:
-#     sys.path.insert(0, os.path.join(MS_WD))
-
 from multiscanner import CONFIG as MS_CONFIG
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULEDIR, MS_WD, multiscan, parse_reports
+from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports
 from multiscanner.common import utils, pdf_generator, stix2_generator
 from multiscanner.storage import elasticsearch_storage, StorageHandler
 from multiscanner.storage import sql_driver as database
@@ -252,7 +247,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    files = utils.parseDir(MODULEDIR, True)
+    files = utils.parseDir(MODULESDIR, True)
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
@@ -465,7 +460,7 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key]
-            files = utils.parseDir(MODULEDIR, True)
+            files = utils.parseDir(MODULESDIR, True)
             modules = []
             for f in files:
                 split = os.path.splitext(os.path.basename(f))
@@ -546,7 +541,7 @@ def get_report(task_id):
 
     report_dict, success = get_report_dict(task_id)
     if success:
-        if (download == 't' or download == 'y' or download == '1'):
+        if download == 't' or download == 'y' or download == '1':
             # raw JSON
             response = make_response(jsonify(report_dict))
             response.headers['Content-Type'] = 'application/json'
@@ -722,7 +717,7 @@ def get_notes(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    if ('ts' in request.args and 'uid' in request.args):
+    if 'ts' in request.args and 'uid' in request.args:
         ts = request.args.get('ts', '')
         uid = request.args.get('uid', '')
         response = handler.get_notes(task.sample_id, [ts, uid])
@@ -928,8 +923,7 @@ def get_stix2_bundle_from_report(task_id):
     return response
 
 
-if __name__ == '__main__':
-
+def _main():
     if not os.path.isdir(api_config['api']['upload_folder']):
         print('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
@@ -947,3 +941,7 @@ if __name__ == '__main__':
 
     if not DISTRIBUTED:
         ms_process.join()
+
+
+if __name__ == '__main__':
+    _main()
