@@ -10,9 +10,8 @@ import imp
 import os
 import sys
 
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
+from multiscanner.config import PY3
+
 try:
     import paramiko
     SSH = True
