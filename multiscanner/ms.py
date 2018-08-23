@@ -30,7 +30,7 @@ import multiscanner
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_config, parseDir, parseFileList,
                                        queue2list)
-from multiscanner.config import PY3, MS_WD, CONFIG, MODULEDIR
+from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path
 from multiscanner.storage import storage
 
 
@@ -38,9 +38,9 @@ from multiscanner.storage import storage
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": os.path.join(MS_WD, 'storage.ini'),
-    "api-config": os.path.join(MS_WD, 'api_config.ini'),
-    "web-config": os.path.join(MS_WD, 'web_config.ini'),
+    "storage-config": CONFIG.replace('config.ini', 'storage.ini'),
+    "api-config": CONFIG.replace('config.ini', 'api_config.ini'),
+    "web-config": CONFIG.replace('config.ini', 'web_config.ini'),
 }
 
 VERBOSE = False
@@ -265,36 +265,57 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
             print(modname, "failed check()")
 
 
+def _update_DEFAULTCONF(defaultconf, filepath):
+    if 'storage-config' in defaultconf:
+        defaultconf['storage-config'] = filepath.replace('config.ini', 'storage.ini')
+    if 'api-config' in defaultconf:
+        defaultconf['api-config'] = filepath.replace('config.ini', 'api_config.ini')
+    if 'web-config' in defaultconf:
+        defaultconf['web-config'] = filepath.replace('config.ini', 'web_config.ini')
+    if 'ruledir' in defaultconf:
+        defaultconf['ruledir'] = os.path.join(filepath.rstrip("config.ini"), "etc", "yarasigs")
+    if 'key' in defaultconf:
+        defaultconf['key'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'id_rsa')
+    if 'hash_list' in defaultconf:
+        defaultconf['hash_list'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'nsrl', 'hash_list')
+    if 'offsets' in defaultconf:
+        defaultconf['offsets'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'nsrl', 'offsets')
+
+
 def _get_main_config(config_object, filepath=CONFIG):
     """
-    Reads in config for main script. It will write defaults if not present. Returns dictionary.
+    Reads in config for main script. It will write defaults if not present.
+    Returns dictionary.
 
     Config - The config object
     filepath - The path to the config file
     """
+    filepath = determine_configuration_path(filepath)
     # Write main defaults if needed
     ConfNeedsWrite = False
     if 'main' not in config_object.sections():
         ConfNeedsWrite = True
-        maindefaults = DEFAULTCONF
+        _update_DEFAULTCONF(DEFAULTCONF, filepath)
         config_object.add_section('main')
-        for key in maindefaults:
-            config_object.set('main', key, str(maindefaults[key]))
+        for key in DEFAULTCONF:
+            config_object.set('main', key, str(DEFAULTCONF[key]))
 
     if ConfNeedsWrite:
-        conffile = codecs.open(filepath, 'w', 'utf-8')
-        config_object.write(conffile)
-        conffile.close()
+        with codecs.open(filepath, 'w', 'utf-8') as f:
+            config_object.write(f)
+
     # Read in main config
     return parse_config(config_object)['main']
 
 
 def _copy_to_share(filelist, filedic, sharedir):
     """
-    Copies files from filelist to a share and populates the filedic. Returns a list of files.
+    Copies files from filelist to a share and populates the filedic. Returns a
+    list of files.
 
     filelist - The list of file to be copied
-    filedic - A dictionary used to translate files back to their original filenames
+    filedic - A dictionary used to translate files back to their original
+        filenames
     sharedir - Where the files are copied to
     """
     if VERBOSE:
@@ -383,20 +404,21 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     return ThreadList
 
 
-def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
+def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
     ModuleList - The list of modules
-    Config - The config object
+    config - The config object
     """
+    filepath = determine_configuration_path(filepath)
     ConfNeedsWrite = False
     ModuleList.sort()
     for module in ModuleList:
         if module.endswith(".py"):
             modname = os.path.basename(module).split('.')[0]
             moddir = os.path.dirname(module)
-            if modname not in Config.sections():
+            if modname not in config.sections():
                 mod = load_module(os.path.basename(module).split('.')[0], [moddir])
                 if mod:
                     try:
@@ -405,36 +427,38 @@ def _write_missing_module_configs(ModuleList, Config, filepath=CONFIG):
                         # TODO: log exception
                         continue
                     ConfNeedsWrite = True
-                    Config.add_section(modname)
+                    _update_DEFAULTCONF(conf, filepath)
+                    config.add_section(modname)
                     for key in conf:
-                        Config.set(modname, key, str(conf[key]))
+                        config.set(modname, key, str(conf[key]))
 
-    if 'main' not in Config.sections():
+    if 'main' not in config.sections():
         ConfNeedsWrite = True
-        Config.add_section('main')
+        _update_DEFAULTCONF(DEFAULTCONF, filepath)
+        config.add_section('main')
         for key in DEFAULTCONF:
-            Config.set('main', key, str(DEFAULTCONF[key]))
+            config.set('main', key, str(DEFAULTCONF[key]))
 
     if ConfNeedsWrite:
-        conffile = codecs.open(filepath, 'w', 'utf-8')
-        Config.write(conffile)
-        conffile.close()
+        with codecs.open(filepath, 'w', 'utf-8') as f:
+            config.write(f)
         return True
     return False
 
 
-def _rewrite_config(ModuleList, Config, filepath=CONFIG):
+def _rewrite_config(ModuleList, config, filepath=CONFIG):
     """
     Write in default config for all modules.
 
     ModuleList - The list of modules
-    Config - The config object
+    config - The config object
     """
+    filepath = determine_configuration_path(filepath)
     if VERBOSE:
-        print("Rewriting config...")
+        print('Rewriting config...')
     ModuleList.sort()
     for module in ModuleList:
-        if module.endswith(".py"):
+        if module.endswith('.py'):
             modname = os.path.basename(module).split('.')[0]
             moddir = os.path.dirname(module)
             mod = load_module(os.path.basename(module).split('.')[0], [moddir])
@@ -444,31 +468,38 @@ def _rewrite_config(ModuleList, Config, filepath=CONFIG):
                 except Exception as e:
                     # TODO: log exception
                     continue
-                Config.add_section(modname)
+                _update_DEFAULTCONF(conf, filepath)
+                config.add_section(modname)
                 for key in conf:
-                    Config.set(modname, key, str(conf[key]))
+                    config.set(modname, key, str(conf[key]))
 
-    Config.add_section('main')
+    _update_DEFAULTCONF(DEFAULTCONF, filepath)
+    config.add_section('main')
     for key in DEFAULTCONF:
-        Config.set('main', key, str(DEFAULTCONF[key]))
+        config.set('main', key, str(DEFAULTCONF[key]))
 
-    conffile = codecs.open(filepath, 'w', 'utf-8')
-    Config.write(conffile)
-    conffile.close()
+    with codecs.open(filepath, 'w', 'utf-8') as f:
+        config.write(f)
 
 
-def config_init(filepath, module_list=parseDir(MODULEDIR, recursive=True, exclude=["__init__"])):
+def config_init(filepath, module_list=parseDir(MODULESDIR, recursive=True, exclude=["__init__"])):
     """
     Creates a new config file at filepath
 
     filepath - The config file to create
     """
-    Config = configparser.SafeConfigParser()
-    Config.optionxform = str
-    _rewrite_config(module_list, Config, filepath)
+    config = configparser.SafeConfigParser()
+    config.optionxform = str
+
+    if filepath:
+        _rewrite_config(module_list, config, filepath)
+    else:
+        filepath = determine_configuration_path(filepath)
+        _rewrite_config(module_list, config, filepath)
+    print('Configuration file initialized at', filepath)
 
 
-def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, python=False):
+def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, python=False):
     """Turn report dictionaries into json output. Returns a string.
 
     resultlist - A list of the scan return values
@@ -479,6 +510,8 @@ def parse_reports(resultlist, groups=[], ugly=True, includeMetadata=False, pytho
     """
     files = {}
     metadatas = {}
+    if not groups:
+        groups = []
     for item in resultlist:
         if item is not None:
             (result, metadata) = item
@@ -533,14 +566,14 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # TODO: Make sure the cleanup from this works is something breaks
 
     # Init some vars
-    # If recursive is None we don't parse the file list and take it as is.
+    # If recursive is False we don't parse the file list and take it as is.
     if recursive:
         filelist = parseFileList(Files, recursive=recursive)
     else:
         filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULEDIR, recursive=True, exclude=["__init__"])
+        module_list = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
     # A dictionary used for the copyfileto parameter
     filedic = {}
     # What will be the config file object
@@ -590,7 +623,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
             filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
         else:
             sys.stdout = stdout
-            raise IOError('The copyfilesto dir" ' + main_config["copyfilesto"] + '" is not a valid dir')
+            raise IOError('The copyfilesto dir "' + main_config["copyfilesto"] + '" is not a valid dir')
 
     # Create the global module interface
     global_module_interface = _GlobalModuleInterface()
@@ -817,7 +850,7 @@ def _parse_args():
     # argparse stuff
     desc = "multiscanner v{} - Analyse files against multiple engines"
     parser = argparse.ArgumentParser(description=desc.format(multiscanner.__version__))
-    parser.add_argument("-c", "--config", required=False, default=CONFIG,
+    parser.add_argument("-c", "--config", required=False, default=None,
                         help="The config file to use")
     parser.add_argument('-j', '--json', required=False, metavar="filepath", default=None,
                         help="The json file to write")
@@ -850,23 +883,21 @@ def _init(args):
         answer = input('Do you wish to overwrite the configuration file [y/N]:')
         if answer == 'y':
             config_init(args.config)
-            print('Configuration file initialized at', args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULEDIR, recursive=True, exclude=["__init__"])
-            Config = configparser.SafeConfigParser()
-            Config.optionxform = str
-            Config.read(args.config)
-            _write_missing_module_configs(ModuleList, Config, filepath=args.config)
+            ModuleList = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
+            config = configparser.SafeConfigParser()
+            config.optionxform = str
+            config.read(args.config)
+            _write_missing_module_configs(ModuleList, config, filepath=args.config)
     else:
         config_init(args.config)
-        print('Configuration file initialized at', args.config)
 
     # Init storage
-    Config = configparser.SafeConfigParser()
-    Config.optionxform = str
-    Config.read(args.config)
-    config = _get_main_config(Config)
+    config = configparser.SafeConfigParser()
+    config.optionxform = str
+    config.read(args.config)
+    config = _get_main_config(config)
     if os.path.isfile(config["storage-config"]):
         print('Warning:', config["storage-config"], 'already exists, overwriting will destroy changes')
         answer = input('Do you wish to overwrite the configuration file [y/N]:')
@@ -884,6 +915,7 @@ def _init(args):
 
 
 def _main():
+    global CONFIG, VERBOSE
     # Force all prints to go to stderr
     stdout = sys.stdout
     sys.stdout = sys.stderr
@@ -891,9 +923,14 @@ def _main():
     import zipfile
     # Get args
     args = _parse_args()
+    # Set config or update locations
+    if args.config is None:
+        args.config = CONFIG
+    else:
+        CONFIG = args.config
+        _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
     # Set verbose
     if args.verbose:
-        global VERBOSE
         VERBOSE = args.verbose
 
     # Checks if user is trying to initialize
@@ -963,10 +1000,10 @@ def _main():
         results = multiscan(filelist, configfile=args.config)
 
         # We need to read in the config for the parseReports call
-        Config = configparser.SafeConfigParser()
-        Config.optionxform = str
-        Config.read(args.config)
-        config = _get_main_config(Config)
+        config = configparser.SafeConfigParser()
+        config.optionxform = str
+        config.read(args.config)
+        config = _get_main_config(config)
         # Make sure we have a group-types
         if "group-types" not in config:
             config["group-types"] = []
