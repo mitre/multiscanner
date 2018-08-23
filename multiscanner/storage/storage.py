@@ -15,7 +15,7 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-from ..multiscanner import CONFIG as MS_CONFIG
+from multiscanner.config import CONFIG as MS_CONFIG
 from multiscanner.common import utils
 
 # TODO: Is this a good default storage location?
@@ -132,7 +132,7 @@ class StorageHandler(object):
                         loaded_storage.append(storage)
                 except Exception as e:
                     print('ERROR:', 'storage', storage_name, 'failed to load.', e)
-        if loaded_storage == []:
+        if not loaded_storage:
             raise RuntimeError('No storage classes loaded')
         self.loaded_storage = loaded_storage
 
@@ -205,9 +205,8 @@ def _rewrite_config(storage_classes, config_object, filepath):
         for key in conf:
             config_object.set(class_name, key, str(conf[key]))
 
-    conffile = codecs.open(filepath, 'w', 'utf-8')
-    config_object.write(conffile)
-    conffile.close()
+    with codecs.open(filepath, 'w', 'utf-8') as f:
+        config_object.write(f)
 
 
 def _write_missing_config(config_object, filepath, storage_classes=None):
@@ -237,9 +236,8 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
             config_object.set(module, key, str(conf[key]))
 
     if ConfNeedsWrite:
-        conffile = codecs.open(filepath, 'w', 'utf-8')
-        config_object.write(conffile)
-        conffile.close()
+        with codecs.open(filepath, 'w', 'utf-8') as f:
+            config_object.write(f)
         return True
     return False
 
