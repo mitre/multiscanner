@@ -109,7 +109,11 @@ def system_health():
                            kibana_loc=app.config['KIBANA_LOC'])
 
 
-if __name__ == "__main__":
+def _main():
     app.run(debug=app.config['DEBUG'],
             port=app.config['PORT'],
             host=app.config['HOST'])
+
+
+if __name__ == "__main__":
+    _main()
