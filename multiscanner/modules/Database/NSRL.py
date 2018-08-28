@@ -18,8 +18,8 @@ NAME = "NSRL"
 REQUIRES = ["SHA1", "MD5"]
 
 DEFAULTCONF = {
-    'hash_list': os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'nsrl', 'hash_list'),
-    'offsets': os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'nsrl', 'offsets'),
+    'hash_list': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'hash_list'),
+    'offsets': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
 }
 

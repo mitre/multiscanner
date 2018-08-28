@@ -1,7 +1,7 @@
 import json
 import os
 
-import stix2
+from stix2 import v20
 
 '''Test module for STIX2 content generation methods'''
 
@@ -12,21 +12,21 @@ from multiscanner.common import stix2_generator
 
 def test_create_empty_bundle():
     bundle = stix2_generator.create_stix2_bundle([])
-    assert isinstance(bundle, stix2.Bundle)
+    assert isinstance(bundle, v20.Bundle)
 
 
 def test_create_non_empty_bundle():
-    indicator1 = stix2.Indicator(**{
+    indicator1 = v20.Indicator(**{
         'labels': ['benign'],
         'pattern': '[ ipv4-addr:value = \'198.51.100.1/32\' ]'
     })
-    indicator2 = stix2.Indicator(**{
+    indicator2 = v20.Indicator(**{
         'labels': ['benign'],
         'pattern': '[ ipv4-addr:value = \'203.0.113.33/32\' ]'
     })
     bundle = stix2_generator.create_stix2_bundle([indicator1, indicator2])
 
-    assert isinstance(bundle, stix2.Bundle)
+    assert isinstance(bundle, v20.Bundle)
     assert bundle.type == 'bundle'
     assert bundle.id.startswith('bundle--')
     assert bundle.spec_version == '2.0'
@@ -173,7 +173,7 @@ def test_parse_json_report_to_stix2_bundle():
         bundle = stix2_generator.parse_json_report_to_stix2_bundle(sample_json)
 
         for x in bundle.objects:
-            if isinstance(x, stix2.Indicator):
+            if isinstance(x, v20.Indicator):
                 extracted_indicator_expressions.append(x.pattern)
 
     assert all(x in all_indicators_expressions for x in extracted_indicator_expressions)

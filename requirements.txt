@@ -5,6 +5,9 @@ configparser
 #Required by modules
 bitstring
 boltons
+#These requirements seem to be problematic. Commenting until its resolved.
+#lief~=0.8.3
+#git+https://github.com/endgameinc/ember.git#egg=ember
 git+https://github.com/knowmalware/pehash.git#egg=pehash
 mmbot
 paramiko
@@ -28,7 +31,7 @@ sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
 #Required by storage modules
-elasticsearch>=5.0.0,<6.0.0
+elasticsearch>=6.0.0,<7.0.0
 elasticsearch-curator
 pymongo
 #Required for distributed

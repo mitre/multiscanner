@@ -57,7 +57,9 @@ class Database(object):
         'host_string': 'localhost',
         'db_name': 'task_db',
         'username': 'multiscanner',
-        'password': 'CHANGEME'
+        'password': 'CHANGEME',
+        'retry_time': 5,  # Number of seconds to wait between retrying to connect to task database
+        'retry_num': 20,  # Number of times to retry to connect to task database
     }
 
     def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):

@@ -21,6 +21,7 @@ import sys
 import tempfile
 import threading
 import time
+import zipfile
 from builtins import *  # noqa: F401,F403
 
 from future import standard_library
@@ -273,13 +274,13 @@ def _update_DEFAULTCONF(defaultconf, filepath):
     if 'web-config' in defaultconf:
         defaultconf['web-config'] = filepath.replace('config.ini', 'web_config.ini')
     if 'ruledir' in defaultconf:
-        defaultconf['ruledir'] = os.path.join(filepath.rstrip("config.ini"), "etc", "yarasigs")
+        defaultconf['ruledir'] = os.path.join(os.path.split(filepath)[0], "etc", "yarasigs")
     if 'key' in defaultconf:
-        defaultconf['key'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'id_rsa')
+        defaultconf['key'] = os.path.join(os.path.split(filepath)[0], 'etc', 'id_rsa')
     if 'hash_list' in defaultconf:
-        defaultconf['hash_list'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'nsrl', 'hash_list')
+        defaultconf['hash_list'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'hash_list')
     if 'offsets' in defaultconf:
-        defaultconf['offsets'] = os.path.join(filepath.rstrip('config.ini'), 'etc', 'nsrl', 'offsets')
+        defaultconf['offsets'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'offsets')
 
 
 def _get_main_config(config_object, filepath=CONFIG):
@@ -559,6 +560,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     configregen - If True a new config file will be created overwriting the old
     configfile - What config file to use. Can be None.
     config - A dictionary containing the configuration options to be used.
+    module_list - A list of file paths to be used as modules. Each string should end in .py
     """
     # Redirect stdout to stderr
     stdout = sys.stdout
@@ -860,6 +862,8 @@ def _parse_args():
                         help="The max number of files per report")
     parser.add_argument("-r", "--recursive", action="store_true",
                         help="Recursively parse folders for files to scan")
+    parser.add_argument('-t', '--tag', required=False, metavar="tag", default=None,
+                        help="Tags to include in the report.", action='append')
     parser.add_argument("-z", "--extractzips", action="store_true",
                         help="If any zip files are detected, extract them and scan the contents")
     parser.add_argument("-p", "--password", default="",
@@ -919,8 +923,7 @@ def _main():
     # Force all prints to go to stderr
     stdout = sys.stdout
     sys.stdout = sys.stderr
-    # Import dependencies only needed by _main()
-    import zipfile
+
     # Get args
     args = _parse_args()
     # Set config or update locations
@@ -943,8 +946,7 @@ def _main():
     # Make sure report is not a dir
     if args.json:
         if os.path.isdir(args.json):
-            print('ERROR:', args.json, 'is a directory, a file is expected')
-            return False
+            sys.exit('ERROR:', args.json, 'is a directory, a file is expected')
 
     # Parse the file list
     parsedlist = parseFileList(args.Files, recursive=args.recursive)
@@ -965,14 +967,16 @@ def _main():
                     print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
                 parsedlist.remove(fname)
 
+    if not parsedlist:
+        sys.exit("ERROR: No valid files found!")
+
     # Resume from report
     if args.resume:
         i = len(parsedlist)
         try:
             reportfile = codecs.open(args.json, 'r', 'utf-8')
         except Exception as e:
-            print("ERROR: Could not open report file")
-            exit(1)
+            sys.exit("ERROR: Could not open report file")
         for line in reportfile:
             line = json.loads(line)
             for fname in line:
@@ -1020,6 +1024,7 @@ def _main():
             # TODO: log exception
             username = os.getenv('USERNAME')
 
+        # Add metadata to the scan
         results.append((
             [],
             {
@@ -1030,6 +1035,19 @@ def _main():
                 "Run by": username
             }
         ))
+
+        # Add tags if present
+        if args.tag:
+            tag_results = []
+            for filename in filelist:
+                tag_results.append((filename, args.tag))
+            results.append((
+                tag_results,
+                {
+                    "Name": "tags",
+                    "Type": "Metadata"
+                }
+            ))
 
         if args.show or not stdout.isatty():
             # TODO: Make this output something readable

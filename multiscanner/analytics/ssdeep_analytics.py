@@ -43,11 +43,7 @@ class SSDeepAnalytic:
         config_object.read(storage_conf)
         conf = utils.parse_config(config_object)
         storage_handler = storage.StorageHandler(configfile=storage_conf)
-        es_handler = None
-        for handler in storage_handler.loaded_storage:
-            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
-                es_handler = handler
-                break
+        es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
             print('[!] ERROR: This analytic only works with ES stroage module.')
@@ -56,7 +52,7 @@ class SSDeepAnalytic:
         # probably not ideal...
         self.es = es_handler.es
         self.index = conf['ElasticSearchStorage']['index']
-        self.doc_type = 'sample'
+        self.doc_type = '_doc'
 
         self.debug = debug
 

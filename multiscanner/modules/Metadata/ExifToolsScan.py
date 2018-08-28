@@ -19,7 +19,7 @@ TYPE = "Metadata"
 NAME = "ExifTool"
 # These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
-KEY = os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
 # Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",

@@ -228,16 +228,23 @@
   function getReport() {
     // Get report and populate the table
     $.get("{{ api_loc }}/api/v1/tasks/{{ task_id }}/report", function(data, status){
-      if (data.hasOwnProperty('Report') && data.Report == 'Task still pending') {
-        // Check again in 5 seconds
-        console.log("Check again in 5 seconds");
-        setTimeout(getReport, 5000);
-        return;
+      if (data.hasOwnProperty('Report')) {
+        if (data.Report == 'Task still pending') {
+          // Check again in 5 seconds
+          console.log("Check again in 5 seconds");
+          setTimeout(getReport, 5000);
+          return;
+        }
+        else if (data.Report == 'Task failed') {
+          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+          return;
+        }
+        else if (data.Report == 'Error occurred in ElasticSearch') {
+          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ElasticSearch Error!</h3>');
+          return;
+        }
       }
-      else if (data.hasOwnProperty('Report') && data.Report == 'Task failed') {
-        $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
-        return;
-      }
+
       $('#pending').hide();
       $('#report-extras').show();
       $('#report-tags').show();
@@ -282,7 +289,7 @@
       var tagNameArray = {{ tags|safe }};
       $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
         $.each(data.Tags, function( index, value ) {
-            if (tagNameArray.indexOf(value.key) > -1) {
+          if (tagNameArray.indexOf(value.key) == -1) {
             tagNameArray.push(value.key);
           }
         });
@@ -323,6 +330,9 @@
       {% if search_term %}
       scrollToHighlight();
       {% endif %}
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ' + jqXHR.responseJSON["Message"] + '</h3>');
     });
   }
 

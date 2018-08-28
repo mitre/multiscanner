@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-
+import json
 import mimetypes
 
 __author__ = 'Austin West'
@@ -82,9 +82,17 @@ def _get_tikaresults(results, fname):
     # mimetype using python's built in mimetypes lib.
     tikadict = dict(results)
     try:
-        return mimetypes.guess_all_extensions(
-            tikadict.get(fname, {}).get('Content-Type')
-        )
+        content_types = tikadict.get(fname, {}).get('Content-Type')
+
+        if not isinstance(content_types, list):
+            content_types = [content_types]
+
+        tika_extensions = []
+        for ctype in content_types:
+            tika_extensions += mimetypes.guess_all_extensions(ctype)
+
+        return list(set(tika_extensions))
+
     except AttributeError:
         return []
 
@@ -120,16 +128,21 @@ def _get_vtresults(results, fname):
 def _convert_libmagic_to_extension(libmagicresult):
     # Do some detction on the libmmagic results and return
     # a best guess of extension
-    if 'Microsoft Office Word' in libmagicresult:
-        return ['.doc', '.docx']
-    elif 'Microsoft Word 2007+' in libmagicresult:
-        return ['.doc', '.docx']
-    elif 'Microsoft Office PowerPoint' in libmagicresult:
-        return ['.ppt', '.pptx']
+
+    if 'Microsoft Word 2007+' in libmagicresult:
+        return ['.docx']
+    elif 'Microsoft Word' in libmagicresult:
+        return ['.doc']
+    elif 'Microsoft PowerPoint 2007+' in libmagicresult:
+        return ['.pptx']
+    elif 'Microsoft PowerPoint' in libmagicresult:
+        return ['.ppt']
     elif 'Rich Text Format data' in libmagicresult:
         return ['.rtf']
+    elif 'Microsoft Excel 2007+' in libmagicresult:
+        return ['.xlsx']
     elif 'Microsoft Excel' in libmagicresult:
-        return ['.xls', '.xlsx']
+        return ['.xls']
     elif 'GIF image data' in libmagicresult:
         return ['.gif']
     elif 'JPEG image data' in libmagicresult:

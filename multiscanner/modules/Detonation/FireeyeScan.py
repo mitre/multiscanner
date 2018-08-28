@@ -18,7 +18,8 @@ DEFAULTCONF = {
     "good path": "good",
     "base path": "/mnt/fireeyeshare/",
     "bad path": "bad",
-    "src path": "src"}
+    "src path": "src"
+}
 
 
 def check(conf=DEFAULTCONF):

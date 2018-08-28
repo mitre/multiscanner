@@ -14,23 +14,24 @@ __license__ = "MPL 2.0"
 TYPE = "Detonation"
 NAME = "FireEyeAPI"
 DEFAULTCONF = {
-        "API URL": "https://fireeye/wsapis/v1.1.0",
-        "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp3"],
-        "username": "api_analyst",
-        "password": "Password123",
-        "info level": "normal",  # concise, normal, extended
-        "timeout": 500,
-        "force": False,  # rescan if it exactly matches a previous scan?
-        "analysis type": 0,  # 0 = sandbox, 1 = live
-        "application id": 0,  # For AX Series appliances (7.7 and higher) and
-                             # CM Series appliances that manage AX Series
-                             # appliances (7.7 and higher), setting the applic-
-                             # ation value to -1 allows the AX Series appliance
-                             # to choose the application for you. For other
-                             # appliances, setting the application value to 0
-                             # allows the AX Series appliance to choose the
-                             # application for you.
-        "ENABLED": False}
+    "API URL": "https://fireeye/wsapis/v1.1.0",
+    "fireeye images": ["win7-sp1", "win7x64-sp1", "winxp-sp3"],
+    "username": "api_analyst",
+    "password": "Password123",
+    "info level": "normal",  # concise, normal, extended
+    "timeout": 500,
+    "force": False,  # rescan if it exactly matches a previous scan?
+    "analysis type": 0,  # 0 = sandbox, 1 = live
+    "application id": 0,  # For AX Series appliances (7.7 and higher) and
+                          # CM Series appliances that manage AX Series
+                          # appliances (7.7 and higher), setting the applic-
+                          # ation value to -1 allows the AX Series appliance
+                          # to choose the application for you. For other
+                          # appliances, setting the application value to 0
+                          # allows the AX Series appliance to choose the
+                          # application for you.
+    "ENABLED": False
+}
 
 VERBOSE = False
 

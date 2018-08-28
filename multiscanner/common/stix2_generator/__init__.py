@@ -1,7 +1,9 @@
 from __future__ import (division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
-import stix2
+import os
+
+from stix2 import v20
 
 
 def create_stix2_bundle(objects):
@@ -16,9 +18,9 @@ def create_stix2_bundle(objects):
 
     '''
     if objects:
-        return stix2.Bundle(objects=objects)
+        return v20.Bundle(objects=objects)
     else:
-        return stix2.Bundle()
+        return v20.Bundle()
 
 
 def join_stix2_comparison_expression(comp_exps, obs_operator):
@@ -40,8 +42,8 @@ def join_stix2_comparison_expression(comp_exps, obs_operator):
         'ipv4-addr:value = \'198.51.100.1/32\' OR ipv4-addr:value = \'203.0.113.33/32\''
 
     '''
-    return " {observation_operator} ".format(observation_operator=
-                                             obs_operator).join(comp_exps)
+    return " {observation_operator} ".format(
+        observation_operator=obs_operator).join(comp_exps)
 
 
 def create_stix2_comparison_expression(lhs, op, rhs):
@@ -93,10 +95,9 @@ def create_stix2_observation_expression(comp_exps, obs_operator=None):
     '''
     if isinstance(comp_exps, list) and len(comp_exps) > 1:
         # The obs_operator is required for this operation.
-        return '[ {pattern} ]'.format(pattern=
-                                      join_stix2_comparison_expression(
-                                          comp_exps, obs_operator
-                                      ))
+        return '[ {pattern} ]'.format(
+            pattern=join_stix2_comparison_expression(comp_exps, obs_operator)
+        )
     elif isinstance(comp_exps, list) and len(comp_exps) == 1:
         return '[ {pattern} ]'.format(pattern=comp_exps[0])
     return '[ {pattern} ]'.format(pattern=comp_exps)
@@ -116,7 +117,7 @@ def extract_file_cuckoo(dropped_file, custom_labels=None):
             a variety of hashes.
 
     '''
-    labels = ['multiscanner']
+    labels = ['file-hash-watchlist']
     dropped_pattern = []
 
     if custom_labels:
@@ -126,9 +127,10 @@ def extract_file_cuckoo(dropped_file, custom_labels=None):
     sha1_value = dropped_file.get('sha1', '')
     sha256_value = dropped_file.get('sha256', '')
     md5_value = dropped_file.get('md5', '')
+    ssdeep_value = dropped_file.get('ssdeep', '')
 
     if file_name:
-        file_name = file_name.split("\\")[-1]
+        file_name = os.path.split(file_name)[-1]
         dropped_pattern.append(
             create_stix2_comparison_expression('file:name', '=', file_name)
         )
@@ -151,8 +153,14 @@ def extract_file_cuckoo(dropped_file, custom_labels=None):
                                                md5_value)
         )
 
+    if ssdeep_value:
+        dropped_pattern.append(
+            create_stix2_comparison_expression('file:hashes.\'ssdeep\'', '=',
+                                               ssdeep_value)
+        )
+
     if dropped_pattern:
-        return stix2.Indicator(**{
+        return v20.Indicator(**{
             'labels': labels,
             'pattern': create_stix2_observation_expression(dropped_pattern, 'OR')
         })
@@ -175,7 +183,7 @@ def extract_http_requests_cuckoo(signature, custom_labels=None):
 
     '''
     indicators = []
-    labels = ['multiscanner']
+    labels = ['url-watchlist']
 
     if custom_labels:
         labels.extend(custom_labels)
@@ -191,7 +199,7 @@ def extract_http_requests_cuckoo(signature, custom_labels=None):
             ioc_pattern = create_stix2_observation_expression(
                 create_stix2_comparison_expression('url:value', '=', url_value)
             )
-            indicators.append(stix2.Indicator(**{
+            indicators.append(v20.Indicator(**{
                 'labels': labels,
                 'pattern': ioc_pattern
             }))
@@ -231,14 +239,14 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
                 and 'Potentially malicious URLs' in signature.get('description', '')):
             all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
     for dropped in cuckoo.get('dropped', []):
-        if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1')):
+        if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1', 'ssdeep')):
             ind = extract_file_cuckoo(dropped, custom_labels)
             if ind:
                 all_objects.append(ind)
 
     # Extract information from file submission and create Indicator
     submission_pattern = []
-    labels = ['multiscanner']
+    labels = ['file-hash-watchlist']
 
     if custom_labels:
         labels.extend(custom_labels)
@@ -247,6 +255,7 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
     sha1_value = r.get('SHA1', '')
     sha256_value = r.get('SHA256', '')
     md5_value = r.get('MD5', '')
+    ssdeep_value = r.get('ssdeep', {})
 
     if file_name:
         submission_pattern.append(
@@ -271,8 +280,14 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
                                                md5_value)
         )
 
+    if ssdeep_value and ssdeep_value.get('ssdeep_hash', ''):
+        submission_pattern.append(
+            create_stix2_comparison_expression('file:hashes.\'ssdeep\'', '=',
+                                               ssdeep_value.get('ssdeep_hash'))
+        )
+
     if submission_pattern:
-        all_objects.append(stix2.Indicator(**{
+        all_objects.append(v20.Indicator(**{
             'labels': labels,
             'pattern': create_stix2_observation_expression(submission_pattern,
                                                            'OR')

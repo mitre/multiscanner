@@ -13,7 +13,7 @@ fi
 #Install requirements for Debian derivatives
 if [ -e /etc/debian_version ]; then
   apt-get update
-  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git ibssl-dev unzip libmagic-dev
+  apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev
 fi
 
 #Install requirements for Python
@@ -21,8 +21,8 @@ curl -k https://bootstrap.pypa.io/get-pip.py | python
 pip install --upgrade -r $DIR/requirements.txt
 
 #Code to compile and install yara
-YARA_VER=3.7.1
-YARA_PY_VER=3.7.0
+YARA_VER=3.8.1
+YARA_PY_VER=3.8.1
 JANSSON_VER=2.11
 read -p "Compile yara $YARA_VER? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
@@ -109,4 +109,5 @@ if [[ $prompt == "y" ]]; then
   rm -fr RDS_*
 fi
 
-pip install $DIR/setup.py
+# Installing the library is now mandatory.
+pip install $DIR

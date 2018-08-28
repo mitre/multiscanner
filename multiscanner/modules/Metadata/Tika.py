@@ -9,8 +9,10 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "Tika"
 REMOVEENTRY = ["X-TIKA:parse_time_millis"]
-DEFAULTCONF = {'ENABLED': False,
-                'remove-entry': REMOVEENTRY}
+DEFAULTCONF = {
+    'ENABLED': False,
+    'remove-entry': REMOVEENTRY
+}
 
 try:
     import tika
