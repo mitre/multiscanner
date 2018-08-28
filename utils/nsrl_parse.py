@@ -44,7 +44,7 @@ def utf_8_encoder(unicode_csv_data):
 
 
 def parse_nsrl(input_file, output_dir):
-    output = open(os.path.join(output_dir, 'hash_list'), 'w')
+    output = codecs.open(os.path.join(output_dir, 'hash_list'), 'w', 'utf-8')
     offset = open(os.path.join(output_dir, 'offsets'), 'wb')
 
     offset_size = 5
@@ -78,7 +78,7 @@ def parse_nsrl(input_file, output_dir):
                     last = offset_val
                 output.write(line[0].lower() + '\t')
                 output.write(line[1].lower() + '\t')
-                output.write(line[3].encode('utf-8'))
+                output.write(line[3])
                 count += 1
 
 
