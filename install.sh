@@ -105,7 +105,7 @@ if [[ $prompt == "y" ]]; then
   curl -k https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernu.zip > rds_modernu.zip
   unzip rds_modernu.zip
   rm rds_modernu.zip
-  python $DIR/utils/nsrl_parse.py -o $DIR/etc/nsrl RDS_*/NSRLFile.txt
+  python $DIR/utils/nsrl_parse.py -o $DIR/etc/nsrl rds_*/NSRLFile.txt
   rm -fr RDS_*
 fi
 

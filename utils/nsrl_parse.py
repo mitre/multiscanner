@@ -78,7 +78,7 @@ def parse_nsrl(input_file, output_dir):
                     last = offset_val
                 output.write(line[0].lower() + '\t')
                 output.write(line[1].lower() + '\t')
-                output.write(line[3])
+                output.write(line[3].encode('utf-8'))
                 count += 1
 
 
