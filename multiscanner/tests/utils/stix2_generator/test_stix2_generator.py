@@ -91,8 +91,8 @@ def test_create_observation_expression_list():
 
 def test_extract_file_cuckoo():
     all_indicators_expressions = [
-        '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' ]',
-        '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' ]'
+        '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' OR file:hashes.\'ssdeep\' = \'3072:v8O0PPXlpAmOvDtu31DunkJdmAOIAT3B/WAyU98SJ4MWFYAkOymiTG4czJE:kdPP1Cm+OKYdmoqH8SSpkOye4czO\' ]',
+        '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' OR file:hashes.\'ssdeep\' = \'6144:63hJxWjDKn4yTxz12wj/CF6J2Os+WX+ugnZJFNpluJHA4:6RJWDsTxzIwj/CF6FR6+zcO4\' ]'
     ]
     extracted_indicator_expressions = []
 
@@ -145,8 +145,8 @@ def test_extract_http_requests_cuckoo():
 
 def test_parse_json_report_to_stix2_bundle():
     all_indicators_expressions = [
-        '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' ]',
-        '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' ]',
+        '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' OR file:hashes.\'ssdeep\' = \'3072:v8O0PPXlpAmOvDtu31DunkJdmAOIAT3B/WAyU98SJ4MWFYAkOymiTG4czJE:kdPP1Cm+OKYdmoqH8SSpkOye4czO\' ]',
+        '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' OR file:hashes.\'ssdeep\' = \'6144:63hJxWjDKn4yTxz12wj/CF6J2Os+WX+ugnZJFNpluJHA4:6RJWDsTxzIwj/CF6FR6+zcO4\' ]',
         '[ url:value = \'http://www.msftncsi.com/ncsi.txt\' ]',
         '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?ec38990cc55170ab\' ]',
         '[ url:value = \'http://tools.google.com/service/update2?cup2key=6:2144477707&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc\' ]',

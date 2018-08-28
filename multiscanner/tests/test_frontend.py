@@ -6,7 +6,7 @@ import pytest
 
 from flask import url_for
 from flask_testing import LiveServerTestCase
-from mocks import get_free_server_port, start_mock_server
+from .mocks import get_free_server_port, start_mock_server
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By

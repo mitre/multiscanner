@@ -1,12 +1,9 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
-import sys
 import os
-# Makes sure we use the multiscanner in ../
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
+
 import multiscanner
 
-sys.path.append(os.path.join(CWD, '..', 'libs'))
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 
 def add_int(x, y):

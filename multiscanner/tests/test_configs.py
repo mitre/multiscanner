@@ -1,16 +1,12 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 import os
-import sys
 import tempfile
-
-# Makes sure we use the multiscanner in ../
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
 
 import multiscanner
 from multiscanner.common import utils
 
-multiscanner.MODULEDIR = os.path.join(CWD, "modules")
+# Makes sure we use the multiscanner in ../
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 module_list = [os.path.join(CWD, 'modules', 'test_conf.py')]
 filelist = utils.parseDir(os.path.join(CWD, 'files'))

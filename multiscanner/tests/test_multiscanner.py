@@ -1,25 +1,25 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
-import sys
 import os
+import sys
+
+import multiscanner
+from multiscanner.common import utils
+
 # Makes sure we use the multiscanner in ../
 CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
-import multiscanner
-
-from multiscanner.common import utils
 
 
 class _runmulti_tests(object):
     @classmethod
     def setup_class(cls):
-        cls.real_mod_dir = multiscanner.MODULEDIR
+        cls.real_mod_dir = multiscanner.MODULESDIR
         multiscanner.MODULEDIR = os.path.join(CWD, "modules")
         cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
         multiscanner.CONFIG = '.tmpfile.ini'
 
     @classmethod
     def teardown_class(cls):
-        multiscanner.MODULEDIR = cls.real_mod_dir
+        multiscanner.MODULESDIR = cls.real_mod_dir
 
 
 class Test_multiscan(_runmulti_tests):
