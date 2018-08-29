@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.3.0
+    rev: v1.4.0
     hooks:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
@@ -9,5 +9,5 @@ repos:
     -   id: mixed-line-ending
     -   id: flake8
         args:
-        - --ignore=E126,E127,E128,E402
+        - --ignore=E126,E127,E128,E402,F841
         - --max-line-length=120

@@ -28,11 +28,11 @@ def _connect_clam():
     try:
         clamScanner = pyclamd.ClamdUnixSocket()
         clamScanner.ping()
-    except ConnectionError:
+    except pyclamd.ConnectionError:
         clamScanner = pyclamd.ClamdNetworkSocket()
         try:
             clamScanner.ping()
-        except ConnectionError:
+        except pyclamd.ConnectionError:
             raise ValueError("Unable to connect to clamd")
     return clamScanner
 

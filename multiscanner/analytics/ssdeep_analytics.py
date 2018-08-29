@@ -27,7 +27,11 @@ import json
 import sys
 from pprint import pprint
 
-import ssdeep
+try:
+    import ssdeep
+except ImportError:
+    print("ssdeep module not installed...")
+
 
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner.common import utils
@@ -46,7 +50,7 @@ class SSDeepAnalytic:
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
-            print('[!] ERROR: This analytic only works with ES stroage module.')
+            print('[!] ERROR: This analytic only works with ES storage module.')
             sys.exit(0)
 
         # probably not ideal...
