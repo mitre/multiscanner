@@ -5,8 +5,7 @@ ENV PYTHON_VER 3.6.2
 
 COPY . /opt/multiscanner
 COPY ./docker_utils/*.ini /opt/multiscanner/
-# Commented until ember module problems are resolved
-# COPY ./etc/ember_model_2017.txt /opt/multiscanner/etc/ember/
+COPY ./etc/ember_model_2017.txt /opt/multiscanner/etc/ember/
 
 WORKDIR /opt/multiscanner
 RUN ./install.sh
