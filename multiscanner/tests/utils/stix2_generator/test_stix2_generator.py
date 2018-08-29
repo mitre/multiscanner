@@ -3,6 +3,8 @@ import os
 
 from stix2 import v20
 
+# flake8: noqa
+
 '''Test module for STIX2 content generation methods'''
 
 CWD = os.path.dirname(os.path.abspath(__file__))

@@ -1,19 +1,19 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016, The MITRE Corporation. All rights reserved.
-# 
+#
 # Approved for Public Release; Distribution Unlimited 14-1511
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -41,8 +41,8 @@ sys.setrecursionlimit(10000)
 
 class OfficeParser(object):
     summary_mapping = {
-        b"\xE0\x85\x9F\xF2\xF9\x4F\x68\x10\xAB\x91\x08\x00\x2B\x27\xB3\xD9": { 
-            'name':         'SummaryInformation',     
+        b"\xE0\x85\x9F\xF2\xF9\x4F\x68\x10\xAB\x91\x08\x00\x2B\x27\xB3\xD9": {
+            'name':         'SummaryInformation',
             0x01:           'Codepage',
             0x02:           'Title',
             0x03:           'Subject',
@@ -87,7 +87,7 @@ class OfficeParser(object):
             # what the heck do these values mean?
         }
     }
-    office_magic = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" 
+    office_magic = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
     def __init__(self, data, verbose=False):
         self.data = data
         self.verbose = verbose
@@ -243,7 +243,7 @@ class OfficeParser(object):
             datestring = time.strftime("%Y/%m/%d %H:%M:%S", time.gmtime(timestamp))
         else:
             timestamp = (wtimestamp / 10000000)
-            datestring = "%02d:%02d:%02d" % (timestamp / 360, timestamp / 60, timestamp % 60) 
+            datestring = "%02d:%02d:%02d" % (timestamp / 360, timestamp / 60, timestamp % 60)
         return (timestamp, datestring)
 
     def parse_properties(self, prop_data, prop_type):
@@ -313,7 +313,7 @@ class OfficeParser(object):
 
     def parse_directory(self, data):
         if len(data) >= 128:
-            #if data[:8] == '\x00\x10\x00\x00\x00\x00\x00\x00': 
+            #if data[:8] == '\x00\x10\x00\x00\x00\x00\x00\x00':
             #    print "trucating first 8 bytes"
             #    self.parse_directory(data[8:])
             entry = {
@@ -367,7 +367,7 @@ class OfficeParser(object):
                 entry['data'] = dir_data
             if self.verbose:
                 pprint.pprint(entry)
-            self.directory.append(entry) 
+            self.directory.append(entry)
             self.parse_directory(data[128:])
         return {}
 
@@ -395,4 +395,4 @@ class OfficeParser(object):
             return None
         self.office_header = self.parse_office_header()
         if self.office_header['maj_ver'] in [3,4]:
-            self.parse_directory(self.get_fat_chain(self.office_header['first_dir_sect']))        
+            self.parse_directory(self.get_fat_chain(self.office_header['first_dir_sect']))

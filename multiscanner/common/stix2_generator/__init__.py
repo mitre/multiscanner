@@ -1,8 +1,6 @@
 from __future__ import (division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
-import os
-
 from stix2 import v20
 
 
@@ -130,7 +128,12 @@ def extract_file_cuckoo(dropped_file, custom_labels=None):
     ssdeep_value = dropped_file.get('ssdeep', '')
 
     if file_name:
-        file_name = os.path.split(file_name)[-1]
+        file_name1 = file_name.split('/')
+        file_name2 = file_name.split('\\')
+        if len(file_name1) > len(file_name2):
+            file_name = file_name1[-1]
+        else:
+            file_name = file_name2[-1]
         dropped_pattern.append(
             create_stix2_comparison_expression('file:name', '=', file_name)
         )
@@ -232,11 +235,11 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
     cuckoo = r.get('Cuckoo Sandbox', {})
 
     for signature in cuckoo.get('signatures', []):
-        if ('description' in signature
-                and 'HTTP request' in signature.get('description', '')):
+        if ('description' in signature and
+                'HTTP request' in signature.get('description', '')):
             all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
-        elif ('description' in signature
-                and 'Potentially malicious URLs' in signature.get('description', '')):
+        elif ('description' in signature and
+              'Potentially malicious URLs' in signature.get('description', '')):
             all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
     for dropped in cuckoo.get('dropped', []):
         if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1', 'ssdeep')):
