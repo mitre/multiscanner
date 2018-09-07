@@ -44,9 +44,8 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
-    elif SSH:
+    else:
         local = False
-        host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
 
@@ -57,6 +56,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     resultlist = []
     try:
+        host, port, user = conf["host"]
         client = sshconnect(host, port=port, username=user, key_filename=conf["key"])
     except Exception as e:
         # TODO: log exception
@@ -69,13 +69,11 @@ def scan(filelist, conf=DEFAULTCONF):
 
         # print(repr(cmd))
         # print(repr(list2cmdline(cmd)))
-        output = ""
         if local:
             try:
                 output = subprocess.check_output(cmd)
             except subprocess.CalledProcessError as e:
                 output = e.output
-                e.returncode
         else:
             try:
                 stdin, stdout, stderr = client.exec_command(list2cmdline(cmd))
@@ -93,6 +91,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
         # res = {"malicious": True, "raw_output": output, "threats": []}
 
+        threat_name = ""
         while '----------------------------- Threat information ------------------------------' in output:
             _, _, output = output.partition(
                     '----------------------------- Threat information ------------------------------')

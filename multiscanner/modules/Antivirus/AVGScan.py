@@ -46,7 +46,7 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
-    elif SSH:
+    else:
         local = False
 
     cmdline = conf["cmdline"]
@@ -58,15 +58,14 @@ def scan(filelist, conf=DEFAULTCONF):
     # Create full command line
     cmdline.insert(0, conf["path"])
     cmdline.append(scan)
-    output = ""
     if local:
         try:
             output = subprocess.check_output(cmdline)
         except subprocess.CalledProcessError as e:
             output = e.output
     else:
-        host, port, user = conf["host"]
         try:
+            host, port, user = conf["host"]
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
         except Exception as e:
             # TODO: log exception
