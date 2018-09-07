@@ -16,10 +16,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import aliased, sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
-from multiscanner import MS_WD
+from multiscanner import CONFIG
 
-# MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CONFIG_FILE = os.path.join(MS_WD, "api_config.ini")
+
+CONFIG_FILE = os.path.join(os.path.split(CONFIG)[0], "api_config.ini")
 
 Base = declarative_base()
 Session = sessionmaker()
@@ -117,7 +117,7 @@ class Database(object):
         db_name = self.config['db_name']
         if db_type == 'sqlite':
             # we can ignore host, username, password, etc
-            sql_lite_db_path = os.path.join(MS_WD, db_name)
+            sql_lite_db_path = os.path.join(os.path.split(CONFIG)[0], db_name)
             self.db_connection_string = 'sqlite:///{}'.format(sql_lite_db_path)
         else:
             username = self.config['username']

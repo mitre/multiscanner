@@ -5,12 +5,14 @@ CWD=`pwd`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #Install requirements for Redhat derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/redhat-release ]; then
   yum install -y epel-release
   yum install -y autoconf automake curl gcc libffi-devel libtool make python-devel ssdeep-devel tar git unzip openssl-devel file-devel
 fi
 
 #Install requirements for Debian derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/debian_version ]; then
   apt-get update
   apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev

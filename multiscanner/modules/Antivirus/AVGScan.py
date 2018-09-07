@@ -21,16 +21,16 @@ NAME = "AVG 2014"
 # Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
 # SSH Key
-KEY = os.path.join(CONFIG.rstrip('config.ini'), 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {
     "path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
     "key": KEY,
     "cmdline": ['/A', '/H', '/PRIORITY=High'],
-    'host': HOST,
+    "host": HOST,
     "replacement path": PATHREPLACE,
-    'ENABLED': True
+    "ENABLED": True
 }
 
 

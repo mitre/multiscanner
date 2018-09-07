@@ -15,7 +15,10 @@ After training a new model, place the resulting txt file in
 
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import os
 from pathlib import Path
+
+from multiscanner import CONFIG
 
 
 __authors__ = "Patrick Copeland"
@@ -26,7 +29,7 @@ NAME = "EndgameEmber"
 REQUIRES = ['libmagic']
 DEFAULTCONF = {
     'ENABLED': False,
-    'path-to-model': 'opt/multiscanner/etc/ember/ember_model_2017.txt',
+    'path-to-model': os.path.join(os.path.split(CONFIG)[0], 'etc', 'ember', 'ember_model_2017.txt'),
 }
 LGBM_MODEL = None
 
