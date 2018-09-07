@@ -47,8 +47,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 elif u'Vivisect workspace analysis information' in f:
                     _extract_data(p.stdout, ret, 'vivisect_meta_info')
         except subprocess.CalledProcessError as e:
-            print(e.message)
-            print(e.returncode)
+            print(e.stderr)
+            print(e)
 
         if ret:
             results.append((fname, ret))

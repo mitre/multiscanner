@@ -17,7 +17,7 @@ from celery.utils.log import get_task_logger
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
 from multiscanner.common import utils
-from multiscanner.storage import storage
+from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
@@ -242,7 +242,7 @@ def metricbeat_rollover(days, config=MS_CONFIG):
 
         # Find Elastic storage
         for handler in storage_handler.loaded_storage:
-            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
+            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
                 ret = handler.delete_index(index_prefix='metricbeat', days=days)
 
                 if ret is False:

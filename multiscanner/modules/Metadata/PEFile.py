@@ -23,13 +23,10 @@ import bz2
 import hashlib
 import binascii
 import struct
-import sys
 from time import strftime, localtime
-from multiscanner.common.utils import convert_encoding
 
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
+from multiscanner.common.utils import convert_encoding
+from multiscanner.config import PY3
 
 TYPE = "Metadata"
 NAME = "pefile"

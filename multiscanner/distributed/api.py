@@ -59,12 +59,11 @@ from flask import Flask, abort, jsonify, make_response, request
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
-from six import PY3
 
-from multiscanner import CONFIG as MS_CONFIG
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports
+from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
 from multiscanner.common import utils, pdf_generator, stix2_generator
+from multiscanner.config import PY3
 from multiscanner.storage import StorageHandler
 from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
@@ -910,7 +909,7 @@ def get_pdf_report(task_id):
     if not success:
         return jsonify(report_dict)
 
-    pdf = pdf_generator.create_pdf_document(MS_WD, report_dict)
+    pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id

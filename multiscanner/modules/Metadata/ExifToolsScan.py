@@ -19,19 +19,19 @@ TYPE = "Metadata"
 NAME = "ExifTool"
 # These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
-KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(CONFIG)[0], "etc", "id_rsa")
 PATHREPLACE = "X:\\"
 # Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",
     "File Creation Date/Time", "File Access Date/Time", "File Permissions"]
 DEFAULTCONF = {
-    'cmdline': ["-t"],
+    "cmdline": ["-t"],
     "path": "C:\\exiftool.exe",
     "key": KEY,
-    'host': HOST,
+    "host": HOST,
     "replacement path": PATHREPLACE,
-    'remove-entry': REMOVEENTRY,
-    'ENABLED': True
+    "remove-entry": REMOVEENTRY,
+    "ENABLED": True
 }
 
 
@@ -52,12 +52,11 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
-    elif SSH:
+    else:
         local = False
 
     cmdline = conf["cmdline"]
     results = []
-    output = ""
     cmd = cmdline
     for item in filelist:
         cmd.append('"' + item + '" ')
@@ -69,7 +68,6 @@ def scan(filelist, conf=DEFAULTCONF):
             output = subprocess.check_output(cmd)
         except subprocess.CalledProcessError as e:
             output = e.output
-            e.returncode
     else:
         try:
             output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
@@ -105,8 +103,6 @@ def scan(filelist, conf=DEFAULTCONF):
             continue
     if data:
         results.append((fname, data))
-        data = {}
-    reader = None
 
     # Gather metadata
     metadata = {}

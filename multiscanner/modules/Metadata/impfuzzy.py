@@ -8,12 +8,6 @@ except ImportError as e:
     print("pyimpfuzzy module not installed...")
     pyimpfuzzy = False
 
-import sys
-
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
-
 __author__ = "Patrick Copeland"
 __credits__ = ["JPCERT/CC"]
 __license__ = "MPL 2.0"

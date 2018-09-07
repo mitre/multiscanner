@@ -31,6 +31,7 @@ try:
     import ssdeep
 except ImportError:
     print("ssdeep module not installed...")
+    ssdeep = None
 
 
 from multiscanner import CONFIG as MS_CONFIG
@@ -61,6 +62,9 @@ class SSDeepAnalytic:
         self.debug = debug
 
     def ssdeep_compare(self):
+        if ssdeep is None:
+            print("ssdeep module not installed... can't perform ssdeep_compare()")
+            return
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {
