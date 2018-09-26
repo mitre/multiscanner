@@ -1,9 +1,5 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import sys
-import os
-# Makes sure we use the multiscanner in ../
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
+
 import multiscanner
 
 

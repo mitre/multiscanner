@@ -5,13 +5,9 @@ from __future__ import division, absolute_import, with_statement, print_function
 import hashlib
 import math
 import re
-import sys
 
+from multiscanner.config import PY3
 from multiscanner.ext import pdfparser
-
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
 
 __author__ = "Drew Bonasera"
 __credits__ = ["Wesley Shields", "Mike Goffin"]

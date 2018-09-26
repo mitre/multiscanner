@@ -17,7 +17,7 @@ from celery.utils.log import get_task_logger
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
 from multiscanner.common import utils
-from multiscanner.storage import storage
+from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
@@ -53,6 +53,13 @@ api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
+storage_config_object = configparser.SafeConfigParser()
+storage_config_object.optionxform = str
+storage_configfile = utils.get_config_path(MS_CONFIG, 'storage')
+storage_config_object.read(storage_configfile)
+config = utils.parse_config(storage_config_object)
+es_storage_config = config.get('ElasticSearchStorage')
+
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('protocol'),
     worker_config.get('user'),
@@ -75,13 +82,11 @@ def setup_periodic_tasks(sender, **kwargs):
 
     # Delete old metricbeat indices
     # Executes every morning at 3:00 a.m.
-    storage_conf_path = utils.get_config_path(MS_CONFIG, 'storage')
-    storage_conf = utils.parse_config(storage_conf_path)
-    metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+    metricbeat_enabled = es_storage_config.get('metricbeat_enabled', True)
     if metricbeat_enabled:
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
-            metricbeat_rollover.s(),
+            metricbeat_rollover.s(days=es_storage_config.get('metricbeat_rollover_days')),
         )
 
 
@@ -122,6 +127,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     multiscanner_celery.delay(full_path, original_filename, task_id,
                               hashed_filename, metadata, config, module_list)
     '''
+
     # Initialize the connection to the task DB
     db.init_db()
 
@@ -150,15 +156,20 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     # Count number of modules enabled out of total possible
     # and add it to the Scan Metadata
     total_enabled = 0
-    total_modules = 0
-    for key in full_conf:
-        if key == 'main':
-            continue
-        sub_conf[key] = {}
-        sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
-        total_modules += 1
-        if sub_conf[key]['ENABLED'] is True:
-            total_enabled += 1
+    total_modules = len(full_conf.keys())
+
+    # Get the count of modules enabled from the module_list
+    # if it exists, else count via the config
+    if module_list:
+        total_enabled = len(module_list)
+    else:
+        for key in full_conf:
+            if key == 'main':
+                continue
+            sub_conf[key] = {}
+            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+            if sub_conf[key]['ENABLED'] is True:
+                total_enabled += 1
 
     results[file_]['Scan Metadata'] = metadata
     results[file_]['Scan Metadata']['Worker Node'] = gethostname()
@@ -175,6 +186,16 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     results[original_filename] = results[file_]
     del results[file_]
 
+    # Save the reports to storage
+    storage_ids = storage_handler.store(results, wait=False)
+    storage_handler.close()
+
+    # Only need to raise ValueError here,
+    # Further cleanup will be handled by the on_failure method
+    # of MultiScannerTask
+    if not storage_ids:
+        raise ValueError('Report failed to index')
+
     # Update the task DB to reflect that the task is done
     db.update_task(
         task_id=task_id,
@@ -182,9 +203,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
         timestamp=scan_time,
     )
 
-    # Save the reports to storage
-    storage_handler.store(results, wait=False)
-    storage_handler.close()
     logger.info('Completed Task #{}'.format(task_id))
 
     return results
@@ -210,24 +228,21 @@ def metricbeat_rollover(days, config=MS_CONFIG):
     '''
     try:
         # Get the storage config
-        storage_conf_path = utils.get_config_path(config, 'storage')
-        storage_handler = storage.StorageHandler(configfile=storage_conf_path)
-        storage_conf = utils.parse_config(storage_conf_path)
-
-        metricbeat_enabled = storage_conf.get('metricbeat_enabled', True)
+        storage_handler = storage.StorageHandler(configfile=storage_configfile)
+        metricbeat_enabled = es_storage_config.get('metricbeat_enabled', True)
 
         if not metricbeat_enabled:
             logger.debug('Metricbeat logging not enbaled, exiting...')
             return
 
         if not days:
-            days = storage_conf.get('metricbeat_rollover_days')
+            days = es_storage_config.get('metricbeat_rollover_days')
         if not days:
             raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
 
         # Find Elastic storage
         for handler in storage_handler.loaded_storage:
-            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
+            if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
                 ret = handler.delete_index(index_prefix='metricbeat', days=days)
 
                 if ret is False:

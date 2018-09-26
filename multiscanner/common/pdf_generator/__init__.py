@@ -7,19 +7,19 @@ import os
 from reportlab.lib import colors, units
 from reportlab.platypus import TableStyle
 
-from . import generic_pdf
+from multiscanner.common.pdf_generator import generic_pdf
 
 
-def create_pdf_document(WD, report):
+def create_pdf_document(DIR, report):
     '''
     Method to create a PDF report based of a multiscanner JSON report.
 
     Args:
-        WD: Represents the working directory of the multiscanner.
+        DIR: Represents the a directory containing the 'pdf_config.json' file.
         report: A JSON object.
 
     '''
-    with open(os.path.join(WD, 'utils/pdf_generator/pdf_config.json')) as data_file:
+    with open(os.path.join(os.path.split(DIR)[0], 'pdf_config.json')) as data_file:
         pdf_components = json.load(data_file)
 
     gen_pdf = generic_pdf.GenericPDF(pdf_components)
@@ -83,6 +83,14 @@ def create_pdf_document(WD, report):
             av_data.append(['AVG 2014', r.get('AVG 2014', '')])
         if 'Microsoft Security Essentials' in r:
             av_data.append(['Microsoft Security Essentials', r.get('Microsoft Security Essentials', '')])
+
+        if 'Metadefender' in r:
+            engine_results = r.get('Metadefender', {}).get('engine_results', {})
+            for av in engine_results:
+                threat_found = av.get('threat_found')
+                if not threat_found:
+                    threat_found = 'No threats found'
+                av_data.append([av.get('engine_name'), threat_found])
 
     if file_data:
         gen_pdf.vertical_table(file_data)

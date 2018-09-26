@@ -1,6 +1,5 @@
 import hashlib
 import os
-import sys
 import unittest
 
 import mock
@@ -19,20 +18,9 @@ except ImportError:
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Allow import of celery_worker.py
-if os.path.join(MS_WD, 'utils') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'utils'))
-if os.path.join(MS_WD, 'storage') not in sys.path:
-    sys.path.insert(0, os.path.join(MS_WD, 'storage'))
-if os.path.join(MS_WD, 'libs') not in sys.path:
-    sys.path.append(os.path.join(MS_WD, 'libs'))
-
-# Use multiscanner in ../
-sys.path.insert(0, os.path.dirname(CWD))
-
 # Get a subset of simple modules to run in testing
 # the celery worker
-MODULE_LIST = utils.parseDir(multiscanner.MODULEDIR, recursive=True)
+MODULE_LIST = utils.parseDir(multiscanner.MODULESDIR, recursive=True)
 DESIRED_MODULES = [
     'entropy.py',
     'MD5.py',

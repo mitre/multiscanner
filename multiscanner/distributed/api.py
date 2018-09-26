@@ -59,19 +59,14 @@ from flask import Flask, abort, jsonify, make_response, request
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
-from six import PY3
 
-# TODO: Move MS_WD to module level
-# MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# if MS_WD not in sys.path:
-#     sys.path.insert(0, os.path.join(MS_WD))
-
-from multiscanner import CONFIG as MS_CONFIG
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULEDIR, MS_WD, multiscan
+from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
 from multiscanner.common import utils, pdf_generator, stix2_generator
-from multiscanner.storage import elasticsearch_storage, StorageHandler
+from multiscanner.config import PY3
+from multiscanner.storage import StorageHandler
 from multiscanner.storage import sql_driver as database
+from multiscanner.storage.storage import StorageNotLoadedError
 
 
 TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
@@ -130,13 +125,36 @@ from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get('Database'))
 # To run under Apache, we need to set up the DB outside of __main__
-db.init_db()
+# Sleep and retry until database connection is successful
+try:
+    # wait this many seconds between tries
+    db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_sleep_time = database.Database.DEFAULTCONF['retry_time']
+try:
+    # max number of times to retry
+    db_num_retries = int(api_config_object.get('Database', 'retry_num'))
+except (configparser.NoSectionError, configparser.NoOptionError):
+    db_num_retries = database.Database.DEFAULTCONF['retry_num']
+
+for x in range(0, db_num_retries):
+    try:
+        db.init_db()
+    except Exception as excinfo:
+        db_error = excinfo
+        print("ERROR: Can't connect to task database.", excinfo)
+    else:
+        break
+
+    if db_error:
+        if x == db_num_retries - 1:
+            raise StorageNotLoadedError()
+        print("Retrying...")
+        time.sleep(db_sleep_time)
 
 storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
 storage_handler = StorageHandler(configfile=storage_conf)
-for handler in storage_handler.loaded_storage:
-    if isinstance(handler, elasticsearch_storage.ElasticSearchStorage):
-        break
+handler = storage_handler.load_required_module('ElasticSearchStorage')
 
 ms_config_object = configparser.SafeConfigParser()
 ms_config_object.optionxform = str
@@ -158,8 +176,8 @@ except KeyError:
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
-batch_size = api_config['api']['batch_size']
-batch_interval = api_config['api']['batch_interval']
+batch_size = api_config['api'].get('batch_size', 10)
+batch_interval = api_config['api'].get('batch_interval', 100)
 # Add `delete_after_scan = True` to api_config.ini to delete samples after scan has completed
 delete_after_scan = api_config['api'].get('delete_after_scan', False)
 
@@ -194,7 +212,7 @@ def multiscanner_process(work_queue, exit_signal):
             filelist, configfile=MS_CONFIG
             # module_list
         )
-        results = utils.parse_reports(resultlist, python=True)
+        results = parse_reports(resultlist, python=True)
 
         scan_time = datetime.now().isoformat()
 
@@ -210,6 +228,8 @@ def multiscanner_process(work_queue, exit_signal):
             results[item[1]]['Scan Metadata'] = item[4]
             results[item[1]]['Scan Metadata']['Scan Time'] = scan_time
             results[item[1]]['Scan Metadata']['Task ID'] = item[2]
+            results[item[1]]['tags'] = results[item[1]]['Scan Metadata'].get('Tags', '').split(',')
+            results[item[1]]['Scan Metadata'].pop('Tags', None)
 
             db.update_task(
                 task_id=item[2],
@@ -252,7 +272,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    files = utils.parseDir(MODULEDIR, True)
+    files = utils.parseDir(MODULESDIR, True)
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
@@ -400,7 +420,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
     '''
     # If option set, or no scan exists for this sample, skip and scan sample again
     # Otherwise, pull latest scan for this sample
-    if (not rescan):
+    if not rescan:
         t_exists = db.exists(f_name)
         if t_exists:
             return t_exists
@@ -465,7 +485,7 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key]
-            files = utils.parseDir(MODULEDIR, True)
+            files = utils.parseDir(MODULESDIR, True)
             modules = []
             for f in files:
                 split = os.path.splitext(os.path.basename(f))
@@ -546,7 +566,7 @@ def get_report(task_id):
 
     report_dict, success = get_report_dict(task_id)
     if success:
-        if (download == 't' or download == 'y' or download == '1'):
+        if download == 't' or download == 'y' or download == '1':
             # raw JSON
             response = make_response(jsonify(report_dict))
             response.headers['Content-Type'] = 'application/json'
@@ -673,7 +693,11 @@ def get_report_dict(task_id):
         abort(HTTP_NOT_FOUND)
 
     if task.task_status == 'Complete':
-        return {'Report': handler.get_report(task.sample_id, task.timestamp)}, True
+        result = handler.get_report(task.sample_id, task.timestamp)
+        if result:
+            return {'Report': result}, True
+        else:
+            return {'Report': 'Error occurred in ElasticSearch'}, False
     elif task.task_status == 'Pending':
         return {'Report': 'Task still pending'}, False
     else:
@@ -722,7 +746,7 @@ def get_notes(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    if ('ts' in request.args and 'uid' in request.args):
+    if 'ts' in request.args and 'uid' in request.args:
         ts = request.args.get('ts', '')
         uid = request.args.get('uid', '')
         response = handler.get_notes(task.sample_id, [ts, uid])
@@ -885,7 +909,7 @@ def get_pdf_report(task_id):
     if not success:
         return jsonify(report_dict)
 
-    pdf = pdf_generator.create_pdf_document(MS_WD, report_dict)
+    pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
@@ -928,8 +952,7 @@ def get_stix2_bundle_from_report(task_id):
     return response
 
 
-if __name__ == '__main__':
-
+def _main():
     if not os.path.isdir(api_config['api']['upload_folder']):
         print('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
@@ -947,3 +970,7 @@ if __name__ == '__main__':
 
     if not DISTRIBUTED:
         ms_process.join()
+
+
+if __name__ == '__main__':
+    _main()

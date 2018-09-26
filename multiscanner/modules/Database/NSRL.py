@@ -2,10 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
 import gzip
 import os
-import sys
 import struct
+
+from multiscanner.config import CONFIG
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -16,8 +18,8 @@ NAME = "NSRL"
 REQUIRES = ["SHA1", "MD5"]
 
 DEFAULTCONF = {
-    'hash_list': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'hash_list'),
-    'offsets': os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'nsrl', 'offsets'),
+    'hash_list': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'hash_list'),
+    'offsets': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
 }
 

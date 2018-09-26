@@ -22,12 +22,6 @@ except ImportError:
     print("pehash module not installed...")
     pehash = False
 
-import sys
-
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
-
 __author__ = "Patrick Copeland"
 __credits__ = ["knowmalware"]
 __license__ = "MPL 2.0"

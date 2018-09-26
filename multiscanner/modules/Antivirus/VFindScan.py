@@ -44,7 +44,6 @@ def check(conf=DEFAULTCONF):
 
 
 def scan(filelist, conf=DEFAULTCONF):
-    results = []
     uad_command = [os.path.join(conf['vstk_home'], "bin/uad"), "-n", "-ssw"] + conf['uad_cmdline'] + filelist
     vfind_command = [os.path.join(conf['vstk_home'], "bin/vfind"), "-ssr"] + conf['vfind_cmdline']
 
@@ -71,7 +70,6 @@ def scan(filelist, conf=DEFAULTCONF):
         # TODO: log exception
         pass
 
-    vdl_version = ""
     with open(os.path.join(conf['vstk_home'], "data/vfind/VERSION"), "r") as vdl_version_file:
         vdl_version = vdl_version_file.read().strip()
 

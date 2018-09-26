@@ -23,13 +23,10 @@ import bz2
 import hashlib
 import binascii
 import struct
-import sys
 from time import strftime, localtime
-from multiscanner.common.utils import convert_encoding
 
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
+from multiscanner.common.utils import convert_encoding
+from multiscanner.config import PY3
 
 TYPE = "Metadata"
 NAME = "pefile"
@@ -260,7 +257,7 @@ def _dump_resource_data(name, dir, pe, save):
                 #         self._debug("Adding new file from resource len %d - %s" % (len(data), rname))
                 #         self.added_files.append((rname, data))
                 results = {
-                        "resource_type": x.struct.name.decode('UTF-8', errors='replace'),
+                        "resource_type": x.struct.name,
                         "resource_id": i.id,
                         "language": x.lang,
                         "sub_language": x.sublang,

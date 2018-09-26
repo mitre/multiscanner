@@ -2,11 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
 import os
 import subprocess
 import re
-import sys
+
+from multiscanner.config import CONFIG
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
+
 subprocess.list2cmdline = list2cmdline
 
 __author__ = "Drew Bonasera"
@@ -16,7 +19,7 @@ TYPE = "Antivirus"
 NAME = "McAfee"
 # These are overwritten by the config file
 # SSH Key
-KEY = os.path.join(os.path.realpath(os.path.dirname(sys.argv[0])), 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")
@@ -24,9 +27,9 @@ DEFAULTCONF = {
     "path": "C:\\vscl-w32-604-e\\scan.exe",
     "key": KEY,
     "cmdline": ["/ALL"],
-    'host': HOST,
+    "host": HOST,
     "replacement path": PATHREPLACE,
-    'ENABLED': True
+    "ENABLED": True
 }
 
 
@@ -42,9 +45,8 @@ def check(conf=DEFAULTCONF):
 def scan(filelist, conf=DEFAULTCONF):
     if os.path.isfile(conf["path"]):
         local = True
-    elif SSH:
+    else:
         local = False
-        host, port, user = conf["host"]
     cmdline = conf["cmdline"]
     path = conf["path"]
     # Fixes list2cmd so we can actually quote things...
@@ -55,16 +57,14 @@ def scan(filelist, conf=DEFAULTCONF):
 
     # Create full command line
     cmdline.insert(0, path)
-
-    output = ""
     if local:
         try:
             output = subprocess.check_output(cmdline)
         except subprocess.CalledProcessError as e:
             output = e.output
-            e.returncode
     else:
         try:
+            host, port, user = conf["host"]
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
         except Exception as e:
             # TODO: log exception

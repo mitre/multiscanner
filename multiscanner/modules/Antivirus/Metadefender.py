@@ -172,7 +172,6 @@ def _submit_sample(fname, scan_url, user_agent, api_key=None):
             headers['apikey'] = api_key
         request = requests.post(scan_url, data=sample, headers=headers)
     resp_status_code = request.status_code
-    resp_json = None
     if resp_status_code == requests.codes.ok:
         resp_json = request.json()
         scan_id = resp_json.get('data_id', None)

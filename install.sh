@@ -5,12 +5,14 @@ CWD=`pwd`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #Install requirements for Redhat derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/redhat-release ]; then
   yum install -y epel-release
   yum install -y autoconf automake curl gcc libffi-devel libtool make python-devel ssdeep-devel tar git unzip openssl-devel file-devel
 fi
 
 #Install requirements for Debian derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/debian_version ]; then
   apt-get update
   apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev
@@ -21,8 +23,8 @@ curl -k https://bootstrap.pypa.io/get-pip.py | python
 pip install --upgrade -r $DIR/requirements.txt
 
 #Code to compile and install yara
-YARA_VER=3.7.1
-YARA_PY_VER=3.7.0
+YARA_VER=3.8.1
+YARA_PY_VER=3.8.1
 JANSSON_VER=2.11
 read -p "Compile yara $YARA_VER? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
@@ -98,7 +100,7 @@ if [[ $prompt == "y" ]]; then
   chmod 755 /opt/floss
 fi
 
-read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
+read -p "Download NSRL database? This will take ~4GB of disk space. <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   # Download the unique set
   mkdir $DIR/etc/nsrl
@@ -109,8 +111,5 @@ if [[ $prompt == "y" ]]; then
   rm -fr RDS_*
 fi
 
-read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
-if [[ $prompt == "y" ]]; then
-  pip install -e $DIR
-  echo "Make sure users have access to $DIR"
-fi
+# Installing the library is now mandatory.
+pip install $DIR

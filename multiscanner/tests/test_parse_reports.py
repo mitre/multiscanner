@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-import os
-# Makes sure we use the multiscanner in ../
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
 import multiscanner
 
 

@@ -1,16 +1,14 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import sys
+
 import os
 import types
 import mock
 import time
 
-# Makes sure we use the multiscanner in ../
-CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(CWD))
 import multiscanner
-
 from multiscanner.common import utils
+
+CWD = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_loadModule():
@@ -28,20 +26,20 @@ def test_fail_loadModule():
 class _runmod_tests(object):
     @classmethod
     def setup_class(cls):
-        cls.real_mod_dir = multiscanner.MODULEDIR
-        multiscanner.MODULEDIR = os.path.join(CWD, "modules")
+        cls.real_mod_dir = multiscanner.MODULESDIR
+        multiscanner.MODULESDIR = os.path.join(CWD, "modules")
         cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
         cls.files = ['a', 'b', 'C:\\c', '/d/d']
         cls.threadDict = {}
 
     @classmethod
     def teardown_class(cls):
-        multiscanner.MODULEDIR = cls.real_mod_dir
+        multiscanner.MODULESDIR = cls.real_mod_dir
 
 
 class Test_runModule_test_1(_runmod_tests):
     def setup(self):
-        m = utils.load_module('test_1', [multiscanner.MODULEDIR])
+        m = utils.load_module('test_1', [multiscanner.MODULESDIR])
         global_module_interface = multiscanner._GlobalModuleInterface()
         self.result = multiscanner._run_module('test_1', m, self.filelist, self.threadDict, global_module_interface)
         global_module_interface._cleanup()
@@ -57,7 +55,7 @@ class Test_runModule_test_1(_runmod_tests):
 
 class Test_runModule_test_2(_runmod_tests):
     def setup(self):
-        self.m = utils.load_module('test_2', [multiscanner.MODULEDIR])
+        self.m = utils.load_module('test_2', [multiscanner.MODULESDIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
         self.threadDict['test_1'].ret = ([('a', 'a'), ('C:\\c', 'c')], {})

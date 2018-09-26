@@ -27,7 +27,12 @@ import json
 import sys
 from pprint import pprint
 
-import ssdeep
+try:
+    import ssdeep
+except ImportError:
+    print("ssdeep module not installed...")
+    ssdeep = None
+
 
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner.common import utils
@@ -43,24 +48,23 @@ class SSDeepAnalytic:
         config_object.read(storage_conf)
         conf = utils.parse_config(config_object)
         storage_handler = storage.StorageHandler(configfile=storage_conf)
-        es_handler = None
-        for handler in storage_handler.loaded_storage:
-            if isinstance(handler, storage.elasticsearch_storage.ElasticSearchStorage):
-                es_handler = handler
-                break
+        es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
-            print('[!] ERROR: This analytic only works with ES stroage module.')
+            print('[!] ERROR: This analytic only works with ES storage module.')
             sys.exit(0)
 
         # probably not ideal...
         self.es = es_handler.es
         self.index = conf['ElasticSearchStorage']['index']
-        self.doc_type = 'sample'
+        self.doc_type = '_doc'
 
         self.debug = debug
 
     def ssdeep_compare(self):
+        if ssdeep is None:
+            print("ssdeep module not installed... can't perform ssdeep_compare()")
+            return
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {

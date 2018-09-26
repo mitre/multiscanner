@@ -11,10 +11,6 @@ from builtins import *  # noqa 401,403
 
 from multiscanner.ext.office_meta import OfficeParser
 
-PY3 = False
-if sys.version_info > (3,):
-    PY3 = True
-
 __author__ = "Patrick Coplenad"
 __credits__ = ["Mike Goffin"]
 __license__ = "MPL 2.0"

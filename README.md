@@ -36,7 +36,7 @@ Then run the following (substituting the actual file you want to scan for `<file
 $ git clone https://github.com/mitre/multiscanner.git
 $ cd multiscanner
 $ sudo -HE ./install.sh
-$ python multiscanner.py init
+$ multiscanner init
 ```
 
 This will generate a default configuration for you. Check `config.ini` to see what
@@ -45,13 +45,13 @@ modules are enabled. See [Configuration](http://multiscanner.readthedocs.io/en/l
 Now you can scan a file (substituting the actual file you want to scan for `<file>`):
 
 ``` bash
-$ python multiscanner.py <file>
+$ multiscanner <file>
 ```
 
 You can run the following to get a list of all of MultiScanner's command-line options:
 
 ``` bash
-$ python multiscanner.py --help
+$ multiscanner --help
 ```
 
 **Note**: If you are not on a RedHat or Debian based Linux distribution, instead of
