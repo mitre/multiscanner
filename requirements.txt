@@ -5,11 +5,7 @@ configparser
 #Required by modules
 bitstring
 boltons
-#lief and ember have problems when deploying from docker
-lief~=0.8.3
-git+https://github.com/endgameinc/ember.git#egg=ember
 git+https://github.com/knowmalware/pehash.git#egg=pehash
-mmbot
 paramiko
 pefile
 pyclamd
