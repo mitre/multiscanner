@@ -1,0 +1,6 @@
+-r requirements.txt
+Flask-Testing
+mock
+pathlib
+pytest
+selenium

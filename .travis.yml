@@ -8,12 +8,25 @@ env:
   - MOZ_HEADLESS=1
 addons:
   firefox: latest
+  apt:
+    # Keep these in sync with the dependencies from the install.sh script
+    packages:
+      - build-essential
+      - curl
+      - dh-autoreconf
+      - gcc
+      - libffi-dev
+      - libfuzzy-dev
+      - python-dev
+      - git
+      - libssl-dev
+      - unzip
+      - libmagic-dev
 before_install:
   - npm install -g geckodriver
 install:
-  - yes "" | sudo -HE ./install.sh
-  - pip install -r requirements.txt
-  - python multiscanner.py init
+  - pip install -U pip setuptools
+  - pip install tox-travis pre-commit
 script:
-  - flake8 --exit-zero .
-  - pytest
+  - tox
+  - pre-commit run --all-files

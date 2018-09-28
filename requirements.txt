@@ -1,13 +1,11 @@
 #Required
 future
+six
 configparser
 #Required by modules
 bitstring
 boltons
-git+https://github.com/endgameinc/ember.git#egg=ember
 git+https://github.com/knowmalware/pehash.git#egg=pehash
-lief~=0.8.3
-mmbot
 paramiko
 pefile
 pyclamd
@@ -35,14 +33,5 @@ pymongo
 #Required for distributed
 celery
 flask_cors
-#Required by tests
-Flask-Testing
-pathlib
-pytest
-mock
-selenium
-#Requred by dev
-flake8
-pre-commit
 #Required by utils
 tqdm

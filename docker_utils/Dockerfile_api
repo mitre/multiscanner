@@ -5,6 +5,8 @@ ENV PYTHON_VER 3.6.2
 
 COPY . /opt/multiscanner
 COPY ./docker_utils/*.ini /opt/multiscanner/
+COPY ./etc/pdf_config.json /opt/multiscanner/
+COPY ./etc/ember_model_2017.txt /opt/multiscanner/etc/ember/
 
 WORKDIR /opt/multiscanner
 RUN ./install.sh
@@ -13,4 +15,4 @@ RUN ./install.sh
 # The sleep is a workaround to make extra sure that
 # the ElasticSearch container is up before the api
 # attempts to connect to it
-CMD sleep 30; python utils/api.py
+CMD sleep 30; multiscanner-api
