@@ -314,6 +314,14 @@ class TestSHA256DownloadSampleCase(APITestCase):
 
     @mock.patch('api.db')
     @mock.patch('api.handler')
+    def test_other_hash(self, mock_handler, mock_db):
+        # using MD5 instead of SHA256
+        resp = self.app.get('/api/v1/files/96b47da202ddba8d7a6b91fecbf89a41')
+
+        self.assertEqual(resp.status_code, api.HTTP_BAD_REQUEST)
+
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
     def test_file_download_raw(self, mock_handler, mock_db):
         expected_response = b'my file contents'
         resp = self.app.get('/api/v1/files/114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9?raw=t')
