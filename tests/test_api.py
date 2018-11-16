@@ -293,3 +293,37 @@ class TestTagsNotesCase(APITestCase):
         args, kwargs = mock_handler.delete_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
         self.assertEqual(args[1], '1')
+
+
+class TestSHA256DownloadSampleCase(APITestCase):
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        # populate the DB w/ a task
+        post_file(self.app)
+        self.sql_db.update_task(
+            task_id=1,
+            task_status='Complete',
+        )
+
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
+    def test_malformed_request(self, mock_handler, mock_db):
+        resp = self.app.get('/api/v1/files/..\opt\multiscanner\web_config.ini')
+
+        self.assertEqual(resp.status_code, api.HTTP_BAD_REQUEST)
+
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
+    def test_file_download_raw(self, mock_handler, mock_db):
+        expected_response = b'my file contents'
+        resp = self.app.get('/api/v1/files/114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9?raw=t')
+
+        self.assertEqual(resp.status_code, api.HTTP_OK)
+        self.assertEqual(resp.get_data(), expected_response)
+
+    @mock.patch('api.db')
+    @mock.patch('api.handler')
+    def test_file_not_found(self, mock_handler, mock_db):
+        resp = self.app.get('/api/v1/files/26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f?raw=t')
+
+        self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
