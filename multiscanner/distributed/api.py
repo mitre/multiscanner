@@ -47,6 +47,7 @@ import json
 import multiprocessing
 import os
 import queue
+import re
 import shutil
 import subprocess
 import time
@@ -55,7 +56,7 @@ from datetime import datetime
 
 import rarfile
 import requests
-from flask import Flask, abort, jsonify, make_response, request
+from flask import Flask, abort, jsonify, make_response, request, safe_join
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
@@ -811,18 +812,21 @@ def files_get_sha256(sha256):
     # is there a robust way to just get this as a bool?
     raw = request.args.get('raw', default='False', type=str)
 
-    return files_get_sha256_helper(sha256, raw)
+    if re.match(r'^[a-fA-F0-9]{64}$', sha256):
+        return files_get_sha256_helper(sha256, raw)
+    else:
+        return abort(HTTP_BAD_REQUEST)
 
 
 def files_get_sha256_helper(sha256, raw=None):
     '''
     Returns binary from storage. Defaults to password protected zipfile.
     '''
-    file_path = os.path.join(api_config['api']['upload_folder'], sha256)
+    file_path = safe_join(api_config['api']['upload_folder'], sha256)
     if not os.path.exists(file_path):
         abort(HTTP_NOT_FOUND)
 
-    with open(file_path, "rb") as fh:
+    with open(file_path, 'rb') as fh:
         fh_content = fh.read()
 
     raw = raw[0].lower()
@@ -834,13 +838,13 @@ def files_get_sha256_helper(sha256, raw=None):
     else:
         # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
         rawname = sha256 + '.bin'
-        with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
+        with open(safe_join('/tmp/', rawname), 'wb') as raw_fh:
             raw_fh.write(fh_content)
 
         zipname = sha256 + '.zip'
         args = ['/usr/bin/zip', '-j',
-                os.path.join('/tmp', zipname),
-                os.path.join('/tmp', rawname),
+                safe_join('/tmp', zipname),
+                safe_join('/tmp', rawname),
                 '-P', 'infected']
         proc = subprocess.Popen(args)
         wait_seconds = 30
@@ -854,7 +858,7 @@ def files_get_sha256_helper(sha256, raw=None):
             proc.terminate()
             return make_response(jsonify({'Error': 'Process timed out'}))
         else:
-            with open(os.path.join('/tmp', zipname), 'rb') as zip_fh:
+            with open(safe_join('/tmp', zipname), 'rb') as zip_fh:
                 zip_data = zip_fh.read()
             if len(zip_data) == 0:
                 return make_response(jsonify({'Error': 'Zip file empty'}))
