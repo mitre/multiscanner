@@ -765,7 +765,7 @@ def add_note(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes/<note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/notes/<int:note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.

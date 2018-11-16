@@ -283,7 +283,7 @@ class TestTagsNotesCase(APITestCase):
 
         args, kwargs = mock_handler.edit_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], '1')
+        self.assertEqual(args[1], 1)
         self.assertEqual(args[2], 'bar')
 
     @mock.patch('api.handler')
@@ -292,7 +292,7 @@ class TestTagsNotesCase(APITestCase):
 
         args, kwargs = mock_handler.delete_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], '1')
+        self.assertEqual(args[1], 1)
 
 
 class TestSHA256DownloadSampleCase(APITestCase):
