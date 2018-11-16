@@ -541,7 +541,7 @@ def create_task():
     )
 
 
-@app.route('/api/v1/tasks/<task_id>/report', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/report', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -572,7 +572,7 @@ def _pre_process(report_dict={}):
     executed on report_dict.
     '''
 
-    # pop unecessary keys
+    # pop unnecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
             try:
@@ -628,7 +628,7 @@ def _linkify(s, url, new_tab=True):
         s=s)
 
 
-@app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/file', methods=['GET'])
 def files_get_task(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -645,7 +645,7 @@ def files_get_task(task_id):
         return jsonify({'Error': 'sha256 not in report!'})
 
 
-@app.route('/api/v1/tasks/<task_id>/maec', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/maec', methods=['GET'])
 def get_maec_report(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -695,7 +695,7 @@ def taglist():
     return jsonify({'Tags': response})
 
 
-@app.route('/api/v1/tasks/<task_id>/tags', methods=['POST', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
@@ -719,7 +719,7 @@ def tags(task_id):
         return jsonify({'Message': 'Tag Removed'})
 
 
-@app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['GET'])
 def get_notes(task_id):
     '''
     Get one or more analyst notes/comments associated with the specified task.
@@ -749,7 +749,7 @@ def get_notes(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/notes', methods=['POST'])
+@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['POST'])
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -764,7 +764,7 @@ def add_note(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/notes/<note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/notes/<note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.
@@ -784,7 +784,7 @@ def edit_note(task_id, note_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/files/<sha256>', methods=['GET'])
+@app.route('/api/v1/files/<string:sha256>', methods=['GET'])
 # get raw file - /api/v1/files/get/<sha256>?raw=true
 def files_get_sha256(sha256):
     '''
@@ -881,7 +881,7 @@ def run_ssdeep_group():
             HTTP_BAD_REQUEST)
 
 
-@app.route('/api/v1/tasks/<task_id>/pdf', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
 def get_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
@@ -898,7 +898,7 @@ def get_pdf_report(task_id):
     return response
 
 
-@app.route('/api/v1/tasks/<task_id>/stix2', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
 def get_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
