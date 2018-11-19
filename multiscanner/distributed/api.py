@@ -83,7 +83,7 @@ DEFAULTCONF = {
     'upload_folder': '/mnt/samples/',
     'distributed': True,
     'web_loc': 'http://localhost:80',
-    'cors': 'https?://localhost(:\d+)?',
+    'cors': r'https?://localhost(:\d+)?',
     'batch_size': 100,
     'batch_interval': 60   # Number of seconds to wait for additional files
                            # submitted to the create/ API
