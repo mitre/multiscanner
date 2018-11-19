@@ -47,6 +47,7 @@ import json
 import multiprocessing
 import os
 import queue
+import re
 import shutil
 import subprocess
 import sys
@@ -56,7 +57,7 @@ from datetime import datetime
 
 import rarfile
 import requests
-from flask import Flask, abort, jsonify, make_response, request
+from flask import Flask, abort, jsonify, make_response, request, safe_join
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
@@ -541,7 +542,7 @@ def create_task():
     )
 
 
-@app.route('/api/v1/tasks/<task_id>/report', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/report', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -572,7 +573,7 @@ def _pre_process(report_dict={}):
     executed on report_dict.
     '''
 
-    # pop unecessary keys
+    # pop unnecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
             try:
@@ -628,7 +629,7 @@ def _linkify(s, url, new_tab=True):
         s=s)
 
 
-@app.route('/api/v1/tasks/<task_id>/file', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/file', methods=['GET'])
 def files_get_task(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -645,7 +646,7 @@ def files_get_task(task_id):
         return jsonify({'Error': 'sha256 not in report!'})
 
 
-@app.route('/api/v1/tasks/<task_id>/maec', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/maec', methods=['GET'])
 def get_maec_report(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -695,7 +696,7 @@ def taglist():
     return jsonify({'Tags': response})
 
 
-@app.route('/api/v1/tasks/<task_id>/tags', methods=['POST', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
@@ -719,7 +720,7 @@ def tags(task_id):
         return jsonify({'Message': 'Tag Removed'})
 
 
-@app.route('/api/v1/tasks/<task_id>/notes', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['GET'])
 def get_notes(task_id):
     '''
     Get one or more analyst notes/comments associated with the specified task.
@@ -749,7 +750,7 @@ def get_notes(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/notes', methods=['POST'])
+@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['POST'])
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -764,7 +765,7 @@ def add_note(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<task_id>/notes/<note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/notes/<int:note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.
@@ -784,7 +785,7 @@ def edit_note(task_id, note_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/files/<sha256>', methods=['GET'])
+@app.route('/api/v1/files/<string:sha256>', methods=['GET'])
 # get raw file - /api/v1/files/get/<sha256>?raw=true
 def files_get_sha256(sha256):
     '''
@@ -793,18 +794,21 @@ def files_get_sha256(sha256):
     # is there a robust way to just get this as a bool?
     raw = request.args.get('raw', default='False', type=str)
 
-    return files_get_sha256_helper(sha256, raw)
+    if re.match(r'^[a-fA-F0-9]{64}$', sha256):
+        return files_get_sha256_helper(sha256, raw)
+    else:
+        return abort(HTTP_BAD_REQUEST)
 
 
 def files_get_sha256_helper(sha256, raw=None):
     '''
     Returns binary from storage. Defaults to password protected zipfile.
     '''
-    file_path = os.path.join(api_config['api']['upload_folder'], sha256)
+    file_path = safe_join(api_config['api']['upload_folder'], sha256)
     if not os.path.exists(file_path):
         abort(HTTP_NOT_FOUND)
 
-    with open(file_path, "rb") as fh:
+    with open(file_path, 'rb') as fh:
         fh_content = fh.read()
 
     raw = raw[0].lower()
@@ -816,13 +820,13 @@ def files_get_sha256_helper(sha256, raw=None):
     else:
         # ref: https://github.com/crits/crits/crits/core/data_tools.py#L122
         rawname = sha256 + '.bin'
-        with open(os.path.join('/tmp/', rawname), 'wb') as raw_fh:
+        with open(safe_join('/tmp/', rawname), 'wb') as raw_fh:
             raw_fh.write(fh_content)
 
         zipname = sha256 + '.zip'
         args = ['/usr/bin/zip', '-j',
-                os.path.join('/tmp', zipname),
-                os.path.join('/tmp', rawname),
+                safe_join('/tmp', zipname),
+                safe_join('/tmp', rawname),
                 '-P', 'infected']
         proc = subprocess.Popen(args)
         wait_seconds = 30
@@ -836,7 +840,7 @@ def files_get_sha256_helper(sha256, raw=None):
             proc.terminate()
             return make_response(jsonify({'Error': 'Process timed out'}))
         else:
-            with open(os.path.join('/tmp', zipname), 'rb') as zip_fh:
+            with open(safe_join('/tmp', zipname), 'rb') as zip_fh:
                 zip_data = zip_fh.read()
             if len(zip_data) == 0:
                 return make_response(jsonify({'Error': 'Zip file empty'}))
@@ -881,7 +885,7 @@ def run_ssdeep_group():
             HTTP_BAD_REQUEST)
 
 
-@app.route('/api/v1/tasks/<task_id>/pdf', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
 def get_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
@@ -898,7 +902,7 @@ def get_pdf_report(task_id):
     return response
 
 
-@app.route('/api/v1/tasks/<task_id>/stix2', methods=['GET'])
+@app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
 def get_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
