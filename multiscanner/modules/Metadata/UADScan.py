@@ -49,7 +49,7 @@ def scan(filelist, conf=DEFAULTCONF):
             return None
 
         # find and submit expanded files for scanning
-        components = re.findall("^(\d+): Tmpfile: (.+)$", output, re.MULTILINE)
+        components = re.findall(r"^(\d+): Tmpfile: (.+)$", output, re.MULTILINE)
 
         for item in components:
             # skip base level items to avoid rescanning files already expanded
@@ -61,7 +61,7 @@ def scan(filelist, conf=DEFAULTCONF):
             # TODO: is there a max recursion depth?
             multiscanner.scan_file(item[1], input_file) # noqa F821
 
-        results += re.findall("^0: Name: (.+)\n^\d+: Type: (.+)$", output, re.MULTILINE)
+        results += re.findall(r"^0: Name: (.+)\n^\d+: Type: (.+)$", output, re.MULTILINE)
 
     metadata = {
         "Type": TYPE,

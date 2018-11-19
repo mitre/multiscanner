@@ -72,7 +72,7 @@ def scan(filelist, conf=DEFAULTCONF):
             return None
     # Parse output
     output = output.decode("utf-8", errors='replace')
-    virusresults = re.findall("(?:\([^\)]*\) )?([^\s]+) (.+)\s+$", output, re.MULTILINE)
+    virusresults = re.findall(r"(?:\([^\)]*\) )?([^\s]+) (.+)\s+$", output, re.MULTILINE)
     results = []
     for (file, result) in virusresults[:]:
         if result.endswith(' '):
@@ -88,13 +88,13 @@ def scan(filelist, conf=DEFAULTCONF):
         results.append((file, result))
 
     metadata = {}
-    verinfo = re.search("Program version ([\d\.]+), engine ([\d\.]+)", output)
+    verinfo = re.search(r"Program version ([\d\.]+), engine ([\d\.]+)", output)
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     if verinfo:
         metadata["Program version"] = verinfo.group(1)
         metadata["Engine version"] = verinfo.group(2)
-    verinfo = re.search("Virus Database: Version ([\d/]+) ([\d-]+)", output)
+    verinfo = re.search(r"Virus Database: Version ([\d/]+) ([\d-]+)", output)
     if verinfo:
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)

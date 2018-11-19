@@ -297,7 +297,7 @@ class TestSHA256DownloadSampleCase(APITestCase):
     @mock.patch('multiscanner.distributed.api.db')
     @mock.patch('multiscanner.distributed.api.handler')
     def test_malformed_request(self, mock_handler, mock_db):
-        resp = self.app.get('/api/v1/files/..\opt\multiscanner\web_config.ini')
+        resp = self.app.get(r'/api/v1/files/..\opt\multiscanner\web_config.ini')
 
         self.assertEqual(resp.status_code, api.HTTP_BAD_REQUEST)
 
