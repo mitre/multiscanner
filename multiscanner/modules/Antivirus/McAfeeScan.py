@@ -72,16 +72,16 @@ def scan(filelist, conf=DEFAULTCONF):
 
     # Parse output
     output = output.decode("utf-8")
-    virusresults = re.findall("([^\n\r]+) ... Found: ([^\n\r]+)", output, re.MULTILINE)
+    virusresults = re.findall(r"([^\n\r]+) ... Found: ([^\n\r]+)", output, re.MULTILINE)
     metadata = {}
-    verinfo = re.search("McAfee VirusScan Command Line for \S+ Version: ([\d\.]+)", output)
+    verinfo = re.search(r"McAfee VirusScan Command Line for \S+ Version: ([\d.]+)", output)
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     if verinfo:
         metadata["Program version"] = verinfo.group(1)
-        verinfo = re.search("AV Engine version: ([\d\.]+)\s", output)
+        verinfo = re.search(r"AV Engine version: ([\d\.]+)\s", output)
         metadata["Engine version"] = verinfo.group(1)
-        verinfo = re.search("Dat set version: (\d+) created (\w+ (?:\d|\d\d) \d\d\d\d)", output)
+        verinfo = re.search(r"Dat set version: (\d+) created (\w+ (?:\d|\d\d) \d\d\d\d)", output)
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
 

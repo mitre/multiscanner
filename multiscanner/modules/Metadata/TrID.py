@@ -92,7 +92,7 @@ def scan(filelist, conf=DEFAULTCONF):
             continue
 
         if fname:
-            virusresults = re.findall("\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line)
+            virusresults = re.findall(r"\s*(\d+.\d+\%) \((\.[^\)]+)\) (.+) \(\d+/", line)
             if virusresults:
                 confidence, exnt, ftype = virusresults[0]
                 fresults[fname].append([confidence, ftype, exnt])
