@@ -69,7 +69,7 @@ def H(data):
 
 
 def _get_pdf_version(data):
-    header_ver = re.compile('%PDF-([A-Za-z0-9\.]{1,3})[\r\n]', re.M)
+    header_ver = re.compile(r'%PDF-([A-Za-z0-9\.]{1,3})[\r\n]', re.M)
     matches = header_ver.match(data.decode('UTF-8', 'replace'))
     if matches:
         return matches.group(1)

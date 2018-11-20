@@ -54,13 +54,13 @@ def scan(filelist, conf=DEFAULTCONF):
     except subprocess.CalledProcessError as error:
         return None
 
-    results = re.findall("^##==>>>> VIRUS POSSIBLE IN FILE: \"(.+)\"\n##==>>>> VIRUS ID: (\w+ .+)",
+    results = re.findall(r"^##==>>>> VIRUS POSSIBLE IN FILE: \"(.+)\"\n##==>>>> VIRUS ID: (\w+ .+)",
                          output,
                          re.MULTILINE)
 
     vfind_version = ""
     try:
-        vfind_version = re.search("^##==> VFind Version: (\d+), Release: (\d+), Patchlevel: (\d+) .+", output)
+        vfind_version = re.search(r"^##==> VFind Version: (\d+), Release: (\d+), Patchlevel: (\d+) .+", output)
         vfind_version = "{}.{}.{}".format(
             vfind_version.group(1),
             vfind_version.group(2),

@@ -329,7 +329,7 @@ class ElasticSearchStorage(storage.Storage):
         if search_type == 'advanced':
             query = self.build_query(query_string)
         else:
-            es_reserved_chars_re = '([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
+            es_reserved_chars_re = r'([\+\-=\>\<\!\(\)\{\}\[\]\^\"\~\*\?\:\\/ ])'
             query_string = re.sub(es_reserved_chars_re, r'\\\g<1>', query_string)
             if search_type == 'default':
                 query = self.build_query("*" + query_string + "*")

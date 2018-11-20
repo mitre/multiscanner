@@ -235,11 +235,11 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
     cuckoo = r.get('Cuckoo Sandbox', {})
 
     for signature in cuckoo.get('signatures', []):
-        if ('description' in signature and
-                'HTTP request' in signature.get('description', '')):
+        if ('description' in signature and 'HTTP request'
+                in signature.get('description', '')):
             all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
-        elif ('description' in signature and
-              'Potentially malicious URLs' in signature.get('description', '')):
+        elif ('description' in signature and 'Potentially malicious URLs'
+              in signature.get('description', '')):
             all_objects.extend(extract_http_requests_cuckoo(signature, custom_labels))
     for dropped in cuckoo.get('dropped', []):
         if dropped and any(x in dropped for x in ('sha256', 'md5', 'sha1', 'ssdeep')):
