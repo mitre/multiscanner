@@ -2,6 +2,7 @@
 future
 six
 configparser
+click==6.7
 #Required by modules
 bitstring
 boltons

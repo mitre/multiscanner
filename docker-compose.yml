@@ -12,36 +12,16 @@ services:
   web:
     build:
       context: .
-      dockerfile: docker_utils/Dockerfile_web
-      # If you are behind a proxy, you must uncomment
-      # the next 3 lines
-      # args:
-      #  - http_proxy
-      #  - https_proxy
+      dockerfile: docker_utils/Dockerfile
+    command: multiscanner-web
     ports:
      - "127.0.0.1:8000:8000"
-    # If you are behind a proxy, you must set the
-    # proxy settings here (uncomment the next 4 lines)
-    # environment:
-    #  - "http_proxy=http://proxy.example:80"
-    #  - "https_proxy=http://proxy.example:80"
-    #  - "no_proxy=localhost,127.0.0.1"
   api:
     build:
       context: .
-      dockerfile: docker_utils/Dockerfile_api
-      # If you are behind a proxy, you must uncomment
-      # the next 3 lines
-      # args:
-      #  - http_proxy
-      #  - https_proxy
+      dockerfile: docker_utils/Dockerfile
+    command: /wait-for-it.sh elastic:9200 -- multiscanner-api
     ports:
      - "127.0.0.1:8080:8080"
-    # If you are behind a proxy, you must set the
-    # proxy settings here (uncomment the next 4 lines)
-    # environment:
-    #  - "http_proxy=http://proxy.example:80"
-    #  - "https_proxy=http://proxy.example:80"
-    #  - "no_proxy=localhost,127.0.0.1"
     depends_on:
      - elastic
