@@ -17,6 +17,7 @@ RUN apk add --no-cache \
         python3 \
         su-exec \
         tini \
+        zip \
         zlib \
   && apk add --no-cache -t .build-deps \
        autoconf \
