@@ -26,6 +26,9 @@
       } ) .DataTable( {
       processing: true,
       serverSide: true,
+      select: {
+        style: 'multi+shift'
+      },
       ajax: {
         "url": apiLoc + "/api/v1/tasks/search",
         "data": function ( d ) {
@@ -37,6 +40,11 @@
         "search": "{{ search_term }}"
       },
       columnDefs: [
+        {
+            orderable: false,
+            className: 'select-checkbox',
+            targets: 0
+        },
         {
           targets: 4,
           searchable: false,
@@ -64,8 +72,8 @@
         // Every time the table is loaded with new data...
         // ...make table rows clickable
         $("td").click(function() {
-          // But not cells with a Delete button
-          if ($(this).hasClass('delete')) {
+          // But not cells with a Delete button or Select checkbox
+          if ($(this).hasClass('delete') || $(this).hasClass('select-checkbox')) {
             return;
           }
           var report_url = $(this).parent().data("href");
@@ -106,7 +114,9 @@
           action: function ( e, dt, node, config ) {
             table.draw(false);
           }
-        }
+        },
+        'selectAll',
+        'selectNone'
       ],
       "initComplete": function( settings, json ) {
         table.buttons().containers().appendTo('#DataTables_Table_0_length');
@@ -128,6 +138,31 @@
             '</label>' +
           '</div></div>');
         $('#DataTables_Table_0_filter').append(searchTypeButtons);
+
+        downloadOptions = $('<div class="dropdown" id="multi-dl-dropdown">' +
+          '<button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" title="Download reports in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download ' +
+            '<span class="caret"></span>' +
+          '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-right">' +
+            '<li id="getSamples"><a href="#">Samples</a></li>' +
+          '</ul>' +
+        '</div>');
+        $('#DataTables_Table_0_filter').append(downloadOptions);
+
+        // Handle download dropdown
+        $('ul.dropdown-menu li').click(function(e) {
+          if (this.id == 'getSamples') {
+            if (table.rows('.selected').data().length > 0) {
+              var selected = table.rows('.selected').data();
+              var request = [];
+              for (x = 0; x < selected.length; x++) {
+                request.push(selected[x][0]);
+              }
+              window.location = "{{ api_loc }}/api/v1/tasks/files?task_ids=" + request.join();
+            }
+          }
+        });
+
         $('#search_type :input').change(function() {
           searchType =  $('#search_type_buttons > .btn.active input').val();
           // TODO: maybe consider changing replaceState here to pushState

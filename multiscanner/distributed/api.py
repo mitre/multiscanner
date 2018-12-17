@@ -51,6 +51,7 @@ import re
 import shutil
 import subprocess
 import time
+import uuid
 import zipfile
 from datetime import datetime
 
@@ -644,20 +645,92 @@ def _linkify(s, url, new_tab=True):
 
 
 @app.route('/api/v1/tasks/<int:task_id>/file', methods=['GET'])
-def files_get_task(task_id):
+def get_file_task(task_id):
+    '''
+    Download a single sample. Either raw binary or enclosed in a zip file.
+    '''
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
     if not success:
         return jsonify(report_dict)
 
     # okay, we have report dict; get sha256
-    sha256 = report_dict.get('Report', {}).get('SHA256')
-    if sha256:
+    sha256 = report_dict.get('Report', {}).get('SHA256', '')
+    if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
                 request.args.get('raw', default=None))
     else:
-        return jsonify({'Error': 'sha256 not in report!'})
+        return jsonify({'Error': 'sha256 invalid or not in report!'})
+
+
+@app.route('/api/v1/tasks/files', methods=['GET'])
+def get_files_task():
+    '''
+    Given a comma-separated list of task ids. Download the samples enclosed in a zip file.
+    '''
+    task_ids = request.args.get('task_ids', default=None)
+
+    if task_ids is not None:
+        task_ids = task_ids.split(',')
+        uuidv4 = str(uuid.uuid4())
+        zipname = uuidv4 + '.zip'
+        zip_command = ['/usr/bin/zip', '-j',
+                       safe_join('/tmp', zipname),
+                       '-P', 'infected']
+
+        try:
+            for t in task_ids:
+                value = int(t)
+                if value <= 0:
+                    raise ValueError
+
+                report_dict, success = get_report_dict(t)
+                if not success:
+                    return jsonify(report_dict)
+
+                sha256 = report_dict.get('Report', {}).get('SHA256', '')
+                if re.match(r'^[a-fA-F0-9]{64}$', sha256):
+                    file_path = safe_join(api_config['api']['upload_folder'], sha256)
+                    if not os.path.exists(file_path):
+                        abort(HTTP_NOT_FOUND)
+
+                    with open(file_path, 'rb') as fh:
+                        fh_content = fh.read()
+
+                    rawname = sha256 + '.bin'
+                    with open(safe_join('/tmp/', rawname), 'wb') as raw_fh:
+                        raw_fh.write(fh_content)
+
+                    zip_command.insert(3, safe_join('/tmp', rawname))
+                else:
+                    return jsonify({'Error': 'sha256 invalid or not in report!'})
+        except ValueError:
+            abort(HTTP_BAD_REQUEST)
+
+        proc = subprocess.Popen(zip_command)
+        wait_seconds = 30
+
+        while proc.poll() is None and wait_seconds:
+            time.sleep(1)
+            wait_seconds -= 1
+
+        if proc.returncode:
+            return make_response(jsonify({'Error': 'Failed to create zip ()'.format(proc.returncode)}))
+        elif not wait_seconds:
+            proc.terminate()
+            return make_response(jsonify({'Error': 'Process timed out'}))
+        else:
+            with open(safe_join('/tmp', zipname), 'rb') as zip_fh:
+                zip_data = zip_fh.read()
+            if len(zip_data) == 0:
+                return make_response(jsonify({'Error': 'Zip file empty'}))
+            response = make_response(zip_data)
+            response.headers['Content-Type'] = 'application/zip; charset=UTF-8'
+            response.headers['Content-Disposition'] = 'inline; filename={}.zip'.format(uuidv4)
+            return response
+    else:
+        return jsonify({'Error': 'empty request'})
 
 
 @app.route('/api/v1/tasks/<int:task_id>/maec', methods=['GET'])
@@ -783,7 +856,7 @@ def add_note(task_id):
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes/<int:note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v1/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.
