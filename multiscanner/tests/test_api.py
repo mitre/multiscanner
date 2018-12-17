@@ -268,20 +268,20 @@ class TestTagsNotesCase(APITestCase):
 
     @mock.patch('multiscanner.distributed.api.handler')
     def test_edit_notes(self, mock_handler):
-        self.app.put('/api/v1/tasks/1/notes/1', data={'text': 'bar'})
+        self.app.put('/api/v1/tasks/1/notes/KNeQuWcBTlckoQ5PFm4B', data={'text': 'bar'})
 
         args, kwargs = mock_handler.edit_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], 1)
+        self.assertEqual(args[1], 'KNeQuWcBTlckoQ5PFm4B')
         self.assertEqual(args[2], 'bar')
 
     @mock.patch('multiscanner.distributed.api.handler')
     def test_remove_notes(self, mock_handler):
-        self.app.delete('/api/v1/tasks/1/notes/1')
+        self.app.delete('/api/v1/tasks/1/notes/KNeQuWcBTlckoQ5PFm4B')
 
         args, kwargs = mock_handler.delete_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], 1)
+        self.assertEqual(args[1], 'KNeQuWcBTlckoQ5PFm4B')
 
 
 class TestSHA256DownloadSampleCase(APITestCase):
