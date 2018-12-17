@@ -1,6 +1,9 @@
 {% extends "layout.html" %}
 
 {% block head %}
+<link rel="stylesheet" type="text/css" href="/static/css/dataTables.bootstrap.min.css"/>
+<script type="text/javascript" src="/static/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.bootstrap.min.js"></script>
 <script type="text/javascript">
   function createGroupRows(index, group, apiLoc) {
     //$("tbody").append('<tr class="group-header"><td>Group ' + index + '</td></tr>')
@@ -64,7 +67,7 @@
         <tr>
           <th width="10%">Group</th>
           <th>SHA256</th>
-      </tr>
+        </tr>
       </thead>
       <tbody>
       </tbody>
