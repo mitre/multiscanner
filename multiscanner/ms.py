@@ -884,7 +884,10 @@ def _init(args):
     # Initialize configuration file
     if os.path.isfile(args.config):
         print('Warning:', args.config, 'already exists, overwriting will destroy changes')
-        answer = input('Do you wish to overwrite the configuration file [y/N]:')
+        try:
+            answer = input('Do you wish to overwrite the configuration file [y/N]:')
+        except EOFError:
+            answer = 'N'
         if answer == 'y':
             config_init(args.config)
         else:
@@ -904,7 +907,10 @@ def _init(args):
     config = _get_main_config(config)
     if os.path.isfile(config["storage-config"]):
         print('Warning:', config["storage-config"], 'already exists, overwriting will destroy changes')
-        answer = input('Do you wish to overwrite the configuration file [y/N]:')
+        try:
+            answer = input('Do you wish to overwrite the configuration file [y/N]:')
+        except EOFError:
+            answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
             print('Storage configuration file initialized at', config["storage-config"])
