@@ -659,7 +659,7 @@ def get_file_task(task_id):
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
-                request.args.get('raw', default=None))
+                request.args.get('raw', default='f'))
     else:
         return jsonify({'Error': 'sha256 invalid or not in report!'})
 
@@ -883,7 +883,7 @@ def files_get_sha256(sha256):
     Returns binary from storage. Defaults to password protected zipfile.
     '''
     # is there a robust way to just get this as a bool?
-    raw = request.args.get('raw', default='False', type=str)
+    raw = request.args.get('raw', default='f', type=str)
 
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(sha256, raw)
@@ -891,7 +891,7 @@ def files_get_sha256(sha256):
         return abort(HTTP_BAD_REQUEST)
 
 
-def files_get_sha256_helper(sha256, raw=None):
+def files_get_sha256_helper(sha256, raw='f'):
     '''
     Returns binary from storage. Defaults to password protected zipfile.
     '''
@@ -902,8 +902,8 @@ def files_get_sha256_helper(sha256, raw=None):
     with open(file_path, 'rb') as fh:
         fh_content = fh.read()
 
-    raw = raw[0].lower()
-    if raw == 't' or raw == 'y' or raw == '1':
+    raw = str(raw)[0].lower()
+    if raw in ['t', 'y', '1']:
         response = make_response(fh_content)
         response.headers['Content-Type'] = 'application/octet-stream; charset=UTF-8'
         # better way to include fname?
