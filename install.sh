@@ -20,7 +20,7 @@ fi
 
 # Install multiscanner library and dependencies
 curl -k https://bootstrap.pypa.io/get-pip.py | python
-pip install --upgrade -r $DIR/multiscanner
+pip install --upgrade $DIR
 
 #Code to compile and install yara
 YARA_VER=3.8.1
@@ -112,5 +112,4 @@ if [[ $prompt == "y" ]]; then
 fi
 
 # Initialize multiscanner
-pip install $DIR
 multiscanner init
