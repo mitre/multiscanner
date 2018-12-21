@@ -8,14 +8,15 @@
   function createGroupRows(index, group, apiLoc) {
     //$("tbody").append('<tr class="group-header"><td>Group ' + index + '</td></tr>')
     for (i=0; i<group.length; i++) {
-      $.ajax({
-        url: apiLoc + '/api/v1/tasks/search',
-        data: { 'sha256': group[i] },
-        success: function(data) {
-          $("tbody").append('<tr class="task-row" data-href="/report/' + data.TaskID + '"><td>' + index + '</td><td>' + group[i] + '</td></tr>');
-        },
-        async: false
-      });
+      //$.ajax({
+      //  url: apiLoc + '/api/v1/tasks/search',
+      //  data: { 'sha256': group[i] },
+      //  success: function(data) {
+      //    $("tbody").append('<tr class="task-row" data-href="/report/' + data.TaskID + '"><td>' + index + '</td><td>' + group[i] + '</td></tr>');
+      //  },
+      //  async: false
+      //});
+      $("tbody").append('<tr><td>' + index + '</td><td>' + group[i] + '</td></tr>');
     }
   }
 
@@ -29,13 +30,13 @@
       });
 
       // Make table rows clickable
-      $("td").click(function() {
-        // But not cells with a Delete button
-        if ($(this).parent().hasClass('group-header')) {
-          return;
-        }
-        window.document.location = $(this).parent().data("href");
-      });
+      // $("td").click(function() {
+      //   // But not cells with a Delete button
+      //   if ($(this).parent().hasClass('group-header')) {
+      //     return;
+      //   }
+      //   window.document.location = $(this).parent().data("href");
+      // });
 
       // Spruce up the table
       $('.table').DataTable({
