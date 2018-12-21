@@ -104,7 +104,12 @@
         }
       ],
       "initComplete": function( settings, json ) {
-        table.buttons().containers().appendTo('#DataTables_Table_0_length');
+        // Set up buttons
+        $('#DataTables_Table_0_length').parent().toggleClass('col-sm-6 col-sm-4');
+        $('#DataTables_Table_0_filter').parent().toggleClass('col-sm-6 col-sm-4');
+        buttonDiv = $('<div class="col-sm-4 text-center">');
+        table.buttons().containers().appendTo(buttonDiv);
+        $('#DataTables_Table_0_length').parent().after(buttonDiv);
 
         // Add search type options
         searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="javascript:;" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span><i class="glyphicon glyphicon-cog"></i></span></a>');
