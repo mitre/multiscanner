@@ -588,7 +588,7 @@ def _pre_process(report_dict={}):
     executed on report_dict.
     '''
 
-    # TODO: create way to mark certain daata as internal only (e.g., does
+    # TODO: create way to mark certain data as internal only (e.g., does
     # not need to be part of generated report)
     # pop unecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
