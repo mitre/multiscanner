@@ -268,17 +268,59 @@ class TestTagsNotesCase(APITestCase):
 
     @mock.patch('multiscanner.distributed.api.handler')
     def test_edit_notes(self, mock_handler):
-        self.app.put('/api/v1/tasks/1/notes/1', data={'text': 'bar'})
+        self.app.put('/api/v1/tasks/1/notes/KNeQuWcBTlckoQ5PFm4B', data={'text': 'bar'})
 
         args, kwargs = mock_handler.edit_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], '1')
+        self.assertEqual(args[1], 'KNeQuWcBTlckoQ5PFm4B')
         self.assertEqual(args[2], 'bar')
 
     @mock.patch('multiscanner.distributed.api.handler')
     def test_remove_notes(self, mock_handler):
-        self.app.delete('/api/v1/tasks/1/notes/1')
+        self.app.delete('/api/v1/tasks/1/notes/KNeQuWcBTlckoQ5PFm4B')
 
         args, kwargs = mock_handler.delete_note.call_args_list[0]
         self.assertEqual(args[0], '114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9')
-        self.assertEqual(args[1], '1')
+        self.assertEqual(args[1], 'KNeQuWcBTlckoQ5PFm4B')
+
+
+class TestSHA256DownloadSampleCase(APITestCase):
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        # populate the DB w/ a task
+        post_file(self.app)
+        self.sql_db.update_task(
+            task_id=1,
+            task_status='Complete',
+        )
+
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
+    def test_malformed_request(self, mock_handler, mock_db):
+        resp = self.app.get(r'/api/v1/files/..\opt\multiscanner\web_config.ini')
+
+        self.assertEqual(resp.status_code, api.HTTP_BAD_REQUEST)
+
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
+    def test_other_hash(self, mock_handler, mock_db):
+        # using MD5 instead of SHA256
+        resp = self.app.get('/api/v1/files/96b47da202ddba8d7a6b91fecbf89a41')
+
+        self.assertEqual(resp.status_code, api.HTTP_BAD_REQUEST)
+
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
+    def test_file_download_raw(self, mock_handler, mock_db):
+        expected_response = b'my file contents'
+        resp = self.app.get('/api/v1/files/114d70ba7d04c76d8c217c970f99682025c89b1a6ffe91eb9045653b4b954eb9?raw=t')
+
+        self.assertEqual(resp.status_code, api.HTTP_OK)
+        self.assertEqual(resp.get_data(), expected_response)
+
+    @mock.patch('multiscanner.distributed.api.db')
+    @mock.patch('multiscanner.distributed.api.handler')
+    def test_file_not_found(self, mock_handler, mock_db):
+        resp = self.app.get('/api/v1/files/26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f?raw=t')
+
+        self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)

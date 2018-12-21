@@ -1,11 +1,11 @@
 {% extends "layout.html" %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/bootstrap-tagsinput.css">
-<link rel="stylesheet" href="/static/css/fileinput.min.css">
-<script src="/static/js/bootstrap-tagsinput.min.js"></script>
-<script src="/static/js/typeahead.bundle.min.js"></script>
-<script src="/static/js/fileinput.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-tagsinput.css">
+<link rel="stylesheet" type="text/css" href="/static/css/fileinput.min.css">
+<script type="text/javascript" src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script type="text/javascript" src="/static/js/typeahead.bundle.min.js"></script>
+<script type="text/javascript" src="/static/js/fileinput.min.js"></script>
 <script type="text/javascript">
   var tagNameArray = {{ tags|safe }};
   var tagNames;
@@ -287,7 +287,7 @@
 
         <div class="form-group">
           <div class="input-group" id="file-group">
-            <input type="file" class='file-loading' id="filesUpload" name="file" multiple></input>
+            <input type="file" class="file-loading" id="filesUpload" name="file" multiple></input>
           </div>
         </div>
 
@@ -324,7 +324,7 @@
             <div class="form-group archive-group">
               <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
               <div class="input-group col-md-5">
-                <input type="text" class='form-control' id="archive-password" name="archive-password"></input>
+                <input type="text" class="form-control" id="archive-password" name="archive-password"></input>
               </div>
             </div>
           </div>
@@ -342,7 +342,7 @@
               {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
               <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
               <div class="input-group col-md-10">
-                <input type="text" class='form-control' id="metadata-{{field}}" name="metadata-{{field}}"></input>
+                <input type="text" class="form-control" id="metadata-{{field}}" name="metadata-{{field}}"></input>
               </div>
             </div>
             {% endfor %}

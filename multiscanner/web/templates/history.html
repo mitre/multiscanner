@@ -1,9 +1,12 @@
 {% extends "layout.html" %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/buttons.bootstrap.min.css">
-<script src="/static/js/dataTables.buttons.min.js"></script>
-<script src="/static/js/buttons.bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/static/css/dataTables.bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="/static/css/buttons.bootstrap.min.css">
+<script type="text/javascript" src="/static/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/js/buttons.bootstrap.min.js"></script>
 <script type="text/javascript">
   var table, search;
   {% if search_type %}

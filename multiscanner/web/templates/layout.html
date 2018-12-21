@@ -2,11 +2,9 @@
 <html>
   <head>
     <title>{% block title %}{% endblock %} | MultiScanner</title>
-    <link rel="stylesheet" href="/static/css/bootstrap-spacelab.min.css">
-    <link rel="stylesheet" href="/static/css/datatables.min.css">
-    <script src="/static/js/jquery-3.1.1.min.js"></script>
-    <script src="/static/js/datatables.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-spacelab.min.css">
+    <script type="text/javascript" src="/static/js/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
     <script type="text/javascript">
       $(document).ready(function($) {
         $('#nav-search-btn').click(function() {
@@ -19,9 +17,7 @@
       });
     </script>
     {% block head %}{% endblock %}
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <!-- <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
   </head>
 
   <body>
