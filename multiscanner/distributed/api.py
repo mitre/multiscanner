@@ -588,11 +588,20 @@ def _pre_process(report_dict={}):
     executed on report_dict.
     '''
 
+    # TODO: create way to mark certain daata as internal only (e.g., does
+    # not need to be part of generated report)
     # pop unecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
             try:
                 report_dict['Report']['ssdeep'].pop(k)
+            except KeyError as e:
+                pass
+
+    if report_dict.get('Report', {}).get('impfuzzy', {}):
+        for k in ['chunksize', 'chunk', 'double_chunk']:
+            try:
+                report_dict['Report']['impfuzzy'].pop(k)
             except KeyError as e:
                 pass
 
