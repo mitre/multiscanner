@@ -6,18 +6,18 @@
 <script type="text/javascript" src="/static/js/dataTables.bootstrap.min.js"></script>
 <script type="text/javascript">
   function createGroupRows(index, group, apiLoc) {
-    //$("tbody").append('<tr class="group-header"><td>Group ' + index + '</td></tr>')
     for (i=0; i<group.length; i++) {
-      //$.ajax({
-      //  url: apiLoc + '/api/v1/tasks/search',
-      //  data: { 'sha256': group[i] },
-      //  success: function(data) {
-      //    $("tbody").append('<tr class="task-row" data-href="/report/' + data.TaskID + '"><td>' + index + '</td><td>' + group[i] + '</td></tr>');
-      //  },
-      //  async: false
-      //});
-      $("tbody").append('<tr><td>' + index + '</td><td>' + group[i] + '</td></tr>');
+      $("tbody").append('<tr data-sha256="' + group[i] + '"><td>' + index + '</td><td>' + group[i] + '</td></tr>');
     }
+  }
+
+  function goToReport(sha256) {
+    $.ajax({
+      url: apiLoc + '/api/v1/tasks/search',
+      success: function(data) {
+        window.document.location = "/report/" + data;
+      }
+    });
   }
 
   function ssdeepGroups(apiLoc) {
@@ -25,18 +25,19 @@
     tasks_data = $.get(apiLoc + "/api/v1/analytics/ssdeep_group", function(data, status){
       // Add rows to the table
       $.each(data.groups, function(index, item) {
-        //$("tbody").append(createGroupRows(index, item, apiLoc));
         createGroupRows(index, item, apiLoc);
       });
 
       // Make table rows clickable
-      // $("td").click(function() {
-      //   // But not cells with a Delete button
-      //   if ($(this).parent().hasClass('group-header')) {
-      //     return;
-      //   }
-      //   window.document.location = $(this).parent().data("href");
-      // });
+      $("td").click(function() {
+        // But not cells with a Delete button
+        if ($(this).parent().hasClass('group-header')) {
+          return;
+        }
+        // Take the browser to the corresponding report
+        var hash = $(this).parent().data("sha256");
+        goToReport(hash);
+      });
 
       // Spruce up the table
       $('.table').DataTable({
