@@ -236,7 +236,7 @@ class SSDeepAnalytic:
         for sha256_, matches_dict in records.items():
             in_group = False
             for i in range(len(groups)):
-                if sha256_ in groups:
+                if sha256_ in groups[i]:
                     in_group = True
                     continue
                 should_add = True
