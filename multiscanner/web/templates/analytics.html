@@ -11,11 +11,14 @@
     }
   }
 
-  function goToReport(sha256) {
+  function goToReport(apiLoc, sha256) {
     $.ajax({
       url: apiLoc + '/api/v1/tasks/search',
+      contentType: 'application/json; charset=UTF-8',
+      data: { 'sha256': sha256 },
       success: function(data) {
-        window.document.location = "/report/" + data;
+        var taskID = parseInt(data.TaskID);
+        window.document.location = "/report/" + taskID;
       }
     });
   }
@@ -36,7 +39,7 @@
         }
         // Take the browser to the corresponding report
         var hash = $(this).parent().data("sha256");
-        goToReport(hash);
+        goToReport(apiLoc, hash);
       });
 
       // Spruce up the table
