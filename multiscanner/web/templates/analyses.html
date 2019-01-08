@@ -35,18 +35,37 @@
           return $.extend( {}, d, {"search_type": searchType} );
         }
       },
-      order: [[0, 'desc']],
+      order: [[1, 'desc']],
       search: {
         "search": "{{ search_term }}"
       },
       columnDefs: [
         {
-            orderable: false,
-            className: 'select-checkbox',
-            targets: 0
+          targets: 0,
+          searchable: false,
+          orderable: false,
+          className: 'select-checkbox',
+          data: null,
+          defaultContent: '',
+        },
+        {
+          targets: 1,
+          data: 0,
+        },
+        {
+          targets: 2,
+          data: 1,
+        },
+        {
+          targets: 3,
+          data: 2,
         },
         {
           targets: 4,
+          data: 3,
+        },
+        {
+          targets: 5,
           searchable: false,
           orderable: false,
           data: null,
@@ -234,8 +253,9 @@
     <table class="table table-striped table-hover">
       <thead>
         <tr>
+          <th width="2%"></th>
           <th width="5%">Task ID</th>
-          <th width="60%">Sample</th>
+          <th width="58%">Sample</th>
           <th width="12%">Task Status</th>
           <th width="17%">Timestamp</th>
           <th class="text-center" width="6%">Delete</th>
