@@ -32,6 +32,10 @@
       ajax: {
         "url": apiLoc + "/api/v1/tasks/search",
         "data": function ( d ) {
+          // shift column by 1 so sorting works on correct column
+          d.order.forEach(function(element){
+            element.column -= 1;
+          });
           return $.extend( {}, d, {"search_type": searchType} );
         }
       },
