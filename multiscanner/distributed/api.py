@@ -8,7 +8,6 @@ Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
 GET /api/v1/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
 GET /api/v1/modules ---> Receive list of modules available
-GET /api/v1/reports/<sha256> ---> Receive the task id for most recent scan of sample
 GET /api/v1/tags ----> Receive list of all tags in use
 GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
 POST /api/v1/tasks ---> POST file and receive report id
@@ -18,6 +17,7 @@ GET /api/v1/tasks/<task_id> ---> Receive task in JSON format
 DELETE /api/v1/tasks/<task_id> ----> Delete task_id
 GET /api/v1/tasks/search/ ---> Receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> Receive list of most all reports for matching samples
+GET /api/v1/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
 GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
 GET /api/v1/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
