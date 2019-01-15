@@ -13,9 +13,8 @@
 
   function goToReport(apiLoc, sha256) {
     $.ajax({
-      url: apiLoc + '/api/v1/tasks/search',
+      url: apiLoc + '/api/v1/tasks/sha256/' + sha256,
       contentType: 'application/json; charset=UTF-8',
-      data: { 'sha256': sha256 },
       success: function(data) {
         var taskID = parseInt(data.TaskID);
         window.document.location = "/report/" + taskID;

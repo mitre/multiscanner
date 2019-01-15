@@ -188,18 +188,6 @@ class Database(object):
                 ses.expunge(task)
                 return task
 
-    def get_task_from_hash(self, sample_hash):
-        """Return the Task ID of the most recent task with the given SHA256 hash.
-        """
-        with self.db_session_scope() as ses:
-            task = ses.query(Task)\
-                    .filter(Task.sample_id == sample_hash)\
-                    .order_by(Task.timestamp)[0]
-            if task:
-                # unbind Task from Session
-                ses.expunge(task)
-                return task.task_id
-
     def get_all_tasks(self):
         with self.db_session_scope() as ses:
             rs = ses.query(Task).all()

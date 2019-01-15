@@ -303,14 +303,6 @@ def task_list():
 
 def search(params, get_all=False):
     # Pass search term to Elasticsearch, get back list of sample_ids
-    sample_id = params.get('sha256')
-    if sample_id:
-        task_id = db.exists(sample_id)
-        if task_id:
-            return {'TaskID': task_id}
-        else:
-            return TASK_NOT_FOUND
-
     search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
     if not search_term:
@@ -360,18 +352,22 @@ def get_task(task_id):
         abort(HTTP_NOT_FOUND)
 
 
-@app.route('/api/v1/reports/<string:sha256>', methods=['GET'])
+@app.route('/api/v1/tasks/sha256/<string:sha256>', methods=['GET'])
 def get_task_sha256(sha256):
     '''
     Return the task ID number for the most recent scan of the sample with the
     given SHA256 hash.
     '''
-    task_id = db.get_task_from_hash(sha256)
-
-    if task_id:
-        return make_response(str(task_id))
+    if re.match(r'^[a-fA-F0-9]{64}$', sha256):
+        task_id = db.exists(sha256)
+        if task_id:
+            return make_response(
+                jsonify({'TaskID': int(task_id)}),
+                HTTP_OK)
+        else:
+            abort(HTTP_NOT_FOUND)
     else:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_BAD_REQUEST)
 
 
 @app.route('/api/v1/tasks/<int:task_id>', methods=['DELETE'])
