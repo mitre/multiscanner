@@ -697,7 +697,9 @@ def get_files_task():
                 try:
                     sha256 = db.get_task(t).sample_id
                 except AttributeError:
-                    return jsonify({'Error': 'task {} not found!'.format(t)})
+                    return make_response(
+                            jsonify({'Error': 'Task {} not found!'.format(t)}),
+                            HTTP_NOT_FOUND)
 
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
                     file_path = safe_join(api_config['api']['upload_folder'], sha256)
