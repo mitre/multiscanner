@@ -705,11 +705,13 @@ def get_files_task():
                 if value <= 0:
                     raise ValueError
 
-                report_dict, success = get_report_dict(t)
-                if not success:
-                    return jsonify(report_dict)
+                try:
+                    sha256 = db.get_task(t).sample_id
+                except AttributeError:
+                    return make_response(
+                            jsonify({'Error': 'Task {} not found!'.format(t)}),
+                            HTTP_NOT_FOUND)
 
-                sha256 = report_dict.get('Report', {}).get('SHA256', '')
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
                     file_path = safe_join(api_config['api']['upload_folder'], sha256)
                     if not os.path.exists(file_path):
@@ -724,7 +726,7 @@ def get_files_task():
 
                     zip_command.insert(3, safe_join('/tmp', rawname))
                 else:
-                    return jsonify({'Error': 'sha256 invalid or not in report!'})
+                    return jsonify({'Error': 'sha256 invalid!'})
         except ValueError:
             abort(HTTP_BAD_REQUEST)
 
