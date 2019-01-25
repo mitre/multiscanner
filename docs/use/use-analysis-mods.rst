@@ -49,7 +49,7 @@ entropy                               Calculates the Shannon entropy of a file.
 `ExifToolsScan <#exiftoolsscan>`__    Scans sample with Exif tools and returns the results.
 fileextensions                        Determines possible file extensions for a file.
 `floss <#floss>`__                    FireEye Labs Obfuscated String Solver uses static analysis techniques to deobfuscate strings from malware binaries.
-`impfuzzy <#impfuzzy>`__              Calculates a fuzzy hash using ssdeep on Windows PE imports.
+`impfuzzy <#impfuzzy>`__              Calculates a fuzzy hash using impfuzzy on Windows PE imports.
 `libmagic <#libmagic>`__              Runs libmagic against the files to identify filetype.
 MD5                                   Generates the MD5 hash of the sample.
 `officemeta <#officemeta>`__          Extracts metadata from Microsoft Office documents.
