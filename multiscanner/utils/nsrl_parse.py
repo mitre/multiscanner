@@ -1,17 +1,18 @@
 #!/usr/bin/env python
-from __future__ import (absolute_import, division, print_function,
-                        with_statement)
+from __future__ import (absolute_import, division, with_statement)
 
 import argparse
 import codecs
 import csv
+import logging
 import math
 import os
 import struct
-import sys
 
 import six
 from tqdm import tqdm
+
+logger = logging.get_logger(__name__)
 
 
 def count_lines(path):
@@ -53,7 +54,7 @@ def parse_nsrl(input_file, output_dir):
     for _ in range(0, int(math.pow(16, offset_size))):
         offset.write(struct.pack('QI', 0, 0))
 
-    print('Starting to parse, this will take a while...', file=sys.stderr)
+    logger.warning('Starting to parse, this will take a while...')
 
     with codecs.open(input_file, 'r', 'utf-8', errors='replace') as f:
         if not six.PY3:

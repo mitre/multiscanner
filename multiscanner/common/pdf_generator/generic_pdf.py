@@ -1,6 +1,7 @@
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
 
 import cgi
+import logging
 
 import six
 
@@ -12,6 +13,8 @@ from reportlab.lib.units import inch, mm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import (SimpleDocTemplate, Spacer, Image, Paragraph,
                                 ListFlowable, ListItem, TableStyle, Table)
+
+logger = logging.getLogger(__name__)
 
 
 class NumberedCanvas(canvas.Canvas):
@@ -145,7 +148,7 @@ class GenericPDF(object):
                 para = Paragraph(paragraph + '<br/><br/>', self.style['section_body'])
                 items.append(para)
             except Exception as e:
-                print('Error Creating PDF: ' + str(e))
+                logger.error('Error Creating PDF: {}'.format(e))
 
         return items
 
@@ -159,7 +162,7 @@ class GenericPDF(object):
                                        value='bulletchar')
                 items.append(bullet_text)
             except Exception as e:
-                print('Error Creating PDF: ' + str(e))
+                logger.error('Error Creating PDF: {}'.format(e))
 
         return ListFlowable(items, bulletType='bullet', start='bulletchar')
 

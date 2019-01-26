@@ -165,8 +165,6 @@ class SimpleRequest(object):
         self.kwargs = kwargs
         self.delivery_info = delivery_info
         self.hostname = hostname
-        print(self.args)
-        print(self.kwargs)
 
     @classmethod
     def from_request(cls, request):

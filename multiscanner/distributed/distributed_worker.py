@@ -2,12 +2,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import argparse
 import codecs
 import configparser
+import logging
 import multiprocessing
 import os
 import queue
@@ -26,6 +26,8 @@ __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
 
 CONFIG = os.path.join(os.path.dirname(__file__), 'distconf.ini')
+
+logger = logging.get_logger(__name__)
 
 
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
@@ -59,7 +61,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
                 os.remove(file_name)
 
         storage_handler.store(results, wait=False)
-        print('Scanned', len(results), 'files')
+        logger.info('Scanned {} files'.format(len(results)))
 
         filelist = []
         time_stamp = None
@@ -96,7 +98,7 @@ def _main():
     except KeyboardInterrupt:
         exit_signal.value = True
 
-    print("Waiting for MultiScanner to exit...")
+    logger.info("Waiting for MultiScanner to exit...")
     ms_process.join()
 
 

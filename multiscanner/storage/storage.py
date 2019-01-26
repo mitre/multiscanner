@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import codecs
 import configparser
 import inspect
+import logging
 import os
 import time
 import threading
@@ -28,6 +28,8 @@ DEFAULTCONF = {
 
 
 STORAGE_DIR = os.path.dirname(__file__)
+
+logger = logging.getLogger(__name__)
 
 
 class StorageNotLoadedError(Exception):
@@ -171,21 +173,24 @@ class StorageHandler(object):
                             self.loaded_storage[storage_name] = storage
                     except Exception as e:
                         storage_error = e
-                        print('ERROR:', 'storage', storage_name, 'failed to load.', e)
+                        logger.error('storage {} failed to load.'.format(storage_name))
+                        logger.error(e)
                 elif storage_name == required_module and storage.config['ENABLED'] is False:
                     raise StorageNotLoadedError('{} module is required but not loaded!'.format(required_module))
 
             if not self.loaded_storage:
-                print('ERROR: No storage classes loaded.')
+                no_storage_msg = 'No storage classes loaded.'
                 if x < self.num_retries:
-                    print('Retrying...')
+                    no_storage_msg += ' Retrying...'
+                logger.error(no_storage_msg)
             elif required_module:
                 if required_module in self.loaded_storage:
                     storage_error = None
                 else:
-                    print('WARNING: Required storage {} not loaded.'.format(required_module))
+                    required_not_loaded_msg = 'Required storage {} not loaded.'.format(required_module)
                     if x < self.num_retries:
-                        print('Retrying...')
+                        required_not_loaded_msg += ' Retrying...'
+                    logger.warning(required_not_loaded_msg)
             else:
                 storage_error = None
 
@@ -339,7 +344,7 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
             moddir = os.path.dirname(filename)
             mod = utils.load_module(os.path.basename(modname), [moddir])
             if not mod:
-                print(filename, 'not a valid storage module...')
+                logger.warning('{} is not a valid storage module...'.format(filename))
                 continue
             for member_name in dir(mod):
                 member = getattr(mod, member_name)

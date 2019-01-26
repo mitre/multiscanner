@@ -1,6 +1,5 @@
 #!/bin/env python
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import os
 import logging
@@ -13,6 +12,8 @@ from multiscanner.common import utils
 WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIBS = os.path.join(WD, 'libs')
 
+logger = logging.get_logger(__name__)
+
 
 def main():
     filelist = utils.parseFileList([LIBS], recursive=True)
@@ -21,20 +22,20 @@ def main():
         filepath = pefile.__file__[:-1]
         filelist.append(filepath)
     except ImportError:
-        print('pefile not installed...')
+        logger.error('pefile not installed...')
     for filename in filelist:
         if filename.endswith('.py'):
             filename = str(filename)
             try:
                 pyx_to_dll(filename, inplace=True)
-                print(filename, 'successful!')
+                logger.info('{} successful!'.format(filename))
             except Exception as e:
-                print('ERROR:', filename, 'failed')
-                logging.exception(e)
+                logger.error('{} failed'.format(filename))
+                logger.exception(e)
             try:
                 os.remove(filename[:-2] + 'c')
             except Exception as e:
-                logging.exception(e)
+                logger.exception(e)
 
     # Cleanup build dirs
     walk = os.walk(LIBS)

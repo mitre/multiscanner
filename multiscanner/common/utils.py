@@ -1,16 +1,19 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import ast
 import configparser
 import imp
+import logging
 import os
 import sys
 
 from multiscanner.config import PY3
+
+logger = logging.getLogger(__name__)
+
 
 try:
     import paramiko
@@ -32,7 +35,7 @@ def load_module(name, path):
         loaded_mod = imp.load_module(name, fname, pathname, description)
     except Exception as e:
         loaded_mod = None
-        print(e)
+        logger.error(e)
     return loaded_mod
 
 
@@ -101,7 +104,7 @@ def get_config_path(config_file, component):
     try:
         return conf['main']['%s-config' % component]
     except KeyError:
-        print("ERROR: Couldn't find '%s-config' value in 'main' section "
+        logger.error("Couldn't find '%s-config' value in 'main' section "
               "of config file. Have you run 'python multiscanner.py init'?"
               % component)
         sys.exit()

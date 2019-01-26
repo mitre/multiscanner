@@ -39,12 +39,11 @@ by modifying the 'cors' setting in the 'api' section of the api config file.
 TODO:
 * Add doc strings to functions
 '''
-from __future__ import print_function
-
 import codecs
 import configparser
 import hashlib
 import json
+import logging
 import multiprocessing
 import os
 import queue
@@ -91,6 +90,8 @@ DEFAULTCONF = {
     'batch_interval': 60   # Number of seconds to wait for additional files
                            # submitted to the create/ API
 }
+
+logger = logging.getLogger(__name__)
 
 
 # Customize timestamp format output of jsonify()
@@ -145,14 +146,14 @@ for x in range(0, db_num_retries):
         db.init_db()
     except Exception as excinfo:
         db_error = excinfo
-        print("ERROR: Can't connect to task database.", excinfo)
+        logger.error("Can't connect to task database. {}".format(excinfo))
     else:
         break
 
     if db_error:
         if x == db_num_retries - 1:
             raise StorageNotLoadedError()
-        print("Retrying...")
+        logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
 storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
@@ -1053,7 +1054,7 @@ def get_stix2_bundle_from_report(task_id):
 
 def _main():
     if not os.path.isdir(api_config['api']['upload_folder']):
-        print('Creating upload dir')
+        logger.info('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
     if not DISTRIBUTED:
