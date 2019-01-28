@@ -13,7 +13,7 @@ __license__ = "MPL 2.0"
 TYPE = "Metadata"
 NAME = "MD5"
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def check():

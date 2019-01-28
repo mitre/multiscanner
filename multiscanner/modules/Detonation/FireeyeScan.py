@@ -21,7 +21,7 @@ DEFAULTCONF = {
     "src path": "src"
 }
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):

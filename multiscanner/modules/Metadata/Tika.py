@@ -16,7 +16,7 @@ DEFAULTCONF = {
 }
 
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 try:
     import tika

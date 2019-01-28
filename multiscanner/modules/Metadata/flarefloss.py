@@ -17,7 +17,7 @@ DEFAULTCONF = {
     'cmdline': [u'--show-metainfo']
 }
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):

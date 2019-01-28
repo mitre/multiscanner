@@ -71,7 +71,7 @@ EMPTY_STR_TO_LS = {
         'dropped', ],
 }
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 # we could use the full path of the keys
 # known to cause issues

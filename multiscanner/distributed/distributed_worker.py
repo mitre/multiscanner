@@ -27,7 +27,7 @@ __license__ = "MPL 2.0"
 
 CONFIG = os.path.join(os.path.dirname(__file__), 'distconf.ini')
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):

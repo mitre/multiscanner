@@ -12,7 +12,7 @@ import struct
 import six
 from tqdm import tqdm
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def count_lines(path):

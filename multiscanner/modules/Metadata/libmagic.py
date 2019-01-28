@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, with_statement, unicode_literals
 import logging
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 try:
     import magic

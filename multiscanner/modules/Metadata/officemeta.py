@@ -20,7 +20,7 @@ DEFAULTCONF = {
     'ENABLED': True,
 }
 
-logger = logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -60,7 +60,7 @@ def run(data):
     oparser = OfficeParser(data)
     oparser.parse_office_doc()
     if not oparser.office_header.get('maj_ver'):
-        print('officemeta', 'Could not parse file as an office document')
+        logging.error('officemeta: {}'.format('Could not parse file as an office document'))
         return
     ret['office_header'] = '%d.%d' % (oparser.office_header.get('maj_ver'), oparser.office_header.get('min_ver'))
 
