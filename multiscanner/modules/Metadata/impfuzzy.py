@@ -1,11 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+
+logger = logging.get_logger(__name__)
+
 try:
     import pyimpfuzzy
 except ImportError as e:
-    print("pyimpfuzzy module not installed...")
+    logger.error("pyimpfuzzy module not installed...")
     pyimpfuzzy = False
 
 __author__ = "Patrick Copeland"
@@ -34,7 +38,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     for fname, libmagicresult in libmagicresults:
         if fname not in filelist:
-            print("DEBUG: File not in filelist")
+            logger.debug("File not in filelist: {}".format(fname))
         if not libmagicresult.startswith('PE32'):
             continue
         impfuzzy_hash = pyimpfuzzy.get_impfuzzy(fname)

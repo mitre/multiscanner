@@ -1,7 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
 import requests
 import time
 # from common import basename
@@ -70,6 +71,8 @@ EMPTY_STR_TO_LS = {
         'dropped', ],
 }
 
+logger = logging.get_logger(__name__)
+
 # we could use the full path of the keys
 # known to cause issues
 
@@ -116,9 +119,9 @@ def post_to_vxstream(f_name, environment_id,
             if res.status_code == 200:
                 return res.json()
             else:
-                print('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
+                logging.error('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
         except requests.exceptions.HTTPError as err:
-            print(err)
+            logging.error(err)
 
 
 def get_file_status(file_sha256, status_url, environment_id, apikey, secret, verify):
@@ -132,10 +135,10 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
             return res.json()
 
         else:
-            print('Error code: {}, returned when getting file status: {}'.format(res.status_code, file_sha256))
+            logging.error('Error code: {}, returned when getting file status: {}'.format(res.status_code, file_sha256))
             return res
     except requests.exceptions.HTTPError as err:
-        print(err)
+        logging.error(err)
 
 
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
@@ -151,10 +154,10 @@ def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secr
             remapped = remap(res.json(), visit=visit)
             return remapped
         else:
-            print('Error code: {}, returned when getting report: {}'.format(res.status_code, file_sha256))
+            logging.error('Error code: {}, returned when getting report: {}'.format(res.status_code, file_sha256))
             return res
     except requests.exceptions.HTTPError as err:
-        print(err)
+        logging.error(err)
 
 
 def check(conf=DEFAULTCONF):
@@ -183,7 +186,7 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             file_sha256 = response['response']['sha256']
         except Exception as e:
-            print(e, fname)
+            logging.error("{}: {}".format(fname, e))
             continue
         if file_sha256 is not None:
             tasks.append((fname, file_sha256))

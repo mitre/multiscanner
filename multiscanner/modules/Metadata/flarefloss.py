@@ -1,7 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
 import os
 import subprocess
 
@@ -15,6 +16,8 @@ DEFAULTCONF = {
     'path': '/opt/floss',
     'cmdline': [u'--show-metainfo']
 }
+
+logger = logging.get_logger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -47,8 +50,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 elif u'Vivisect workspace analysis information' in f:
                     _extract_data(p.stdout, ret, 'vivisect_meta_info')
         except subprocess.CalledProcessError as e:
-            print(e.stderr)
-            print(e)
+            logger.error(e.stderr)
+            logger.error(e)
 
         if ret:
             results.append((fname, ret))

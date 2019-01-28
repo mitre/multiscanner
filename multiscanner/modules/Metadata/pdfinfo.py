@@ -1,8 +1,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
 import hashlib
+import logging
 import math
 import re
 
@@ -20,6 +21,8 @@ DEFAULTCONF = {
     'ENABLED': True,
     'fast': False
 }
+
+logger = logging.get_logger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -40,7 +43,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 handle = open(fname, 'rb')
                 ret = run(fname, handle.read(), fast=conf['fast'])
             except Exception as e:
-                print('pdfinfo:', e)
+                logger.error('pdfinfo: {}'.format(e))
             finally:
                 handle.close()
             if ret:

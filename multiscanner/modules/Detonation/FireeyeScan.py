@@ -1,7 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
 import os
 import time
 import shutil
@@ -19,6 +20,8 @@ DEFAULTCONF = {
     "bad path": "bad",
     "src path": "src"
 }
+
+logger = logging.get_logger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -38,7 +41,7 @@ def scan(filelist, conf=DEFAULTCONF):
     # Checks if the img dir exist in list, if not remove
     for imgPath in FireEyeImages[:]:
         if not (os.path.isdir(os.path.join(base, imgPath))):
-            print("WARNING: Fireeye path not found -", (os.path.join(base, imgPath)))
+            logger.warning("WARNING: Fireeye path not found - {}".format((os.path.join(base, imgPath))))
             FireEyeImages.remove(imgPath)
 
     timestamp = str(time.time()).replace('.', '-')

@@ -1,11 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+
+logger = logging.get_logger(__name__)
+
 try:
     import pefile
 except ImportError:
-    print("pefile module not installed...")
+    logger.error("pefile module not installed...")
     pefile = False
 
 try:
@@ -52,7 +56,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     for fname, libmagicresult in libmagicresults:
         if fname not in filelist:
-            print("DEBUG: File not in filelist")
+            logger.debug("File not in filelist: {}".format(fname))
         if not libmagicresult.startswith('PE32'):
             continue
         result = {}
@@ -273,7 +277,7 @@ def _dump_resource_data(name, dir, pe, save):
                 resultlist.extend(_dump_resource_data(name + "_%s" % i.name,
                                          i.directory, pe, save))
         except Exception as e:
-            print('pefile:', e)
+            logger.error('pefile: {}'.format(e))
             return None
         return resultlist
 
@@ -320,7 +324,7 @@ def _get_imports(pe):
                 result[name] = data
     except Exception as e:
         # self._parse_error("imports", e)
-        print(e)
+        logger.error(e)
     return result
 
 
@@ -409,7 +413,7 @@ def _get_debug_info(pe):
                 results[dbg_path] = result
     except Exception as e:
         # self._parse_error("could not extract debug info", e)
-        print(e)
+        logger.error(e)
     return results
 
 

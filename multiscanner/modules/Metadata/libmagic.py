@@ -1,11 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+
+logger = logging.get_logger(__name__)
+
 try:
     import magic
 except ImportError:
-    print("python-magic module not installed...")
+    logger.error("python-magic module not installed...")
     magic = False
 
 __author__ = "Drew Bonasera"
@@ -34,7 +38,7 @@ def scan(filelist, conf=DEFAULTCONF):
             maaagic = magic.Magic(magic_file=conf['magicfile'])
         except Exception as e:
             # TODO: log exception
-            print("ERROR: Failed to use magic file", conf['magicfile'])
+            logger.error("Failed to use magic file: {}".format(conf['magicfile']))
             maaagic = magic.Magic()
     else:
         maaagic = magic.Magic()

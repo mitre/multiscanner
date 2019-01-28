@@ -1,10 +1,11 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
-import time
-import requests
+from __future__ import division, absolute_import, with_statement, unicode_literals
 import json
+import logging
+import requests
+import time
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -37,16 +38,18 @@ VERBOSE = False
 
 token = None
 
+logger = logging.get_logger(__name__)
+
 
 def _authenticate(conf):
     global token
     if VERBOSE:
-        print('Authenticating to FireEye API...')
+        logger.debug('Authenticating to FireEye API...')
     resp = requests.post(conf['API URL'] + '/auth/login', auth=(conf["username"], conf["password"]), verify=False)
     if resp.status_code == 200:
         token = resp.headers['x-feapi-token']
         if VERBOSE:
-            print('Authenticated')
+            logger.debug('Authenticated')
     elif resp.status_code == 401:
         raise ValueError('Bad authentication for FireEye API')
     elif resp.status_code == 503:
@@ -78,7 +81,7 @@ def _request(conf, path, method=None, **kwargs):
 
     if resp.status_code == 401 and resp.json()['fireeyeapis']['errorCode'] == 'FEAUTH1001':
         if VERBOSE:
-            print('FireEye token expired, reauthenticating...')
+            logger.debug('FireEye token expired, reauthenticating...')
         _authenticate(conf)
         if method == 'GET':
             resp = requests.get(conf['API URL'] + path, verify=False, **kwargs)

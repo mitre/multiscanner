@@ -1,11 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+
+logger = logging.get_logger(__name__)
+
 try:
     import pyclamd
 except ImportError:
-    print("pyclamd module not installed...")
+    logger.error("pyclamd module not installed...")
     pyclamd = None
 
 __author__ = 'Mike Long'
@@ -58,7 +62,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 except pyclamd.BufferTooLongError:
                     continue
                 except Exception as e:
-                    print(e)
+                    logger.error(e)
                     clamScanner = _connect_clam()
                     output = clamScanner.scan_stream(file_handle.read())
 
@@ -68,7 +72,7 @@ def scan(filelist, conf=DEFAULTCONF):
         if list(output.values())[0][0] == 'FOUND':
             results.append((f, list(output.values())[0][1]))
         elif list(output.values())[0][0] == 'ERROR':
-            print('ClamAV: ERROR:', list(output.values())[0][1])
+            logger.error('ClamAV: ERROR: {}'.format(list(output.values())[0][1]))
 
     # Set metadata tags
     metadata = {

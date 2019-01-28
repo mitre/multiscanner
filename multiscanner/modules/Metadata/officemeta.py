@@ -1,12 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import binascii
-import sys
-import traceback
+import logging
 from builtins import *  # noqa 401,403
 
 from multiscanner.ext.office_meta import OfficeParser
@@ -21,6 +19,8 @@ REQUIRES = ["libmagic"]
 DEFAULTCONF = {
     'ENABLED': True,
 }
+
+logger = logging.get_logger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -41,8 +41,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 with open(fname, 'rb') as fh:
                     ret = run(fh.read())
             except Exception as e:
-                print('officemeta', e)
-                traceback.print_exc(file=sys.stdout)
+                logger.error('officemeta {}'.format(e), exc_info=1)
             if ret:
                 results.append((fname, ret))
 

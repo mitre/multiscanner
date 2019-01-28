@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import logging
 import os
 import time
 
@@ -23,10 +24,12 @@ DEFAULTCONF = {
     "ENABLED": True
 }
 
+logger = logging.get_logger(__name__)
+
 try:
     import yara
 except ImportError:
-    print("yara-python module not installed...")
+    logger.error("yara-python module not installed...")
     yara = False
 
 
@@ -64,10 +67,11 @@ def scan(filelist, conf=DEFAULTCONF):
             bad_file = os.path.abspath(str(e).split('(')[0])
             if bad_file in ruleset:
                 del ruleset[bad_file]
-                print('WARNING: Yara', e)
+                logger.warning('WARNING: Yara: {}'.format(e))
             else:
-                print('ERROR Yara: Invalid rule in', bad_file, 'but we are unable to remove it from our list. Aborting')
-                print(e)
+                logger.error('ERROR Yara: Invalid rule in {} but we are unable '
+                             'to remove it from our list. Aborting'.format(bad_file))
+                logger.error(e)
                 return None
 
     matches = []
