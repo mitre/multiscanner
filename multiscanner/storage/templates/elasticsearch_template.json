@@ -1,0 +1,51 @@
+{
+    "index_patterns": "multiscanner_reports",
+    "settings": {
+        "index": {
+            "mapping.coerce": true,
+            "number_of_shards": "5",
+            "codec": "best_compression",
+            "number_of_replicas": "1"
+        },
+        "analysis": {
+            "analyzer": {
+                "ssdeep_analyzer": {"tokenizer": "ssdeep_tokenizer"}
+            },
+            "tokenizer": {
+                "ssdeep_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 7,
+                    "max_gram": 7
+                }
+            }
+        }
+    },
+    "mappings": {
+        "_doc": {
+            "properties": {
+                "doc_type": {
+                    "type": "join",
+                    "relations": {
+                        "sample": ["report", "note"]
+                    }
+                },
+                "filename": {"type": "text"},
+                "ssdeep": {
+                    "properties": {
+                        "chunksize": {"type": "integer"},
+                        "chunk": {
+                            "analyzer": "ssdeep_analyzer",
+                            "type": "text"
+                        },
+                        "double_chunk": {
+                            "analyzer": "ssdeep_analyzer",
+                            "type": "text"
+                        },
+                        "ssdeep_hash": {"type": "keyword"}
+                    }
+                },
+                "timestamp": {"type": "date"}
+            }
+        }
+    }
+}

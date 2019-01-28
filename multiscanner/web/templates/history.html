@@ -1,0 +1,276 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/static/css/dataTables.bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="/static/css/buttons.bootstrap.min.css"/>
+<link rel="stylesheet" type="text/css" href="/static/css/select.bootstrap.min.css"/>
+<script type="text/javascript" src="/static/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.select.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.buttons.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript" src="/static/js/buttons.bootstrap.min.js"></script>
+<script type="text/javascript">
+  var table, search;
+  {% if search_type %}
+  var searchType = '{{ search_type }}';
+  {% else %}
+  var searchType = 'default';
+  {% endif %}
+  var lastType = searchType;
+
+  function tasksSetup(apiLoc) {
+    $.fn.dataTable.ext.errMode = 'none';
+    table = $('.table')
+      .on( 'error.dt', function ( e, settings, techNote, message ) {
+        console.error( message );
+    } ) .DataTable( {
+      processing: true,
+      serverSide: true,
+      select: {
+        style: 'multi+shift'
+      },
+      ajax: {
+        "url": apiLoc + "/api/v1/tasks/search/history",
+        "data": function ( d ) {
+          // Shift column by 1 so sorting works on correct column
+          d.order.forEach(function(element){
+            element.column -= 1;
+          });
+          return $.extend( {}, d, {"search_type": searchType} );
+        }
+      },
+      order: [[1, 'desc']],
+      search: {
+        "search": "{{ search_term }}"
+      },
+      columnDefs: [
+        {
+          targets: 0,
+          searchable: false,
+          orderable: false,
+          className: 'select-checkbox',
+          data: null,
+          defaultContent: '',
+        },
+        {
+          targets: 1,
+          data: 0,
+        },
+        {
+          targets: 2,
+          data: 1,
+        },
+        {
+          targets: 3,
+          data: 2,
+        },
+        {
+          targets: 4,
+          data: 3,
+        },
+        {
+          targets: 5,
+          searchable: false,
+          orderable: false,
+          data: null,
+          className: "text-center delete",
+          "render": function ( data, type, full, meta ) {
+            // Add Delete column buttons
+            return '<button type="button" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="Delete this task?" data-id="' + data[0] + '"><span class="glyphicon glyphicon-remove"></span></button>';
+          },
+        }
+      ],
+      rowCallback: function( row, data, index ) {
+        if (data[3] != null) {
+          data[3] = data[3].replace(' ', 'T');
+        }
+        if (data[2] == "Complete") {
+          tr_class = "";
+        } else if (data[2] == "Failed") {
+            tr_class = " danger";
+        } else {
+          tr_class = " warning";
+        }
+        $(row).addClass("task-row" + tr_class);
+        $(row).attr('data-href', '/report/' + data[0]);
+      },
+      drawCallback: function( settings ) {
+        // Every time the table is loaded with new data...
+        // ...make table rows clickable
+        $("td").click(function() {
+          // But not cells with a Delete button or Select checkbox
+          if ($(this).hasClass('delete') || $(this).hasClass('select-checkbox')) {
+            return;
+          }
+          var report_url = $(this).parent().data("href");
+          var report_param = search.val();
+          if (report_param != "") {
+              report_url += "?st=" + report_param;
+          }
+          window.document.location = report_url;
+        });
+
+        // ...add tooltip to Delete buttons
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+
+        // ...add delete functionality
+        $('.btn-danger').click(function() {
+          var t_id = this.dataset.id;
+          $.ajax({
+            url: apiLoc + "/api/v1/tasks/" + t_id,
+            type: 'DELETE',
+            success: function(data, status) {
+              $('td').filter(function() {
+                return this.innerHTML === t_id;
+              }).parent().remove();
+              $('.alert-row div:first').append('<div class="alert alert-dismissable alert-success fade in"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><strong>Success!</strong> <span>' + data.Message + '</span></div>');
+            },
+            error: function(data, status) {
+                $('.alert-row div:first').append('<div class="alert alert-dismissable alert-danger fade in"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><strong>Error!</strong> <span>Task could not be deleted.</span></div>');
+            }
+          });
+        });
+      },
+      buttons: [
+        {
+          text: '<i class="glyphicon glyphicon-refresh"></i>',
+          titleAttr: 'Refresh',
+          action: function ( e, dt, node, config ) {
+            table.draw(false);
+          }
+        },
+        'selectAll',
+        'selectNone'
+      ],
+      "initComplete": function( settings, json ) {
+        // Set up buttons
+        $('#DataTables_Table_0_length').parent().toggleClass('col-sm-6 col-sm-4');
+        $('#DataTables_Table_0_filter').parent().toggleClass('col-sm-6 col-sm-4');
+        buttonDiv = $('<div class="col-sm-4 text-center">');
+        table.buttons().containers().appendTo(buttonDiv);
+        $('#DataTables_Table_0_length').parent().after(buttonDiv);
+
+        // Add search type options
+        searchOptions = $('<a class="btn btn-primary btn-sm collapsed" tabindex="0" id="search_options" href="javascript:;" title="Search Options" data-toggle="collapse" data-target="#search_type" aria-expanded="false" aria-controls="#search_type"><span><i class="glyphicon glyphicon-cog"></i></span></a>');
+        $('#DataTables_Table_0_filter').append(searchOptions);
+        searchTypeButtons = $('<div id="search_type" class="collapse">' +
+            '<label for="search_type_buttons">Search Type:&nbsp;</label>' +
+            '<div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">' +
+            '<label class="btn btn-primary {% if search_type == 'default' or search_type is not defined %}active{% endif %}" title="Add wildcards to start and end of search term, to search as you type">' +
+            '<input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" {% if search_type == 'default' or search_type is not defined %}checked{% endif %}>Default' +
+            '</label>' +
+            '<label class="btn btn-primary {% if search_type == 'exact' %}active{% endif %}" title="Add quotes to start and end of search term, to search for the exact phrase">' +
+              '<input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off" {% if search_type == 'exact' %}checked{% endif %}>Exact' +
+            '</label>' +
+            '<label class="btn btn-primary {% if search_type == 'advanced' %}active{% endif %}" title="Use the full power of Lucene query syntax; you must escape reserved characters yourself">' +
+              '<input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off" {% if search_type == 'advanced' %}checked{% endif %}>Advanced' +
+            '</label>' +
+          '</div></div>');
+        $('#DataTables_Table_0_filter').append(searchTypeButtons);
+
+        downloadOptions = $('<div class="dropdown" id="multi-dl-dropdown">' +
+          '<button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" title="Download reports in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download ' +
+            '<span class="caret"></span>' +
+          '</button>' +
+          '<ul class="dropdown-menu dropdown-menu-right">' +
+            '<li id="getSamples"><a href="#">Samples</a></li>' +
+          '</ul>' +
+        '</div>');
+        $('#DataTables_Table_0_filter').append(downloadOptions);
+
+        // Handle download dropdown
+        $('ul.dropdown-menu li').click(function(e) {
+          if (this.id == 'getSamples') {
+            if (table.rows('.selected').data().length > 0) {
+              var selected = table.rows('.selected').data();
+              var request = [];
+              for (x = 0; x < selected.length; x++) {
+                request.push(selected[x][0]);
+              }
+              window.location = "{{ api_loc }}/api/v1/tasks/files?task_ids=" + request.join();
+            }
+          }
+        });
+
+        $('#search_type :input').change(function() {
+          searchType =  $('#search_type_buttons > .btn.active input').val();
+          // TODO: maybe consider changing replaceState here to pushState
+          history.replaceState({query: history.state == null ? '{{ search_term }}' : history.state.query,
+                               type: searchType},
+                               "",
+                               "analyses");
+
+          if (searchType != lastType) {
+            // needed because we click on a searchType button in the popstate listener
+            table.draw();
+          }
+          lastType = searchType;
+        });
+      }
+    });
+  }
+
+  $(document).ready(function($) {
+    tasksSetup("{{ api_loc }}");
+    search = $('#DataTables_Table_0_filter input.form-control');
+
+    {% if search_term %}
+    history.replaceState({query: '{{ search_term }}',
+                         type: searchType},
+                         "",
+                         "analyses");
+    {% endif %}
+
+    // Insert state into browser history when search term is entered
+    search.on("input", function() {
+      // Use timeout to "debounce" input and only trigger pushState when user is done typing
+      clearTimeout($(this).data('timeout'));
+      $(this).data('timeout', setTimeout(function() {
+        history.pushState({query: search.val(),
+                           type: searchType},
+                           "",
+                           "analyses");
+      }, 250));
+    });
+    // Pop back to a previous search on browser back button
+    window.addEventListener("popstate", function(e) {
+      if (e.state) {
+        search.val(e.state.query);
+        $('#' + e.state.type).click();
+        search.trigger('paste');
+      }
+    });
+  });
+</script>
+{% endblock %}
+
+{% block title %}Task History{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">History</h1>
+
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th width="2%"></th>
+          <th width="5%">Task ID</th>
+          <th width="58%">Sample</th>
+          <th width="12%">Task Status</th>
+          <th width="17%">Timestamp</th>
+          <th class="text-center" width="6%">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

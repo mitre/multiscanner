@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{% endblock %} | MultiScanner</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-spacelab.min.css">
+    <script type="text/javascript" src="/static/js/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function($) {
+        $('#nav-search-btn').click(function() {
+          $('#nav-search-form').submit();
+        });
+        $('#nav-search-form').submit(function() {
+          search_target =  $('#search_target_buttons > .btn.active input').val();
+          $('#nav-search-form').attr("action", "/" + search_target);
+        });
+      });
+    </script>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" type="text/css" href="/static/css/styles.css">
+  </head>
+
+  <body>
+    {% block header %}
+    <nav class="navbar navbar-inverse col-md-10 col-md-offset-1">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">MultiScanner</a>
+        </div>
+
+        <!-- NAVBAR ITEMS -->
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li {% if request.path == '/' %} class="active" {% endif %}><a href="/">Scan</a></li>
+            <li {% if request.path == '/analyses' %} class="active" {% endif %}><a href="/analyses">Analyses</a></li>
+            <li {% if request.path == '/history' %} class="active" {% endif %}><a href="/history">History</a></li>
+            <li {% if request.path == '/analytics' %} class="active" {% endif %}><a href="/analytics">Analytics</a></li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="/system">System
+              <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="/about">About</a></li>
+                <li><a href="/system-health">System Health</a></li>
+                <li><a target="_blank" href="{{ flower_loc }}">Task Queue</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            {% if request.path not in ['/analyses', '/history'] %}
+              <li>
+              <form class="navbar-form" action="/analyses" method="post" id="nav-search-form">
+                <a type="button" class="btn btn-default btn-sm collapsed" id="nav-search-opt-btn" href="#" data-toggle="collapse" data-target="#nav-search-opts" aria-expanded="false" aria-controls="#nav-search-opts"><span class="glyphicon glyphicon-cog"></span></a>
+                <div class="form-group">
+                  <input type="search" name="search_term" class="form-control" placeholder="Search scans">
+                </div>
+                <a type="button" class="btn btn-success" id="nav-search-btn" href="#"><span class="glyphicon glyphicon-search"></span></a>
+                <div id="nav-search-opts" class="collapse">
+                  <div id="search_type">
+                    <label for="search_type_buttons">Search Type:&nbsp;</label>
+                    <div class="btn-group btn-group-sm" data-toggle="buttons" id="search_type_buttons">
+                      <label class="btn btn-default active" title="Add wildcards to start and end of search term, to search as you type">
+                        <input type="radio" name="search_type_buttons" id="default" value="default" autocomplete="off" checked>Default</input>
+                      </label>
+                      <label class="btn btn-default" title="Add quotes to start and end of search term, to search for the exact phrase">
+                        <input type="radio" name="search_type_buttons" id="exact" value="exact" autocomplete="off">Exact</input>
+                      </label>
+                      <label class="btn btn-default" title="Use the full power of Lucene query syntax; you must escape reserved characters yourself">
+                        <input type="radio" name="search_type_buttons" id="advanced" value="advanced" autocomplete="off">Advanced</input>
+                      </label>
+                    </div>
+                  </div>
+                  <div id="search_target">
+                    <label for="search_target_buttons">Search Target:&nbsp;</label>
+                    <div class="btn-group btn-group-sm" data-toggle="buttons" id="search_target_buttons">
+                      <label class="btn btn-default active" title="Search latest scan per sample">
+                        <input type="radio" name="search_target_buttons" id="search-analyses" value="analyses" autocomplete="off" checked>Analyses</input>
+                      </label>
+                      <label class="btn btn-default" title="Search all scans">
+                        <input type="radio" name="search_target_buttons" id="search-history" value="history" autocomplete="off">History</input>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+              </li>
+            {% endif %}
+            <li data-toggle="modal" data-target="#help-modal"><a href="#"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    {% endblock %}
+
+    <div class="container-fluid">
+      {% block content %}{% endblock %}
+
+      <div class="row">
+        <div class="col-md-12">
+        {% block footer %}
+        {% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">MultiScanner Help</h4>
+          </div>
+          <div class="modal-body">
+            <p>MultiScanner is a file scanning and analysis framework that automatically runs a suite of tools against file submissions.</p>
+            <h3>Scan Page</h3>
+            <p>This page lets you submit files to be scanned. Click on the "Advanced Options" button to set options for archive files and set metadata fields to be added to the scan results. If you have a directory of samples you wish to scan at once, we recommend zipping them and uploading the archive with the option to extract archives enabled. Alternatively you can use the REST API for bulk uploads.</p>
+            <h3>Analyses Page</h3>
+            <p>This page displays a searchable list of samples that have been scanned. Clicking on one will take you to the most recent scan report for that file.</p>
+            <h3>History Page</h3>
+            <p>This page displays a searchable list of scan reports. In contrast to the Analyses page, this page shows all reports, not merely the most recent.</p>
+            <h3>Report Page</h3>
+            <p>This page displays the results of a single scan. Some rows in the report can be expanded or collapsed to reveal more data by clicking on the row header or the "Expand" button. Shift-clicking will also expand or collapse all of it's child rows. The "Expand All" button will expand all rows at once.</p>
+            <p>Click on "Notes" to open a sidebar where analysts may enter notes or comments.</p>
+            <h3>Sample Download</h3>
+            <p>Samples are downloaded as password-protected ZIP files. The password is <tt>infected</tt>.</p>
+            <h3>Search</h3>
+            <p>Reports can be searched from any page, with a few options. You can search Analyses to get the most recent scan per file, or search History to get all scans recorded for each file. Use the "Default" search type to have wildcards automatically appended to the beginning and end of your search term. Use the "Exact" search type to search automatically append quotes and search for the exact phrase. Finally, use the "Advanced" search type to search with the full power of Lucene query string syntax. Nothing will be automatically appended and you will need to escape any reserved characters yourself. When you click on one of the search results, the search term will be highlighted on the Report page.</p>
+            <br/>
+            <p>MultiScanner is copyright The MITRE Corporation, licensed under the Mozilla Public License, version 2.0.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

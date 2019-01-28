@@ -8,7 +8,7 @@ The Docker standalone system is less scalable, robust, and feature-rich, but it 
 System Requirements
 -------------------
 
-Python 3.6 is recommended. Compatibility with Python 2.7+ and 3.4+ is supported but not thoroughly maintained and tested. Please submit an issue or a pull request fixing any issues found with other versions of Python.
+Python 3.6 is recommended. Compatibility with Python 2.7+ and 3.5+ is supported but not thoroughly maintained and tested. Please submit an issue or a pull request fixing any issues found with other versions of Python.
 
 An installer script is included in the project (`install.sh <https://github.com/mitre/multiscanner/blob/feature-celery/install.sh>`_), which installs the prerequisites on most systems.
 

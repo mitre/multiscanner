@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/static/css/dataTables.bootstrap.min.css"/>
+<script type="text/javascript" src="/static/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="/static/js/dataTables.bootstrap.min.js"></script>
+<script type="text/javascript">
+  function createGroupRows(index, group, apiLoc) {
+    for (i=0; i<group.length; i++) {
+      $("tbody").append('<tr data-sha256="' + group[i] + '"><td>' + index + '</td><td>' + group[i] + '</td></tr>');
+    }
+  }
+
+  function goToReport(apiLoc, sha256) {
+    $.ajax({
+      url: apiLoc + '/api/v1/tasks/sha256/' + sha256,
+      contentType: 'application/json; charset=UTF-8',
+      success: function(data) {
+        var taskID = parseInt(data.TaskID);
+        window.document.location = "/report/" + taskID;
+      }
+    });
+  }
+
+  function ssdeepGroups(apiLoc) {
+    // Get list of tasks and populate the table
+    tasks_data = $.get(apiLoc + "/api/v1/analytics/ssdeep_group", function(data, status){
+      // Add rows to the table
+      $.each(data.groups, function(index, item) {
+        createGroupRows(index, item, apiLoc);
+      });
+
+      // Make table rows clickable
+      $("td").click(function() {
+        // But not cells with a Delete button
+        if ($(this).parent().hasClass('group-header')) {
+          return;
+        }
+        // Take the browser to the corresponding report
+        var hash = $(this).parent().data("sha256");
+        goToReport(apiLoc, hash);
+      });
+
+      // Spruce up the table
+      $('.table').DataTable({
+        "pageLength": 25
+      });
+    });
+  }
+
+  $(document).ready(function($) {
+    ssdeepGroups("{{ api_loc }}");
+  });
+</script>
+{% endblock %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-10 col-md-offset-1">
+    <h1 class="text-center">SSDeep Groups</h1>
+    <br />
+
+    <table class="table table-striped table-hover ">
+      <thead>
+        <tr>
+          <th width="10%">Group</th>
+          <th>SHA256</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,359 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-tagsinput.css">
+<link rel="stylesheet" type="text/css" href="/static/css/fileinput.min.css">
+<script type="text/javascript" src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script type="text/javascript" src="/static/js/typeahead.bundle.min.js"></script>
+<script type="text/javascript" src="/static/js/fileinput.min.js"></script>
+<script type="text/javascript">
+  var tagNameArray = {{ tags|safe }};
+  var tagNames;
+
+  function correctSubmitText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if ($("#filesUpload").fileinput('getFilesCount') > 1) {
+        if (upload_type == 'scan') {
+          $('#btn-scan').html('Scan them!');
+        } else if (upload_type == 'import') {
+          $('#btn-scan').html('Import them!');
+        }
+    } else {
+      if (upload_type == 'scan') {
+        $('#btn-scan').html('Scan it!');
+      } else if (upload_type == 'import') {
+        $('#btn-scan').html('Import it!');
+      }
+    }
+  }
+
+  function msgUploadText() {
+    var upload_type = $('#upload-opts .btn.active input').val();
+    if (upload_type == 'scan') {
+      return "Submitted to scanner"
+    } else if (upload_type == 'import') {
+      return "Imported"
+    }
+  }
+
+  function addTagsInput(selector) {
+    $(selector).tagsinput({
+      tagClass: 'label label-primary',
+      typeaheadjs: {
+        source: tagNames.ttAdapter()
+      },
+      trimValue: true
+    });
+    $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
+      .attr("title", "Type something and hit the enter key to add a tag.")
+      .attr("data-placement", "left")
+      .tooltip();
+  }
+
+  $(document).ready(function() {
+    $("#filesUpload").fileinput({
+      uploadUrl: "{{ api_loc }}/api/v1/tasks",
+      browseOnZoneClick: true,
+      allowedPreviewTypes: [],
+      showUpload: false,
+      browseLabel: "Select File(s) …",
+      removeLabel: "Clear",
+      removeClass: "btn btn-danger",
+      msgUploadEnd: msgUploadText,
+      previewTemplates: {
+          other: '<div class="file-preview-frame krajee-default kv-preview-thumb foobar" id="{previewId}" data-fileindex="{fileindex}" data-template="{template}" title="{caption}">\n' +
+          '   <div class="file-thumbnail-footer">\n' +
+          '    <div class="file-preview-other">' +
+          '    <span class="file-other-icon"><i class="glyphicon glyphicon-file"></i></span>' +
+          '    </div>' +
+          '        {footer}\n' +
+          '    </div>\n' +
+          '</div>\n' +
+          '<div class="collapse text-center metadata-group" data-target="{previewId}">\n' +
+          '<div class="form-group-sm tags-group">\n' +
+          '   <label for="{previewId}-Tags" class="col-md-2 control-label">Tags</label>\n' +
+          '   <div class="input-group col-md-10">\n' +
+          '     <input type="text" class="form-control" id="{previewId}-Tags" name="{previewId}-Tags"></input>\n' +
+          '   </div>\n' +
+          '</div>\n' +
+          {% for metadata in metadata_fields %}
+          '<div class="form-group-sm">\n' +
+          {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+          '    <label for="{previewId}-{{field}}" class="col-md-2 control-label">{{metadata}}</label>\n' +
+          '    <div class="input-group col-md-10">\n' +
+                  '<input type="text" class="form-control" id="{previewId}-{{field}}" name="{previewId}-{{field}}"></input>\n' +
+          '    </div>\n' +
+          '    </div>\n' +
+          {% endfor %}
+          '</div>\n',
+      },
+      layoutTemplates: {
+        main1: '{preview}\n' +
+          '<div class="kv-upload-progress hide"></div>\n' +
+          '<div class="input-group {class}">\n' +
+          '    {caption}\n' +
+          '    <div class="input-group-btn">\n' +
+          '        {remove}\n' +
+          '        {cancel}\n' +
+          '        {upload}\n' +
+          '        {browse}\n' +
+          '    </div>\n' +
+          '</div>',
+        actions: '<div class="file-actions">\n' +
+          '    <div class="file-footer-buttons">\n' +
+          '        {upload} {delete} {other}' +
+          '        <button type="button" class="add-metadata btn btn-xs btn-default" title="Add metadata">\n' +
+          '            <i class="glyphicon glyphicon-th-list"></i>\n' +
+          '        </button>\n' +
+          '    </div>\n' +
+          '    {drag}\n' +
+          '    <div class="file-upload-indicator" title="{indicatorTitle}">{indicator}</div>\n' +
+          '    <div class="clearfix"></div>\n' +
+          '</div>',
+        footer: '<div class="file-footer-caption" title="{caption}">{caption}<br>{size}</div>\n' +
+          '        {progress} {actions}',
+      },
+      previewFileIcon: '',
+      fileActionSettings: {
+        removeIcon: '<i class="glyphicon glyphicon-trash"></i>',
+        removeClass: 'btn btn-xs btn-danger',
+        uploadIcon: '<i class="glyphicon glyphicon-upload"></i>',
+        uploadClass: 'btn btn-xs btn-primary',
+      },
+      uploadExtraData: function (previewId, index) {
+        // Send options along with the file
+        var obj = {};
+        // Scan or Import?
+        var upload_type = $('#upload-opts .btn.active input').val();
+        obj['upload_type'] = upload_type;
+        if (upload_type == 'import') {
+          return obj;
+        }
+        // Pull latest or Rescan?
+        var duplicate_action = $('#duplicate-opts .btn.active input').val();
+        obj['duplicate'] = duplicate_action;
+        // Modules options
+        var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
+        obj['modules'] = moduleList;
+        // Archive options
+        if ($('#archive-analyze').is(':checked')) {
+          obj['archive-analyze'] = 'true';
+          if ($('#archive-password').val() !== '') {
+            obj['archive-password'] = $('#archive-password').val();
+          }
+        }
+        // Metadata options
+        $('.metadata-group[data-target=' + previewId + '] .form-group-sm').each(function() {
+          var key = $(this).children('label').first().html();
+          var val = $(this).find('input.form-control').val();
+          obj[key] = val;
+        });
+        return obj;
+      }
+    });
+
+    $("#filesUpload").on('fileuploaded', function(event, data, previewId, index) {
+      // Hide buttons after upload
+      $('#' + previewId + ' .file-footer-buttons').css('visibility', 'hidden');
+
+      // Disable metadata fields after upload
+      $('.metadata-group[data-target=' + previewId + '] input').each(function (index, element) {
+        $(element).attr('readonly', true);
+      })
+
+      // Click on preview box to go straight to the task/report
+      // If file was a zip, it will go to the first file
+      $('#' + previewId).css('cursor', 'pointer');
+      $('#' + previewId).click(function() {
+        window.location = "report/" + data.response.Message.task_ids[0];
+      })
+    });
+
+    $('#filesUpload').on('fileloaded', function(event, file, previewId, index, reader) {
+      // Scroll to file
+      window.scrollTo(0, $("#" + previewId).offset().top);
+
+      // Use correct submit button text
+      correctSubmitText();
+
+      // Set up tag auto-completion for per-file tags input
+      addTagsInput('#' + previewId + '-Tags');
+      $('#' + previewId + '-Tags').parent().click(function(e) {
+        // Prevent "File Upload" dialogs when removing a tag
+        e.stopPropagation();
+      })
+
+      // Show/hide per file metadata input
+      $('#' + previewId + ' .add-metadata').click(function() {
+        $('.metadata-group[data-target=' + previewId + ']').collapse('toggle');
+      });
+
+      // Populate metadata fields if need be
+      $('#adv-options .metadata-group:not(.tags-group) input').each(function( index, element ) {
+        var field = $(element).attr('id').substring(9);
+        var value = $(element).val();
+        $('#' + previewId + '-' + field).val(value);
+      });
+      $('#adv-options .metadata-group.tags-group .tag').each(function( index, element ) {
+        var value = $(element).text();
+        $('#' + previewId + '-Tags').tagsinput('add', value);
+      });
+
+    });
+
+    // Bootstrap Toggle Switch (https://www.bootply.com/92189)
+    $('#upload-opts .btn-toggle').click(function() {
+      $(this).find('.btn').toggleClass('active');
+      $(this).find('.btn').prop('checked', !$(this).find('.btn').prop('checked'));
+      $('#adv-options > div:not(#upload-opts) input').each(function() {
+        $(this).prop('disabled', !$(this).prop('disabled'));
+      });
+      $('#adv-options > div:not(#upload-opts) .btn-toggle label').each(function() {
+        $(this).toggleClass('disabled');
+      });
+      // Use correct submit button text
+      correctSubmitText();
+    });
+
+    // Set up tags
+    $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+      $.each(data.Tags, function( index, value ) {
+        if (tagNameArray.indexOf(value.key) == -1) {
+          tagNameArray.push(value.key);
+        }
+      });
+      tagNames = new Bloodhound({
+        datumTokenizer: Bloodhound.tokenizers.whitespace,
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: tagNameArray
+      });
+      tagNames.initialize();
+
+      addTagsInput('#metadata-Tags');
+    })
+
+    // Add options for selecting which modules to run
+    //$.get("{{ api_loc }}/api/v1/modules", function(data) {
+    //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
+    //  for (mod in data.Modules) {
+    //    checked = (data.Modules[mod] == "True" ? "checked" : "");
+    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
+    //  }
+    //  modules += '</div>';
+    //  $('#adv-options').prepend(modules);
+    //});
+
+    // Set metadata field values for all files
+    $('#adv-options .metadata-group input').change(function() {
+      var field = $(this).attr('id').substring(9);
+      var value = $(this).val();
+      $('.file-preview-thumbnails .metadata-group').each(function( index, element ) {
+        childId = $(element).attr('data-target') + '-' + field;
+        if (field == 'Tags') {
+          $('#' + childId).tagsinput('removeAll');
+          var taglist = value.split(",");
+          taglist.forEach(function(elem) {
+            $('#' + childId).tagsinput('add', elem);
+          });
+        } else {
+          $(element).find('input[id=' + childId + ']').val(value);
+        }
+      });
+    });
+
+    // Submit all files
+    $('#btn-scan').click(function () {
+      $("#filesUpload").fileinput('upload');
+    });
+  });
+</script>
+{% endblock %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row alert-row">
+  <div class="col-md-6 col-md-offset-6"></div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <h1 class="text-center">MultiScanner</h1>
+    <br />
+
+    <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
+      <fieldset>
+        <legend>Submit Files For Analysis</legend>
+
+        <div class="form-group">
+          <div class="input-group" id="file-group">
+            <input type="file" class="file-loading" id="filesUpload" name="file" multiple></input>
+          </div>
+        </div>
+
+        <div class="form-group text-center">
+          <button type="button" class="btn-sm btn-default" id="btn-opts" data-toggle="collapse" data-target="#adv-options" aria-expanded="false" aria-controls="adv-options">Advanced Options</button>
+        </div>
+        <div id="adv-options" class="collapse form-group text-center">
+          <div id="upload-opts" class="opt-section">
+            <div class="btn-group btn-toggle" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
+              </label>
+              <label class="btn btn-primary">
+                <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
+              </label>
+            </div>
+          </div>
+          <div id="duplicate-opts" class="opt-section">
+            <label class="col-md-5">How to handle resubmissions?</label>
+            <div class="btn-group btn-toggle" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                <input name="duplicate" value="latest" type="radio" title="Pull the latest report" checked> Pull latest
+              </label>
+              <label class="btn btn-primary">
+                <input name="duplicate" value="rescan" type="radio" title="Re-scan and generate a new report"> Re-scan
+              </label>
+            </div>
+          </div>
+          <div id="archive-opts" class="opt-section">
+            <h4>Archives</h4>
+            <div class="checkbox col-md-4">
+              <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
+            </div>
+            <div class="form-group archive-group">
+              <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
+              <div class="input-group col-md-5">
+                <input type="text" class="form-control" id="archive-password" name="archive-password"></input>
+              </div>
+            </div>
+          </div>
+          <div id="metadata-opts" class="opt-section">
+            <h4>Metadata Fields</h4>
+            <div><p><i>(These apply to all files in this submission.)</i></p></div>
+            <div class="form-group metadata-group tags-group">
+              <label for="metadata-Tags" class="col-md-2 control-label">Tags</label>
+              <div class="input-group col-md-10">
+                <input type="text" class="form-control" id="metadata-Tags" name="metadata-Tags"></input>
+              </div>
+            </div>
+            {% for metadata in metadata_fields %}
+            <div class="form-group metadata-group">
+              {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
+              <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
+              <div class="input-group col-md-10">
+                <input type="text" class="form-control" id="metadata-{{field}}" name="metadata-{{field}}"></input>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group text-center">
+          <button type="button" class="btn-lg btn-success" id="btn-scan">Scan it!</button>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+git+https://github.com/endgameinc/ember.git#egg=ember
+mmbot

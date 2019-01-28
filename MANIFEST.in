@@ -1,0 +1,13 @@
+graft multiscanner
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude multiscanner\tests *
+
+recursive-include docs
+include README.md
+include LICENSE
+include AUTHORS
+include requirements.txt
+include requirements-dev.txt
+include requirements-test.txt
+include install.sh

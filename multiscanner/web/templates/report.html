@@ -1,0 +1,611 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="stylesheet" type="text/css" href="/static/css/bootstrap-tagsinput.css">
+<script type="text/javascript" src="/static/js/bootstrap-tagsinput.min.js"></script>
+<script type="text/javascript" src="/static/js/typeahead.bundle.min.js"></script>
+<script type="text/javascript">
+  var expanders = null,
+  collapsers = null;
+
+  function regExpEscape(literal_string) {
+    // https://stackoverflow.com/a/30851002/
+    return literal_string.replace(/[-[\]{}()*+!<=:?.\/\\^$|#\s,]/g, '\\$&');
+  }
+
+  function createRow(heading, content, parentSize) {
+    // Return a row to add to a table
+    if (typeof content === 'string' && content.startsWith('<table')) {
+      numberRowsInContent = (content.match(/<tr>/g) || []).length;
+      if (typeof parentSize === 'undefined') {
+        shouldExpand = numberRowsInContent < 4;
+      }
+      else if (numberRowsInContent == 0) {
+        shouldExpand = true;
+      }
+      else {
+        shouldExpand = (parentSize < 10 && numberRowsInContent < 10);
+      }
+      {% if search_term %}
+      if (!shouldExpand && content.indexOf('{{ search_term }}') >= 0) {
+          shouldExpand = true;
+      }
+      {% endif %}
+
+      if (shouldExpand) {
+        expanderStyle = 'style="display: none;"'
+        contentStyle = ''
+      }
+      else {
+        expanderStyle = ''
+        contentStyle = 'style="display: none;"'
+      }
+      th = '<th class="expander">' + heading +
+           ' <span class="glyphicon glyphicon-minus-sign" ' + contentStyle + '></span></th>';
+      td = '<td class="expander" ' + expanderStyle + ' title="Shift-click to expand all children">Expand' +
+           ' <span class="glyphicon glyphicon-plus-sign"></span>' +
+           '</td><td class="cell-table" ' + contentStyle + '>' +
+           content + '</td>';
+    }
+    else {
+      th = '<th>' + heading + '</th>';
+      td = '<td>' + content + '</td>';
+    }
+
+    return '<tr>' + th + td + '</tr>';
+  }
+
+  function createSubtable(data, isArray) {
+    // Return a table to be nested within a row
+    isArray = typeof isArray !== 'undefined' ? isArray : false;
+    rows = ''
+    $.each(data, function(index, item) {
+      if (isArray) {
+        rows += determineType('', item, Object.keys(data).length);
+      }
+      else {
+        rows += determineType(index, item, Object.keys(data).length);
+      }
+    });
+    return '<table class="table table-hover"><tbody>' + rows +
+           '</tbody></table>';
+  }
+
+  function determineType(index, item, parentSize) {
+    // Add a row to the table bases on an item's data type
+    if (item === null || item === undefined) {
+      return createRow(index, '<i>None</i>');
+    }
+    else if (item.constructor === Array) {
+      return createRow(index, createSubtable(item, true), parentSize);
+    }
+    else if (!(item instanceof String) && typeof item === 'object') {
+      return createRow(index, createSubtable(item), parentSize);
+    }
+    else {
+      {% if search_term %}
+      var re = new RegExp('(' + regExpEscape('{{ search_term }}') + ')', "i");
+      return createRow(index, String(item).replace(re, '<span class="highlight">$1</span>'));
+      {% else %}
+      return createRow(index, item);
+      {% endif %}
+    }
+  }
+
+  function toggleRow(row, all) {
+    // Expand/collapse a single row
+    // If `all` is true, then all subfields of this row will also expand/collapse
+    all = typeof all !== 'undefined' ? all : false;
+    var th = row.children('th');
+    var expander = row.children('td.expander');
+    var td = row.children('td.cell-table');
+
+    expander.toggle();
+    td.toggle();
+    th.children('span').toggle();
+    if (all) {
+      if (expander.is(':hidden')) {
+        // it's expanded; expand children
+        td.find('th.expander span').show();
+        td.find('td.expander').hide();
+        td.find('td.cell-table').show();
+      }
+      else {
+        // it's collapsed; collapse children
+        td.find('th.expander span').hide();
+        td.find('td.expander').show();
+        td.find('td.cell-table').hide();
+      }
+    }
+
+    // Show correct "Expand/Collapse All" button
+    if (expanders.filter(':visible').length > 0) {
+      $('#expand-all').show();
+      $('#collapse-all').hide();
+    } else {
+      $('#expand-all').hide();
+      $('#collapse-all').show();
+    }
+  }
+
+  function expandAll() {
+    var shiftClick = jQuery.Event("click");
+    shiftClick.shiftKey = true;
+    expanders.filter(':visible').trigger(shiftClick);
+  }
+
+  function collapseAll() {
+    var shiftClick = jQuery.Event("click");
+    collapsers.filter(':visible').click();
+  }
+
+  function openNotes() {
+    // $('#notes-close').show();
+    $('#notes-close').addClass('open');
+    $('#report-notes').addClass('open');
+    $('#report-container').addClass('pushed');
+    $('.navbar').addClass('pushed');
+  }
+
+  function closeNotes() {
+    // $('#notes-close').hide();
+    $('#notes-close').removeClass('open');
+    $('#report-notes').removeClass('open');
+    $('#report-container').removeClass('pushed');
+    $('.navbar').removeClass('pushed');
+  }
+
+  function deleteNote(id) {
+    var text = {"text": $('#note-input').val()}
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + id;
+    $.ajax({
+      url: url,
+      type: 'DELETE',
+      success: function(data, status) {
+        if (status == 'success') {
+          $('#' + id).remove();
+        }
+        return status;
+      }
+    });
+  }
+
+  function displayNote(data) {
+    // Display the note passed in
+    var text = data._source.text;
+    var tsRegEx = /\d{2}(\d{2})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/
+    var m = tsRegEx.exec(data._source.timestamp)
+    var ts = m[4]+":"+m[5]+" "+m[2]+"/"+m[3]+"/"+m[1];
+
+    panelBody = $('<div class="panel-body"><span>' + text + '</span></div>')
+      .append($('<textarea class="form-control" rows="4"></textarea>').hide())
+      .append($('<button type="button" class="btn btn-default btn-xs btn-send-note">Submit</button>').hide())
+      .append($('<button type="button" class="btn btn-default btn-xs btn-edit-note"><span class="glyphicon glyphicon-pencil" aria-hidden="true"></span> Edit</button>'))
+      .append($('<button type="button" class="btn btn-default btn-xs btn-del-note"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete</button>'));
+
+    var panel = $('<div class="panel panel-default" id="' + data._id + '">')
+      .append($('<div class="panel-heading"><span>' + ts + '</span></div>'))
+      .append(panelBody);
+    $('#note-container').append(panel);
+  }
+
+  function getNotes(empty, ts, uid) {
+    // Get all notes for this sample and display them
+    empty = typeof empty !== 'undefined' ? empty : false;
+    ts = typeof ts !== 'undefined' ? ts : false;
+    uid = typeof uid !== 'undefined' ? uid : false;
+
+    var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes";
+    if (ts && uid) {
+      url += "?ts=" + ts + "&uid=" + uid;
+    }
+    var resp = $.get(url, function(notes_list, status){
+      if (empty === true) {
+        $('#note-container').empty();
+      }
+      notes_list.forEach(function (item) {
+        displayNote(item);
+      });
+
+      if (notes_list.length === 10) {
+        sort_params = notes_list[notes_list.length-1]["sort"];
+        getNotes(false, sort_params[0], sort_params[1]);
+      }
+    });
+  }
+
+  function scrollToHighlight() {
+    // Scroll to first highlighted search term
+    try {
+      $('html, body'). scrollTop($('.highlight').first().offset().top);
+    } catch (err) {
+      // search term not found
+    }
+  }
+
+  function getReport() {
+    // Get report and populate the table
+    $.get("{{ api_loc }}/api/v1/tasks/{{ task_id }}/report", function(data, status){
+      if (data.hasOwnProperty('Report')) {
+        if (data.Report == 'Task still pending') {
+          // Check again in 5 seconds
+          console.log("Check again in 5 seconds");
+          setTimeout(getReport, 5000);
+          return;
+        }
+        else if (data.Report == 'Task failed') {
+          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+          return;
+        }
+        else if (data.Report == 'Error occurred in ElasticSearch') {
+          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ElasticSearch Error!</h3>');
+          return;
+        }
+      }
+
+      $('#pending').hide();
+      $('#report-extras').show();
+      $('#report-tags').show();
+
+      // Take tags out of report and put into tags input element
+      if (data.Report.hasOwnProperty('tags')) {
+        tags = data.Report.tags;
+        delete data.Report.tags;
+        $('#tags').val(tags.toString());
+      }
+
+      // Take some report data and put it at the top of the report
+      var top_fields_list = [
+          'filename',
+          'Scan Time',
+          'Scan Metadata',
+          'MD5',
+          'SHA1',
+          'SHA256'
+      ]
+      top_fields_list.forEach(function(elem) {
+        if (data.Report.hasOwnProperty(elem)) {
+          val = data.Report[elem];
+          delete data.Report[elem];
+          $('tbody:first').append(determineType(elem, val));
+        }
+      });
+
+      // Put report into table
+      $.each(data.Report, function(index, item) {
+        $('tbody:first').append(determineType(index, item));
+      });
+
+      // Handle row expanson
+      $('.expander').each(function(idx, elem) {
+        $(elem).click(function(e) {
+          toggleRow($(this).parent(), e.shiftKey);
+        });
+      });
+
+      // Set up tags
+      var tagNameArray = {{ tags|safe }};
+      $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+        $.each(data.Tags, function( index, value ) {
+          if (tagNameArray.indexOf(value.key) == -1) {
+            tagNameArray.push(value.key);
+          }
+        });
+        var tagNames = new Bloodhound({
+          datumTokenizer: Bloodhound.tokenizers.whitespace,
+          queryTokenizer: Bloodhound.tokenizers.whitespace,
+          local: tagNameArray
+        });
+        tagNames.initialize();
+
+        $('#tags').tagsinput({
+          tagClass: 'label label-primary',
+          typeaheadjs: {
+            source: tagNames.ttAdapter()
+          }
+        });
+        $('#tags').on('itemAdded', function(event) {
+            tag_response = $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
+            return status;
+          });
+        });
+        $('#tags').on('beforeItemRemove', function(event) {
+          tag_response = $.ajax({
+            url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags",
+            type: 'DELETE',
+            data: {'tag': event.item},
+            success: function(data, status) {
+              return status;
+            }
+          });
+        });
+        $('.bootstrap-tagsinput').attr("data-toggle", "tooltip")
+          .attr("title", "Type something and hit the enter key to add a tag.")
+          .attr("data-placement", "left")
+          .tooltip();
+      })
+
+      {% if search_term %}
+      scrollToHighlight();
+      {% endif %}
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ' + jqXHR.responseJSON["Message"] + '</h3>');
+    });
+  }
+
+  function matchText(node, regex, callback, excludeElements) {
+    // Takes a reference to a DOM element, iterates over its text nodes, runs a regex on them and executes a callback
+    // Modified from http://blog.alexanderdickson.com/javascript-replacing-text
+    excludeElements || (excludeElements = ['script', 'style', 'iframe', 'canvas']);
+    var child = node.firstChild;
+
+    do {
+      if (child == null) {
+        break;
+      }
+      else if (child.nodeType == 1) {  // element
+        if (excludeElements.indexOf(child.tagName.toLowerCase()) > -1) {
+            continue;
+        }
+
+        matchText(child, regex, callback, excludeElements);
+      }
+      else if (child.nodeType == 3) {  // text node
+        child.data.replace(regex, function(all) {
+            var args = [].slice.call(arguments),
+                offset = args[args.length - 2],
+                newTextNode = child.splitText(offset);
+
+            newTextNode.data = newTextNode.data.substr(all.length);
+            callback.apply(window, [child].concat(args));
+            child = newTextNode;
+        });
+      }
+    } while (child = child.nextSibling);
+
+    return node;
+  }
+
+  function inPageSearch() {
+    // Remove existing highlights
+    $('#report').find('span.highlight').each(function(index) {
+      var hText = $(this).text();
+      $(this).replaceWith(hText);
+    });
+
+    // Highlight new search term
+    var newHText = $('#search-report input').val();
+    var re = new RegExp(regExpEscape(newHText), "i");
+    matchText($("#report").get(0), re, function(node, match, offset) {
+      var span = document.createElement("span");
+      span.className = "highlight";
+      span.textContent = match;
+      node.parentNode.insertBefore(span, node.nextSibling);
+    });
+
+    // Expand new search terms
+    $('.highlight').each(function(index) {
+      if (!$(this).is(':visible')) {
+        $(this).parents('td').filter(function() {
+          return $(this).css('display') == 'none';
+        }).siblings('td.expander').click();
+      }
+    });
+
+    // Scroll to highlighted search term
+    scrollToHighlight();
+  }
+
+  $(document).ready(function($) {
+    $('#collapse-all').hide();
+    $('#report-extras').hide();
+    $('#report-tags').hide();
+
+    // Add report data and notes to the page
+    getReport();
+    getNotes();
+
+    $( document ).ajaxStop(function() {
+      // cache jquery selectors for performance
+      expanders = $('td.expander');
+      collapsers = $('th.expander span');
+
+      // Update notes button based on number of notes
+      numNotes = $('#note-container > div').length;
+      if (numNotes > 0) {
+        if (numNotes === 1) {
+          $('#notes-open').html('1 Note');
+        } else {
+          $('#notes-open').html(numNotes + ' Notes');
+        }
+        $('#notes-open').addClass('btn-warning').removeClass('btn-primary');
+        $('#notes-close').addClass('btn-warning').removeClass('btn-primary');
+      }
+    });
+
+    // Handle submission of notes
+    $('#note-form').submit(function( event ) {
+      var text = {"text": $('#note-input').val()}
+      $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes", text, function(data, status){
+        displayNote(data);
+        return status;
+      });
+      event.preventDefault();
+    });
+
+    $('#notes-open').click(openNotes);
+    $('#notes-close').click(closeNotes);
+
+    // Handle editing notes
+    $('#report-notes').on('click', '.btn-edit-note', (function(event) {
+      var span = $(this).siblings('span');
+      if (span.is(':visible')) {
+        span.hide();
+        $(this).siblings('textarea').val(span.html());
+        $(this).siblings('textarea, .btn-send-note').show();
+      } else {
+        $(this).siblings('span').show();
+        $(this).siblings('textarea, .btn-send-note').hide();
+      }
+    }));
+    $('#report-notes').on('click', '.btn-send-note', (function(event) {
+      var span = $(this).siblings('span');
+      var textarea = $(this).siblings('textarea');
+      var submit = $(this);
+      var text = {"text": textarea.val()}
+      var noteId = $(this).parents('.panel').attr('id');
+      var url = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/notes/" + noteId;
+      $.ajax({
+          url: url,
+          type: 'PUT',
+          data: text,
+          success: function(data, status) {
+            textarea.hide();
+            submit.hide();
+            span.html(textarea.val()).show();
+            return status;
+        }
+      });
+    }));
+
+    // Handle deleting notes
+    $('#report-notes').on('click', '.btn-del-note', (function(event) {
+      var noteId = $(this).parents('.panel').attr('id');
+      var response = deleteNote(noteId);
+    }));
+
+    // Handle "Expand All" button
+    $('#expand-all').on('click', (function(event) {
+      expandAll();
+    }));
+
+    // Handle "Collapse All" button
+    $('#collapse-all').on('click', (function(event) {
+      collapseAll();
+    }));
+
+    //Handle in-page search
+    $('#search-report-btn').click(function() {
+      inPageSearch();
+    });
+    $('#search-report input').keypress(function(e) {
+      if (e.which == 13) {  // enter key
+        inPageSearch();
+      }
+    });
+
+    // Handle deleting report
+    $('#delete-btn').click(function(event) {
+      $.ajax({
+        url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}",
+        type: 'DELETE',
+        success: function(data, status) {
+          $('#report-container').empty();
+          $('#report-container').html('<div class="row col-md-6 col-md-offset-3"><div class="panel panel-success"><div class="panel-heading"><h3 class="panel-title">Success!</h3></div><div class="panel-body"><h4>' + data.Message + '</h4></div></div></div>');
+        },
+        error: function(data, status) {
+            $('#report-tags').after('<div class="row col-md-6 col-md-offset-3"><div class="panel panel-danger"><div class="panel-heading"><h3 class="panel-title">Error!</h3></div><div class="panel-body"><h4>Task could not be deleted.</h4></div></div></div>');
+        }
+      });
+    });
+
+    // Handle download dropdown
+    $('ul.dropdown-menu li').click(function(e) {
+      if (this.id == 'getJson') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
+      } else if (this.id == 'getSample') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
+      } else if (this.id == 'getMAEC') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/maec";
+      } else if (this.id == 'getPDF') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/pdf";
+      } else if (this.id == 'getSTIX2') {
+        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/stix2?pretty=true";
+      }
+    });
+  });
+
+</script>
+{% endblock %}
+
+{% block title %}Report{% endblock %}
+
+{% block content %}
+<button class="btn btn-primary" id="notes-open" title="View analyst notes">Notes</button>
+
+<div id="report-container">
+  <h1 class="text-center">Task {{ task_id }} Report</h1>
+  <div class="row" id="report-extras">
+    <div class="col-md-2 col-md-offset-1" id="expand-all">
+      <button class="btn btn-primary" type="button" title="Expand all subfields"><span class="glyphicon glyphicon-plus-sign"></span>&nbsp;Expand All
+      </button>
+    </div>
+    <div class="col-md-2 col-md-offset-1" id="collapse-all">
+      <button class="btn btn-primary" type="button" title="Collapse all subfields"><span class="glyphicon glyphicon-minus-sign"></span>&nbsp;Collapse All
+      </button>
+    </div>
+    <div class="col-md-5" id="search-report">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Search within this report">
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="button" id="search-report-btn"><span class="glyphicon glyphicon-search"></span></button>
+        </span>
+      </div>
+    </div>
+    <div class="dropdown col-md-1" id="delete-btn">
+      <button class="btn btn-danger dropdown-toggle" type="button" data-toggle="dropdown" title="Delete report"><span class="glyphicon glyphicon-remove"></span>&nbsp;Delete
+      </button>
+    </div>
+    <div class="dropdown col-md-2" id="dl-dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown" title="Download report in an alternate format"><span class="glyphicon glyphicon-download-alt"></span>&nbsp;Download
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li id="getJson"><a href="#">JSON</a></li>
+        <li id="getSample"><a href="#">Sample</a></li>
+        <li id="getMAEC"><a href="#">MAEC</a></li>
+        <li id="getPDF"><a href="#">PDF</a></li>
+        <li id="getSTIX2"><a href="#">STIX2</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="row" id="report-tags">
+    <div class="col-md-5 col-md-offset-3">
+      <label for="tags" class="pull-left">Tags</label>
+      <span>
+        <input type="text" id="tags" class="form-control">
+      </span>
+    </div>
+  </div>
+  <div class="row" id="pending">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="spin-outer"></div>
+      <div class="spin-inner"></div>
+      <div class="text-center">
+        <h3>Scan results pending...</h3>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1" id="report">
+      <table class="table table-hover ">
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="" id="report-notes">
+  <button id="notes-close" class="btn btn-primary" aria-label="Close"><span class="glyphicon glyphicon-chevron-left"></span></button>
+  <div id="note-container"></div>
+  <form id="note-form">
+    <div class="form-group">
+      <label for="note-input">Add a Note/Comment:</label>
+      <textarea class="form-control" rows="5" id="note-input"></textarea>
+    </div>
+    <button class="btn btn-primary">Submit</button>
+  </form>
+</div>
+
+{% endblock %}

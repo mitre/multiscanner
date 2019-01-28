@@ -5,24 +5,26 @@ CWD=`pwd`
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #Install requirements for Redhat derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/redhat-release ]; then
   yum install -y epel-release
   yum install -y autoconf automake curl gcc libffi-devel libtool make python-devel ssdeep-devel tar git unzip openssl-devel file-devel
 fi
 
 #Install requirements for Debian derivatives
+#Keep these in sync with .travis.yml
 if [ -e /etc/debian_version ]; then
   apt-get update
   apt-get install -y build-essential curl dh-autoreconf gcc libffi-dev libfuzzy-dev python-dev git libssl-dev unzip libmagic-dev
 fi
 
-#Install requirements for Python
+# Install multiscanner library and dependencies
 curl -k https://bootstrap.pypa.io/get-pip.py | python
-pip install --upgrade -r $DIR/requirements.txt
+pip install --upgrade $DIR
 
 #Code to compile and install yara
-YARA_VER=3.7.1
-YARA_PY_VER=3.7.0
+YARA_VER=3.8.1
+YARA_PY_VER=3.8.1
 JANSSON_VER=2.11
 read -p "Compile yara $YARA_VER? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
@@ -60,14 +62,14 @@ fi
 
 read -p "Download yararules.com signatures? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
-  git clone --depth 1 https://github.com/Yara-Rules/rules.git $DIR/etc/yarasigs/Yara-Rules
-  echo You can update these signatures by running cd $DIR/etc/yarasigs/Yara-Rules \&\& git pull
+  git clone --depth 1 https://github.com/Yara-Rules/rules.git ~/.multiscanner/yarasigs/Yara-Rules
+  echo You can update these signatures by running cd ~/.multiscanner/yarasigs/Yara-Rules \&\& git pull
 fi
 
 read -p "Download SupportIntelligence's Icewater yara signatures? <y/N> " prompt
 if [[ $prompt == "y" ]]; then
-  git clone --depth 1 https://github.com/SupportIntelligence/Icewater.git $DIR/etc/yarasigs/Icewater
-  echo You can update these signatures by running cd $DIR/etc/yarasigs/Icewater \&\& git pull
+  git clone --depth 1 https://github.com/SupportIntelligence/Icewater.git ~/.multiscanner/yarasigs/Icewater
+  echo You can update these signatures by running cd ~/.multiscanner/yarasigs/Icewater \&\& git pull
 fi
 
 read -p "Download TrID? <y/N> " prompt
@@ -98,19 +100,16 @@ if [[ $prompt == "y" ]]; then
   chmod 755 /opt/floss
 fi
 
-read -p "Would you me to download the NSRL database? This will take ~4GB of disk space. <y/N> " prompt
+read -p "Download NSRL database? This will take ~4GB of disk space. <y/N> " prompt
 if [[ $prompt == "y" ]]; then
   # Download the unique set
-  mkdir $DIR/etc/nsrl
+  mkdir ~/.multiscanner/nsrl
   curl -k https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernu.zip > rds_modernu.zip
   unzip rds_modernu.zip
   rm rds_modernu.zip
-  python $DIR/utils/nsrl_parse.py -o $DIR/etc/nsrl rds_*/NSRLFile.txt
-  rm -fr rds_*
+  python $DIR/multiscanner/utils/nsrl_parse.py -o ~/.multiscanner/nsrl RDS_*/NSRLFile.txt
+  rm -fr RDS_*
 fi
 
-read -p "Would you like to install MultiScanner as a system library? <y/N> " prompt
-if [[ $prompt == "y" ]]; then
-  pip install -e $DIR
-  echo "Make sure users have access to $DIR"
-fi
+# Initialize multiscanner
+multiscanner init
