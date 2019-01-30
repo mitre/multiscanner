@@ -124,13 +124,13 @@ class BasicElasticSearchStorage(storage.Storage):
                 array[i] = self.same_type_lists(array[i])
         elif not self.check_same_types(array):
             for i in range(0, len(array)):
-                    if isinstance(array[i], list):
-                        array[i] = self.normalize_list(array[i])
-                    elif isinstance(array[i], dict):
-                        array[i] = self.same_type_lists(array[i])
-                    else:
-                        array[i] = str(array[i])
-                        if not self.warned_changed:
-                            logger.warning("We changed some of the data types so that Elasticsearch wouldn't get angry")
-                            self.warned_changed = True
+                if isinstance(array[i], list):
+                    array[i] = self.normalize_list(array[i])
+                elif isinstance(array[i], dict):
+                    array[i] = self.same_type_lists(array[i])
+                else:
+                    array[i] = str(array[i])
+                    if not self.warned_changed:
+                        logger.warning("We changed some of the data types so that Elasticsearch wouldn't get angry")
+                        self.warned_changed = True
         return array
