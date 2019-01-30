@@ -41,7 +41,7 @@ def scan(filelist, conf=DEFAULTCONF):
     # Checks if the img dir exist in list, if not remove
     for imgPath in FireEyeImages[:]:
         if not (os.path.isdir(os.path.join(base, imgPath))):
-            logger.warning("WARNING: Fireeye path not found - {}".format((os.path.join(base, imgPath))))
+            logger.warning("Fireeye path not found - {}".format((os.path.join(base, imgPath))))
             FireEyeImages.remove(imgPath)
 
     timestamp = str(time.time()).replace('.', '-')

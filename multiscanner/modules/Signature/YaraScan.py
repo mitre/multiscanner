@@ -67,10 +67,10 @@ def scan(filelist, conf=DEFAULTCONF):
             bad_file = os.path.abspath(str(e).split('(')[0])
             if bad_file in ruleset:
                 del ruleset[bad_file]
-                logger.warning('WARNING: Yara: {}'.format(e))
+                logger.warning('Yara: {}'.format(e))
             else:
-                logger.error('ERROR Yara: Invalid rule in {} but we are unable '
-                             'to remove it from our list. Aborting'.format(bad_file))
+                logger.error('Invalid Yara rule in {} but we are unable to '
+                             'remove it from our list. Aborting'.format(bad_file))
                 logger.error(e)
                 return None
 

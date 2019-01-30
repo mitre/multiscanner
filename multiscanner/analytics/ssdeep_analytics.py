@@ -54,7 +54,7 @@ class SSDeepAnalytic:
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
-            logger.error('[!] ERROR: This analytic only works with ES storage module.')
+            logger.error('This analytic only works with ES storage module.')
             sys.exit(0)
 
         # probably not ideal...
