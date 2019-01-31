@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 try:
     import pefile
 except ImportError:
-    logging.error("pefile module not installed...")
+    logger.error("pefile module not installed...")
     pefile = False
 
 try:
@@ -23,7 +23,7 @@ try:
         'pehashng': pehash.pehashng,
     }
 except ImportError:
-    logging.error("pehash module not installed...")
+    logger.error("pehash module not installed...")
     pehash = False
 
 __author__ = "Patrick Copeland"

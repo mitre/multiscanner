@@ -34,8 +34,6 @@ DEFAULTCONF = {
     "ENABLED": False
 }
 
-VERBOSE = False
-
 token = None
 
 logger = logging.getLogger(__name__)
@@ -43,13 +41,11 @@ logger = logging.getLogger(__name__)
 
 def _authenticate(conf):
     global token
-    if VERBOSE:
-        logger.debug('Authenticating to FireEye API...')
+    logger.debug('Authenticating to FireEye API...')
     resp = requests.post(conf['API URL'] + '/auth/login', auth=(conf["username"], conf["password"]), verify=False)
     if resp.status_code == 200:
         token = resp.headers['x-feapi-token']
-        if VERBOSE:
-            logger.debug('Authenticated')
+        logger.debug('Authenticated')
     elif resp.status_code == 401:
         raise ValueError('Bad authentication for FireEye API')
     elif resp.status_code == 503:
@@ -80,8 +76,7 @@ def _request(conf, path, method=None, **kwargs):
         raise ValueError('Unknown HTTP method')
 
     if resp.status_code == 401 and resp.json()['fireeyeapis']['errorCode'] == 'FEAUTH1001':
-        if VERBOSE:
-            logger.debug('FireEye token expired, reauthenticating...')
+        logger.debug('FireEye token expired, reauthenticating...')
         _authenticate(conf)
         if method == 'GET':
             resp = requests.get(conf['API URL'] + path, verify=False, **kwargs)

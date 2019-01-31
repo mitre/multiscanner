@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 try:
     import ssdeep
 except ImportError:
-    logging.error("ssdeep module not installed...")
+    logger.error("ssdeep module not installed...")
     ssdeep = None
 
 

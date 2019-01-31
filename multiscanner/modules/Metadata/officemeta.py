@@ -60,7 +60,7 @@ def run(data):
     oparser = OfficeParser(data)
     oparser.parse_office_doc()
     if not oparser.office_header.get('maj_ver'):
-        logging.error('officemeta: {}'.format('Could not parse file as an office document'))
+        logger.error('officemeta: Could not parse file as an office document')
         return
     ret['office_header'] = '%d.%d' % (oparser.office_header.get('maj_ver'), oparser.office_header.get('min_ver'))
 

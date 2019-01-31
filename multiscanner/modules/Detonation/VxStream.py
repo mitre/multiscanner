@@ -119,9 +119,9 @@ def post_to_vxstream(f_name, environment_id,
             if res.status_code == 200:
                 return res.json()
             else:
-                logging.error('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
+                logger.error('Error code: {}, returned when uploading: {}'.format(res.status_code, f.name))
         except requests.exceptions.HTTPError as err:
-            logging.error(err)
+            logger.error(err)
 
 
 def get_file_status(file_sha256, status_url, environment_id, apikey, secret, verify):
@@ -135,10 +135,10 @@ def get_file_status(file_sha256, status_url, environment_id, apikey, secret, ver
             return res.json()
 
         else:
-            logging.error('Error code: {}, returned when getting file status: {}'.format(res.status_code, file_sha256))
+            logger.error('Error code: {}, returned when getting file status: {}'.format(res.status_code, file_sha256))
             return res
     except requests.exceptions.HTTPError as err:
-        logging.error(err)
+        logger.error(err)
 
 
 def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secret, verify):
@@ -154,10 +154,10 @@ def get_file_report(file_sha256, report_url, environment_id, type_, apikey, secr
             remapped = remap(res.json(), visit=visit)
             return remapped
         else:
-            logging.error('Error code: {}, returned when getting report: {}'.format(res.status_code, file_sha256))
+            logger.error('Error code: {}, returned when getting report: {}'.format(res.status_code, file_sha256))
             return res
     except requests.exceptions.HTTPError as err:
-        logging.error(err)
+        logger.error(err)
 
 
 def check(conf=DEFAULTCONF):
@@ -186,7 +186,7 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             file_sha256 = response['response']['sha256']
         except Exception as e:
-            logging.error("{}: {}".format(fname, e))
+            logger.error("{}: {}".format(fname, e))
             continue
         if file_sha256 is not None:
             tasks.append((fname, file_sha256))

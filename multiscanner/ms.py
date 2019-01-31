@@ -44,8 +44,6 @@ DEFAULTCONF = {
     "web-config": CONFIG.replace('config.ini', 'web_config.ini'),
 }
 
-VERBOSE = False
-
 logger = logging.getLogger(__name__)
 
 
@@ -242,13 +240,13 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
                 if modded:
                     results = (result, metadata)
             return results
-        elif VERBOSE:
-            logger.debug(modname, "{} failed check(conf)".format(modname))
+
+        logger.debug("{} failed check(conf)".format(modname))
     else:
         if mod.check() is True:
             return mod.scan(filelist)
-        elif VERBOSE:
-            logger.debug(modname, "{} failed check()".format(modname))
+
+        logger.debug("{} failed check()".format(modname))
 
 
 def _update_DEFAULTCONF(defaultconf, filepath):
@@ -304,8 +302,7 @@ def _copy_to_share(filelist, filedic, sharedir):
         filenames
     sharedir - Where the files are copied to
     """
-    if VERBOSE:
-        logger.debug("Copying files to share...")
+    logger.debug("Copying files to share...")
     tmpfilelist = filelist[:]
     filelist = []
     for fname in tmpfilelist:
@@ -336,8 +333,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
-    if VERBOSE:
-        logger.debug("Starting modules...")
+    logger.debug("Starting modules...")
     ThreadList = []
     ThreadDict = {}
     global_module_interface.run_count += 1
@@ -440,8 +436,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
-    if VERBOSE:
-        logger.debug('Rewriting config...')
+    logger.debug('Rewriting config...')
     ModuleList.sort()
     for module in ModuleList:
         if module.endswith('.py'):
@@ -623,6 +618,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
+    verbose = logger.isEnabledFor(logging.DEBUG)
     i = 0
     while thread_wait_list:
         i += 1
@@ -630,11 +626,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                if VERBOSE:
-                    logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
+                logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
-            if VERBOSE:
+            if verbose:
                 p = 'Waiting on'
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
@@ -757,6 +752,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
+    verbose = logger.isEnabledFor(logging.DEBUG)
     i = 0
     while thread_wait_list:
         i += 1
@@ -764,11 +760,10 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                if VERBOSE:
-                    logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
+                logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
-            if VERBOSE:
+            if verbose:
                 p = 'Waiting on'
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
@@ -889,7 +884,7 @@ def _init(args):
             answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
-            logger.info('Storage configuration file initialized at', config["storage-config"])
+            logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
         else:
             logger.info('Checking for missing modules in storage configuration...')
             storage.config_init(config["storage-config"], overwrite=False)
@@ -901,7 +896,7 @@ def _init(args):
 
 
 def _main():
-    global CONFIG, VERBOSE
+    global CONFIG
 
     # Get args
     args = _parse_args()
@@ -912,19 +907,12 @@ def _main():
         CONFIG = args.config
         _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
 
-    # Send all logs to stderr
-    log_handler = logging.StreamHandler(sys.stderr)
-    logger.propogate = False
-    # Set verbose
+    # Send all logs to stderr and set verbose
     if args.verbose:
-        VERBOSE = args.verbose
-        log_handler.setLevel(logging.DEBUG)
-        logger.addHandler(log_handler)
-        logger.setLevel(logging.DEBUG)
+        log_lvl = logging.DEBUG
     else:
-        log_handler.setLevel(logging.INFO)
-        logger.addHandler(log_handler)
-        logger.setLevel(logging.INFO)
+        log_lvl = logging.INFO
+    logging.basicConfig(stream=sys.stderr, level=log_lvl)
 
     # Checks if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
@@ -974,8 +962,7 @@ def _main():
                     parsedlist.remove(fname)
         reportfile.close()
         i = i - len(parsedlist)
-        if VERBOSE:
-            logger.debug("Skipping {} files which are in the report already".format(i))
+        logger.debug("Skipping {} files which are in the report already".format(i))
 
     # Do multiple runs if there are too many files
     filelists = []
@@ -1007,11 +994,10 @@ def _main():
         # Add in script metadata
         endtime = str(datetime.datetime.now())
 
-        # For windows compatibility
         try:
             username = os.getlogin()
         except Exception as e:
-            # TODO: log exception
+            # For windows compatibility
             username = os.getenv('USERNAME')
 
         # Add metadata to the scan
