@@ -47,7 +47,11 @@ def scan(filelist, conf=DEFAULTCONF):
     includes = 'includes' in conf and conf['includes']
 
     ruleset = {}
-    rules = parseDir(ruleDir, recursive=True)
+    try:
+        rules = parseDir(ruleDir, recursive=True)
+    except FileNotFoundError as e:
+        logger.error('Cannot find files: {}'.format(e.filename))
+        return None
     for r in rules:
         for ext in extlist:
             if r.endswith(ext):
