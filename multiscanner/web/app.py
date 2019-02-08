@@ -32,7 +32,7 @@ DEFAULTCONF = {
 app = Flask(__name__)
 
 # Finagle Flask to read config from .ini file instead of .py file
-web_config_object = configparser.SafeConfigParser()
+web_config_object = configparser.ConfigParser()
 web_config_object.optionxform = str
 web_config_file = utils.get_config_path(MS_CONFIG, 'web')
 web_config_object.read(web_config_file)

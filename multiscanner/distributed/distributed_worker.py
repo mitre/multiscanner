@@ -67,7 +67,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 
 
 def _read_conf(file_path):
-    conf = configparser.SafeConfigParser()
+    conf = configparser.ConfigParser()
     conf.optionxform = str
     with codecs.open(file_path, 'r', encoding='utf-8') as fp:
         conf.readfp(fp)

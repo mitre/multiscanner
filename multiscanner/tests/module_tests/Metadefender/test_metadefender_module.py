@@ -154,9 +154,9 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_submit_sample_success')
         submit_resp = Metadefender._submit_sample(RANDOM_INPUT_FILES[0], 'scan_url', 'user_agent')
-        self.assertEquals(submit_resp['status_code'], 200)
-        self.assertEquals(submit_resp['error'], None)
-        self.assertEquals(submit_resp['scan_id'], generate_scan_id(RANDOM_INPUT_FILES[0]))
+        self.assertEqual(submit_resp['status_code'], 200)
+        self.assertEqual(submit_resp['error'], None)
+        self.assertEqual(submit_resp['scan_id'], generate_scan_id(RANDOM_INPUT_FILES[0]))
 
     @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_failed_w_msg)
     def test_submit_sample_fail_unavailable(self, mock_get):
@@ -166,9 +166,9 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_submit_sample_fail_unavailable')
         submit_resp = Metadefender._submit_sample(RANDOM_INPUT_FILES[1], 'scan_url', 'user_agent')
-        self.assertEquals(submit_resp['status_code'], 500)
-        self.assertEquals(submit_resp['error'], MSG_SERVER_UNAVAILABLE)
-        self.assertEquals(submit_resp['scan_id'], None)
+        self.assertEqual(submit_resp['status_code'], 500)
+        self.assertEqual(submit_resp['error'], MSG_SERVER_UNAVAILABLE)
+        self.assertEqual(submit_resp['scan_id'], None)
 
     @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_failed_no_msg)
     def test_submit_sample_fail_unavailable_no_msg(self, mock_get):
@@ -178,9 +178,9 @@ class MetadefenderTest(unittest.TestCase):
         '''
         print('Running test_submit_sample_fail_unavailable_no_msg')
         submit_resp = Metadefender._submit_sample(RANDOM_INPUT_FILES[1], 'scan_url', 'user_agent')
-        self.assertEquals(submit_resp['status_code'], 500)
-        self.assertEquals(submit_resp['error'], Metadefender.MD_HTTP_ERR_CODES[500])
-        self.assertEquals(submit_resp['scan_id'], None)
+        self.assertEqual(submit_resp['status_code'], 500)
+        self.assertEqual(submit_resp['error'], Metadefender.MD_HTTP_ERR_CODES[500])
+        self.assertEqual(submit_resp['scan_id'], None)
 
     # ---------------------------------------------------------------------
     # This section tests the logic for parsing Metadefender's responses
@@ -195,8 +195,8 @@ class MetadefenderTest(unittest.TestCase):
         print('Running test_get_results_200_success')
         report_resp = Metadefender._retrieve_scan_results('results_url', SCAN_IDS[0])
         is_scan_complete, parsed_resp = Metadefender._parse_scan_result(report_resp)
-        self.assertEquals(is_scan_complete, True)
-        self.assertEquals(parsed_resp['overall_status'], Metadefender.STATUS_SUCCESS)
+        self.assertEqual(is_scan_complete, True)
+        self.assertEqual(parsed_resp['overall_status'], Metadefender.STATUS_SUCCESS)
 
         engine_results = parsed_resp['engine_results']
         for engine_result in engine_results:
@@ -204,17 +204,17 @@ class MetadefenderTest(unittest.TestCase):
             scan_result = engine_result['scan_result']
             threat_found = engine_result['threat_found']
             if engine_name == 'ClamAV':
-                self.assertEquals(scan_result, 'Infected/Known')
-                self.assertEquals(threat_found, 'Heuristics.PDF.ObfuscatedNameObject')
+                self.assertEqual(scan_result, 'Infected/Known')
+                self.assertEqual(threat_found, 'Heuristics.PDF.ObfuscatedNameObject')
             elif engine_name == 'Ahnlab':
-                self.assertEquals(scan_result, 'Infected/Known')
-                self.assertEquals(threat_found, 'Trojan/Win32.Inject.C1515213')
+                self.assertEqual(scan_result, 'Infected/Known')
+                self.assertEqual(threat_found, 'Trojan/Win32.Inject.C1515213')
             elif engine_name == 'ESET':
-                self.assertEquals(scan_result, 'No threats Found')
-                self.assertEquals(threat_found, '')
+                self.assertEqual(scan_result, 'No threats Found')
+                self.assertEqual(threat_found, '')
             elif engine_name == 'Avira':
-                self.assertEquals(scan_result, 'No threats Found')
-                self.assertEquals(threat_found, '')
+                self.assertEqual(scan_result, 'No threats Found')
+                self.assertEqual(threat_found, '')
             else:
                 self.fail('Unexpected Engine: %s' % engine_name)
 
@@ -228,8 +228,8 @@ class MetadefenderTest(unittest.TestCase):
         print('Running test_get_results_200_not_found')
         report_resp = Metadefender._retrieve_scan_results('results_url', SCAN_IDS[0])
         is_scan_complete, parsed_resp = Metadefender._parse_scan_result(report_resp)
-        self.assertEquals(is_scan_complete, False)
-        self.assertEquals(parsed_resp['overall_status'], Metadefender.STATUS_PENDING)
+        self.assertEqual(is_scan_complete, False)
+        self.assertEqual(parsed_resp['overall_status'], Metadefender.STATUS_PENDING)
 
         engine_results = parsed_resp['engine_results']
         if len(engine_results) != 0:
@@ -244,8 +244,8 @@ class MetadefenderTest(unittest.TestCase):
         print('Running test_get_results_200_succes_in_progress')
         report_resp = Metadefender._retrieve_scan_results('results_url', SCAN_IDS[0])
         is_scan_complete, parsed_resp = Metadefender._parse_scan_result(report_resp)
-        self.assertEquals(is_scan_complete, False)
-        self.assertEquals(parsed_resp['overall_status'], Metadefender.STATUS_PENDING)
+        self.assertEqual(is_scan_complete, False)
+        self.assertEqual(parsed_resp['overall_status'], Metadefender.STATUS_PENDING)
         msg = parsed_resp['msg']
         if 'percent complete: 10' not in msg:
             self.fail('Progress percentage not present')
@@ -265,9 +265,9 @@ class MetadefenderTest(unittest.TestCase):
         print('Running test_scan_complete_success')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
                                                  conf=self.create_conf_short_timeout())
-        self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
+        self.assertEqual(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
-            self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_SUCCESS)
+            self.assertEqual(scan_res[1]['overall_status'], Metadefender.STATUS_SUCCESS)
 
     @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_in_progress)
     @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
@@ -278,9 +278,9 @@ class MetadefenderTest(unittest.TestCase):
         print('Running test_scan_timeout_scan_in_progress')
         resultlist, metadata = Metadefender.scan(RANDOM_INPUT_FILES,
                                                  conf=self.create_conf_short_timeout())
-        self.assertEquals(len(resultlist), len(RANDOM_INPUT_FILES))
+        self.assertEqual(len(resultlist), len(RANDOM_INPUT_FILES))
         for scan_res in resultlist:
-            self.assertEquals(scan_res[1]['overall_status'], Metadefender.STATUS_TIMEOUT)
+            self.assertEqual(scan_res[1]['overall_status'], Metadefender.STATUS_TIMEOUT)
 
 
 if __name__ == "__main__":
