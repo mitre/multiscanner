@@ -35,7 +35,7 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-config_object = configparser.SafeConfigParser()
+config_object = configparser.ConfigParser()
 config_object.optionxform = str
 configfile = utils.get_config_path(MS_CONFIG, 'api')
 config_object.read(configfile)
@@ -53,7 +53,7 @@ api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-storage_config_object = configparser.SafeConfigParser()
+storage_config_object = configparser.ConfigParser()
 storage_config_object.optionxform = str
 storage_configfile = utils.get_config_path(MS_CONFIG, 'storage')
 storage_config_object.read(storage_configfile)
@@ -148,7 +148,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     # Get the Scan Config that the task was run with and
     # add it to the task metadata
-    scan_config_object = configparser.SafeConfigParser()
+    scan_config_object = configparser.ConfigParser()
     scan_config_object.optionxform = str
     scan_config_object.read(config)
     full_conf = utils.parse_config(scan_config_object)

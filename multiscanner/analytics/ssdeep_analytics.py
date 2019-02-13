@@ -43,7 +43,7 @@ class SSDeepAnalytic:
 
     def __init__(self, debug=False):
         storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
-        config_object = configparser.SafeConfigParser()
+        config_object = configparser.ConfigParser()
         config_object.optionxform = str
         config_object.read(storage_conf)
         conf = utils.parse_config(config_object)

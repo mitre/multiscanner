@@ -67,7 +67,7 @@ class Database(object):
         self.db_engine = None
 
         # Configuration parsing
-        config_parser = configparser.SafeConfigParser()
+        config_parser = configparser.ConfigParser()
         config_parser.optionxform = str
 
         # (re)generate conf file if necessary

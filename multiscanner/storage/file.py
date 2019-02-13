@@ -48,7 +48,7 @@ class File(storage.Storage):
                     writedata = {}
             if writedata:
                 if metadata:
-                        writedata = {'Files': writedata, 'Metadata': metadata}
+                    writedata = {'Files': writedata, 'Metadata': metadata}
                 if self.config['gzip'] is True:
                     self.file_handle.write(
                         json.dumps(writedata, sort_keys=True, separators=(',', ':'),
