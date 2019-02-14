@@ -41,8 +41,6 @@ TODO:
 '''
 from __future__ import print_function
 
-import codecs
-import configparser
 import hashlib
 import json
 import multiprocessing
@@ -106,20 +104,8 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_object = configparser.SafeConfigParser()
-api_config_object.optionxform = str
-# TODO: Why does this multiscanner.common instead of just common?
 api_config_file = utils.get_config_path(MS_CONFIG, 'api')
-api_config_object.read(api_config_file)
-if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
-    # Write default config
-    api_config_object.add_section('api')
-    for key in DEFAULTCONF:
-        api_config_object.set('api', key, str(DEFAULTCONF[key]))
-    conffile = codecs.open(api_config_file, 'w', 'utf-8')
-    api_config_object.write(conffile)
-    conffile.close()
-api_config = utils.parse_config(api_config_object)
+api_config = utils.read_config(api_config_file, 'api', DEFAULTCONF)
 
 # TODO: fix this mess
 # Needs api_config in order to function properly
@@ -131,13 +117,13 @@ db = database.Database(config=api_config.get('Database'))
 # Sleep and retry until database connection is successful
 try:
     # wait this many seconds between tries
-    db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
-except (configparser.NoSectionError, configparser.NoOptionError):
+    db_sleep_time = int(api_config['Database']['retry_time'])
+except KeyError:
     db_sleep_time = database.Database.DEFAULTCONF['retry_time']
 try:
     # max number of times to retry
-    db_num_retries = int(api_config_object.get('Database', 'retry_num'))
-except (configparser.NoSectionError, configparser.NoOptionError):
+    db_num_retries = int(api_config['Database']['retry_num'])
+except KeyError:
     db_num_retries = database.Database.DEFAULTCONF['retry_num']
 
 for x in range(0, db_num_retries):
@@ -159,11 +145,8 @@ storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
 storage_handler = StorageHandler(configfile=storage_conf)
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_object = configparser.SafeConfigParser()
-ms_config_object.optionxform = str
-ms_configfile = MS_CONFIG
-ms_config_object.read(ms_configfile)
-ms_config = utils.parse_config(ms_config_object)
+ms_config_file = MS_CONFIG
+ms_config = utils.read_config(ms_config_file)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
@@ -279,14 +262,12 @@ def modules():
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
-    ms_config = configparser.SafeConfigParser()
-    ms_config.optionxform = str
-    ms_config.read(MS_CONFIG)
+    global ms_config
     modules = {}
     for module in module_names:
         try:
-            modules[module] = ms_config.get(module, 'ENABLED')
-        except (configparser.NoSectionError, configparser.NoOptionError):
+            modules[module] = ms_config[module]['ENABLED']
+        except KeyError:
             pass
     return jsonify({'Modules': modules})
 

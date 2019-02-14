@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
 import ast
+import codecs
 import configparser
 import imp
 import os
@@ -73,7 +74,7 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
 
 
 def parse_config(config_object):
-    """Take a config object and returns it as a dictionary"""
+    """Converts a config object to a dictionary"""
     return_var = {}
     for section in config_object.sections():
         section_dict = dict(config_object.items(section))
@@ -105,6 +106,42 @@ def get_config_path(config_file, component):
               "of config file. Have you run 'python multiscanner.py init'?"
               % component)
         sys.exit()
+
+
+def write_config(config_object, config_file, section_name, default_config):
+    """Write the default configuration to the given config file
+
+    config_object - the ConfigParser object
+    config_file - the filename of the config file
+    section_name - the name of the section of defaults to be added
+    default_config - values to set this configuration to
+    """
+    config_object.add_section(section_name)
+    for key in default_config:
+        config_object.set(section_name, key, str(default_config[key]))
+    conffile = codecs.open(config_file, 'w', 'utf-8')
+    config_object.write(conffile)
+    conffile.close()
+
+
+def read_config(config_file, section_name=None, default_config=None):
+    """Parse a config file into a dictionary
+
+    Can optionally set a default configuration by providing 'section_name' and
+    'default_config' arguments.
+
+    config_file - the filename of the config file
+    section_name - the name of the section of defaults to be added
+    default_config - values to set this configuration to
+    """
+    config_object = configparser.SafeConfigParser()
+    config_object.optionxform = str
+    config_object.read(config_file)
+    if section_name is not None and default_config is not None and \
+           (not config_object.has_section(section_name) or not os.path.isfile(config_file)):
+        # Write default config
+        write_config(config_object, config_file, section_name, default_config)
+    return parse_config(config_object)
 
 
 def dirname(path):

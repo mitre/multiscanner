@@ -6,8 +6,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals, with_statement)
 
 import argparse
-import codecs
-import configparser
 import multiprocessing
 import os
 import queue
@@ -66,18 +64,10 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
     storage_handler.close()
 
 
-def _read_conf(file_path):
-    conf = configparser.SafeConfigParser()
-    conf.optionxform = str
-    with codecs.open(file_path, 'r', encoding='utf-8') as fp:
-        conf.readfp(fp)
-    return utils.parse_config(conf)
-
-
 def _main():
     args = _parse_args()
     # Pull config options
-    conf = _read_conf(args.config)
+    conf = utils.read_config(args.config)
     multiscanner_config = conf['worker']['multiscanner_config']
 
     # Start worker task

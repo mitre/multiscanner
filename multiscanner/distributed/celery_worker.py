@@ -4,9 +4,7 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import codecs
 import configparser
-import os
 from datetime import datetime
 from socket import gethostname
 
@@ -35,30 +33,15 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-config_object = configparser.SafeConfigParser()
-config_object.optionxform = str
 configfile = utils.get_config_path(MS_CONFIG, 'api')
-config_object.read(configfile)
-
-if not config_object.has_section('celery') or not os.path.isfile(configfile):
-    # Write default config
-    config_object.add_section('celery')
-    for key in DEFAULTCONF:
-        config_object.set('celery', key, str(DEFAULTCONF[key]))
-    conffile = codecs.open(configfile, 'w', 'utf-8')
-    config_object.write(conffile)
-    conffile.close()
-config = utils.parse_config(config_object)
+config = utils.read_config(configfile, 'celery', DEFAULTCONF)
 api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-storage_config_object = configparser.SafeConfigParser()
-storage_config_object.optionxform = str
 storage_configfile = utils.get_config_path(MS_CONFIG, 'storage')
-storage_config_object.read(storage_configfile)
-config = utils.parse_config(storage_config_object)
-es_storage_config = config.get('ElasticSearchStorage')
+storage_config = utils.read_config(storage_configfile)
+es_storage_config = storage_config.get('ElasticSearchStorage')
 
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('protocol'),

@@ -22,7 +22,6 @@ Set of analytics based on ssdeep hash.
 '''
 
 import argparse
-import configparser
 import json
 import sys
 from pprint import pprint
@@ -43,10 +42,7 @@ class SSDeepAnalytic:
 
     def __init__(self, debug=False):
         storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
-        config_object = configparser.SafeConfigParser()
-        config_object.optionxform = str
-        config_object.read(storage_conf)
-        conf = utils.parse_config(config_object)
+        conf = utils.read_config(storage_conf)
         storage_handler = storage.StorageHandler(configfile=storage_conf)
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
