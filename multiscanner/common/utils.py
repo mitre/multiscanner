@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 try:
     import paramiko
     SSH = True
-except ImportError:
+except ImportError as e:
+    logger.debug(e)
     SSH = False
 
 
@@ -84,8 +85,7 @@ def parse_config(config_object):
             try:
                 section_dict[key] = ast.literal_eval(section_dict[key])
             except Exception as e:
-                # TODO: log exception
-                pass
+                logger.debug(e)
         return_var[section] = section_dict
     return return_var
 
@@ -104,9 +104,11 @@ def get_config_path(config_file, component):
     try:
         return conf['main']['%s-config' % component]
     except KeyError:
-        logger.error("Couldn't find '%s-config' value in 'main' section "
-              "of config file. Have you run 'python multiscanner.py init'?"
-              % component)
+        logger.error(
+            "Couldn't find '{}-config' value in 'main' section "
+            "of config file. Have you run 'python multiscanner.py init'?"
+            .format(component)
+        )
         sys.exit()
 
 

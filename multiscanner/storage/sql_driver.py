@@ -149,7 +149,7 @@ class Database(object):
             yield ses
             ses.commit()
         except Exception as e:
-            # TODO: log exception
+            logger.exception(e)
             ses.rollback()
             raise
         finally:
@@ -168,7 +168,7 @@ class Database(object):
                 # Need to explicitly commit here in order to update the ID in the DAO
                 ses.commit()
             except IntegrityError as e:
-                logger.error('PRIMARY KEY must be unique! %s' % e)
+                logger.error('PRIMARY KEY must be unique! {}'.format(e))
                 return -1
             created_task_id = task.task_id
             return created_task_id

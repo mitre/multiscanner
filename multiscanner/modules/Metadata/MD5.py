@@ -32,7 +32,7 @@ def scan(filelist):
                 results.append((fname, hashfile(fname, hashlib.md5())))
                 goodtogo = True
             except Exception as e:
-                logger.error('MD5: {}'.format(e))
+                logger.error(e)
                 time.sleep(3)
                 i += 1
 

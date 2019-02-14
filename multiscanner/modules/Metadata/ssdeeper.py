@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, unicode_literals
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -11,8 +12,6 @@ try:
 except ImportError:
     logger.error("ssdeep module not installed...")
     ssdeep = False
-
-import time
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -51,7 +50,7 @@ def scan(filelist):
                 results.append((fname, doc))
                 goodtogo = True
             except Exception as e:
-                logger.error('ssdeeper: '.format(e))
+                logger.error(e)
                 time.sleep(3)
                 i += 1
 

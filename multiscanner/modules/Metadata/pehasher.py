@@ -62,7 +62,8 @@ def scan(filelist, conf=DEFAULTCONF):
             try:
                 pe_hashes[name] = hasher(pe=pe, raise_on_error=True).hexdigest()
             except Exception as e:
-                logger.error('pehash ({}):'.format(name), e)
+                logger.error(name)
+                logger.error(e)
         results.append((fname, pe_hashes))
 
     metadata = {}

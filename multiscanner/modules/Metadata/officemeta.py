@@ -41,7 +41,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 with open(fname, 'rb') as fh:
                     ret = run(fh.read())
             except Exception as e:
-                logger.error('officemeta {}'.format(e), exc_info=1)
+                logger.exception(e)
             if ret:
                 results.append((fname, ret))
 
@@ -60,7 +60,7 @@ def run(data):
     oparser = OfficeParser(data)
     oparser.parse_office_doc()
     if not oparser.office_header.get('maj_ver'):
-        logger.error('officemeta: Could not parse file as an office document')
+        logger.error('Could not parse file as an office document')
         return
     ret['office_header'] = '%d.%d' % (oparser.office_header.get('maj_ver'), oparser.office_header.get('min_ver'))
 

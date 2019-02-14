@@ -246,11 +246,11 @@ def metricbeat_rollover(days, config=MS_CONFIG):
                 ret = handler.delete_index(index_prefix='metricbeat', days=days)
 
                 if ret is False:
-                    logger.warn('Metricbeat Roller failed')
+                    logger.warning('Metricbeat Roller failed')
                 else:
                     logger.info('Metricbeat indices older than {} days deleted'.format(days))
     except Exception as e:
-        logger.warn(e)
+        logger.warning(e)
     finally:
         storage_handler.close()
 

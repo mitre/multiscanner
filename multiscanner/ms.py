@@ -150,8 +150,7 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
         try:
             conf = mod.DEFAULTCONF
         except Exception as e:
-            # TODO: log exception
-            pass
+            logger.warning(e)
 
     required = None
     if hasattr(mod, "REQUIRES"):
@@ -359,7 +358,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                         conf = mod.DEFAULTCONF
                         conf.update(config[modname])
                     except Exception as e:
-                        # TODO: log exception
+                        logger.warning(e)
                         conf = config[modname]
                     # Remove _load_default from config
                     if '_load_default' in conf:
@@ -372,8 +371,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                 try:
                     conf = mod.DEFAULTCONF
                 except Exception as e:
-                    # TODO: log exception
-                    pass
+                    logger.error(e)
             thread = _Thread(
                 target=_run_module,
                 args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
@@ -406,7 +404,7 @@ def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
                     try:
                         conf = mod.DEFAULTCONF
                     except Exception as e:
-                        # TODO: log exception
+                        logger.warning(e)
                         continue
                     ConfNeedsWrite = True
                     _update_DEFAULTCONF(conf, filepath)
@@ -447,7 +445,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
                 try:
                     conf = mod.DEFAULTCONF
                 except Exception as e:
-                    # TODO: log exception
+                    logger.warning(e)
                     continue
                 _update_DEFAULTCONF(conf, filepath)
                 config.add_section(modname)
@@ -642,8 +640,8 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         for item in filelist:
             try:
                 os.remove(item)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.debug(e)
 
     # Get Result list
     results = []
@@ -857,7 +855,8 @@ def _init(args):
         logger.warning('{} already exists, overwriting will destroy changes'.format(args.config))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
-        except EOFError:
+        except EOFError as e:
+            logger.debug(e)
             answer = 'N'
         if answer == 'y':
             config_init(args.config)
@@ -880,7 +879,8 @@ def _init(args):
         logger.warning('{} already exists, overwriting will destroy changes'.format(config["storage-config"]))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
-        except EOFError:
+        except EOFError as e:
+            logger.debug(e)
             answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
@@ -912,8 +912,9 @@ def _main():
         log_lvl = logging.DEBUG
     else:
         log_lvl = logging.INFO
-    logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)-7s: %(message)s",
-            stream=sys.stderr, level=log_lvl)
+
+    base_logger = logging.getLogger("multiscanner")
+    base_logger.setLevel(log_lvl)
 
     # Checks if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
@@ -955,6 +956,7 @@ def _main():
         try:
             reportfile = codecs.open(args.json, 'r', 'utf-8')
         except Exception as e:
+            logger.error(e)
             sys.exit("ERROR: Could not open report file")
         for line in reportfile:
             line = json.loads(line)
@@ -1000,6 +1002,7 @@ def _main():
         except Exception as e:
             # For windows compatibility
             username = os.getenv('USERNAME')
+            logger.debug(e)
 
         # Add metadata to the scan
         results.append((

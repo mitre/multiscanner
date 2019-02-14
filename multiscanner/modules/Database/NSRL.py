@@ -33,7 +33,7 @@ def check(conf=DEFAULTCONF):
     if None in REQUIRES:
         return False
     if not os.path.isfile(conf['hash_list']) or not os.path.isfile(conf['offsets']):
-        logger.error('NSRL: Required files do not exist')
+        logger.error('Required files do not exist')
         return False
     return True
 

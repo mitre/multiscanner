@@ -37,8 +37,8 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             maaagic = magic.Magic(magic_file=conf['magicfile'])
         except Exception as e:
-            # TODO: log exception
             logger.error("Failed to use magic file: {}".format(conf['magicfile']))
+            logger.error(e)
             maaagic = magic.Magic()
     else:
         maaagic = magic.Magic()

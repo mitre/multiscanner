@@ -71,13 +71,14 @@ def scan(filelist, conf=DEFAULTCONF):
             try:
                 result['import_hash'] = pe.get_imphash()
             except Exception as e:
-                # TODO: log exception
-                pass
+                logger.error(e)
         if hasattr(pe, 'DIRECTORY_ENTRY_RESOURCE'):
-            result['resource_data'] = _dump_resource_data("ROOT",
-            pe.DIRECTORY_ENTRY_RESOURCE,
-            pe,
-            False)
+            result['resource_data'] = _dump_resource_data(
+                "ROOT",
+                pe.DIRECTORY_ENTRY_RESOURCE,
+                pe,
+                False
+            )
         result['sections'] = _get_sections(pe)
         if hasattr(pe, 'DIRECTORY_ENTRY_IMPORT'):
             result['imports'] = _get_imports(pe)
@@ -225,6 +226,7 @@ def _get_rich_header(pe):
             return (richchecksum, None)
         data = list(struct.unpack("<32I", rich_data))
     except pefile.PEFormatError as e:
+        logger.error(e)
         return (richchecksum, None)
 
     checksum = data[1]
@@ -277,7 +279,7 @@ def _dump_resource_data(name, dir, pe, save):
                 resultlist.extend(_dump_resource_data(name + "_%s" % i.name,
                                          i.directory, pe, save))
         except Exception as e:
-            logger.error('pefile: {}'.format(e))
+            logger.error(e)
             return None
         return resultlist
 
@@ -299,6 +301,7 @@ def _get_sections(pe):
             # self._add_result('pe_section', section_name, data)
             resultdict[section_name] = data
         except Exception as e:
+            logger.error(e)
             continue
     return resultdict
 
@@ -337,6 +340,7 @@ def _get_exports(pe):
             results[entry.name] = data
     except Exception as e:
         # self._parse_error("exports", e)
+        logger.error(e)
         pass
     return results
 
@@ -350,6 +354,7 @@ def _get_timestamp(pe):
         return time_string
     except Exception as e:
         # self._parse_error("timestamp", e)
+        logger.error(e)
         return None
 
 
@@ -432,7 +437,7 @@ def _get_version_info(pe):
                                 #     'value': value,
                                 # }
                             except Exception as e:
-                                # TODO: log exception
+                                logger.error(e)
                                 value = str_entry[1].encode('ascii', errors='ignore')
                                 # raw = binascii.hexlify(str_entry[1].encode('utf-8'))
                                 # result = {
@@ -454,7 +459,7 @@ def _get_version_info(pe):
                                     #     'value': value,
                                     # }
                                 except Exception as e:
-                                    # TODO: log exception
+                                    logger.error(e)
                                     value = var_entry.entry[key].encode('ascii', errors='ignore')
                                     # raw = binascii.hexlify(var_entry.entry[key])
                                     # result = {
@@ -466,7 +471,7 @@ def _get_version_info(pe):
                                 # self._add_result('version_var', result_name, result)
                                 results[key] = value
         except Exception as e:
-            pass
+            logger.error(e)
             # self._parse_error("version info", e)
         return results
 

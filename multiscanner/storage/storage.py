@@ -318,7 +318,7 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
         try:
             conf = module.DEFAULTCONF
         except Exception as e:
-            # TODO: log exception
+            logger.warning(e)
             continue
         ConfNeedsWrite = True
         config_object.add_section(module)

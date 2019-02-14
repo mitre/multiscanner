@@ -43,7 +43,7 @@ def scan(filelist, conf=DEFAULTCONF):
                 handle = open(fname, 'rb')
                 ret = run(fname, handle.read(), fast=conf['fast'])
             except Exception as e:
-                logger.error('pdfinfo: {}'.format(e))
+                logger.error(e)
             finally:
                 handle.close()
             if ret:
@@ -119,6 +119,7 @@ def run(fname, data, fast=False):
         try:
             pdf_object = oPDFParser.GetObject()
         except Exception as e:
+            logger.error(e)
             pdf_object = None
         if pdf_object is not None:
             if pdf_object.type in [pdfparser.PDF_ELEMENT_INDIRECT_OBJECT]:

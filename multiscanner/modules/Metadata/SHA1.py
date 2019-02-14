@@ -32,7 +32,7 @@ def scan(filelist):
                 results.append((fname, hashfile(fname, hashlib.sha1())))
                 goodtogo = True
             except Exception as e:
-                logger.error('SHA1: {}'.format(e))
+                logger.error(e)
                 time.sleep(3)
                 i += 1
 

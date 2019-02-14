@@ -109,8 +109,8 @@ class ElasticSearchStorage(storage.Storage):
         # Try to create the index, pass if it exists
         try:
             es_indices.create(self.index)
-        except TransportError:
-            pass
+        except TransportError as e:
+            logger.debug(e)
 
         # Set the total fields limit
         try:
@@ -118,13 +118,14 @@ class ElasticSearchStorage(storage.Storage):
                 index=self.index,
                 body={'index.mapping.total_fields.limit': ES_MAX},
             )
-        except TransportError:
-            pass
+        except TransportError as e:
+            logger.debug(e)
 
         # Create de-dot preprocessor if doesn't exist yet
         try:
             dedot = self.es.ingest.get_pipeline('dedot')
-        except TransportError:
+        except TransportError as e:
+            logger.debug(e)
             dedot = False
         if not dedot:
             script = {
@@ -273,7 +274,7 @@ class ElasticSearchStorage(storage.Storage):
                 for tag in sample_tags.get(sid, []):
                     self.add_tag(sid, tag)
 
-        result = helpers.bulk(self.es, updates_list, raise_on_error=False)
+        helpers.bulk(self.es, updates_list, raise_on_error=False)
         return sample_ids
 
     def get_report(self, sample_id, timestamp):

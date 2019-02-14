@@ -65,8 +65,8 @@ class DirWatcher(FileSystemEventHandler):
                 open(file_path, 'a+').close()
                 # File is considered done if we can open it for writing
                 break
-            except IOError:
-                pass
+            except IOError as e:
+                logger.debug(e)
         self.work_queue.put(file_path)
 
 
@@ -129,7 +129,8 @@ def _main():
     try:
         while True:
             time.sleep(60)
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as e:
+        logger.debug(e)
         exit_signal.value = True
         observer.stop()
     observer.join()

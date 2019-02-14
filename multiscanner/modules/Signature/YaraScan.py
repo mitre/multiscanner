@@ -71,7 +71,7 @@ def scan(filelist, conf=DEFAULTCONF):
             bad_file = os.path.abspath(str(e).split('(')[0])
             if bad_file in ruleset:
                 del ruleset[bad_file]
-                logger.warning('Yara: {}'.format(e))
+                logger.warning(e)
             else:
                 logger.error('Invalid Yara rule in {} but we are unable to '
                              'remove it from our list. Aborting'.format(bad_file))
@@ -88,13 +88,13 @@ def scan(filelist, conf=DEFAULTCONF):
                 f = open(m, 'rb')
                 goodtogo = True
             except Exception as e:
-                print('yara:', e)
+                logger.error(e)
                 time.sleep(3)
                 i += 1
         try:
             hit = yararules.match(data=f.read())
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             continue
         finally:
             f.close()

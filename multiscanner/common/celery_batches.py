@@ -230,7 +230,7 @@ class Batches(Task):
         if self._buffer.qsize():
             requests = list(consume_queue(self._buffer))
             if requests:
-                logger.debug('Batches: Buffer complete: %s', len(requests))
+                logger.debug('Batches: Buffer complete: {}'.format(len(requests)))
                 self.flush(requests)
         if not requests:
             logger.debug('Batches: Canceling timer: Nothing in buffer.')
