@@ -107,7 +107,7 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_object = configparser.SafeConfigParser()
+api_config_object = configparser.ConfigParser()
 api_config_object.optionxform = str
 # TODO: Why does this multiscanner.common instead of just common?
 api_config_file = utils.get_config_path(MS_CONFIG, 'api')
@@ -162,7 +162,7 @@ storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
 storage_handler = StorageHandler(configfile=storage_conf)
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_object = configparser.SafeConfigParser()
+ms_config_object = configparser.ConfigParser()
 ms_config_object.optionxform = str
 ms_configfile = MS_CONFIG
 ms_config_object.read(ms_configfile)
@@ -284,7 +284,7 @@ def modules():
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
-    ms_config = configparser.SafeConfigParser()
+    ms_config = configparser.ConfigParser()
     ms_config.optionxform = str
     ms_config.read(MS_CONFIG)
     modules = {}

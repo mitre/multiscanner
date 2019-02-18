@@ -98,7 +98,7 @@ def get_config_path(config_file, component):
         storage
         api
         web"""
-    conf = configparser.SafeConfigParser()
+    conf = configparser.ConfigParser()
     conf.read(config_file)
     conf = parse_config(conf)
     try:

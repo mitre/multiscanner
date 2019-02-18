@@ -467,7 +467,7 @@ def config_init(filepath, module_list=parseDir(MODULESDIR, recursive=True, exclu
 
     filepath - The config file to create
     """
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     config.optionxform = str
 
     if filepath:
@@ -556,7 +556,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     # Read in config
     if configfile:
-        config_object = configparser.SafeConfigParser()
+        config_object = configparser.ConfigParser()
         config_object.optionxform = str
         # Regen the config if needed or wanted
         if configregen or not os.path.isfile(configfile):
@@ -863,7 +863,7 @@ def _init(args):
         else:
             logger.info('Checking for missing modules in configuration...')
             ModuleList = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
-            config = configparser.SafeConfigParser()
+            config = configparser.ConfigParser()
             config.optionxform = str
             config.read(args.config)
             _write_missing_module_configs(ModuleList, config, filepath=args.config)
@@ -871,7 +871,7 @@ def _init(args):
         config_init(args.config)
 
     # Init storage
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     config.optionxform = str
     config.read(args.config)
     config = _get_main_config(config)
@@ -984,7 +984,7 @@ def _main():
         results = multiscan(filelist, configfile=args.config)
 
         # We need to read in the config for the parseReports call
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.optionxform = str
         config.read(args.config)
         config = _get_main_config(config)

@@ -26,7 +26,7 @@ proxies = {
 try:
     opts = Options()
     opts.add_argument('-headless')
-    driver = webdriver.Firefox(firefox_options=opts)
+    driver = webdriver.Firefox(options=opts)
 except Exception as e:
     pytestmark = pytest.mark.skip
 

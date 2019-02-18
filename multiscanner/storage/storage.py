@@ -98,7 +98,7 @@ class StorageHandler(object):
         # Read in config
         if configfile:
             configfile = utils.get_config_path(MS_CONFIG, 'storage')
-            config_object = configparser.SafeConfigParser()
+            config_object = configparser.ConfigParser()
             config_object.optionxform = str
             # Regen the config if needed or wanted
             if configregen or not os.path.isfile(configfile):
@@ -267,7 +267,7 @@ class StorageHandler(object):
 def config_init(filepath, overwrite=False, storage_classes=None):
     if storage_classes is None:
         storage_classes = _get_storage_classes()
-    config_object = configparser.SafeConfigParser()
+    config_object = configparser.ConfigParser()
     config_object.optionxform = str
     if overwrite or not os.path.isfile(filepath):
         _write_main_config(config_object)
