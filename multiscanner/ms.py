@@ -913,8 +913,8 @@ def _main():
     else:
         log_lvl = logging.INFO
 
-    base_logger = logging.getLogger("multiscanner")
-    base_logger.setLevel(log_lvl)
+    logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)-7s: %(message)s",
+                        stream=sys.stderr, level=log_lvl)
 
     # Checks if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
