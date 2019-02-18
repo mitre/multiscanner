@@ -254,8 +254,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 pass
         else:
             err_msg = submission_resp['error']
-            logger.error('%s: %s not submitted: Code: %d, Message: %s'
-                         % (NAME, basename(fname), resp_status_code, err_msg))
+            logger.error('{}: {} not submitted: Code: {}, Message: {}'
+                         .format(NAME, basename(fname), resp_status_code, err_msg))
 
     # Wait for tasks to finish
     time.sleep(fetch_delay_seconds)
