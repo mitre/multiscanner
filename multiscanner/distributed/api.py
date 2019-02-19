@@ -139,7 +139,7 @@ except (configparser.NoSectionError, configparser.NoOptionError) as e:
 try:
     # max number of times to retry
     db_num_retries = int(api_config_object.get('Database', 'retry_num'))
-except (configparser.NoSectionError, configparser.NoOptionError):
+except (configparser.NoSectionError, configparser.NoOptionError) as e:
     logger.debug(e)
     db_num_retries = database.Database.DEFAULTCONF['retry_num']
 
