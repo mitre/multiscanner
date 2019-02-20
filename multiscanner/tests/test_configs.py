@@ -9,7 +9,7 @@ from multiscanner.common import utils
 CWD = os.path.dirname(os.path.abspath(__file__))
 
 module_list = [os.path.join(CWD, 'modules', 'test_conf.py')]
-filelist = utils.parseDir(os.path.join(CWD, 'files'))
+filelist = utils.parse_dir(os.path.join(CWD, 'files'))
 
 
 def test_no_config():

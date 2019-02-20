@@ -20,7 +20,7 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Get a subset of simple modules to run in testing
 # the celery worker
-MODULE_LIST = utils.parseDir(multiscanner.MODULESDIR, recursive=True)
+MODULE_LIST = utils.parse_dir(multiscanner.MODULESDIR, recursive=True)
 DESIRED_MODULES = [
     'entropy.py',
     'MD5.py',

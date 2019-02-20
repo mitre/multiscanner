@@ -29,7 +29,7 @@ standard_library.install_aliases()
 
 import multiscanner
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
-                                       parse_config, parseDir, parseFileList,
+                                       parse_config, parse_dir, parse_file_list,
                                        queue2list)
 from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path
 from multiscanner.storage import storage
@@ -483,7 +483,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
         config.write(f)
 
 
-def config_init(filepath, module_list=parseDir(MODULESDIR, recursive=True, exclude=["__init__"])):
+def config_init(filepath, module_list=parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])):
     """
     Creates a new config file at filepath
 
@@ -570,12 +570,12 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Init some vars
     # If recursive is False we don't parse the file list and take it as is.
     if recursive:
-        filelist = parseFileList(Files, recursive=recursive)
+        filelist = parse_file_list(Files, recursive=recursive)
     else:
         filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
+        module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
     # A dictionary used for the copyfileto parameter
     filedic = {}
     # What will be the config file object
@@ -892,7 +892,7 @@ def _init(args):
             config_init(args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
+            ModuleList = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
             config = configparser.SafeConfigParser()
             config.optionxform = str
             config.read(args.config)
@@ -955,7 +955,7 @@ def _main():
             sys.exit('ERROR:', args.json, 'is a directory, a file is expected')
 
     # Parse the file list
-    parsedlist = parseFileList(args.Files, recursive=args.recursive)
+    parsedlist = parse_file_list(args.Files, recursive=args.recursive)
 
     # Unzip zip files if asked to
     if args.extractzips:

@@ -11,7 +11,7 @@ import imp
 import os
 import sys
 
-from multiscanner.config import PY3
+from six import PY3
 
 try:
     import paramiko
@@ -166,7 +166,7 @@ def basename(path):
         return split[-1]
 
 
-def parseDir(directory, recursive=False, exclude=['__init__']):
+def parse_dir(directory, recursive=False, exclude=['__init__']):
     """
     Returns a list of files in a directory.
 
@@ -180,7 +180,7 @@ def parseDir(directory, recursive=False, exclude=['__init__']):
         item = os.path.join(directory, item)
         if os.path.isdir(item):
             if recursive:
-                filelist.extend(parseDir(item, recursive))
+                filelist.extend(parse_dir(item, recursive))
             else:
                 continue
         else:
@@ -194,7 +194,7 @@ def parseDir(directory, recursive=False, exclude=['__init__']):
     return filelist
 
 
-def parseFileList(FileList, recursive=False):
+def parse_file_list(FileList, recursive=False):
     """
     Takes a list of files and directories and returns a list of files.
 
@@ -205,7 +205,7 @@ def parseFileList(FileList, recursive=False):
     filelist = []
     for item in FileList:
         if os.path.isdir(item):
-            filelist.extend(parseDir(item, recursive))
+            filelist.extend(parse_dir(item, recursive))
         elif os.path.isfile(item):
             if not PY3:
                 filelist.append(item.decode('utf8'))

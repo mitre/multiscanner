@@ -5,6 +5,7 @@ import os
 import sys
 
 from six import PY3  # noqa F401
+from multiscanner.common.utils import parse_dir
 
 if sys.version_info < (2, 7) or sys.version_info > (4,):
     print("WARNING: You're running an untested version of python")
@@ -50,3 +51,25 @@ def determine_configuration_path(filepath):
 
 # The default config file
 CONFIG = determine_configuration_path(None)
+
+
+def get_enabled_modules():
+    """Returns a dictionary with module names as keys, with boolean values
+    denoting whether or not they are enabled in the config.
+    """
+    files = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
+    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
+    module_names = [m[0] for m in filenames if m[1] == '.py']
+
+    global CONFIG
+    modules = {}
+    for module in module_names:
+        try:
+            modules[module] = CONFIG[module]['ENABLED']
+        except KeyError:
+            pass
+    return modules
+
+
+# The list of enabled modules
+MODULESLIST = get_enabled_modules()

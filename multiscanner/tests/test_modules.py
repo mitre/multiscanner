@@ -28,7 +28,7 @@ class _runmod_tests(object):
     def setup_class(cls):
         cls.real_mod_dir = multiscanner.MODULESDIR
         multiscanner.MODULESDIR = os.path.join(CWD, "modules")
-        cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
+        cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
         cls.files = ['a', 'b', 'C:\\c', '/d/d']
         cls.threadDict = {}
 
@@ -100,7 +100,7 @@ class test_start_module_threads(_runmod_tests):
 
     def test_all_started(self):
         ThreadList = multiscanner._start_module_threads(
-            self.filelist, utils.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
+            self.filelist, utils.parse_dir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started

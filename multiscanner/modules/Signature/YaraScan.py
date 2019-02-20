@@ -7,7 +7,7 @@ import os
 import time
 
 from multiscanner.config import CONFIG
-from multiscanner.common.utils import parseDir
+from multiscanner.common.utils import parse_dir
 
 
 __authors__ = "Nick Beede, Drew Bonasera"
@@ -44,7 +44,7 @@ def scan(filelist, conf=DEFAULTCONF):
     includes = 'includes' in conf and conf['includes']
 
     ruleset = {}
-    rules = parseDir(ruleDir, recursive=True)
+    rules = parse_dir(ruleDir, recursive=True)
     for r in rules:
         for ext in extlist:
             if r.endswith(ext):

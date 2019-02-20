@@ -15,7 +15,7 @@ LIBS = os.path.join(WD, 'libs')
 
 
 def main():
-    filelist = utils.parseFileList([LIBS], recursive=True)
+    filelist = utils.parse_file_list([LIBS], recursive=True)
     try:
         import pefile
         filepath = pefile.__file__[:-1]

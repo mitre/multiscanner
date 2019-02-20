@@ -14,7 +14,7 @@ class _runmulti_tests(object):
     def setup_class(cls):
         cls.real_mod_dir = multiscanner.MODULESDIR
         multiscanner.MODULEDIR = os.path.join(CWD, "modules")
-        cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
+        cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
         multiscanner.CONFIG = '.tmpfile.ini'
 
     @classmethod

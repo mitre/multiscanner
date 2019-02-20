@@ -61,8 +61,7 @@ from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
 
-# TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
+from multiscanner import MODULESLIST, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
 from multiscanner.common import utils, pdf_generator, stix2_generator
 from multiscanner.config import PY3
 from multiscanner.storage import StorageHandler
@@ -258,18 +257,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    files = utils.parseDir(MODULESDIR, True)
-    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
-    module_names = [m[0] for m in filenames if m[1] == '.py']
-
-    global ms_config
-    modules = {}
-    for module in module_names:
-        try:
-            modules[module] = ms_config[module]['ENABLED']
-        except KeyError:
-            pass
-    return jsonify({'Modules': modules})
+    return jsonify({'Modules': MODULESLIST})
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -408,7 +396,7 @@ def import_task(file_):
     return task_id
 
 
-def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
+def queue_task(original_filename, f_name, full_path, metadata, rescan=False, module_list=None):
     '''
     Queue up a single new task, for a single non-archive file.
     '''
@@ -427,7 +415,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
                                   task_id, f_name, metadata,
-                                  config=MS_CONFIG)
+                                  config=MS_CONFIG, module_list=module_list)
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))
@@ -469,6 +457,7 @@ def create_task():
     task_id_list = []
     extract_dir = None
     rescan = False
+    modules = None
     for key in request.form.keys():
         if key in ['file_id', 'archive-password', 'upload_type'] or request.form[key] == '':
             continue
@@ -478,13 +467,15 @@ def create_task():
             elif request.form[key] == 'rescan':
                 rescan = True
         elif key == 'modules':
-            module_names = request.form[key]
-            files = utils.parseDir(MODULESDIR, True)
-            modules = []
-            for f in files:
-                split = os.path.splitext(os.path.basename(f))
-                if split[0] in module_names and split[1] == '.py':
-                    modules.append(f)
+            module_names = request.form[key].split(',')
+            modules = list(set(module_names).intersection(MODULESLIST.keys()))
+
+            # files = utils.parse_dir(MODULESDIR, True)
+            # modules = []
+            # for f in files:
+            #     split = os.path.splitext(os.path.basename(f))
+            #     if split[0] in module_names and split[1] == '.py':
+            #         modules.append(f)
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
             if not os.path.isdir(extract_dir):

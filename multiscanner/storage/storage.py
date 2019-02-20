@@ -329,7 +329,7 @@ def _write_missing_config(config_object, filepath, storage_classes=None):
 
 def _get_storage_classes(dir_path=STORAGE_DIR):
     storage_classes = {}
-    dir_list = utils.parseDir(dir_path, recursive=True)
+    dir_list = utils.parse_dir(dir_path, recursive=True)
     dir_list.remove(os.path.join(dir_path, 'storage.py'))
     # dir_list.remove(os.path.join(dir_path, '__init__.py'))
     dir_list.remove(os.path.join(dir_path, 'sql_driver.py'))
