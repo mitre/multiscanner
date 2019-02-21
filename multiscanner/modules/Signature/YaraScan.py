@@ -54,7 +54,6 @@ def scan(filelist, conf=DEFAULTCONF):
 
     # Ran into a weird issue with file locking, this fixes it
     goodtogo = False
-    i = 0
     yararules = None
     while not goodtogo:
         try:
@@ -105,7 +104,7 @@ def scan(filelist, conf=DEFAULTCONF):
                     except IndexError:
                         h_key = '{}'.format(hit_dict['rule'])
                     hdict[h_key] = hit_dict
-            matches.append((m, hdict))
+            matches.append((m, [x for x in hdict.values()]))
 
     metadata = {}
     rulelist = list(ruleset)
