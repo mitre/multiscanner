@@ -27,7 +27,7 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-import multiscanner
+from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_config, parseDir, parseFileList,
                                        queue2list)
@@ -301,7 +301,7 @@ def _copy_to_share(filelist, filedic, sharedir):
         filenames
     sharedir - Where the files are copied to
     """
-    logger.debug("Copying files to share...")
+    logger.info("Copying files to share...")
     tmpfilelist = filelist[:]
     filelist = []
     for fname in tmpfilelist:
@@ -332,7 +332,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
-    logger.debug("Starting modules...")
+    logger.info("Starting modules...")
     ThreadList = []
     ThreadDict = {}
     global_module_interface.run_count += 1
@@ -434,7 +434,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
-    logger.debug('Rewriting config...')
+    logger.info('Rewriting config...')
     ModuleList.sort()
     for module in ModuleList:
         if module.endswith('.py'):
@@ -616,7 +616,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
-    verbose = logger.isEnabledFor(logging.DEBUG)
+    verbose = logger.isEnabledFor(logging.INFO)
     i = 0
     while thread_wait_list:
         i += 1
@@ -624,7 +624,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
+                logger.info("Module <{0}> took {1:.5f} seconds".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
             if verbose:
@@ -632,7 +632,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
                 p += '...'
-                logger.debug(p)
+                logger.info(p)
         time.sleep(1)
 
     # Delete copied files
@@ -750,7 +750,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
-    verbose = logger.isEnabledFor(logging.DEBUG)
+    verbose = logger.isEnabledFor(logging.INFO)
     i = 0
     while thread_wait_list:
         i += 1
@@ -758,7 +758,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                logger.debug("{} took {}".format(thread.name, thread.endtime - thread.starttime))
+                logger.info("Module <{0}> took {1:.5f} seconds".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
             if verbose:
@@ -766,7 +766,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
                 p += '...'
-                logger.debug(p)
+                logger.info(p)
         time.sleep(1)
 
     # Delete copied files
@@ -819,8 +819,8 @@ def _parse_args():
     Parses arguments
     """
     # argparse stuff
-    desc = "multiscanner v{} - Analyse files against multiple engines"
-    parser = argparse.ArgumentParser(description=desc.format(multiscanner.__version__))
+    desc = "MultiScanner v{} - Analyse files against multiple engines"
+    parser = argparse.ArgumentParser(description=desc.format(MS_VERSION))
     parser.add_argument("-c", "--config", required=False, default=None,
                         help="The config file to use")
     parser.add_argument('-j', '--json', required=False, metavar="filepath", default=None,
@@ -841,7 +841,10 @@ def _parse_args():
                         help="Print report to screen")
     parser.add_argument("-u", "--ugly", action="store_true",
                         help="If set the printed json will not have whitespace")
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Increase output verbosity (e.g., -v, -vv, -vvv)")
+    parser.add_argument("-d", "--debug", action="store_true", default=False,
+                        help="Log debug messages, overrides verbose flag")
     parser.add_argument("--resume", action="store_true",
                         help="Read in the report file and continue where we left off")
     parser.add_argument('Files', nargs='+',
@@ -856,7 +859,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.debug(e)
+            logger.warn(e)
             answer = 'N'
         if answer == 'y':
             config_init(args.config)
@@ -880,7 +883,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.debug(e)
+            logger.warn(e)
             answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
@@ -908,13 +911,19 @@ def _main():
         _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
 
     # Send all logs to stderr and set verbose
-    if args.verbose:
+    if args.debug or args.verbose > 1:
         log_lvl = logging.DEBUG
-    else:
+    elif args.verbose > 0:
         log_lvl = logging.INFO
+    else:
+        log_lvl = logging.WARNING
 
-    logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)-7s: %(message)s",
-                        stream=sys.stderr, level=log_lvl)
+    if log_lvl == logging.DEBUG:
+        logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(filename)s:%(lineno)d %(message)s",
+                            stream=sys.stderr, level=log_lvl)
+    else:
+        logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(message)s",
+                            stream=sys.stderr, level=log_lvl)
 
     # Checks if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
