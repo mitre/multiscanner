@@ -16,14 +16,14 @@ from elasticsearch.exceptions import TransportError
 from multiscanner import MS_WD
 from multiscanner.storage import storage
 
-METADATA_FIELDS = [
-    'MD5',
-    'SHA1',
-    'SHA256',
-    'ssdeep',
-    'tags',
-    'Metadata',
-]
+# METADATA_FIELDS = [
+#     'MD5',
+#     'SHA1',
+#     'SHA256',
+#     'ssdeep',
+#     'tags',
+#     'Metadata',
+# ]
 
 ES_MAX = 2147483647
 ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'templates', 'elasticsearch_template.json')
@@ -165,20 +165,34 @@ class ElasticSearchStorage(storage.Storage):
         sample_list = []
         sample_tags = {}  # track in case we need to update sample instead of create
 
+        logger.warn(report)
         for filename in report:
             report[filename]['filename'] = filename
             try:
-                sample_id = report[filename]['SHA256']
+                sample_id = report[filename]['filemeta']['sha256']
             except KeyError:
+                logger.warn("Unable to find sha256 hash for sample_id")
                 sample_id = uuid4()
             # Store metadata with the sample, not the report
-            sample = {'doc_type': 'sample', 'filename': filename, 'tags': []}
-            for field in METADATA_FIELDS:
-                if field in report[filename]:
-                    if len(report[filename][field]) != 0:
-                        sample[field] = report[filename][field]
-                    del report[filename][field]
+            sample = {
+                'doc_type': 'sample',
+                # 'filename': filename,
+                'filemeta': report[filename]['filemeta'],
+                'ssdeep': report[filename]['ssdeep'],
+                'tags': [],
+            }
+            try:
+                del report[filename]['filemeta']
+                del report[filename]['ssdeep']
+            except Exception as e:
+                pass
+            # for field in METADATA_FIELDS:
+            #     if field in report[filename]:
+            #         if len(report[filename][field]) != 0:
+            #             sample[field] = report[filename][field]
+            #         del report[filename][field]
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
+            report[filename]['filename'] = filename
             sample_tags[sample_id] = sample.get('tags', [])
 
             # If there is Cuckoo results in the report, some

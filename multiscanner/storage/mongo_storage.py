@@ -51,7 +51,7 @@ class MongoStorage(storage.Storage):
         for filename in report:
             report[filename]['filename'] = filename
             try:
-                report_id = report[filename]['SHA256']
+                report_id = report[filename]['filemeta']['sha256']
             except KeyError:
                 report_id = uuid4()
             report_id_list.append(report_id)

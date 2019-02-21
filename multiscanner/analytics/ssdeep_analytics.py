@@ -44,7 +44,7 @@ from multiscanner.storage import storage
 
 class SSDeepAnalytic:
 
-    def __init__(self, debug=False):
+    def __init__(self):
         storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
         config_object = configparser.ConfigParser()
         config_object.optionxform = str
@@ -62,8 +62,6 @@ class SSDeepAnalytic:
         self.index = conf['ElasticSearchStorage']['index']
         self.doc_type = '_doc'
 
-        self.debug = debug
-
     def ssdeep_compare(self):
         if ssdeep is None:
             logger.error("ssdeep module not installed... can't perform ssdeep_compare()")
@@ -71,7 +69,7 @@ class SSDeepAnalytic:
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {
-            '_source': ['ssdeep', 'SHA256'],
+            '_source': ['ssdeep', 'filemeta'],
             'query': {
                 'bool': {
                     'must': [
@@ -99,12 +97,12 @@ class SSDeepAnalytic:
             chunksize = new_ssdeep_hit_src.get('ssdeep').get('chunksize')
             chunk = new_ssdeep_hit_src.get('ssdeep').get('chunk')
             double_chunk = new_ssdeep_hit_src.get('ssdeep').get('double_chunk')
-            new_sha256 = new_ssdeep_hit_src.get('SHA256')
+            new_sha256 = new_ssdeep_hit_src.get('filemeta', {}).get('sha256')
 
             # build new query for docs that match our optimizations
             # https://github.com/intezer/ssdeep-elastic/blob/master/ssdeep_elastic/ssdeep_querying.py#L35
             opti_query = {
-                '_source': ['ssdeep', 'SHA256'],
+                '_source': ['ssdeep', 'filemeta'],
                 'query': {
                     'bool': {
                         'must': [
@@ -138,7 +136,7 @@ class SSDeepAnalytic:
                                 'bool': {
                                     'must_not': {
                                         'match': {
-                                            'SHA256': new_sha256
+                                            'filemeta.sha256': new_sha256
                                         }
                                     }
                                 }
@@ -171,15 +169,10 @@ class SSDeepAnalytic:
                 # for each hit, ssdeep.compare != 0; update the matches
                 for opti_hit in opti_page['hits']['hits']:
                     opti_hit_src = opti_hit.get('_source')
-                    opti_sha256 = opti_hit_src.get('SHA256')
+                    opti_sha256 = opti_hit_src.get('filemeta', {}).get('sha256')
                     result = ssdeep.compare(
                                 new_ssdeep_hit_src.get('ssdeep').get('ssdeep_hash'),
                                 opti_hit_src.get('ssdeep').get('ssdeep_hash'))
-
-                    if self.debug:
-                        logger.debug(new_ssdeep_hit_src.get('SHA256'))
-                        logger.debug(opti_hit_src.get('SHA256'))
-                        logger.debug(result)
 
                     msg = {'doc': {'ssdeep': {'matches': {opti_sha256: result}}}}
                     self.es.update(
@@ -210,7 +203,7 @@ class SSDeepAnalytic:
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {
-            '_source': ['ssdeep', 'SHA256'],
+            '_source': ['ssdeep', 'filemeta'],
             'query': {
                 'exists': {
                     'field': 'ssdeep.matches'
@@ -228,8 +221,8 @@ class SSDeepAnalytic:
         while len(page['hits']['hits']) > 0:
             for hit in page['hits']['hits']:
                 hit_src = hit.get('_source')
-                records[hit_src.get('SHA256')] = hit_src.get('ssdeep', {}) \
-                                                        .get('matches', {})
+                records[hit_src.get('filemeta', {}).get('sha256')] = hit_src.get('ssdeep', {}) \
+                                                                            .get('matches', {})
             sid = page['_scroll_id']
             page = self.es.scroll(scroll_id=sid, scroll='2m')
 
@@ -259,17 +252,18 @@ def main():
         'Multiscanner\'s Elasticsearch datastore to run analytics based on '
         'ssdeep hash.')
     group = parser.add_mutually_exclusive_group(required=True)
-    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true',
-                        help='Increase output to stdout')
     group.add_argument('-c', '--compare', dest='compare', action='store_true',
         help='Run ssdeep.compare using a few optimizations based on ssdeep'
         ' hash structure.')
     group.add_argument('-g', '--group', dest='group', action='store_true',
         help='Returns group of samples based on ssdeep hash.')
 
+    logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(message)s",
+                        stream=sys.stderr, level=logging.INFO)
+
     args = parser.parse_args()
 
-    ssdeep_analytic = SSDeepAnalytic(debug=args.verbose)
+    ssdeep_analytic = SSDeepAnalytic()
 
     if args.compare:
         ssdeep_analytic.ssdeep_compare()

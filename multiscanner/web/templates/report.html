@@ -259,14 +259,14 @@
           'filename',
           'Scan Time',
           'Scan Metadata',
-          'MD5',
-          'SHA1',
-          'SHA256'
+          'md5',
+          'sha1',
+          'sha256'
       ]
       top_fields_list.forEach(function(elem) {
-        if (data.Report.hasOwnProperty(elem)) {
-          val = data.Report[elem];
-          delete data.Report[elem];
+        if (data.Report.filemeta.hasOwnProperty(elem)) {
+          val = data.Report.filemeta[elem];
+          delete data.Report.filemeta[elem];
           $('tbody:first').append(determineType(elem, val));
         }
       });

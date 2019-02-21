@@ -255,10 +255,10 @@ def create_stix2_from_json_report(report, custom_labels=None):
         labels.extend(custom_labels)
 
     file_name = r.get('filename', '')
-    sha1_value = r.get('SHA1', '')
-    sha256_value = r.get('SHA256', '')
-    md5_value = r.get('MD5', '')
-    ssdeep_value = r.get('ssdeep', {})
+    sha1_value = r.get('filemeta', {}).get('sha1', '')
+    sha256_value = r.get('filemeta', {}).get('sha256', '')
+    md5_value = r.get('filemeta', {}).get('md5', '')
+    ssdeep_value = r.get('ssdeep')
 
     if file_name:
         submission_pattern.append(
