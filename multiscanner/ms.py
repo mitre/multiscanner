@@ -342,12 +342,12 @@ def _copy_to_share(filelist, filedic, sharedir):
     return filelist
 
 
-def _start_module_threads(filelist, ModuleList, config, global_module_interface):
+def _start_module_threads(filelist, module_list, config, global_module_interface):
     """
     Starts each module on the file list in a separate thread. Returns a list of threads
 
     filelist - A lists of strings. The strings are files to be scanned
-    ModuleList - A list of all the modules to be run
+    module_list - A list of all the modules to be run
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
@@ -357,7 +357,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     ThreadDict = {}
     global_module_interface.run_count += 1
     # Starts a thread for each module.
-    for module in ModuleList:
+    for module in module_list:
         if module.endswith(".py"):
             modname = os.path.basename(module[:-3])
 
@@ -405,17 +405,17 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     return ThreadList
 
 
-def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
+def _write_missing_module_configs(module_list, config, filepath=CONFIG):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
-    ModuleList - The list of modules
+    module_list - The list of modules
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
     ConfNeedsWrite = False
-    ModuleList.sort()
-    for module in ModuleList:
+    module_list.sort()
+    for module in module_list:
         if module.endswith(".py"):
             modname = os.path.basename(module).split('.')[0]
             moddir = os.path.dirname(module)
@@ -447,18 +447,18 @@ def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
     return False
 
 
-def _rewrite_config(ModuleList, config, filepath=CONFIG):
+def _rewrite_config(module_list, config, filepath=CONFIG):
     """
     Write in default config for all modules.
 
-    ModuleList - The list of modules
+    module_list - The list of modules
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
     if VERBOSE:
         print('Rewriting config...')
-    ModuleList.sort()
-    for module in ModuleList:
+    module_list.sort()
+    for module in module_list:
         if module.endswith('.py'):
             modname = os.path.basename(module).split('.')[0]
             moddir = os.path.dirname(module)
@@ -892,11 +892,11 @@ def _init(args):
             config_init(args.config)
         else:
             print('Checking for missing modules in configuration...')
-            ModuleList = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
+            module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
             config = configparser.SafeConfigParser()
             config.optionxform = str
             config.read(args.config)
-            _write_missing_module_configs(ModuleList, config, filepath=args.config)
+            _write_missing_module_configs(module_list, config, filepath=args.config)
     else:
         config_init(args.config)
 
