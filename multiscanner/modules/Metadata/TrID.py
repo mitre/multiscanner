@@ -26,7 +26,7 @@ KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {
     "path": '/opt/trid/trid',
-    'ENABLED': True,
+    'ENABLED': False,
     "key": KEY,
     "cmdline": ['-r:3'],
     'host': HOST,

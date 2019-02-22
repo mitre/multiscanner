@@ -12,7 +12,7 @@ __author__ = 'Mike Long'
 __license__ = "MPL 2.0"
 
 DEFAULTCONF = {
-    "ENABLED": True,
+    "ENABLED": False,
 }
 
 
