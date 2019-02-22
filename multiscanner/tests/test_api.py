@@ -26,7 +26,6 @@ DB_CONF['db_name'] = TEST_DB_PATH
 
 TEST_UPLOAD_FOLDER = os.path.join(CWD, 'tmp')
 if not os.path.isdir(TEST_UPLOAD_FOLDER):
-    print('Creating upload dir')
     os.makedirs(TEST_UPLOAD_FOLDER)
 api.api_config['api']['upload_folder'] = TEST_UPLOAD_FOLDER
 

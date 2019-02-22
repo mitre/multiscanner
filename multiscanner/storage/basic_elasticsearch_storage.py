@@ -1,11 +1,14 @@
 """
 Storage module that will interact with elasticsearch in a simple way.
 """
+import logging
 from uuid import uuid4
 
 from elasticsearch import Elasticsearch
 
 from multiscanner.storage import storage
+
+logger = logging.getLogger(__name__)
 
 
 class BasicElasticSearchStorage(storage.Storage):
@@ -72,7 +75,7 @@ class BasicElasticSearchStorage(storage.Storage):
                 dictionary[new_key] = dictionary[key]
                 del dictionary[key]
                 if not self.warned_renamed:
-                    print('WARNING: Some keys had a . in their name which was replaced with a _')
+                    logger.warning('Some keys had a . in their name which was replaced with a _')
                     self.warned_renamed = True
         return dictionary
 
@@ -128,6 +131,6 @@ class BasicElasticSearchStorage(storage.Storage):
                 else:
                     array[i] = str(array[i])
                     if not self.warned_changed:
-                        print("WARNING: We changed some of the data types so that Elasticsearch wouldn't get angry")
+                        logger.warning("We changed some of the data types so that Elasticsearch wouldn't get angry")
                         self.warned_changed = True
         return array

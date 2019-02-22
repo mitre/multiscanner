@@ -15,7 +15,8 @@ Notes on special configuration options:
     The value of ('fetch delay seconds' + 'poll interval seconds')
     should be less than ('timeout' + 'running timeout')
 '''
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
 import requests
 import time
 from multiscanner.common.utils import basename
@@ -57,6 +58,8 @@ STATUS_SUCCESS = 'Success'
 STATUS_FAIL = 'Failure'
 STATUS_PENDING = 'Pending'
 STATUS_TIMEOUT = 'Timeout'
+
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -251,8 +254,8 @@ def scan(filelist, conf=DEFAULTCONF):
                 pass
         else:
             err_msg = submission_resp['error']
-            print('%s: %s not submitted: Code: %d, Message: %s'
-                  % (NAME, basename(fname), resp_status_code, err_msg))
+            logger.error('{}: {} not submitted: Code: {}, Message: {}'
+                         .format(NAME, basename(fname), resp_status_code, err_msg))
 
     # Wait for tasks to finish
     time.sleep(fetch_delay_seconds)

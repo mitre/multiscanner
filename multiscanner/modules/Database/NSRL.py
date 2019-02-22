@@ -1,8 +1,9 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
 
+import logging
 import gzip
 import os
 import struct
@@ -23,6 +24,8 @@ DEFAULTCONF = {
     'ENABLED': True
 }
 
+logger = logging.getLogger(__name__)
+
 
 def check(conf=DEFAULTCONF):
     if not conf['ENABLED']:
@@ -30,7 +33,8 @@ def check(conf=DEFAULTCONF):
     if None in REQUIRES:
         return False
     if not os.path.isfile(conf['hash_list']) or not os.path.isfile(conf['offsets']):
-        print('NSRL: Required files do not exist')
+        logger.error('Required files (hash_list and offsets) do not exist. '
+                     'NSRL module exiting.')
         return False
     return True
 

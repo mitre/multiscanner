@@ -24,13 +24,16 @@ Set of analytics based on ssdeep hash.
 import argparse
 import configparser
 import json
+import logging
 import sys
-from pprint import pprint
+from pprint import pformat
+
+logger = logging.getLogger(__name__)
 
 try:
     import ssdeep
 except ImportError:
-    print("ssdeep module not installed...")
+    logger.error("ssdeep module not installed...")
     ssdeep = None
 
 
@@ -51,7 +54,7 @@ class SSDeepAnalytic:
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
-            print('[!] ERROR: This analytic only works with ES storage module.')
+            logger.error('This analytic only works with ES storage module.')
             sys.exit(0)
 
         # probably not ideal...
@@ -63,7 +66,7 @@ class SSDeepAnalytic:
 
     def ssdeep_compare(self):
         if ssdeep is None:
-            print("ssdeep module not installed... can't perform ssdeep_compare()")
+            logger.error("ssdeep module not installed... can't perform ssdeep_compare()")
             return
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
@@ -174,10 +177,9 @@ class SSDeepAnalytic:
                                 opti_hit_src.get('ssdeep').get('ssdeep_hash'))
 
                     if self.debug:
-                        print(
-                            new_ssdeep_hit_src.get('SHA256'),
-                            opti_hit_src.get('SHA256'),
-                            result)
+                        logger.debug(new_ssdeep_hit_src.get('SHA256'))
+                        logger.debug(opti_hit_src.get('SHA256'))
+                        logger.debug(result)
 
                     msg = {'doc': {'ssdeep': {'matches': {opti_sha256: result}}}}
                     self.es.update(
@@ -271,10 +273,10 @@ def main():
 
     if args.compare:
         ssdeep_analytic.ssdeep_compare()
-        print('[*] Success')
+        logger.info('[*] Success')
     elif args.group:
-        pprint(ssdeep_analytic.ssdeep_group())
-        print('[*] Success')
+        logger.info(pformat(ssdeep_analytic.ssdeep_group()))
+        logger.info('[*] Success')
 
 
 if __name__ == '__main__':

@@ -1,14 +1,17 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
 try:
     import ssdeep
 except ImportError:
-    print("ssdeep module not installed...")
+    logger.error("ssdeep module not installed...")
     ssdeep = False
-
-import time
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -47,7 +50,7 @@ def scan(filelist):
                 results.append((fname, doc))
                 goodtogo = True
             except Exception as e:
-                print('ssdeeper:', e)
+                logger.error(e)
                 time.sleep(3)
                 i += 1
 

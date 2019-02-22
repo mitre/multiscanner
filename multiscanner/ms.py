@@ -3,14 +3,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import argparse
 import codecs
 import configparser
 import datetime
 import json
+import logging
 import multiprocessing
 import os
 import random
@@ -27,7 +27,7 @@ from builtins import *  # noqa: F401,F403
 from future import standard_library
 standard_library.install_aliases()
 
-import multiscanner
+from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_config, parseDir, parseFileList,
                                        queue2list)
@@ -44,23 +44,7 @@ DEFAULTCONF = {
     "web-config": CONFIG.replace('config.ini', 'web_config.ini'),
 }
 
-VERBOSE = False
-
-
-class _Print():
-    def __init__(self, lock=threading.Lock(), real_print=print):
-        self.lock = lock
-        self.real_print = real_print
-
-    def __call__(self, *args, **kwargs):
-        self.lock.acquire()
-        try:
-            self.real_print(*args, **kwargs)
-        finally:
-            self.lock.release()
-
-
-print = _Print()
+logger = logging.getLogger(__name__)
 
 
 class _Thread(threading.Thread):
@@ -161,14 +145,12 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
     """
 
     mod.multiscanner = _ModuleInterface(modname, global_module_interface)
-    mod.print = print
 
     if not conf:
         try:
             conf = mod.DEFAULTCONF
         except Exception as e:
-            # TODO: log exception
-            pass
+            logger.warning(e)
 
     required = None
     if hasattr(mod, "REQUIRES"):
@@ -257,13 +239,13 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
                 if modded:
                     results = (result, metadata)
             return results
-        elif VERBOSE:
-            print(modname, "failed check(conf)")
+
+        logger.debug("{} failed check(conf)".format(modname))
     else:
         if mod.check() is True:
             return mod.scan(filelist)
-        elif VERBOSE:
-            print(modname, "failed check()")
+
+        logger.debug("{} failed check()".format(modname))
 
 
 def _update_DEFAULTCONF(defaultconf, filepath):
@@ -319,8 +301,7 @@ def _copy_to_share(filelist, filedic, sharedir):
         filenames
     sharedir - Where the files are copied to
     """
-    if VERBOSE:
-        print("Copying files to share...")
+    logger.info("Copying files to share...")
     tmpfilelist = filelist[:]
     filelist = []
     for fname in tmpfilelist:
@@ -351,8 +332,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
-    if VERBOSE:
-        print("Starting modules...")
+    logger.info("Starting modules...")
     ThreadList = []
     ThreadDict = {}
     global_module_interface.run_count += 1
@@ -369,7 +349,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
             moddir = os.path.dirname(module)
             mod = load_module(os.path.basename(module).split('.')[0], [moddir])
             if not mod:
-                print(module, " not a valid module...")
+                logger.warning("{} not a valid module...".format(module))
                 continue
             conf = None
             if modname in config:
@@ -378,7 +358,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                         conf = mod.DEFAULTCONF
                         conf.update(config[modname])
                     except Exception as e:
-                        # TODO: log exception
+                        logger.warning(e)
                         conf = config[modname]
                     # Remove _load_default from config
                     if '_load_default' in conf:
@@ -391,8 +371,7 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
                 try:
                     conf = mod.DEFAULTCONF
                 except Exception as e:
-                    # TODO: log exception
-                    pass
+                    logger.error(e)
             thread = _Thread(
                 target=_run_module,
                 args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
@@ -425,7 +404,7 @@ def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
                     try:
                         conf = mod.DEFAULTCONF
                     except Exception as e:
-                        # TODO: log exception
+                        logger.warning(e)
                         continue
                     ConfNeedsWrite = True
                     _update_DEFAULTCONF(conf, filepath)
@@ -455,8 +434,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
-    if VERBOSE:
-        print('Rewriting config...')
+    logger.info('Rewriting config...')
     ModuleList.sort()
     for module in ModuleList:
         if module.endswith('.py'):
@@ -467,7 +445,7 @@ def _rewrite_config(ModuleList, config, filepath=CONFIG):
                 try:
                     conf = mod.DEFAULTCONF
                 except Exception as e:
-                    # TODO: log exception
+                    logger.warning(e)
                     continue
                 _update_DEFAULTCONF(conf, filepath)
                 config.add_section(modname)
@@ -497,7 +475,7 @@ def config_init(filepath, module_list=parseDir(MODULESDIR, recursive=True, exclu
     else:
         filepath = determine_configuration_path(filepath)
         _rewrite_config(module_list, config, filepath)
-    print('Configuration file initialized at', filepath)
+    logger.info('Configuration file initialized at {}'.format(filepath))
 
 
 def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, python=False):
@@ -562,11 +540,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     config - A dictionary containing the configuration options to be used.
     module_list - A list of file paths to be used as modules. Each string should end in .py
     """
-    # Redirect stdout to stderr
-    stdout = sys.stdout
-    sys.stdout = sys.stderr
-    # TODO: Make sure the cleanup from this works is something breaks
-
     # Init some vars
     # If recursive is False we don't parse the file list and take it as is.
     if recursive:
@@ -614,7 +587,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     # If none of the files existed
     if not filelist:
-        sys.stdout = stdout
         raise ValueError("No valid files")
 
     # Copy files to a share if configured
@@ -624,7 +596,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         if os.path.isdir(main_config["copyfilesto"]):
             filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
         else:
-            sys.stdout = stdout
             raise IOError('The copyfilesto dir "' + main_config["copyfilesto"] + '" is not a valid dir')
 
     # Create the global module interface
@@ -640,11 +611,12 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
     # Warn about spaces in file names
     for f in filelist:
         if ' ' in f:
-            print('WARNING: You are using file paths with spaces. This may result in modules not reporting correctly.')
+            logger.warning('You are using file paths with spaces. This may result in modules not reporting correctly.')
             break
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
+    verbose = logger.isEnabledFor(logging.INFO)
     i = 0
     while thread_wait_list:
         i += 1
@@ -652,16 +624,15 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                if VERBOSE:
-                    print(thread.name, "took", thread.endtime - thread.starttime)
+                logger.info("Module <{0}> took {1:.5f} seconds".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
-            if VERBOSE:
+            if verbose:
                 p = 'Waiting on'
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
                 p += '...'
-                print(p)
+                logger.info(p)
         time.sleep(1)
 
     # Delete copied files
@@ -669,8 +640,8 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         for item in filelist:
             try:
                 os.remove(item)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.debug(e)
 
     # Get Result list
     results = []
@@ -711,8 +682,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
 
     global_module_interface._cleanup()
 
-    # Return stdout to previous state
-    sys.stdout = stdout
     return results
 
 
@@ -781,6 +750,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
 
     # Wait for all threads to finish
     thread_wait_list = thread_list[:]
+    verbose = logger.isEnabledFor(logging.INFO)
     i = 0
     while thread_wait_list:
         i += 1
@@ -788,16 +758,15 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
             if not thread.is_alive():
                 i = 0
                 thread_wait_list.remove(thread)
-                if VERBOSE:
-                    print(thread.name, "took", thread.endtime - thread.starttime)
+                logger.info("Module <{0}> took {1:.5f} seconds".format(thread.name, thread.endtime - thread.starttime))
         if i == 15:
             i = 0
-            if VERBOSE:
+            if verbose:
                 p = 'Waiting on'
                 for thread in thread_wait_list:
                     p += ' ' + thread.name
                 p += '...'
-                print(p)
+                logger.info(p)
         time.sleep(1)
 
     # Delete copied files
@@ -850,8 +819,8 @@ def _parse_args():
     Parses arguments
     """
     # argparse stuff
-    desc = "multiscanner v{} - Analyse files against multiple engines"
-    parser = argparse.ArgumentParser(description=desc.format(multiscanner.__version__))
+    desc = "MultiScanner v{} - Analyse files against multiple engines"
+    parser = argparse.ArgumentParser(description=desc.format(MS_VERSION))
     parser.add_argument("-c", "--config", required=False, default=None,
                         help="The config file to use")
     parser.add_argument('-j', '--json', required=False, metavar="filepath", default=None,
@@ -872,7 +841,10 @@ def _parse_args():
                         help="Print report to screen")
     parser.add_argument("-u", "--ugly", action="store_true",
                         help="If set the printed json will not have whitespace")
-    parser.add_argument("-v", "--verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Increase output verbosity (e.g., -v, -vv, -vvv)")
+    parser.add_argument("-d", "--debug", action="store_true", default=False,
+                        help="Log debug messages, overrides verbose flag")
     parser.add_argument("--resume", action="store_true",
                         help="Read in the report file and continue where we left off")
     parser.add_argument('Files', nargs='+',
@@ -883,15 +855,16 @@ def _parse_args():
 def _init(args):
     # Initialize configuration file
     if os.path.isfile(args.config):
-        print('Warning:', args.config, 'already exists, overwriting will destroy changes')
+        logger.warning('{} already exists, overwriting will destroy changes'.format(args.config))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
-        except EOFError:
+        except EOFError as e:
+            logger.warn(e)
             answer = 'N'
         if answer == 'y':
             config_init(args.config)
         else:
-            print('Checking for missing modules in configuration...')
+            logger.info('Checking for missing modules in configuration...')
             ModuleList = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
             config = configparser.ConfigParser()
             config.optionxform = str
@@ -906,29 +879,27 @@ def _init(args):
     config.read(args.config)
     config = _get_main_config(config)
     if os.path.isfile(config["storage-config"]):
-        print('Warning:', config["storage-config"], 'already exists, overwriting will destroy changes')
+        logger.warning('{} already exists, overwriting will destroy changes'.format(config["storage-config"]))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
-        except EOFError:
+        except EOFError as e:
+            logger.warn(e)
             answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)
-            print('Storage configuration file initialized at', config["storage-config"])
+            logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
         else:
-            print('Checking for missing modules in storage configuration...')
+            logger.info('Checking for missing modules in storage configuration...')
             storage.config_init(config["storage-config"], overwrite=False)
     else:
         storage.config_init(config["storage-config"])
-        print('Storage configuration file initialized at', config["storage-config"])
+        logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
 
     exit(0)
 
 
 def _main():
-    global CONFIG, VERBOSE
-    # Force all prints to go to stderr
-    stdout = sys.stdout
-    sys.stdout = sys.stderr
+    global CONFIG
 
     # Get args
     args = _parse_args()
@@ -938,9 +909,21 @@ def _main():
     else:
         CONFIG = args.config
         _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
-    # Set verbose
-    if args.verbose:
-        VERBOSE = args.verbose
+
+    # Send all logs to stderr and set verbose
+    if args.debug or args.verbose > 1:
+        log_lvl = logging.DEBUG
+    elif args.verbose > 0:
+        log_lvl = logging.INFO
+    else:
+        log_lvl = logging.WARNING
+
+    if log_lvl == logging.DEBUG:
+        logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(filename)s:%(lineno)d %(message)s",
+                            stream=sys.stderr, level=log_lvl)
+    else:
+        logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(message)s",
+                            stream=sys.stderr, level=log_lvl)
 
     # Checks if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
@@ -970,7 +953,7 @@ def _main():
                     for uzfile in z.namelist():
                         parsedlist.append(os.path.join(unzip_dir, uzfile))
                 except RuntimeError as e:
-                    print("ERROR: Failed to extract ", fname, ' - ', e, sep='')
+                    logger.error("Failed to extract {} - {}".format(fname, e))
                 parsedlist.remove(fname)
 
     if not parsedlist:
@@ -982,6 +965,7 @@ def _main():
         try:
             reportfile = codecs.open(args.json, 'r', 'utf-8')
         except Exception as e:
+            logger.error(e)
             sys.exit("ERROR: Could not open report file")
         for line in reportfile:
             line = json.loads(line)
@@ -990,8 +974,7 @@ def _main():
                     parsedlist.remove(fname)
         reportfile.close()
         i = i - len(parsedlist)
-        if VERBOSE:
-            print("Skipping", i, "files which are in the report already")
+        logger.debug("Skipping {} files which are in the report already".format(i))
 
     # Do multiple runs if there are too many files
     filelists = []
@@ -1023,12 +1006,12 @@ def _main():
         # Add in script metadata
         endtime = str(datetime.datetime.now())
 
-        # For windows compatibility
         try:
             username = os.getlogin()
         except Exception as e:
-            # TODO: log exception
+            # For windows compatibility
             username = os.getenv('USERNAME')
+            logger.debug(e)
 
         # Add metadata to the scan
         results.append((
@@ -1055,17 +1038,16 @@ def _main():
                 }
             ))
 
-        if args.show or not stdout.isatty():
+        if args.show or not sys.stdout.isatty():
             # TODO: Make this output something readable
             # Parse Results
             report = parse_reports(results, groups=config["group-types"], ugly=args.ugly, includeMetadata=args.metadata)
 
             # Print report
             try:
-                print(convert_encoding(report, encoding='ascii', errors='replace'), file=stdout)
-                stdout.flush()
+                logger.info(convert_encoding(report, encoding='ascii', errors='replace'))
             except Exception as e:
-                print('ERROR: Can\'t print report -', e)
+                logger.error('Can\'t print report - {}'.format(e))
 
         report = parse_reports(results, groups=config["group-types"], includeMetadata=args.metadata, python=True)
 

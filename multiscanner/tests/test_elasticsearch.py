@@ -192,7 +192,6 @@ class TestES(unittest.TestCase):
         note_id = kwargs['id']
         parent = kwargs['routing']
         body = kwargs['body']
-        print(body)
 
         self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)
