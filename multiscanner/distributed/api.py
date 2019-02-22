@@ -39,10 +39,9 @@ by modifying the 'cors' setting in the 'api' section of the api config file.
 TODO:
 * Add doc strings to functions
 '''
-from __future__ import print_function
-
 import hashlib
 import json
+import logging
 import multiprocessing
 import os
 import queue
@@ -89,6 +88,8 @@ DEFAULTCONF = {
                            # submitted to the create/ API
 }
 
+logger = logging.getLogger(__name__)
+
 
 # Customize timestamp format output of jsonify()
 class CustomJSONEncoder(JSONEncoder):
@@ -117,12 +118,14 @@ db = database.Database(config=api_config.get('Database'))
 try:
     # wait this many seconds between tries
     db_sleep_time = int(api_config['Database']['retry_time'])
-except KeyError:
+except KeyError as e:
+    logger.debug(e)
     db_sleep_time = database.Database.DEFAULTCONF['retry_time']
 try:
     # max number of times to retry
     db_num_retries = int(api_config['Database']['retry_num'])
-except KeyError:
+except KeyError as e:
+    logger.debug(e)
     db_num_retries = database.Database.DEFAULTCONF['retry_num']
 
 for x in range(0, db_num_retries):
@@ -130,14 +133,14 @@ for x in range(0, db_num_retries):
         db.init_db()
     except Exception as excinfo:
         db_error = excinfo
-        print("ERROR: Can't connect to task database.", excinfo)
+        logger.error("Can't connect to task database. {}".format(excinfo))
     else:
         break
 
     if db_error:
         if x == db_num_retries - 1:
             raise StorageNotLoadedError()
-        print("Retrying...")
+        logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
 storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
@@ -149,7 +152,8 @@ ms_config = utils.read_config(ms_config_file)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
-except KeyError:
+except KeyError as e:
+    logger.debug("Distributed set to False - {}".format(e))
     DISTRIBUTED = False
 
 if not DISTRIBUTED:
@@ -157,7 +161,8 @@ if not DISTRIBUTED:
 
 try:
     cors_origins = api_config['api']['cors']
-except KeyError:
+except KeyError as e:
+    logger.debug("Loaded from default configuration - {}".format(e))
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
@@ -383,7 +388,8 @@ def import_task(file_):
     report = json.loads(file_.read().decode('utf-8'))
     try:
         report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
-    except ValueError:
+    except ValueError as e:
+        logger.debug(e)
         raise InvalidScanTimeFormatError()
 
     task_id = db.add_task(
@@ -433,15 +439,18 @@ def create_task():
     if request.form.get('upload_type', None) == 'import':
         try:
             task_id = import_task(file_)
-        except KeyError:
+        except KeyError as e:
+            logger.debug('Cannot import report missing \'Scan Time\' field! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
                 HTTP_BAD_REQUEST)
-        except InvalidScanTimeFormatError:
+        except InvalidScanTimeFormatError as e:
+            logger.debug('Cannot import report with \'Scan Time\' of invalid format! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import report with \'Scan Time\' of invalid format!'}),
                 HTTP_BAD_REQUEST)
-        except (UnicodeDecodeError, ValueError):
+        except (UnicodeDecodeError, ValueError) as e:
+            logger.debug('Cannot import non-JSON files! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import non-JSON files!'}),
                 HTTP_BAD_REQUEST)
@@ -509,6 +518,7 @@ def create_task():
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                logger.error(msg)
                 return make_response(
                     jsonify({'Message': msg}),
                     HTTP_BAD_REQUEST)
@@ -524,6 +534,7 @@ def create_task():
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                logger.error(msg)
                 return make_response(
                     jsonify({'Message': msg}),
                     HTTP_BAD_REQUEST)
@@ -565,28 +576,24 @@ def get_report(task_id):
         return jsonify(report_dict)
 
 
-def _pre_process(report_dict={}):
+def _pre_process(report_dict):
     '''
     Returns a JSON dictionary where a series of pre-processing steps are
     executed on report_dict.
     '''
+    if not report_dict:
+        report_dict = {}
 
     # TODO: create way to mark certain data as internal only (e.g., does
     # not need to be part of generated report)
-    # pop unecessary keys
+    # pop unnecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            try:
-                report_dict['Report']['ssdeep'].pop(k)
-            except KeyError as e:
-                pass
+            report_dict['Report']['ssdeep'].pop(k, None)
 
     if report_dict.get('Report', {}).get('impfuzzy', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            try:
-                report_dict['Report']['impfuzzy'].pop(k)
-            except KeyError as e:
-                pass
+            report_dict['Report']['impfuzzy'].pop(k, None)
 
     report_dict = _add_links(report_dict)
 
@@ -680,8 +687,10 @@ def get_files_task():
                 try:
                     sha256 = db.get_task(t).sample_id
                 except AttributeError:
+                    msg = 'Task {} not found!'.format(t)
+                    logger.error(msg)
                     return make_response(
-                            jsonify({'Error': 'Task {} not found!'.format(t)}),
+                            jsonify({'Error': msg}),
                             HTTP_NOT_FOUND)
 
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
@@ -737,7 +746,8 @@ def get_maec_report(task_id):
     # okay, we have report dict; get cuckoo task ID
     try:
         cuckoo_task_id = report_dict['Report']['Cuckoo Sandbox']['info']['id']
-    except KeyError:
+    except KeyError as e:
+        logger.debug('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
 
     # Get the MAEC report from Cuckoo
@@ -746,7 +756,7 @@ def get_maec_report(task_id):
             '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
         )
     except Exception as e:
-        # TODO: log exception
+        logger.warning('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
     # raw JSON
     response = make_response(jsonify(maec_report.json()))
@@ -830,8 +840,7 @@ def get_notes(task_id):
         for hit in response:
             hit['_source']['text'] = Markup.escape(hit['_source']['text'])
     except Exception as e:
-        # TODO: log exception
-        pass
+        logger.warning(e)
     return jsonify(response)
 
 
@@ -950,6 +959,7 @@ def run_ssdeep_compare():
             ssdeep_analytic.ssdeep_compare()
             return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
+        logger.debug('Unable to complete request - {}'.format(e))
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
             HTTP_BAD_REQUEST)
@@ -965,6 +975,7 @@ def run_ssdeep_group():
         groups = ssdeep_analytic.ssdeep_group()
         return make_response(jsonify({'groups': groups}))
     except Exception as e:
+        logger.debug('Unable to complete request - {}'.format(e))
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
             HTTP_BAD_REQUEST)
@@ -1025,7 +1036,7 @@ def get_stix2_bundle_from_report(task_id):
 
 def _main():
     if not os.path.isdir(api_config['api']['upload_folder']):
-        print('Creating upload dir')
+        logger.info('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
     if not DISTRIBUTED:

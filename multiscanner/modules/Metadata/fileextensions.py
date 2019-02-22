@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
+import logging
 import mimetypes
 
 __author__ = 'Austin West'
@@ -20,6 +22,8 @@ EXTENSION_BLACKLIST = [
     '.ex_',
     '.partial',
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -92,7 +96,8 @@ def _get_tikaresults(results, fname):
 
         return list(set(tika_extensions))
 
-    except AttributeError:
+    except AttributeError as e:
+        logger.error(e)
         return []
 
 

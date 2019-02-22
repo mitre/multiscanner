@@ -2,10 +2,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals, with_statement)
+from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import argparse
+import logging
 import multiprocessing
 import os
 import queue
@@ -24,6 +24,8 @@ from multiscanner import multiscan, parse_reports
 from multiscanner.common import utils
 from multiscanner.storage import storage
 
+logger = logging.getLogger(__name__)
+
 
 class DirWatcher(FileSystemEventHandler):
     def __init__(self, work_queue):
@@ -32,12 +34,12 @@ class DirWatcher(FileSystemEventHandler):
 
     def on_moved(self, event):
         if not event.is_directory:
-            print("File moved:", event.dest_path)
+            logger.info("File moved: {}".format(event.dest_path))
             self.startwatch(event.dest_path)
 
     def on_created(self, event):
         if not event.is_directory:
-            print("File created:", event.src_path)
+            logger.info("File created: {}".format(event.src_path))
             self.startwatch(event.src_path)
 
     def startwatch(self, file_path):
@@ -54,17 +56,17 @@ class DirWatcher(FileSystemEventHandler):
                 while os.stat(file_path) != file_stat or int(file_stat.st_size) <= 0:
                     file_stat = os.stat(file_path)
                     time.sleep(3)
-                print("File Finished:", file_path)
+                logger.info("File Finished: {}".format(file_path))
             except Exception as e:
-                print("ERROR:", e)
+                logger.error(e)
                 return
             # Try to open the file for writing
             try:
                 open(file_path, 'a+').close()
                 # File is considered done if we can open it for writing
                 break
-            except IOError:
-                pass
+            except IOError as e:
+                logger.debug(e)
         self.work_queue.put(file_path)
 
 
@@ -107,7 +109,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
                 os.remove(file_name)
 
         storage_handler.store(results, wait=False)
-        print('Scanned', len(results), 'files')
+        logger.info('Scanned {} files'.format(len(results)))
 
         filelist = []
         time_stamp = None
@@ -127,11 +129,12 @@ def _main():
     try:
         while True:
             time.sleep(60)
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as e:
+        logger.debug(e)
         exit_signal.value = True
         observer.stop()
     observer.join()
-    print("Waiting for MultiScanner to exit...")
+    logger.info("Waiting for MultiScanner to exit...")
     ms_process.join()
 
 

@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import logging
 import os
 import time
 
@@ -23,10 +24,12 @@ DEFAULTCONF = {
     "ENABLED": True
 }
 
+logger = logging.getLogger(__name__)
+
 try:
     import yara
 except ImportError:
-    print("yara-python module not installed...")
+    logger.error("yara-python module not installed...")
     yara = False
 
 
@@ -44,7 +47,11 @@ def scan(filelist, conf=DEFAULTCONF):
     includes = 'includes' in conf and conf['includes']
 
     ruleset = {}
-    rules = parse_dir(ruleDir, recursive=True)
+    try:
+        rules = parse_dir(ruleDir, recursive=True)
+    except (OSError, IOError) as e:
+        logger.error('Cannot read files: {}'.format(e.filename))
+        return None
     for r in rules:
         for ext in extlist:
             if r.endswith(ext):
@@ -64,10 +71,11 @@ def scan(filelist, conf=DEFAULTCONF):
             bad_file = os.path.abspath(str(e).split('(')[0])
             if bad_file in ruleset:
                 del ruleset[bad_file]
-                print('WARNING: Yara', e)
+                logger.warning(e)
             else:
-                print('ERROR Yara: Invalid rule in', bad_file, 'but we are unable to remove it from our list. Aborting')
-                print(e)
+                logger.error('Invalid Yara rule in {} but we are unable to '
+                             'remove it from our list. Aborting'.format(bad_file))
+                logger.error(e)
                 return None
 
     matches = []
@@ -80,13 +88,13 @@ def scan(filelist, conf=DEFAULTCONF):
                 f = open(m, 'rb')
                 goodtogo = True
             except Exception as e:
-                print('yara:', e)
+                logger.error(e)
                 time.sleep(3)
                 i += 1
         try:
             hit = yararules.match(data=f.read())
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             continue
         finally:
             f.close()

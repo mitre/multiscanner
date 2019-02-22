@@ -131,7 +131,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     # Get the Scan Config that the task was run with and
     # add it to the task metadata
-    scan_config_object = configparser.SafeConfigParser()
+    scan_config_object = configparser.ConfigParser()
     scan_config_object.optionxform = str
     scan_config_object.read(config)
     full_conf = utils.parse_config(scan_config_object)
@@ -229,11 +229,11 @@ def metricbeat_rollover(days, config=MS_CONFIG):
                 ret = handler.delete_index(index_prefix='metricbeat', days=days)
 
                 if ret is False:
-                    logger.warn('Metricbeat Roller failed')
+                    logger.warning('Metricbeat Roller failed')
                 else:
                     logger.info('Metricbeat indices older than {} days deleted'.format(days))
     except Exception as e:
-        logger.warn(e)
+        logger.warning(e)
     finally:
         storage_handler.close()
 
