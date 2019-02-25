@@ -266,10 +266,10 @@ def index():
     Return a default standard message
     for testing connectivity.
     '''
-    return jsonify({'Message': 'True'})
+    return jsonify({'Message': True})
 
 
-@app.route('/api/v1/modules', methods=['GET'])
+@app.route('/api/v2/modules', methods=['GET'])
 def modules():
     '''
     Return a list of module names available for MultiScanner to use,
@@ -285,20 +285,24 @@ def modules():
     modules = {}
     for module in module_names:
         try:
-            modules[module] = ms_config.get(module, 'ENABLED')
+            is_enabled = ms_config.get(module, 'ENABLED')
+            if is_enabled == "True":
+                modules[module] = True
+            else:
+                modules[module] = False
         except (configparser.NoSectionError, configparser.NoOptionError):
             pass
-    return jsonify({'Modules': modules})
+    return jsonify(modules)
 
 
-@app.route('/api/v1/tasks', methods=['GET'])
+@app.route('/api/v2/tasks', methods=['GET'])
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
     in the tasks DB.
     '''
 
-    return jsonify({'Tasks': db.get_all_tasks()})
+    return jsonify(db.get_all_tasks())
 
 
 def search(params, get_all=False):
@@ -317,7 +321,7 @@ def search(params, get_all=False):
         return db.search(params, es_result)
 
 
-@app.route('/api/v1/tasks/search/history', methods=['GET'])
+@app.route('/api/v2/tasks/search/history', methods=['GET'])
 def task_search_history():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -328,7 +332,7 @@ def task_search_history():
     return jsonify(resp)
 
 
-@app.route('/api/v1/tasks/search', methods=['GET'])
+@app.route('/api/v2/tasks/search', methods=['GET'])
 def task_search():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -339,7 +343,7 @@ def task_search():
     return jsonify(resp)
 
 
-@app.route('/api/v1/tasks/<int:task_id>', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -347,12 +351,12 @@ def get_task(task_id):
     '''
     task = db.get_task(task_id)
     if task:
-        return jsonify({'Task': task.to_dict()})
+        return jsonify(task.to_dict())
     else:
         abort(HTTP_NOT_FOUND)
 
 
-@app.route('/api/v1/tasks/sha256/<string:sha256>', methods=['GET'])
+@app.route('/api/v2/tasks/sha256/<string:sha256>', methods=['GET'])
 def get_task_sha256(sha256):
     '''
     Return the task ID number for the most recent scan of the sample with the
@@ -362,7 +366,7 @@ def get_task_sha256(sha256):
         task_id = db.exists(sha256)
         if task_id:
             return make_response(
-                jsonify({'TaskID': int(task_id)}),
+                jsonify({"task_id":int(task_id)}),
                 HTTP_OK)
         else:
             abort(HTTP_NOT_FOUND)
@@ -370,7 +374,7 @@ def get_task_sha256(sha256):
         abort(HTTP_BAD_REQUEST)
 
 
-@app.route('/api/v1/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
@@ -455,6 +459,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
 
 
 @app.route('/api/v1/tasks', methods=['POST'])
+@app.route('/api/v2/tasks', methods=['POST'])
 def create_task():
     '''
     Create a new task for a submitted file. Save the submitted file to
@@ -478,7 +483,7 @@ def create_task():
                 HTTP_BAD_REQUEST)
 
         return make_response(
-            jsonify({'Message': {'task_ids': [task_id]}}),
+            jsonify({'task_ids': [task_id]}),
             HTTP_CREATED
         )
 
@@ -561,9 +566,8 @@ def create_task():
         tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
         task_id_list = [tid]
 
-    msg = {'task_ids': task_id_list}
     return make_response(
-        jsonify({'Message': msg}),
+        jsonify({'task_ids': task_id_list}),
         HTTP_CREATED
     )
 
@@ -664,7 +668,7 @@ def _linkify(s, url, new_tab=True):
         s=s)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/file', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/file', methods=['GET'])
 def get_file_task(task_id):
     '''
     Download a single sample. Either raw binary or enclosed in a zip file.
@@ -684,7 +688,7 @@ def get_file_task(task_id):
         return jsonify({'Error': 'sha256 invalid or not in report!'})
 
 
-@app.route('/api/v1/tasks/files', methods=['GET'])
+@app.route('/api/v2/tasks/files', methods=['GET'])
 def get_files_task():
     '''
     Given a comma-separated list of task ids. Download the samples enclosed in a zip file.
