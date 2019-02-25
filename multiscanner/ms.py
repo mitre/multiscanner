@@ -878,22 +878,23 @@ def _init(args):
     config.optionxform = str
     config.read(args.config)
     config = _get_main_config(config)
-    if os.path.isfile(config["storage-config"]):
-        logger.warning('{} already exists, overwriting will destroy changes'.format(config["storage-config"]))
+    storage_config = config["storage-config"]
+    if os.path.isfile(storage_config):
+        logger.warning('{} already exists, overwriting will destroy changes'.format(storage_config))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
             logger.warn(e)
             answer = 'N'
         if answer == 'y':
-            storage.config_init(config["storage-config"], overwrite=True)
-            logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
+            storage.config_init(storage_config, overwrite=True)
+            logger.info('Storage configuration file initialized at {}'.format(storage_config))
         else:
             logger.info('Checking for missing modules in storage configuration...')
-            storage.config_init(config["storage-config"], overwrite=False)
+            storage.config_init(storage_config, overwrite=False)
     else:
-        storage.config_init(config["storage-config"])
-        logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
+        storage.config_init(storage_config)
+        logger.info('Storage configuration file initialized at {}'.format(storage_config))
 
     exit(0)
 

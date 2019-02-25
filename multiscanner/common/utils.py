@@ -85,6 +85,9 @@ def parse_config(config_object):
         for key in section_dict:
             try:
                 section_dict[key] = ast.literal_eval(section_dict[key])
+            except SyntaxError as e:
+                # Ignore if config value isn't convertible to a Python literal
+                pass
             except Exception as e:
                 logger.debug(e)
         return_var[section] = section_dict
