@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import binascii
 import os
 import time
 
@@ -83,27 +84,52 @@ def scan(filelist, conf=DEFAULTCONF):
                 time.sleep(3)
                 i += 1
         try:
-            hit = yararules.match(data=f.read())
+            hits = yararules.match(data=f.read())
         except Exception as e:
             # TODO: log exception
             continue
         finally:
             f.close()
-        if hit:
+        if hits:
             hdict = {}
-            for h in hit:
+            for h in hits:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
                     hit_dict = {
                         'meta': h.meta,
                         'namespace': h.namespace,
                         'rule': h.rule,
-                        'tags': h.tags,
+                        'tags': h.tags
                     }
                     try:
                         h_key = '{}:{}'.format(hit_dict['namespace'].split('/')[-1], hit_dict['rule'])
                     except IndexError:
                         h_key = '{}'.format(hit_dict['rule'])
-                    hdict[h_key] = hit_dict
+
+                    if h_key not in hdict:
+                        strings_dict = {}
+                        for s in h.strings:
+                            s_name = s[1]
+                            s_offset = s[0]
+                            try:
+                                s_data = s[2].decode('ascii')
+                            except UnicodeError:
+                                s_data = "Hex: {}".format(binascii.hexlify(s[2]).decode('ascii'))
+                            s_key = "{0}-{1}".format(s_name, s_data)
+                            if s_key in strings_dict:
+                                strings_dict[s_key]['offset'].append(s_offset)
+                            else:
+                                strings_dict[s_key] = {
+                                    'offset': [s_offset],
+                                    'name': s_name,
+                                    'data': s_data,
+                                }
+                        string_list = []
+                        for key in strings_dict:
+                            string_list.append(strings_dict[key])
+
+                        hit_dict['strings'] = string_list
+                        hdict[h_key] = hit_dict
+
             matches.append((m, [x for x in hdict.values()]))
 
     metadata = {}
