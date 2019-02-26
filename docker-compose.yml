@@ -13,15 +13,31 @@ services:
     build:
       context: .
       dockerfile: docker_utils/Dockerfile
+      args:
+       - http_proxy
+       - https_proxy
+       - no_proxy
     command: multiscanner-web
     ports:
      - "127.0.0.1:8000:8000"
+    environment:
+     - http_proxy
+     - https_proxy
+     - no_proxy
   api:
     build:
       context: .
       dockerfile: docker_utils/Dockerfile
+      args:
+       - http_proxy
+       - https_proxy
+       - no_proxy
     command: /wait-for-it.sh elastic:9200 -- multiscanner-api
     ports:
      - "127.0.0.1:8080:8080"
     depends_on:
      - elastic
+    environment:
+     - http_proxy
+     - https_proxy
+     - no_proxy

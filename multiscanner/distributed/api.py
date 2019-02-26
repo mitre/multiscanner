@@ -837,7 +837,7 @@ def tags(task_id):
         return jsonify({'Message': 'Tag Removed'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/notes', methods=['GET'])
 def get_notes(task_id):
     '''
     Get one or more analyst notes/comments associated with the specified task.
@@ -849,25 +849,29 @@ def get_notes(task_id):
     if 'ts' in request.args and 'uid' in request.args:
         ts = request.args.get('ts', '')
         uid = request.args.get('uid', '')
-        response = handler.get_notes(task.sample_id, [ts, uid])
+        es_response = handler.get_notes(task.sample_id, [ts, uid])
     else:
-        response = handler.get_notes(task.sample_id)
+        es_response = handler.get_notes(task.sample_id)
 
-    if not response:
+    if not es_response:
         abort(HTTP_BAD_REQUEST)
 
-    if 'hits' in response and 'hits' in response['hits']:
-        response = response['hits']['hits']
+    notes = []
+    if 'hits' in es_response and 'hits' in es_response['hits']:
+        hits = es_response['hits']['hits']
     try:
-        for hit in response:
-            hit['_source']['text'] = Markup.escape(hit['_source']['text'])
+        for hit in hits:
+            notes.append({
+                'id': hit['_id'],
+                'text': Markup.escape(hit['_source']['text'])
+            })
     except Exception as e:
         # TODO: log exception
         pass
-    return jsonify(response)
+    return jsonify(notes)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['POST'])
+@app.route('/api/v2/tasks/<int:task_id>/notes', methods=['POST'])
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
@@ -876,13 +880,16 @@ def add_note(task_id):
     if not task:
         abort(HTTP_NOT_FOUND)
 
-    response = handler.add_note(task.sample_id, request.form.to_dict())
+    data = request.form.to_dict()
+    response = handler.add_note(task.sample_id, data)
     if not response:
         abort(HTTP_BAD_REQUEST)
+
+    response = { 'id': response['_id'], 'text': Markup.escape(response['_source']['text']) }
     return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.
@@ -892,13 +899,19 @@ def edit_note(task_id, note_id):
         abort(HTTP_NOT_FOUND)
 
     if request.method == 'PUT':
-        response = handler.edit_note(task.sample_id, note_id,
-                                     Markup(request.form.get('text', '')).striptags())
+        try:
+            response = handler.edit_note(task.sample_id, note_id,
+                                         request.form.get('text', ''))
+        except e:
+            abort(HTTP_BAD_REQUEST)
     elif request.method == 'DELETE':
         response = handler.delete_note(task.sample_id, note_id)
 
     if not response:
         abort(HTTP_BAD_REQUEST)
+
+    response = { 'id': response['_id'], 'result': response['result'] }
+
     return jsonify(response)
 
 
