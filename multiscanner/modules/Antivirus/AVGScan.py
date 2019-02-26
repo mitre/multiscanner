@@ -30,7 +30,7 @@ DEFAULTCONF = {
     "cmdline": ['/A', '/H', '/PRIORITY=High'],
     "host": HOST,
     "replacement path": PATHREPLACE,
-    "ENABLED": True
+    "ENABLED": False
 }
 
 

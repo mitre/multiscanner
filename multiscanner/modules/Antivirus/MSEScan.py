@@ -28,7 +28,7 @@ DEFAULTCONF = {
     "cmdline": ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"],
     'host': HOST,
     "replacement path": PATHREPLACE,
-    'ENABLED': True
+    'ENABLED': False
 }
 
 

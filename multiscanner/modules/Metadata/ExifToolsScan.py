@@ -32,7 +32,7 @@ DEFAULTCONF = {
     "host": HOST,
     "replacement path": PATHREPLACE,
     "remove-entry": REMOVEENTRY,
-    "ENABLED": True
+    "ENABLED": False
 }
 
 logger = logging.getLogger(__name__)
