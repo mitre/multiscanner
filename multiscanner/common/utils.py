@@ -3,13 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
-import ast
-import codecs
-import configparser
 import imp
 import logging
 import os
-import sys
 
 from six import PY3
 
@@ -75,81 +71,6 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
         return data.decode(encoding=encoding, errors=errors)
     else:
         return data
-
-
-def parse_config(config_object):
-    """Converts a config object to a dictionary"""
-    return_var = {}
-    for section in config_object.sections():
-        section_dict = dict(config_object.items(section))
-        for key in section_dict:
-            try:
-                section_dict[key] = ast.literal_eval(section_dict[key])
-            except SyntaxError as e:
-                # Ignore if config value isn't convertible to a Python literal
-                pass
-            except Exception as e:
-                logger.debug(e)
-        return_var[section] = section_dict
-    return return_var
-
-
-def get_config_path(config_file, component):
-    """Gets the location of the config file for the given multiscanner component
-    from the multiscanner config file
-
-    Components:
-        storage
-        api
-        web"""
-    conf = configparser.ConfigParser()
-    conf.read(config_file)
-    conf = parse_config(conf)
-    try:
-        return conf['main']['%s-config' % component]
-    except KeyError:
-        logger.error(
-            "Couldn't find '{}-config' value in 'main' section "
-            "of config file. Have you run 'python multiscanner.py init'?"
-            .format(component)
-        )
-        sys.exit()
-
-
-def write_config(config_object, config_file, section_name, default_config):
-    """Write the default configuration to the given config file
-
-    config_object - the ConfigParser object
-    config_file - the filename of the config file
-    section_name - the name of the section of defaults to be added
-    default_config - values to set this configuration to
-    """
-    config_object.add_section(section_name)
-    for key in default_config:
-        config_object.set(section_name, key, str(default_config[key]))
-    conffile = codecs.open(config_file, 'w', 'utf-8')
-    config_object.write(conffile)
-    conffile.close()
-
-
-def read_config(config_file, section_name=None, default_config=None):
-    """Parse a config file into a dictionary
-
-    Can optionally set a default configuration by providing 'section_name' and
-    'default_config' arguments.
-
-    config_file - the filename of the config file
-    section_name - the name of the section of defaults to be added
-    default_config - values to set this configuration to
-    """
-    config_object = configparser.ConfigParser()
-    config_object.optionxform = str
-    config_object.read(config_file)
-    if section_name is not None and default_config is not None and \
-           (not config_object.has_section(section_name) or not os.path.isfile(config_file)):
-        # Write default config
-        write_config(config_object, config_file, section_name, default_config)
-    return parse_config(config_object)
 
 
 def dirname(path):

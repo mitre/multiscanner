@@ -29,9 +29,8 @@ standard_library.install_aliases()
 
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
-                                       parse_config, parse_dir, parse_file_list,
-                                       queue2list)
-from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path
+                                       parse_dir, parse_file_list, queue2list)
+from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path, parse_config
 from multiscanner.storage import storage
 
 

@@ -12,9 +12,9 @@ from celery import Celery, Task
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
-from multiscanner.common import utils
+from multiscanner.config import CONFIG as MS_CONFIG
+from multiscanner.config import get_config_path, parse_config, read_config
 from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
@@ -33,14 +33,14 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-configfile = utils.get_config_path(MS_CONFIG, 'api')
-config = utils.read_config(configfile, 'celery', DEFAULTCONF)
+configfile = get_config_path(MS_CONFIG, 'api')
+config = read_config(configfile, 'celery', DEFAULTCONF)
 api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-storage_configfile = utils.get_config_path(MS_CONFIG, 'storage')
-storage_config = utils.read_config(storage_configfile)
+storage_configfile = get_config_path(MS_CONFIG, 'storage')
+storage_config = read_config(storage_configfile)
 es_storage_config = storage_config.get('ElasticSearchStorage')
 
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
@@ -117,7 +117,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
-    storage_conf = utils.get_config_path(config, 'storage')
+    storage_conf = get_config_path(config, 'storage')
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscan(
@@ -134,7 +134,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     scan_config_object = configparser.ConfigParser()
     scan_config_object.optionxform = str
     scan_config_object.read(config)
-    full_conf = utils.parse_config(scan_config_object)
+    full_conf = parse_config(scan_config_object)
     sub_conf = {}
     # Count number of modules enabled out of total possible
     # and add it to the Scan Metadata

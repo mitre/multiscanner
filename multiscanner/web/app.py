@@ -4,7 +4,7 @@ import re
 
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import __version__
-from multiscanner.common import utils
+from multiscanner.config import get_config_path, read_config
 
 DEFAULTCONF = {
     'HOST': "localhost",
@@ -29,8 +29,8 @@ DEFAULTCONF = {
 app = Flask(__name__)
 
 # Finagle Flask to read config from .ini file instead of .py file
-web_config_file = utils.get_config_path(MS_CONFIG, 'web')
-web_config = utils.read_config(web_config_file, 'web', DEFAULTCONF)
+web_config_file = get_config_path(MS_CONFIG, 'web')
+web_config = read_config(web_config_file, 'web', DEFAULTCONF)
 conf_tuple = namedtuple('WebConfig', web_config.keys())(*web_config.values())
 app.config.from_object(conf_tuple)
 

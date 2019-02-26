@@ -16,7 +16,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.common import utils
+from multiscanner.config import get_config_path, read_config
 from multiscanner.storage import storage
 
 
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = utils.get_config_path(config, 'storage')
+    storage_conf = get_config_path(config, 'storage')
     storage_handler = storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)
@@ -69,7 +69,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 def _main():
     args = _parse_args()
     # Pull config options
-    conf = utils.read_config(args.config)
+    conf = read_config(args.config)
     multiscanner_config = conf['worker']['multiscanner_config']
 
     # Start worker task

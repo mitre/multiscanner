@@ -17,8 +17,9 @@ from future import standard_library
 standard_library.install_aliases()
 
 
-from multiscanner.config import CONFIG as MS_CONFIG
 from multiscanner.common import utils
+from multiscanner.config import CONFIG as MS_CONFIG
+from multiscanner.config import get_config_path, parse_config
 
 
 DEFAULTCONF = {
@@ -97,7 +98,7 @@ class StorageHandler(object):
 
         # Read in config
         if configfile:
-            configfile = utils.get_config_path(MS_CONFIG, 'storage')
+            configfile = get_config_path(MS_CONFIG, 'storage')
             config_object = configparser.ConfigParser()
             config_object.optionxform = str
             # Regen the config if needed or wanted
@@ -107,7 +108,7 @@ class StorageHandler(object):
 
             config_object.read(configfile)
             if config:
-                file_conf = utils.parse_config(config_object)
+                file_conf = parse_config(config_object)
                 for key in config:
                     if key not in file_conf:
                         file_conf[key] = config[key]
@@ -116,7 +117,7 @@ class StorageHandler(object):
                         file_conf[key].update(config[key])
                 config = file_conf
             else:
-                config = utils.parse_config(config_object)
+                config = parse_config(config_object)
         else:
             if config is None:
                 config = {}

@@ -61,8 +61,8 @@ from flask_cors import CORS
 from jinja2 import Markup
 
 from multiscanner import MODULESLIST, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
-from multiscanner.common import utils, pdf_generator, stix2_generator
-from multiscanner.config import PY3
+from multiscanner.common import pdf_generator, stix2_generator
+from multiscanner.config import PY3, get_config_path, read_config
 from multiscanner.storage import StorageHandler
 from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
@@ -104,8 +104,8 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_file = utils.get_config_path(MS_CONFIG, 'api')
-api_config = utils.read_config(api_config_file, 'api', DEFAULTCONF)
+api_config_file = get_config_path(MS_CONFIG, 'api')
+api_config = read_config(api_config_file, 'api', DEFAULTCONF)
 
 # TODO: fix this mess
 # Needs api_config in order to function properly
@@ -143,12 +143,12 @@ for x in range(0, db_num_retries):
         logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
-storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
+storage_conf = get_config_path(MS_CONFIG, 'storage')
 storage_handler = StorageHandler(configfile=storage_conf)
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
 ms_config_file = MS_CONFIG
-ms_config = utils.read_config(ms_config_file)
+ms_config = read_config(ms_config_file)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']

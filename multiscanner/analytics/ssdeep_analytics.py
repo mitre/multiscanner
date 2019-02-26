@@ -37,15 +37,15 @@ except ImportError:
 
 
 from multiscanner import CONFIG as MS_CONFIG
-from multiscanner.common import utils
+from multiscanner.config import get_config_path, read_config
 from multiscanner.storage import storage
 
 
 class SSDeepAnalytic:
 
     def __init__(self, debug=False):
-        storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
-        conf = utils.read_config(storage_conf)
+        storage_conf = get_config_path(MS_CONFIG, 'storage')
+        conf = read_config(storage_conf)
         storage_handler = storage.StorageHandler(configfile=storage_conf)
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
