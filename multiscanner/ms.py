@@ -30,7 +30,7 @@ standard_library.install_aliases()
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_dir, parse_file_list, queue2list)
-from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path, parse_config
+from multiscanner.config import CONFIG_FILE, MODULESDIR, PY3, determine_configuration_path, parse_config
 from multiscanner.storage import storage
 
 
@@ -38,9 +38,9 @@ from multiscanner.storage import storage
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": CONFIG.replace('config.ini', 'storage.ini'),
-    "api-config": CONFIG.replace('config.ini', 'api_config.ini'),
-    "web-config": CONFIG.replace('config.ini', 'web_config.ini'),
+    "storage-config": CONFIG_FILE.replace('config.ini', 'storage.ini'),
+    "api-config": CONFIG_FILE.replace('config.ini', 'api_config.ini'),
+    "web-config": CONFIG_FILE.replace('config.ini', 'web_config.ini'),
 }
 
 logger = logging.getLogger(__name__)
@@ -264,7 +264,7 @@ def _update_DEFAULTCONF(defaultconf, filepath):
         defaultconf['offsets'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'offsets')
 
 
-def _get_main_config(config_object, filepath=CONFIG):
+def _get_main_config(config_object, filepath=CONFIG_FILE):
     """
     Reads in config for main script. It will write defaults if not present.
     Returns dictionary.
@@ -286,7 +286,7 @@ def _get_main_config(config_object, filepath=CONFIG):
         with codecs.open(filepath, 'w', 'utf-8') as f:
             config_object.write(f)
 
-    # Read in main config
+    # Return main config as a dictionary
     return parse_config(config_object)['main']
 
 
@@ -383,7 +383,7 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
     return ThreadList
 
 
-def _write_missing_module_configs(module_list, config, filepath=CONFIG):
+def _write_missing_module_configs(module_list, config, filepath=CONFIG_FILE):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
@@ -425,7 +425,7 @@ def _write_missing_module_configs(module_list, config, filepath=CONFIG):
     return False
 
 
-def _rewrite_config(module_list, config, filepath=CONFIG):
+def _rewrite_config(module_list, config, filepath=CONFIG_FILE):
     """
     Write in default config for all modules.
 
@@ -528,7 +528,7 @@ def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, pyt
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, config=None, module_list=None):
+def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG_FILE, config=None, module_list=None):
     """
     The meat and potatoes. Returns the list of module results
 
@@ -899,16 +899,16 @@ def _init(args):
 
 
 def _main():
-    global CONFIG
+    global CONFIG_FILE
 
     # Get args
     args = _parse_args()
     # Set config or update locations
     if args.config is None:
-        args.config = CONFIG
+        args.config = CONFIG_FILE
     else:
-        CONFIG = args.config
-        _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
+        CONFIG_FILE = args.config
+        _update_DEFAULTCONF(DEFAULTCONF, CONFIG_FILE)
 
     # Send all logs to stderr and set verbose
     if args.debug or args.verbose > 1:

@@ -18,8 +18,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import CONFIG as MS_CONFIG
-from multiscanner.config import get_config_path, parse_config
+from multiscanner.config import MS_CONFIG, get_config_path, parse_config
 
 
 DEFAULTCONF = {

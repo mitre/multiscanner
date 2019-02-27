@@ -13,8 +13,7 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import CONFIG as MS_CONFIG
-from multiscanner.config import get_config_path, parse_config, read_config
+from multiscanner.config import MS_CONFIG, get_config_path, parse_config, read_config
 from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic

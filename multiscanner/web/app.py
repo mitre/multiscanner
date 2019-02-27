@@ -2,9 +2,8 @@ from collections import namedtuple
 from flask import Flask, render_template, request
 import re
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import __version__
-from multiscanner.config import get_config_path, read_config
+from multiscanner.config import MS_CONFIG, get_config_path, read_config
 
 DEFAULTCONF = {
     'HOST': "localhost",

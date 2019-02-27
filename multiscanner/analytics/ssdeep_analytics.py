@@ -36,8 +36,7 @@ except ImportError:
     ssdeep = None
 
 
-from multiscanner import CONFIG as MS_CONFIG
-from multiscanner.config import get_config_path, read_config
+from multiscanner.config import MS_CONFIG, get_config_path, read_config
 from multiscanner.storage import storage
 
 

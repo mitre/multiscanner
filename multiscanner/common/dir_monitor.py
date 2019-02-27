@@ -19,9 +19,8 @@ standard_library.install_aliases()
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import get_config_path
+from multiscanner.config import CONFIG_FILE, get_config_path
 from multiscanner.storage import storage
 
 logger = logging.getLogger(__name__)
@@ -141,7 +140,7 @@ def _main():
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
     parser.add_argument("-c", "--config", help="The config file to use", required=False,
-                        default=MS_CONFIG)
+                        default=CONFIG_FILE)
     parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
                         required=False, default=120, type=int)
     parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,

@@ -60,7 +60,7 @@ from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
 
-from multiscanner import MODULESLIST, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
+from multiscanner import CONFIG_FILE, MODULESLIST, MS_CONFIG, MS_WD, multiscan, parse_reports
 from multiscanner.common import pdf_generator, stix2_generator
 from multiscanner.config import PY3, get_config_path, read_config
 from multiscanner.storage import StorageHandler
@@ -199,7 +199,7 @@ def multiscanner_process(work_queue, exit_signal):
         filelist = [item[0] for item in metadata_list]
         # modulelist = [item[5] for item in metadata_list]
         resultlist = multiscan(
-            filelist, configfile=MS_CONFIG
+            filelist, configfile=CONFIG_FILE
             # module_list
         )
         results = parse_reports(resultlist, python=True)
@@ -991,7 +991,7 @@ def get_pdf_report(task_id):
     if not success:
         return jsonify(report_dict)
 
-    pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
+    pdf = pdf_generator.create_pdf_document(CONFIG_FILE, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id

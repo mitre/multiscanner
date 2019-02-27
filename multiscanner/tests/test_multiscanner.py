@@ -15,7 +15,7 @@ class _runmulti_tests(object):
         cls.real_mod_dir = multiscanner.MODULESDIR
         multiscanner.MODULEDIR = os.path.join(CWD, "modules")
         cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
-        multiscanner.CONFIG = '.tmpfile.ini'
+        multiscanner.CONFIG_FILE = '.tmpfile.ini'
 
     @classmethod
     def teardown_class(cls):

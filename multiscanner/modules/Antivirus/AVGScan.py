@@ -7,7 +7,7 @@ import os
 import subprocess
 import re
 
-from multiscanner.config import CONFIG
+from multiscanner.config import CONFIG_FILE
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
 
 subprocess.list2cmdline = list2cmdline
@@ -21,7 +21,7 @@ NAME = "AVG 2014"
 # Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
 # SSH Key
-KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(CONFIG_FILE)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {

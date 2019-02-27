@@ -4,7 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from .config import (  # noqa F401
-    PY3, MS_WD, CONFIG, MODULESDIR, MODULESLIST,
+    CONFIG_FILE, MS_WD, MS_CONFIG, MODULESDIR, MODULESLIST, PY3,
 )
 
 from .ms import (  # noqa F401

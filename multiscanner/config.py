@@ -56,7 +56,7 @@ def determine_configuration_path(filepath):
 
 
 # The default config file
-CONFIG = determine_configuration_path(None)
+CONFIG_FILE = determine_configuration_path(None)
 
 
 def parse_config(config_object):
@@ -76,19 +76,20 @@ def parse_config(config_object):
     return return_var
 
 
-def get_config_path(config_file, component):
-    """Gets the location of the config file for the given multiscanner component
-    from the multiscanner config file
+def get_config_path(config, component):
+    """Gets the location of the config file for the given MultiScanner component
+    from the MultiScanner config
 
     Components:
         storage
         api
-        web"""
-    conf = configparser.ConfigParser()
-    conf.read(config_file)
-    conf = parse_config(conf)
+        web
+
+    config - dictionary or ConfigParser object containing MultiScanner config
+    component - component to get the path for
+    """
     try:
-        return conf['main']['%s-config' % component]
+        return config['main']['%s-config' % component]
     except KeyError:
         logger.error(
             "Couldn't find '{}-config' value in 'main' section "
@@ -134,6 +135,10 @@ def read_config(config_file, section_name=None, default_config=None):
     return parse_config(config_object)
 
 
+# Main MultiScanner config, as a dictionary
+MS_CONFIG = read_config(CONFIG_FILE)
+
+
 def get_enabled_modules():
     """Returns a dictionary with module names as keys, with boolean values
     denoting whether or not they are enabled in the config.
@@ -142,11 +147,11 @@ def get_enabled_modules():
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
-    global CONFIG
+    global MS_CONFIG
     modules = {}
     for module in module_names:
         try:
-            modules[module] = CONFIG[module]['ENABLED']
+            modules[module] = MS_CONFIG[module]['ENABLED']
         except KeyError as e:
             logger.debug(e)
     return modules
