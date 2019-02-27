@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import logging
 import os
 import subprocess
 import re
@@ -31,8 +32,10 @@ DEFAULTCONF = {
     "host": HOST,
     "replacement path": PATHREPLACE,
     "remove-entry": REMOVEENTRY,
-    "ENABLED": True
+    "ENABLED": False
 }
+
+logger = logging.getLogger(__name__)
 
 
 def check(conf=DEFAULTCONF):
@@ -72,7 +75,7 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             output = sshexec(host, list2cmdline(cmd), port=port, username=user, key_filename=conf["key"])
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return None
 
     output = output.decode("utf-8", errors="ignore")
@@ -93,13 +96,12 @@ def scan(filelist, conf=DEFAULTCONF):
                     fname = fname.replace('/', '\\')
                 continue
         except Exception as e:
-            # TODO: log exception
-            pass
+            logger.error(e)
         try:
             if row[0] not in conf['remove-entry']:
                 data[row[0]] = row[1]
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             continue
     if data:
         results.append((fname, data))

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 try:
     import yara
 except ImportError:
-    print("yara-python module not installed...")
+    logger.error("yara-python module not installed...")
     yara = False
 
 
@@ -50,7 +50,11 @@ def scan(filelist, conf=DEFAULTCONF):
     includes = 'includes' in conf and conf['includes']
 
     ruleset = {}
-    rules = parseDir(ruleDir, recursive=True)
+    try:
+        rules = parseDir(ruleDir, recursive=True)
+    except (OSError, IOError) as e:
+        logger.error('Cannot read files: {}'.format(e.filename))
+        return None
     for r in rules:
         for ext in extlist:
             if r.endswith(ext):
@@ -69,10 +73,11 @@ def scan(filelist, conf=DEFAULTCONF):
             bad_file = os.path.abspath(str(e).split('(')[0])
             if bad_file in ruleset:
                 del ruleset[bad_file]
-                print('WARNING: Yara', e)
+                logger.warning(e)
             else:
-                print('ERROR Yara: Invalid rule in', bad_file, 'but we are unable to remove it from our list. Aborting')
-                print(e)
+                logger.error('Invalid Yara rule in {} but we are unable to '
+                             'remove it from our list. Aborting'.format(bad_file))
+                logger.error(e)
                 return None
 
     matches = []
@@ -85,13 +90,13 @@ def scan(filelist, conf=DEFAULTCONF):
                 f = open(m, 'rb')
                 goodtogo = True
             except Exception as e:
-                print('yara:', e)
+                logger.error(e)
                 time.sleep(3)
                 i += 1
         try:
             hits = yararules.match(data=f.read())
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             continue
         finally:
             f.close()
@@ -120,6 +125,8 @@ def scan(filelist, conf=DEFAULTCONF):
                             logger.warning(msg.format(h_key, string_threshold, len(h.strings)))
 
                         else:
+                            # Largely based on:
+                            # https://github.com/crits/crits_services/blob/master/yara_service/__init__.py#L261
                             strings_dict = {}
 
                             for s in h.strings:

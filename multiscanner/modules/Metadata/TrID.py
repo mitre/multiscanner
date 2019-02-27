@@ -3,12 +3,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import logging
 import os
 import subprocess
 import re
 
 from multiscanner.config import CONFIG
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
+
+logger = logging.getLogger(__name__)
 
 subprocess.list2cmdline = list2cmdline
 
@@ -26,7 +29,7 @@ KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {
     "path": '/opt/trid/trid',
-    'ENABLED': True,
+    'ENABLED': False,
     "key": KEY,
     "cmdline": ['-r:3'],
     'host': HOST,
@@ -63,6 +66,7 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             output = subprocess.check_output(cmdline)
         except subprocess.CalledProcessError as e:
+            logger.error(e)
             output = e.output
 
     else:
@@ -70,7 +74,7 @@ def scan(filelist, conf=DEFAULTCONF):
         try:
             output = sshexec(host, list2cmdline(cmdline), port=port, username=user, key_filename=conf["key"])
         except Exception as e:
-            # TODO: log exeption
+            logger.error(e)
             return None
 
     # Parse output

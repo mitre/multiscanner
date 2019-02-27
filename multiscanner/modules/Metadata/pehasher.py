@@ -1,11 +1,15 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
+
+logger = logging.getLogger(__name__)
+
 try:
     import pefile
 except ImportError:
-    print("pefile module not installed...")
+    logger.error("pefile module not installed...")
     pefile = False
 
 try:
@@ -19,7 +23,7 @@ try:
         'pehashng': pehash.pehashng,
     }
 except ImportError:
-    print("pehash module not installed...")
+    logger.error("pehash module not installed...")
     pehash = False
 
 __author__ = "Patrick Copeland"
@@ -49,7 +53,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     for fname, libmagicresult in libmagicresults:
         if fname not in filelist:
-            print("DEBUG: File not in filelist")
+            logger.debug("File not in filelist: {}".format(fname))
         if not libmagicresult.startswith('PE32'):
             continue
         pe_hashes = {}
@@ -58,7 +62,8 @@ def scan(filelist, conf=DEFAULTCONF):
             try:
                 pe_hashes[name] = hasher(pe=pe, raise_on_error=True).hexdigest()
             except Exception as e:
-                print('pehash ({}):'.format(name), e)
+                logger.error(name)
+                logger.error(e)
         results.append((fname, pe_hashes))
 
     metadata = {}

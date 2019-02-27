@@ -29,6 +29,8 @@ ES_MAX = 2147483647
 ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'templates', 'elasticsearch_template.json')
 ES_TEMPLATE_NAME = 'multiscanner_template'
 
+logger = logging.getLogger(__name__)
+
 
 def process_cuckoo_signatures(signatures):
     new_signatures = []
@@ -107,8 +109,8 @@ class ElasticSearchStorage(storage.Storage):
         # Try to create the index, pass if it exists
         try:
             es_indices.create(self.index)
-        except TransportError:
-            pass
+        except TransportError as e:
+            logger.debug(e)
 
         # Set the total fields limit
         try:
@@ -116,13 +118,14 @@ class ElasticSearchStorage(storage.Storage):
                 index=self.index,
                 body={'index.mapping.total_fields.limit': ES_MAX},
             )
-        except TransportError:
-            pass
+        except TransportError as e:
+            logger.debug(e)
 
         # Create de-dot preprocessor if doesn't exist yet
         try:
             dedot = self.es.ingest.get_pipeline('dedot')
-        except TransportError:
+        except TransportError as e:
+            logger.debug(e)
             dedot = False
         if not dedot:
             script = {
@@ -216,7 +219,7 @@ class ElasticSearchStorage(storage.Storage):
                                               pipeline='dedot', routing=sample_id)
             except (TransportError, UnicodeEncodeError) as e:
                 # If fail, index empty doc instead
-                print('Failed to index that report!\n{}'.format(e))
+                logger.error('Failed to index that report!\n{}'.format(e))
                 report_body_fail = {
                     'doc_type': {
                         'name': 'report',
@@ -271,7 +274,7 @@ class ElasticSearchStorage(storage.Storage):
                 for tag in sample_tags.get(sid, []):
                     self.add_tag(sid, tag)
 
-        result = helpers.bulk(self.es, updates_list, raise_on_error=False)
+        helpers.bulk(self.es, updates_list, raise_on_error=False)
         return sample_ids
 
     def get_report(self, sample_id, timestamp):
@@ -314,7 +317,7 @@ class ElasticSearchStorage(storage.Storage):
             result.update(result_sample['_source'])
             return result
         except Exception as e:
-            print(e)
+            logger.error(e)
             return None
 
     def build_query(self, query_string):
@@ -336,7 +339,7 @@ class ElasticSearchStorage(storage.Storage):
             elif search_type == 'exact':
                 query = self.build_query("\"" + query_string + "\"")
             else:
-                print('Unknown search type!')
+                logger.error('Unknown search type!')
                 return None
         result = helpers.scan(
             self.es, query=query, index=self.index
@@ -370,7 +373,7 @@ class ElasticSearchStorage(storage.Storage):
             )
             return result
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return None
 
     def remove_tag(self, sample_id, tag):
@@ -392,7 +395,7 @@ class ElasticSearchStorage(storage.Storage):
             )
             return result
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return None
 
     def get_tags(self):
@@ -452,7 +455,7 @@ class ElasticSearchStorage(storage.Storage):
             )
             return result
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return None
 
     def add_note(self, sample_id, data):
@@ -472,7 +475,6 @@ class ElasticSearchStorage(storage.Storage):
                 "text": text
             }
         }
-        print(partial_doc)
         result = self.es.update(
             index=self.index, doc_type=self.doc_type, id=note_id,
             body=partial_doc, routing=sample_id
@@ -496,7 +498,7 @@ class ElasticSearchStorage(storage.Storage):
             )
             return True
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return False
 
     def delete_by_task_id(self, task_id):
@@ -514,7 +516,7 @@ class ElasticSearchStorage(storage.Storage):
             )
             return True
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return False
 
     def teardown(self):
@@ -531,5 +533,5 @@ class ElasticSearchStorage(storage.Storage):
             delete_indices = curator.DeleteIndices(ilo)
             delete_indices.do_action()
         except Exception as e:
-            # TODO: log exception
+            logger.error(e)
             return False

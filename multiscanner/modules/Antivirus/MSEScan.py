@@ -1,7 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
 
 import os
 import subprocess
@@ -28,7 +28,7 @@ DEFAULTCONF = {
     "cmdline": ["-Scan", "-ScanType", "3", "-DisableRemediation", "-File"],
     'host': HOST,
     "replacement path": PATHREPLACE,
-    'ENABLED': True
+    'ENABLED': False
 }
 
 
@@ -67,8 +67,6 @@ def scan(filelist, conf=DEFAULTCONF):
         cmd = cmdline[:]
         cmd.append('"' + item + '"')
 
-        # print(repr(cmd))
-        # print(repr(list2cmdline(cmd)))
         if local:
             try:
                 output = subprocess.check_output(cmd)
@@ -83,7 +81,6 @@ def scan(filelist, conf=DEFAULTCONF):
 
         # Parse output
         output = output.decode("utf-8")
-        # print(output)
 
         if "<===========================LIST OF DETECTED THREATS==========================>" not in output:
             # resultlist.append((item, {"malicious": False, "raw_output": output}))
@@ -100,7 +97,6 @@ def scan(filelist, conf=DEFAULTCONF):
             block, _, _ = output.partition(
                 '-------------------------------------------------------------------------------')
 
-            # print(block)
             lines = block.split('\n')
             threat_name = lines[0].partition(':')[2].strip()
             # threat = {"threat": threat_name, "resources": []}

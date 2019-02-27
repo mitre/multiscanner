@@ -13,8 +13,9 @@ After training a new model, place the resulting txt file in
 `multiscanner/etc` and update `config.ini` with the new filename.
 """
 
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
 
+import logging
 import os
 from pathlib import Path
 
@@ -33,17 +34,19 @@ DEFAULTCONF = {
 }
 LGBM_MODEL = None
 
+logger = logging.getLogger(__name__)
+
 try:
     import ember
     has_ember = True
 except ImportError as e:
-    print("ember module not installed...")
+    logger.error("ember module not installed...")
     has_ember = False
 
 try:
     import lightgbm as lgb
 except ImportError as e:
-    print("lightgbm module needed for ember. Not installed...")
+    logger.error("lightgbm module needed for ember. Not installed...")
     has_ember = False
 
 
@@ -54,14 +57,14 @@ def check(conf=DEFAULTCONF):
         return False
 
     if not Path(conf['path-to-model']).is_file():
-        print("'{}' does not exist. Check config.ini for model location.".format(conf['path-to-model']))
+        logger.error("'{}' does not exist. Check config.ini for model location.".format(conf['path-to-model']))
         return False
 
     try:
         global LGBM_MODEL
         LGBM_MODEL = lgb.Booster(model_file=conf['path-to-model'])
     except lgb.LightGBMError as e:
-        print("Unable to load model, {}. ({})".format(conf['path-to-model'], e))
+        logger.error("Unable to load model, {}. ({})".format(conf['path-to-model'], e))
         return False
 
     return True

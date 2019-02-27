@@ -29,7 +29,7 @@ DEFAULTCONF = {
     "cmdline": ["/ALL"],
     "host": HOST,
     "replacement path": PATHREPLACE,
-    "ENABLED": True
+    "ENABLED": False
 }
 
 

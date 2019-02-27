@@ -1,7 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+from __future__ import division, absolute_import, with_statement, unicode_literals
+import logging
 
 __authors__ = "Austin West"
 __license__ = "MPL 2.0"
@@ -13,11 +14,13 @@ DEFAULTCONF = {
     'ENABLED': False
 }
 
+logger = logging.getLogger(__name__)
+
 try:
     from mmbot import MaliciousMacroBot
     has_mmbot = True
 except ImportError as e:
-    print("mmbot module not installed...")
+    logger.error("mmbot module not installed...")
     has_mmbot = False
 
 
