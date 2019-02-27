@@ -97,7 +97,7 @@ class StorageHandler(object):
 
         # Read in config
         if configfile:
-            configfile = get_config_path(MS_CONFIG, 'storage')
+            configfile = get_config_path('storage')
             config_object = configparser.ConfigParser()
             config_object.optionxform = str
             # Regen the config if needed or wanted

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = get_config_path(config, 'storage')
+    storage_conf = get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)

@@ -104,7 +104,7 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_file = get_config_path(MS_CONFIG, 'api')
+api_config_file = get_config_path('api')
 api_config = read_config(api_config_file, 'api', DEFAULTCONF)
 
 # TODO: fix this mess
@@ -143,7 +143,7 @@ for x in range(0, db_num_retries):
         logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
-storage_conf = get_config_path(MS_CONFIG, 'storage')
+storage_conf = get_config_path('storage')
 storage_handler = StorageHandler(configfile=storage_conf)
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 

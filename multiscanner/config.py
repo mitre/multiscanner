@@ -76,29 +76,6 @@ def parse_config(config_object):
     return return_var
 
 
-def get_config_path(config, component):
-    """Gets the location of the config file for the given MultiScanner component
-    from the MultiScanner config
-
-    Components:
-        storage
-        api
-        web
-
-    config - dictionary or ConfigParser object containing MultiScanner config
-    component - component to get the path for
-    """
-    try:
-        return config['main']['%s-config' % component]
-    except KeyError:
-        logger.error(
-            "Couldn't find '{}-config' value in 'main' section "
-            "of config file. Have you run 'python multiscanner.py init'?"
-            .format(component)
-        )
-        sys.exit()
-
-
 def write_config(config_object, config_file, section_name, default_config):
     """Write the default configuration to the given config file
 
@@ -137,6 +114,29 @@ def read_config(config_file, section_name=None, default_config=None):
 
 # Main MultiScanner config, as a dictionary
 MS_CONFIG = read_config(CONFIG_FILE)
+
+
+def get_config_path(component, config=MS_CONFIG):
+    """Gets the location of the config file for the given MultiScanner component
+    from the MultiScanner config
+
+    Components:
+        storage
+        api
+        web
+
+    component - component to get the path for
+    config - dictionary or ConfigParser object containing MultiScanner config
+    """
+    try:
+        return config['main']['%s-config' % component]
+    except KeyError:
+        logger.error(
+            "Couldn't find '{}-config' value in 'main' section "
+            "of config file. Have you run 'python multiscanner.py init'?"
+            .format(component)
+        )
+        sys.exit()
 
 
 def get_enabled_modules():

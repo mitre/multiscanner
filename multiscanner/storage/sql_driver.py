@@ -17,9 +17,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import aliased, sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
-from multiscanner.config import MS_CONFIG, get_config_path
+from multiscanner.config import get_config_path
 
-CONFIG_FILE = get_config_path(MS_CONFIG, 'api')
+CONFIG_FILE = get_config_path('api')
 
 Base = declarative_base()
 Session = sessionmaker()

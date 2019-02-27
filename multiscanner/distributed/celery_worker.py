@@ -32,13 +32,13 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-configfile = get_config_path(MS_CONFIG, 'api')
+configfile = get_config_path('api')
 config = read_config(configfile, 'celery', DEFAULTCONF)
 api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-storage_configfile = get_config_path(MS_CONFIG, 'storage')
+storage_configfile = get_config_path('storage')
 storage_config = read_config(storage_configfile)
 es_storage_config = storage_config.get('ElasticSearchStorage')
 
@@ -116,7 +116,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
-    storage_conf = get_config_path(config, 'storage')
+    storage_conf = get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscan(
