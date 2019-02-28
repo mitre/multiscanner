@@ -2,8 +2,10 @@ import codecs
 from collections import namedtuple
 import configparser
 from flask import Flask, render_template, request
+from gevent.pywsgi import WSGIServer
 import os
 import re
+import sys
 
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import __version__
@@ -111,9 +113,17 @@ def system_health():
 
 
 def _main():
-    app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
-            port=app.config.get('PORT', DEFAULTCONF['PORT']),
-            host=app.config.get('HOST', DEFAULTCONF['HOST']))
+    in_docker = os.getenv("IN_DOCKER_CONTAINER", False)
+    
+    if in_docker:
+        http_server = WSGIServer( (app.config.get('HOST', DEFAULTCONF['HOST']), 
+        app.config.get('PORT', DEFAULTCONF['PORT'])), app, log=sys.stdout)
+        http_server.serve_forever()
+    else:
+        app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
+                port=app.config.get('PORT', DEFAULTCONF['PORT']),
+                host=app.config.get('HOST', DEFAULTCONF['HOST']))
+        
 
 
 if __name__ == "__main__":
