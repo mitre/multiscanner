@@ -528,13 +528,12 @@ def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, pyt
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG_FILE, config=None, module_list=None):
+def multiscan(Files, recursive=False, configfile=CONFIG_FILE, config=None, module_list=None):
     """
     The meat and potatoes. Returns the list of module results
 
     Files - A list of files and dirs to be scanned
     recursive - If true it will search the dirs in Files recursively
-    configregen - If True a new config file will be created overwriting the old
     configfile - What config file to use. Can be None.
     config - A dictionary containing the configuration options to be used.
     module_list - A list of file paths to be used as modules. Each string should end in .py
@@ -561,10 +560,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG_FILE,
     if configfile:
         config_object = configparser.ConfigParser()
         config_object.optionxform = str
-        # Regen the config if needed or wanted
-        if configregen or not os.path.isfile(configfile):
-            _rewrite_config(module_list, config_object, filepath=configfile)
-
         config_object.read(configfile)
         main_config = _get_main_config(config_object, filepath=configfile)
         if config:

@@ -89,7 +89,7 @@ class Storage(object):
 
 
 class StorageHandler(object):
-    def __init__(self, configfile=MS_CONFIG, config=None, configregen=False):
+    def __init__(self, configfile=MS_CONFIG, config=None):
         self.storage_lock = threading.Lock()
         self.storage_counter = ThreadCounter()
         # Load all storage classes
@@ -100,11 +100,6 @@ class StorageHandler(object):
             configfile = get_config_path('storage')
             config_object = configparser.ConfigParser()
             config_object.optionxform = str
-            # Regen the config if needed or wanted
-            if configregen or not os.path.isfile(configfile):
-                _write_main_config(config_object)
-                _rewrite_config(storage_classes, config_object, configfile)
-
             config_object.read(configfile)
             if config:
                 file_conf = parse_config(config_object)
@@ -279,8 +274,9 @@ def config_init(filepath, overwrite=False, storage_classes=None):
 
 
 def _write_main_config(config_object):
+    """Write default config for storage config's [main] section
+    """
     if not config_object.has_section('main'):
-        # Write default config
         config_object.add_section('main')
         for key in DEFAULTCONF:
             config_object.set('main', key, str(DEFAULTCONF[key]))

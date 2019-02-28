@@ -84,12 +84,12 @@ def write_config(config_object, config_file, section_name, default_config):
     section_name - the name of the section of defaults to be added
     default_config - values to set this configuration to
     """
-    config_object.add_section(section_name)
+    if section_name not in config_object.sections():
+        config_object.add_section(section_name)
     for key in default_config:
         config_object.set(section_name, key, str(default_config[key]))
-    conffile = codecs.open(config_file, 'w', 'utf-8')
-    config_object.write(conffile)
-    conffile.close()
+    with codecs.open(config_file, 'w', 'utf-8') as conffile:
+        config_object.write(conffile)
 
 
 def read_config(config_file, section_name=None, default_config=None):
