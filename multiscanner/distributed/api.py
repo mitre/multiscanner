@@ -885,7 +885,7 @@ def add_note(task_id):
     if not response:
         abort(HTTP_BAD_REQUEST)
 
-    response = { 'id': response['_id'], 'text': Markup.escape(response['_source']['text']) }
+    response = { 'id': response['_id'], 'text': response['_source']['text'] }
     return jsonify(response)
 
 
