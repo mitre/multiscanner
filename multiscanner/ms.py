@@ -545,6 +545,10 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG_FILE,
         filelist = parse_file_list(Files, recursive=recursive)
     else:
         filelist = Files
+    # If none of the files existed, why continue?
+    if not filelist:
+        raise ValueError("No valid files")
+
     # A list of files in the module dir
     if module_list is None:
         module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
@@ -583,10 +587,6 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG_FILE,
             main_config = config['main']
         else:
             main_config = DEFAULTCONF
-
-    # If none of the files existed
-    if not filelist:
-        raise ValueError("No valid files")
 
     # Copy files to a share if configured
     if "copyfilesto" not in main_config:

@@ -45,7 +45,7 @@ TEST_TASK_ID = 1
 with open(TEST_FULL_PATH, 'r') as f:
     TEST_FILE_HASH = hashlib.sha256(f.read().encode('utf-8')).hexdigest()
 TEST_METADATA = {}
-TEST_CONFIG = multiscanner.CONFIG
+TEST_CONFIG = multiscanner.MS_CONFIG
 
 TEST_REPORT = {
     'MD5': '96b47da202ddba8d7a6b91fecbf89a41',
@@ -59,10 +59,6 @@ def post_file(app):
     return app.post(
         '/api/v1/tasks',
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
-
-
-# def mock_delay(file_, original_filename, task_id, f_name, metadata, config):
-#     return TEST_REPORT
 
 
 class CeleryTestCase(unittest.TestCase):
@@ -80,7 +76,6 @@ class CeleryTestCase(unittest.TestCase):
 class TestCeleryCase(CeleryTestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        # api.multiscanner_celery.delay = mock_delay
 
     def test_base(self):
         self.assertEqual(True, True)

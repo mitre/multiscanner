@@ -4,7 +4,6 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import configparser
 from datetime import datetime
 from socket import gethostname
 
@@ -13,7 +12,7 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import MS_CONFIG, get_config_path, parse_config, read_config
+from multiscanner.config import MS_CONFIG, get_config_path, read_config
 from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
@@ -34,7 +33,6 @@ DEFAULTCONF = {
 
 configfile = get_config_path('api')
 config = read_config(configfile, 'celery', DEFAULTCONF)
-api_config = config.get('api')
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
@@ -130,26 +128,22 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     # Get the Scan Config that the task was run with and
     # add it to the task metadata
-    scan_config_object = configparser.ConfigParser()
-    scan_config_object.optionxform = str
-    scan_config_object.read(config)
-    full_conf = parse_config(scan_config_object)
     sub_conf = {}
-    # Count number of modules enabled out of total possible
+    # Count number of modules enabled out of total possible (-1 for main)
     # and add it to the Scan Metadata
     total_enabled = 0
-    total_modules = len(full_conf.keys())
+    total_modules = len(config.keys()) - 1
 
     # Get the count of modules enabled from the module_list
     # if it exists, else count via the config
     if module_list:
         total_enabled = len(module_list)
     else:
-        for key in full_conf:
+        for key in config:
             if key == 'main':
                 continue
             sub_conf[key] = {}
-            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+            sub_conf[key]['ENABLED'] = config[key]['ENABLED']
             if sub_conf[key]['ENABLED'] is True:
                 total_enabled += 1
 
@@ -204,7 +198,7 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover(days, config=MS_CONFIG):
+def metricbeat_rollover(days):
     '''
     Clean up old Elastic Beats indices
     '''

@@ -43,7 +43,7 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
-def mock_delay(full_path, original_filename, task_id, f_name, metadata, config):
+def mock_delay(*args, **kwargs):
     pass
 
 
