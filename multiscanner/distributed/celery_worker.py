@@ -119,7 +119,7 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     resultlist = multiscan(
         [file_],
-        configfile=config,
+        config=config,
         module_list=module_list
     )
     results = parse_reports(resultlist, python=True)

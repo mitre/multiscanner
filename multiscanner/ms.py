@@ -30,7 +30,9 @@ standard_library.install_aliases()
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_dir, parse_file_list, queue2list)
-from multiscanner.config import CONFIG_FILE, MODULESDIR, PY3, determine_configuration_path, parse_config
+from multiscanner.config import (CONFIG_FILE, MODULESDIR, MODULESLIST,
+                                 MS_CONFIG, PY3, determine_configuration_path,
+                                 get_config_path, update_ms_config)
 from multiscanner.storage import storage
 
 
@@ -264,32 +266,6 @@ def _update_DEFAULTCONF(defaultconf, filepath):
         defaultconf['offsets'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'offsets')
 
 
-def _get_main_config(config_object, filepath=CONFIG_FILE):
-    """
-    Reads in config for main script. It will write defaults if not present.
-    Returns dictionary.
-
-    Config - The config object
-    filepath - The path to the config file
-    """
-    filepath = determine_configuration_path(filepath)
-    # Write main defaults if needed
-    ConfNeedsWrite = False
-    if 'main' not in config_object.sections():
-        ConfNeedsWrite = True
-        _update_DEFAULTCONF(DEFAULTCONF, filepath)
-        config_object.add_section('main')
-        for key in DEFAULTCONF:
-            config_object.set('main', key, str(DEFAULTCONF[key]))
-
-    if ConfNeedsWrite:
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-
-    # Return main config as a dictionary
-    return parse_config(config_object)['main']
-
-
 def _copy_to_share(filelist, filedic, sharedir):
     """
     Copies files from filelist to a share and populates the filedic. Returns a
@@ -387,6 +363,8 @@ def _write_missing_module_configs(module_list, config, filepath=CONFIG_FILE):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
+    Also adds a '[main]' section if not present.
+
     module_list - The list of modules
     config - The config object
     """
@@ -397,7 +375,7 @@ def _write_missing_module_configs(module_list, config, filepath=CONFIG_FILE):
         if module.endswith(".py"):
             modname = os.path.basename(module).split('.')[0]
             moddir = os.path.dirname(module)
-            if modname not in config.sections():
+            if modname not in config.keys():
                 mod = load_module(os.path.basename(module).split('.')[0], [moddir])
                 if mod:
                     try:
@@ -407,20 +385,23 @@ def _write_missing_module_configs(module_list, config, filepath=CONFIG_FILE):
                         continue
                     ConfNeedsWrite = True
                     _update_DEFAULTCONF(conf, filepath)
-                    config.add_section(modname)
+                    config[modname] = {}
                     for key in conf:
-                        config.set(modname, key, str(conf[key]))
+                        config[modname][key] = str(conf[key])
 
-    if 'main' not in config.sections():
+    if 'main' not in config.keys():
         ConfNeedsWrite = True
         _update_DEFAULTCONF(DEFAULTCONF, filepath)
-        config.add_section('main')
+        config['main'] = {}
         for key in DEFAULTCONF:
-            config.set('main', key, str(DEFAULTCONF[key]))
+            config['main'][key] = str(DEFAULTCONF[key])
 
     if ConfNeedsWrite:
+        config_object = configparser.ConfigParser()
+        config_object.optionxform = str
+        config_object.read_dict(config)
         with codecs.open(filepath, 'w', 'utf-8') as f:
-            config.write(f)
+            config_object.write(f)
         return True
     return False
 
@@ -528,13 +509,12 @@ def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, pyt
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-def multiscan(Files, recursive=False, configfile=CONFIG_FILE, config=None, module_list=None):
+def multiscan(Files, recursive=False, config=None, module_list=None):
     """
     The meat and potatoes. Returns the list of module results
 
     Files - A list of files and dirs to be scanned
     recursive - If true it will search the dirs in Files recursively
-    configfile - What config file to use. Can be None.
     config - A dictionary containing the configuration options to be used.
     module_list - A list of file paths to be used as modules. Each string should end in .py
     """
@@ -553,35 +533,16 @@ def multiscan(Files, recursive=False, configfile=CONFIG_FILE, config=None, modul
         module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
     # A dictionary used for the copyfileto parameter
     filedic = {}
-    # What will be the config file object
-    config_object = None
 
     # Read in config
-    if configfile:
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
-        config_object.read(configfile)
-        main_config = _get_main_config(config_object, filepath=configfile)
-        if config:
-            file_conf = parse_config(config_object)
-            for key in config:
-                if key not in file_conf:
-                    file_conf[key] = config[key]
-                    file_conf[key]['_load_default'] = True
-                else:
-                    file_conf[key].update(config[key])
-            config = file_conf
-        else:
-            config = parse_config(config_object)
+    if config is None:
+        config = {}
     else:
-        if config is None:
-            config = {}
-        else:
-            config['_load_default'] = True
-        if 'main' in config:
-            main_config = config['main']
-        else:
-            main_config = DEFAULTCONF
+        config['_load_default'] = True
+    if 'main' in config:
+        main_config = config['main']
+    else:
+        main_config = DEFAULTCONF
 
     # Copy files to a share if configured
     if "copyfilesto" not in main_config:
@@ -597,10 +558,6 @@ def multiscan(Files, recursive=False, configfile=CONFIG_FILE, config=None, modul
 
     # Start a thread for each module
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
-
-    # Write the default configure settings for missing ones
-    if config_object:
-        _write_missing_module_configs(module_list, config_object, filepath=configfile)
 
     # Warn about spaces in file names
     for f in filelist:
@@ -868,11 +825,7 @@ def _init(args):
         config_init(args.config)
 
     # Init storage
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(args.config)
-    config = _get_main_config(config)
-    storage_config = config["storage-config"]
+    storage_config = get_config_path('storage')
     if os.path.isfile(storage_config):
         logger.warning('{} already exists, overwriting will destroy changes'.format(storage_config))
         try:
@@ -894,15 +847,13 @@ def _init(args):
 
 
 def _main():
-    global CONFIG_FILE
-
     # Get args
     args = _parse_args()
     # Set config or update locations
     if args.config is None:
         args.config = CONFIG_FILE
     else:
-        CONFIG_FILE = args.config
+        update_ms_config(args.config)
         _update_DEFAULTCONF(DEFAULTCONF, CONFIG_FILE)
 
     # Send all logs to stderr and set verbose
@@ -926,6 +877,9 @@ def _main():
 
     if not os.path.isfile(args.config):
         config_init(args.config)
+    else:
+        # Write the default configure settings for any missing modules
+        _write_missing_module_configs(MODULESLIST.keys(), MS_CONFIG, filepath=CONFIG_FILE)
 
     # Make sure report is not a dir
     if args.json:
@@ -985,17 +939,15 @@ def _main():
         starttime = str(datetime.datetime.now())
 
         # Run the multiscan
-        results = multiscan(filelist, configfile=args.config)
+        results = multiscan(filelist, config=MS_CONFIG)
 
         # We need to read in the config for the parseReports call
         config = configparser.ConfigParser()
         config.optionxform = str
         config.read(args.config)
-        config = _get_main_config(config)
+        config = MS_CONFIG['main']
         # Make sure we have a group-types
-        if "group-types" not in config:
-            config["group-types"] = []
-        elif not config["group-types"]:
+        if "group-types" not in config or not config["group-types"]:
             config["group-types"] = []
 
         # Add in script metadata

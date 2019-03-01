@@ -5,6 +5,7 @@
 
 from .config import (  # noqa F401
     CONFIG_FILE, MS_WD, MS_CONFIG, MODULESDIR, MODULESLIST, PY3,
+    update_ms_config
 )
 
 from .ms import (  # noqa F401

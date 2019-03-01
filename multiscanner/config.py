@@ -139,7 +139,7 @@ def get_config_path(component, config=MS_CONFIG):
         sys.exit()
 
 
-def get_enabled_modules():
+def get_modules():
     """Returns a dictionary with module names as keys, with boolean values
     denoting whether or not they are enabled in the config.
     """
@@ -154,8 +154,19 @@ def get_enabled_modules():
             modules[module] = MS_CONFIG[module]['ENABLED']
         except KeyError as e:
             logger.debug(e)
+            modules[module] = False
     return modules
 
 
-# The list of enabled modules
-MODULESLIST = get_enabled_modules()
+# The dictionary of modules and whether they're enabled or not
+MODULESLIST = get_modules()
+
+
+def update_ms_config(config_file):
+    """Update config globals to a different file than the default.
+
+    config_file - the file to be assigned to CONFIG_FILE and read into MS_CONFIG
+    """
+    global CONFIG_FILE, MS_CONFIG
+    CONFIG_FILE = config_file
+    MS_CONFIG = read_config(CONFIG_FILE)
