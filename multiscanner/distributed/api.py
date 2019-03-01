@@ -1069,7 +1069,7 @@ def _main():
     in_docker = os.getenv("IN_DOCKER_CONTAINER", False)
 
     if in_docker:
-        http_server = WSGIServer( (api_config['api']['host'], 
+        http_server = WSGIServer((api_config['api']['host'],
         api_config['api']['port']), app)
         http_server.serve_forever()
     else:

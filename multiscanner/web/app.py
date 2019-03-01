@@ -114,16 +114,15 @@ def system_health():
 
 def _main():
     in_docker = os.getenv("IN_DOCKER_CONTAINER", False)
-    
+
     if in_docker:
-        http_server = WSGIServer( (app.config.get('HOST', DEFAULTCONF['HOST']), 
+        http_server = WSGIServer((app.config.get('HOST', DEFAULTCONF['HOST']),
         app.config.get('PORT', DEFAULTCONF['PORT'])), app, log=sys.stdout)
         http_server.serve_forever()
     else:
         app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
                 port=app.config.get('PORT', DEFAULTCONF['PORT']),
                 host=app.config.get('HOST', DEFAULTCONF['HOST']))
-        
 
 
 if __name__ == "__main__":
