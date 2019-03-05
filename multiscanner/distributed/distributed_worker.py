@@ -16,7 +16,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import get_config_path, read_config
+from multiscanner.config import get_config_path, read_config, update_ms_config_file
 from multiscanner.storage import storage
 
 
@@ -71,6 +71,8 @@ def _main():
     # Pull config options
     conf = read_config(args.config)
     multiscanner_config = conf['worker']['multiscanner_config']
+    update_ms_config_file(multiscanner_config)
+    config = read_config(multiscanner_config)
 
     # Start worker task
     work_queue = multiprocessing.Queue()
@@ -78,7 +80,7 @@ def _main():
     exit_signal.value = False
     ms_process = multiprocessing.Process(
             target=multiscanner_process,
-            args=(work_queue, multiscanner_config, args.delete, exit_signal))
+            args=(work_queue, config, args.delete, exit_signal))
     ms_process.start()
 
     # Start message pickup task

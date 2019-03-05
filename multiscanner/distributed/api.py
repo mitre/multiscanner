@@ -199,7 +199,7 @@ def multiscanner_process(work_queue, exit_signal):
         filelist = [item[0] for item in metadata_list]
         # modulelist = [item[5] for item in metadata_list]
         resultlist = multiscan(
-            filelist, configfile=CONFIG_FILE
+            filelist,
             # module_list
         )
         results = parse_reports(resultlist, python=True)

@@ -20,7 +20,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import CONFIG_FILE, get_config_path
+from multiscanner.config import CONFIG_FILE, MS_CONFIG, get_config_path, update_ms_config_file
 from multiscanner.storage import storage
 
 logger = logging.getLogger(__name__)
@@ -117,13 +117,16 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 
 def _main():
     args = _parse_args()
+    if args.config != CONFIG_FILE:
+        update_ms_config_file(args.config)
+
     work_queue = multiprocessing.Queue()
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
     observer = start_observer(args.Directory, work_queue, args.recursive)
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
-        args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
+        args=(work_queue, MS_CONFIG, args.batch, args.seconds, args.delete, exit_signal))
     ms_process.start()
     try:
         while True:
