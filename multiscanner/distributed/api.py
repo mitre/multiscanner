@@ -197,10 +197,10 @@ def multiscanner_process(work_queue, exit_signal):
                 continue
 
         filelist = [item[0] for item in metadata_list]
-        # modulelist = [item[5] for item in metadata_list]
+        module_list = [item[5] for item in metadata_list]
         resultlist = multiscan(
             filelist,
-            # module_list
+            module_list=module_list
         )
         results = parse_reports(resultlist, python=True)
 
@@ -262,7 +262,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    return jsonify({'Modules': MODULE_LIST})
+    return jsonify({name: mod[0] for (name, mod) in MODULE_LIST.items()})
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -424,7 +424,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False, mod
                                   config=MS_CONFIG, module_list=module_list)
     else:
         # Put the task on the queue
-        work_queue.put((full_path, original_filename, task_id, f_name, metadata))
+        work_queue.put((full_path, original_filename, task_id, f_name, metadata, module_list))
 
     return task_id
 
@@ -514,7 +514,7 @@ def create_task():
                 for uzfile in z.namelist():
                     unzipped_file = open(os.path.join(extract_dir, uzfile))
                     f_name, full_path = save_hashed_filename(unzipped_file, True)
-                    tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan, module_list=modules)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -530,7 +530,7 @@ def create_task():
                 for urfile in r.namelist():
                     unrarred_file = open(os.path.join(extract_dir, urfile))
                     f_name, full_path = save_hashed_filename(unrarred_file, True)
-                    tid = queue_task(urfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(urfile, f_name, full_path, metadata, rescan=rescan, module_list=modules)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -541,7 +541,7 @@ def create_task():
     else:
         # File was not an archive to extract
         f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
+        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan, module_list=modules)
         task_id_list = [tid]
 
     msg = {'task_ids': task_id_list}
