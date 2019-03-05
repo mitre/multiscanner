@@ -60,7 +60,7 @@ from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
 
-from multiscanner import CONFIG_FILE, MODULESLIST, MS_CONFIG, MS_WD, multiscan, parse_reports
+from multiscanner import CONFIG_FILE, MODULE_LIST, MS_CONFIG, MS_WD, multiscan, parse_reports
 from multiscanner.common import pdf_generator, stix2_generator
 from multiscanner.config import PY3, get_config_path, read_config
 from multiscanner.storage import StorageHandler
@@ -262,7 +262,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    return jsonify({'Modules': MODULESLIST})
+    return jsonify({'Modules': MODULE_LIST})
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -477,9 +477,9 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key].split(',')
-            modules = list(set(module_names).intersection(MODULESLIST.keys()))
+            modules = list(set(module_names).intersection(MODULE_LIST.keys()))
 
-            # files = utils.parse_dir(MODULESDIR, True)
+            # files = utils.parse_dir(MODULES_DIR, True)
             # modules = []
             # for f in files:
             #     split = os.path.splitext(os.path.basename(f))

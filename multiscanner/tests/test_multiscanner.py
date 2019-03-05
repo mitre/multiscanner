@@ -12,16 +12,16 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 class _runmulti_tests(object):
     @classmethod
     def setup_class(cls):
-        cls.real_mod_dir = multiscanner.MODULESDIR
-        multiscanner.MODULEDIR = os.path.join(CWD, "modules")
+        cls.real_mod_dir = multiscanner.MODULES_DIR
+        multiscanner.MODULES_DIR = os.path.join(CWD, "modules")
         cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
         config_file = '.tmpfile.ini'
         multiscanner.config_init(config_file)
-        multiscanner.update_ms_config(config_file)
+        multiscanner.update_ms_config_file(config_file)
 
     @classmethod
     def teardown_class(cls):
-        multiscanner.MODULESDIR = cls.real_mod_dir
+        multiscanner.MODULES_DIR = cls.real_mod_dir
 
 
 class Test_multiscan(_runmulti_tests):

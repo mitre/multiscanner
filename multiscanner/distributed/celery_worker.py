@@ -98,7 +98,7 @@ class MultiScannerTask(Task):
 
 @app.task(base=MultiScannerTask)
 def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
-                        config=MS_CONFIG, module_list=None):
+                        config=None, module_list=None):
     '''
     Queue up multiscanner tasks
 
@@ -114,6 +114,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
+    if config is None:
+        config = MS_CONFIG
     storage_conf = get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 

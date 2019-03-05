@@ -5,7 +5,6 @@ import unittest
 import mock
 import multiscanner
 
-from multiscanner.common import utils
 from multiscanner.distributed import celery_worker
 from multiscanner.storage.sql_driver import Database
 
@@ -20,16 +19,14 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Get a subset of simple modules to run in testing
 # the celery worker
-MODULE_LIST = utils.parse_dir(multiscanner.MODULESDIR, recursive=True)
-DESIRED_MODULES = [
-    'entropy.py',
-    'MD5.py',
-    'SHA1.py',
-    'SHA256.py',
-    'libmagic.py',
-    'ssdeep.py'
+MODULES_TO_TEST = [
+    'entropy',
+    'MD5',
+    'SHA1',
+    'SHA256',
+    'libmagic',
+    'ssdeep'
 ]
-MODULES_TO_TEST = [i for e in DESIRED_MODULES for i in MODULE_LIST if e in i]
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')

@@ -21,7 +21,7 @@ if sys.version_info < (2, 7) or sys.version_info > (4,):
 MS_WD = os.path.dirname(os.path.abspath(__file__))
 
 # The directory where the modules are kept
-MODULESDIR = os.path.join(MS_WD, 'modules')
+MODULES_DIR = os.path.join(MS_WD, 'modules')
 
 
 def get_configuration_paths():
@@ -67,7 +67,7 @@ def parse_config(config_object):
         for key in section_dict:
             try:
                 section_dict[key] = ast.literal_eval(section_dict[key])
-            except SyntaxError as e:
+            except (SyntaxError, ValueError) as e:
                 # Ignore if config value isn't convertible to a Python literal
                 pass
             except Exception as e:
@@ -116,7 +116,7 @@ def read_config(config_file, section_name=None, default_config=None):
 MS_CONFIG = read_config(CONFIG_FILE)
 
 
-def get_config_path(component, config=MS_CONFIG):
+def get_config_path(component, config=None):
     """Gets the location of the config file for the given MultiScanner component
     from the MultiScanner config
 
@@ -128,6 +128,9 @@ def get_config_path(component, config=MS_CONFIG):
     component - component to get the path for
     config - dictionary or ConfigParser object containing MultiScanner config
     """
+    if config is None:
+        config = MS_CONFIG
+
     try:
         return config['main']['%s-config' % component]
     except KeyError:
@@ -140,29 +143,46 @@ def get_config_path(component, config=MS_CONFIG):
 
 
 def get_modules():
-    """Returns a dictionary with module names as keys, with boolean values
-    denoting whether or not they are enabled in the config.
+    """Returns a dictionary with module names as keys. Values contain a boolean
+    denoting whether or not they are enabled in the config, and the folder
+    containing the module.
     """
-    files = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
-    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
-    module_names = [m[0] for m in filenames if m[1] == '.py']
+    files = parse_dir(MODULES_DIR, recursive=True, exclude=["__init__"])
 
     global MS_CONFIG
     modules = {}
-    for module in module_names:
-        try:
-            modules[module] = MS_CONFIG[module]['ENABLED']
-        except KeyError as e:
-            logger.debug(e)
-            modules[module] = False
+    # for module in module_names:
+    for f in files:
+        folder = os.path.dirname(f)
+        filename = os.path.splitext(os.path.basename(f))
+
+        if filename[1] == '.py':
+            module = filename[0]
+            try:
+                modules[module] = [MS_CONFIG[module]['ENABLED'], folder]
+            except KeyError as e:
+                logger.debug(e)
+                modules[module] = [False, folder]
     return modules
 
 
 # The dictionary of modules and whether they're enabled or not
-MODULESLIST = get_modules()
+MODULE_LIST = get_modules()
 
 
-def update_ms_config(config_file):
+def update_ms_config(config):
+    """Update global config dictionary.
+
+    config - the ConfigParser object or dictionary to replace MS_CONFIG with
+    """
+    global MS_CONFIG
+    if isinstance(config, configparser.ConfigParser):
+        MS_CONFIG = parse_config(config)
+    else:
+        MS_CONFIG = config
+
+
+def update_ms_config_file(config_file):
     """Update config globals to a different file than the default.
 
     config_file - the file to be assigned to CONFIG_FILE and read into MS_CONFIG

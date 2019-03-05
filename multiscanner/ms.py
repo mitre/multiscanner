@@ -16,6 +16,7 @@ import os
 import random
 import re
 import shutil
+import six
 import string
 import sys
 import tempfile
@@ -29,10 +30,11 @@ standard_library.install_aliases()
 
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
-                                       parse_dir, parse_file_list, queue2list)
-from multiscanner.config import (CONFIG_FILE, MODULESDIR, MODULESLIST,
+                                       parse_file_list, queue2list)
+from multiscanner.config import (CONFIG_FILE, MODULE_LIST,
                                  MS_CONFIG, PY3, determine_configuration_path,
-                                 get_config_path, update_ms_config)
+                                 get_config_path, update_ms_config,
+                                 update_ms_config_file)
 from multiscanner.storage import storage
 
 
@@ -303,7 +305,7 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
     Starts each module on the file list in a separate thread. Returns a list of threads
 
     filelist - A lists of strings. The strings are files to be scanned
-    module_list - A list of all the modules to be run
+    module_list - A list of the names of all modules to be run
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
@@ -312,79 +314,82 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
     ThreadDict = {}
     global_module_interface.run_count += 1
     # Starts a thread for each module.
-    for module in module_list:
-        if module.endswith(".py"):
-            modname = os.path.basename(module[:-3])
-
-            # If the module is disabled we don't mess with it further to prevent spamming errors on screen
-            if modname in config:
-                if not config[modname].get('ENABLED', True):
-                    continue
-
-            moddir = os.path.dirname(module)
-            mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-            if not mod:
-                logger.warning("{} not a valid module...".format(module))
+    for modname in module_list:
+        # If the module is disabled we don't mess with it further to prevent spamming errors on screen
+        if modname in config:
+            if not config[modname].get('ENABLED', True):
                 continue
-            conf = None
-            if modname in config:
-                if '_load_default' in config or '_load_default' in config[modname]:
-                    try:
-                        conf = mod.DEFAULTCONF
-                        conf.update(config[modname])
-                    except Exception as e:
-                        logger.warning(e)
-                        conf = config[modname]
-                    # Remove _load_default from config
-                    if '_load_default' in conf:
-                        del conf['_load_default']
-                else:
-                    conf = config[modname]
+        # TODO: What if the module isn't specified in the config
 
-            # Try and read in the default conf if one was not passed
-            if not conf:
+        try:
+            moddir = MODULE_LIST[modname][1]
+        except KeyError:
+            logger.warning(MODULE_LIST)
+            logger.warning("{} not a valid module...".format(modname))
+            continue
+
+        mod = load_module(modname, [moddir])
+        if not mod:
+            logger.warning("{} not a valid module...".format(modname))
+            continue
+        conf = None
+        if modname in config:
+            if '_load_default' in config or '_load_default' in config[modname]:
                 try:
                     conf = mod.DEFAULTCONF
+                    conf.update(config[modname])
                 except Exception as e:
-                    logger.error(e)
-            thread = _Thread(
-                target=_run_module,
-                args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
-            thread.name = modname
-            thread.setDaemon(True)
-            ThreadList.append(thread)
-            ThreadDict[modname] = thread
+                    logger.warning(e)
+                    conf = config[modname]
+                # Remove _load_default from config
+                if '_load_default' in conf:
+                    del conf['_load_default']
+            else:
+                conf = config[modname]
+
+        # Try and read in the default conf if one was not passed
+        if not conf:
+            try:
+                conf = mod.DEFAULTCONF
+            except Exception as e:
+                logger.error(e)
+        thread = _Thread(
+            target=_run_module,
+            args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
+        thread.name = modname
+        thread.setDaemon(True)
+        ThreadList.append(thread)
+        ThreadDict[modname] = thread
+
     for thread in ThreadList:
         thread.start()
     return ThreadList
 
 
-def _write_missing_module_configs(module_list, config, filepath=CONFIG_FILE):
+def _write_missing_module_configs(config, filepath=CONFIG_FILE):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
     Also adds a '[main]' section if not present.
 
-    module_list - The list of modules
+    module_list - The list of modules (filenames)
     config - The config object
     """
     filepath = determine_configuration_path(filepath)
     ConfNeedsWrite = False
-    module_list.sort()
-    for module in module_list:
-        if module.endswith(".py"):
-            modname = os.path.basename(module).split('.')[0]
-            moddir = os.path.dirname(module)
-            if modname not in config.keys():
-                mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-                if mod:
-                    try:
-                        conf = mod.DEFAULTCONF
-                    except Exception as e:
-                        logger.warning(e)
-                        continue
+    for modname, module in sorted(six.iteritems(MODULE_LIST)):
+        if modname not in config.keys():
+            moddir = module[1]
+            print(moddir)
+            mod = load_module(modname, [moddir])
+            if mod:
+                try:
+                    conf = mod.DEFAULTCONF
+                except Exception as e:
+                    logger.warning(e)
+                    continue
+                if modname not in config.keys():
                     ConfNeedsWrite = True
-                    _update_DEFAULTCONF(conf, filepath)
                     config[modname] = {}
                     for key in conf:
                         config[modname][key] = str(conf[key])
@@ -415,22 +420,19 @@ def _rewrite_config(module_list, config, filepath=CONFIG_FILE):
     """
     filepath = determine_configuration_path(filepath)
     logger.info('Rewriting config...')
-    module_list.sort()
-    for module in module_list:
-        if module.endswith('.py'):
-            modname = os.path.basename(module).split('.')[0]
-            moddir = os.path.dirname(module)
-            mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-            if mod:
-                try:
-                    conf = mod.DEFAULTCONF
-                except Exception as e:
-                    logger.warning(e)
-                    continue
-                _update_DEFAULTCONF(conf, filepath)
-                config.add_section(modname)
-                for key in conf:
-                    config.set(modname, key, str(conf[key]))
+    for modname, module in sorted(six.iteritems(module_list)):
+        moddir = module[1]
+        mod = load_module(modname, [moddir])
+        if mod:
+            try:
+                conf = mod.DEFAULTCONF
+            except Exception as e:
+                logger.warning(e)
+                continue
+            _update_DEFAULTCONF(conf, filepath)
+            config.add_section(modname)
+            for key in conf:
+                config.set(modname, key, str(conf[key]))
 
     _update_DEFAULTCONF(DEFAULTCONF, filepath)
     config.add_section('main')
@@ -440,13 +442,18 @@ def _rewrite_config(module_list, config, filepath=CONFIG_FILE):
     with codecs.open(filepath, 'w', 'utf-8') as f:
         config.write(f)
 
+    # Set global main config
+    update_ms_config(config)
 
-def config_init(filepath, module_list=parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])):
+
+def config_init(filepath, module_list=None):
     """
     Creates a new config file at filepath
 
     filepath - The config file to create
     """
+    if module_list is None:
+        module_list = MODULE_LIST
     config = configparser.ConfigParser()
     config.optionxform = str
 
@@ -530,7 +537,7 @@ def multiscan(Files, recursive=False, config=None, module_list=None):
 
     # A list of files in the module dir
     if module_list is None:
-        module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
+        module_list = [modname for modname in MODULE_LIST]
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
@@ -816,11 +823,8 @@ def _init(args):
             config_init(args.config)
         else:
             logger.info('Checking for missing modules in configuration...')
-            module_list = parse_dir(MODULESDIR, recursive=True, exclude=["__init__"])
-            config = configparser.ConfigParser()
-            config.optionxform = str
-            config.read(args.config)
-            _write_missing_module_configs(module_list, config, filepath=args.config)
+            config = MS_CONFIG  # MS_CONFIG will already have been set in main()
+            _write_missing_module_configs(config, filepath=args.config)
     else:
         config_init(args.config)
 
@@ -853,7 +857,7 @@ def _main():
     if args.config is None:
         args.config = CONFIG_FILE
     else:
-        update_ms_config(args.config)
+        update_ms_config_file(args.config)
         _update_DEFAULTCONF(DEFAULTCONF, CONFIG_FILE)
 
     # Send all logs to stderr and set verbose
@@ -879,7 +883,7 @@ def _main():
         config_init(args.config)
     else:
         # Write the default configure settings for any missing modules
-        _write_missing_module_configs(MODULESLIST.keys(), MS_CONFIG, filepath=CONFIG_FILE)
+        _write_missing_module_configs(MS_CONFIG, filepath=CONFIG_FILE)
 
     # Make sure report is not a dir
     if args.json:

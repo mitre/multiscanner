@@ -89,11 +89,13 @@ class Storage(object):
 
 
 class StorageHandler(object):
-    def __init__(self, configfile=MS_CONFIG, config=None):
+    def __init__(self, configfile=None, config=None):
         self.storage_lock = threading.Lock()
         self.storage_counter = ThreadCounter()
         # Load all storage classes
         storage_classes = _get_storage_classes()
+        if configfile is None:
+            configfile = MS_CONFIG
 
         # Read in config
         if configfile:
