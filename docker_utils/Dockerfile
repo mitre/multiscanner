@@ -4,7 +4,7 @@ MAINTAINER Patrick Copeland ptcnop
 ENV YARA_VERSION 3.8.1
 ENV YARA_PY_VERSION 3.8.1
 ENV SSDEEP ssdeep-2.13
-ENV IN_DOCKER_CONTAINER Yes
+ENV PRODUCTION Yes
 
 COPY requirements.txt /opt/multiscanner/
 

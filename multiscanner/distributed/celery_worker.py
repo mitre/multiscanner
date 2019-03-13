@@ -114,6 +114,10 @@ class MultiScannerTask(Task):
             task_status='Failed',
             timestamp=scan_time,
         )
+        
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        db_session.remove()
+
 
 
 @app.task(base=MultiScannerTask)

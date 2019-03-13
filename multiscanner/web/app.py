@@ -2,7 +2,6 @@ import codecs
 from collections import namedtuple
 import configparser
 from flask import Flask, render_template, request
-from gevent.pywsgi import WSGIServer
 import os
 import re
 import sys
@@ -113,9 +112,10 @@ def system_health():
 
 
 def _main():
-    in_docker = os.getenv("IN_DOCKER_CONTAINER", False)
+    in_docker = os.getenv("PRODUCTION", False)
 
     if in_docker:
+        from gevent.pywsgi import WSGIServer
         http_server = WSGIServer((app.config.get('HOST', DEFAULTCONF['HOST']),
         app.config.get('PORT', DEFAULTCONF['PORT'])), app, log=sys.stdout)
         http_server.serve_forever()
