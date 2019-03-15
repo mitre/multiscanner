@@ -116,7 +116,7 @@ class MultiScannerTask(Task):
         )
         
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
-        db_session.remove()
+        db.db_session.remove()
 
 
 

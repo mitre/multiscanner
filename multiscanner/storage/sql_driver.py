@@ -13,7 +13,7 @@ from sqlalchemy import (Column, DateTime, Integer, String, and_, create_engine,
                         func)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import aliased, sessionmaker
+from sqlalchemy.orm import aliased, scoped_session, sessionmaker
 from sqlalchemy_utils import create_database, database_exists
 
 from multiscanner import CONFIG
@@ -65,6 +65,7 @@ class Database(object):
     def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
         self.db_connection_string = None
         self.db_engine = None
+        self.db_session = None
 
         # Configuration parsing
         config_parser = configparser.SafeConfigParser()
@@ -126,128 +127,117 @@ class Database(object):
             self.db_connection_string = '{}://{}:{}@{}/{}'.format(db_type, username, password, host_string, db_name)
 
         self.db_engine = create_engine(self.db_connection_string)
+        self.db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=self.db_engine))
         # If db not present AND type is not SQLite, create the DB
         if not self.config['db_type'] == 'sqlite':
             if not database_exists(self.db_engine.url):
                 create_database(self.db_engine.url)
         Base.metadata.bind = self.db_engine
         Base.metadata.create_all()
+
+        #unsure why we would want this bounud globably 
+        """
         # Bind the global Session to our DB engine
         global Session
         Session.configure(bind=self.db_engine)
+        """
 
-    @contextmanager
-    def db_session_scope(self):
-        """
-        Taken from http://docs.sqlalchemy.org/en/latest/orm/session_basics.html.
-        Provides a transactional scope around a series of operations.
-        """
-        ses = Session()
-        try:
-            yield ses
-            ses.commit()
-        except Exception as e:
-            # TODO: log exception
-            ses.rollback()
-            raise
-        finally:
-            ses.close()
+  
 
     def add_task(self, task_id=None, task_status='Pending', sample_id=None, timestamp=None):
-        with self.db_session_scope() as ses:
-            task = Task(
-                task_id=task_id,
-                task_status=task_status,
-                sample_id=sample_id,
-                timestamp=timestamp,
-            )
-            try:
-                ses.add(task)
-                # Need to explicitly commit here in order to update the ID in the DAO
-                ses.commit()
-            except IntegrityError as e:
-                print('PRIMARY KEY must be unique! %s' % e)
-                return -1
-            created_task_id = task.task_id
-            return created_task_id
+        
+        task = Task(
+            task_id=task_id,
+            task_status=task_status,
+            sample_id=sample_id,
+            timestamp=timestamp,
+        )
+        try:
+            self.db_session.add(task)
+            # Need to explicitly commit here in order to update the ID in the DAO
+            self.db_session.commit()
+        except IntegrityError as e:
+            print('PRIMARY KEY must be unique! %s' % e)
+            return -1
+        created_task_id = task.task_id
+        return created_task_id
 
     def update_task(self, task_id, task_status, timestamp=None):
-        with self.db_session_scope() as ses:
-            task = ses.query(Task).get(task_id)
-            if task:
-                task.task_status = task_status
-                if timestamp:
-                    task.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-                return task.to_dict()
+        
+        task = self.db_session.query(Task).get(task_id)
+        if task:
+            task.task_status = task_status
+            if timestamp:
+                task.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
+            return task.to_dict()
 
     def get_task(self, task_id):
-        with self.db_session_scope() as ses:
-            task = ses.query(Task).get(task_id)
-            if task:
-                # unbind Task from Session
-                ses.expunge(task)
-                return task
+        task = self.db_session.query(Task).get(task_id)
+        if task:
+            # unbind Task from Session
+            self.db_session.expunge(task)
+            return task
 
     def get_all_tasks(self):
-        with self.db_session_scope() as ses:
-            rs = ses.query(Task).all()
-            # TODO: For testing, do not use in production
-            task_list = []
-            for task in rs:
-                ses.expunge(task)
-                task_list.append(task.to_dict())
-            return task_list
+        
+        rs = self.db_session.query(Task).all()
+        # TODO: For testing, do not use in production
+        task_list = []
+        for task in rs:
+            self.db_session.expunge(task)
+            task_list.append(task.to_dict())
+        return task_list
 
     def search(self, params, id_list=None, search_by_value=False, return_all=False):
         '''Search according to Datatables-supplied parameters.
         Returns results in format expected by Datatables.
         '''
-        with self.db_session_scope() as ses:
-            fields = [Task.task_id, Task.sample_id, Task.task_status, Task.timestamp]
-            columns = [ColumnDT(f) for f in fields]
-            if return_all:
-                # History page
-                if id_list is None:
-                    # Return all tasks
-                    query = ses.query(*fields)
-                else:
-                    # Query all tasks for samples with given IDs
-                    query = ses.query(*fields).filter(Task.sample_id.in_(id_list))
+    
+        fields = [Task.task_id, Task.sample_id, Task.task_status, Task.timestamp]
+        columns = [ColumnDT(f) for f in fields]
+        if return_all:
+            # History page
+            if id_list is None:
+                # Return all tasks
+                query = self.db_session.query(*fields)
             else:
-                # Analyses page
-                task_alias = aliased(Task)
-                sample_subq = (ses.query(task_alias.sample_id,
-                                         func.max(task_alias.timestamp).label('ts_max'))
-                               .group_by(task_alias.sample_id)
-                               .subquery()
-                               .alias('sample_subq'))
-                # Query for most recent task per sample
-                query = (ses.query(*fields)
-                         .join(sample_subq,
-                               and_(Task.sample_id == sample_subq.c.sample_id,
-                                    Task.timestamp == sample_subq.c.ts_max)))
-                if id_list is not None:
-                    # Query for most recent task per sample, only for samples with given IDs
-                    query = query.filter(Task.sample_id.in_(id_list))
-            if not search_by_value:
-                # Don't limit search by search term or it won't return anything
-                # (search term already handled by Elasticsearch)
-                del params['search[value]']
-            rowTable = DataTables(params, query, columns)
+                # Query all tasks for samples with given IDs
+                query = self.db_session.query(*fields).filter(Task.sample_id.in_(id_list))
+        else:
+            # Analyses page
+            task_alias = aliased(Task)
+            sample_subq = (self.db_session.query(task_alias.sample_id,
+                                        func.max(task_alias.timestamp).label('ts_max'))
+                            .group_by(task_alias.sample_id)
+                            .subquery()
+                            .alias('sample_subq'))
+            # Query for most recent task per sample
+            query = (self.db_session.query(*fields)
+                        .join(sample_subq,
+                            and_(Task.sample_id == sample_subq.c.sample_id,
+                                Task.timestamp == sample_subq.c.ts_max)))
+            if id_list is not None:
+                # Query for most recent task per sample, only for samples with given IDs
+                query = query.filter(Task.sample_id.in_(id_list))
+        if not search_by_value:
+            # Don't limit search by search term or it won't return anything
+            # (search term already handled by Elasticsearch)
+            del params['search[value]']
+        rowTable = DataTables(params, query, columns)
 
-            output = rowTable.output_result()
-            ses.expunge_all()
+        output = rowTable.output_result()
+        self.db_session.expunge_all()
 
-            return output
+        return output
 
     def delete_task(self, task_id):
-        with self.db_session_scope() as ses:
-            task = ses.query(Task).get(task_id)
-            if task:
-                ses.delete(task)
-                return True
-            else:
-                return False
+    
+        task = self.db_session.query(Task).get(task_id)
+        if task:
+            self.db_session.delete(task)
+            return True
+        else:
+            return False
 
     def exists(self, sample_id):
         '''Checks if any tasks exist in the database with the given sample_id.
@@ -256,14 +246,13 @@ class Database(object):
             Task id of the most recent task with the given sample_id if one
             exists in task database, otherwise None.
         '''
-        with self.db_session_scope() as ses:
-            # Query for most recent task with given sample_id
-            subquery = (ses.query(func.max(Task.timestamp))
-                .filter(Task.sample_id == sample_id))
-            task = ses.query(Task).filter(Task.sample_id == sample_id,
-                                          Task.timestamp == subquery).first()
+        # Query for most recent task with given sample_id
+        subquery = (self.db_session.query(func.max(Task.timestamp))
+            .filter(Task.sample_id == sample_id))
+        task = self.db_session.query(Task).filter(Task.sample_id == sample_id,
+                                        Task.timestamp == subquery).first()
 
-            if task:
-                return task.task_id
-            else:
-                return None
+        if task:
+            return task.task_id
+        else:
+            return None
