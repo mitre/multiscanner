@@ -99,7 +99,7 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                      |
 |                                                                                                         |
-| TODO: remove "Report" wrapper                                                                           |
+| DONE*: remove "Report" wrapper EV: For download response, but unsure if we need internally              |
 +--------+-----------------------------------------------------+------------------------------------------+ 
 
 Tags
@@ -151,8 +151,8 @@ TODO: responses might be needlessly large, with lots of Elastic info -- we reall
 +--------+-----------------------------------------------------+------------------------------------------+
 | Add a note to task, using the HTTP parameter ``text=...``                                               |
 |                                                                                                         |
-| * TODO: should POST body this just be the text itself...? we don't use other fields                     |
-| * TODO: should response just be the note ID? and optionally text, and maybe sample ID                   |
+| * DONE*: should POST body this just be the text itself..? we don't use other fields EV: Just success msg|
+| * DONE*: should response just be the note ID? and optionally text, and maybe sample ID                  |
 +--------+-----------------------------------------------------+------------------------------------------+
 | PUT    | /api/v1/tasks/<task_id>/notes/<note_id>             | Extensive ES object w/ note's ``_id``    |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -160,7 +160,7 @@ TODO: responses might be needlessly large, with lots of Elastic info -- we reall
 +--------+-----------------------------------------------------+------------------------------------------+
 | DELETE | /api/v1/tasks/<task_id>/notes/<note_id>             | Extensive ES object w/ note's ``_id``    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Delete a note (TODO: response note above)                                                               |
+| Delete a note (DONE*: response note above)                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
 
 
@@ -188,6 +188,6 @@ Modules/Other
 +--------------------------------------------------------------+------------------------------------------+
 | GET    | /                                                   | Test response object                     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Test functionality. Should produce: ``{'Message': 'True'}``  (TODO: use boolean)                        |
+| Test functionality. Should produce: ``{'Message': 'True'}``  (DONE*: use boolean)                       |
 +---------------------------------------------------------------------------------------------------------+            
 
