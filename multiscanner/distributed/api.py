@@ -72,7 +72,7 @@ from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
 
 
-TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
+TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
 
 HTTP_OK = 200
@@ -251,13 +251,13 @@ def multiscanner_process(work_queue, exit_signal):
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
     '''Return a 400 with the INVALID_REQUEST message.'''
-    return make_response(jsonify(INVALID_REQUEST), HTTP_BAD_REQUEST)
+    return make_response(jsonify(error.description), HTTP_BAD_REQUEST)
 
 
 @app.errorhandler(HTTP_NOT_FOUND)
 def not_found(error):
     '''Return a 404 with a TASK_NOT_FOUND message.'''
-    return make_response(jsonify(TASK_NOT_FOUND), HTTP_NOT_FOUND)
+    return make_response(jsonify(error.description), HTTP_NOT_FOUND)
 
 
 @app.route('/')
@@ -310,15 +310,15 @@ def search(params, get_all=False):
     search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
     if not search_term:
-        es_result = None
+        result = None
     else:
-        es_result = handler.search(search_term, search_type)
+        result = handler.search(search_term, search_type)
 
     # Search the task db for the ids we got from Elasticsearch
     if get_all:
-        return db.search(params, es_result, return_all=True)
+        return db.search(params, result, return_all=True)
     else:
-        return db.search(params, es_result)
+        return db.search(params, result)
 
 
 @app.route('/api/v2/tasks/search/history', methods=['GET'])
@@ -353,7 +353,7 @@ def get_task(task_id):
     if task:
         return jsonify(task.to_dict())
     else:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
 
 @app.route('/api/v2/tasks/sha256/<string:sha256>', methods=['GET'])
@@ -365,13 +365,11 @@ def get_task_sha256(sha256):
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         task_id = db.exists(sha256)
         if task_id:
-            return make_response(
-                jsonify({"task_id":int(task_id)}),
-                HTTP_OK)
+            return make_response(jsonify({"task_id": int(task_id)}), HTTP_OK)
         else:
-            abort(HTTP_NOT_FOUND)
+            abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
     else:
-        abort(HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
 
 @app.route('/api/v2/tasks/<int:task_id>', methods=['DELETE'])
@@ -379,12 +377,12 @@ def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
     '''
-    es_result = handler.delete_by_task_id(task_id)
-    if not es_result:
-        abort(HTTP_NOT_FOUND)
+    result = handler.delete_by_task_id(task_id)
+    if not result:
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
     sql_result = db.delete_task(task_id)
     if not sql_result:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
     return jsonify({'Message': 'Deleted'})
 
 
@@ -458,7 +456,6 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
     return task_id
 
 
-@app.route('/api/v1/tasks', methods=['POST'])
 @app.route('/api/v2/tasks', methods=['POST'])
 def create_task():
     '''
@@ -470,17 +467,11 @@ def create_task():
         try:
             task_id = import_task(file_)
         except KeyError:
-            return make_response(
-                jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
-                HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, {'Message': 'Cannot import report missing \'Scan Time\' field!'})
         except InvalidScanTimeFormatError:
-            return make_response(
-                jsonify({'Message': 'Cannot import report with \'Scan Time\' of invalid format!'}),
-                HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, {'Message': 'Cannot import report with \'Scan Time\' of invalid format!'})
         except (UnicodeDecodeError, ValueError):
-            return make_response(
-                jsonify({'Message': 'Cannot import non-JSON files!'}),
-                HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, {'Message': 'Cannot import non-JSON files!'})
 
         return make_response(
             jsonify({'task_ids': [task_id]}),
@@ -512,10 +503,7 @@ def create_task():
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
             if not os.path.isdir(extract_dir):
-                return make_response(
-                    jsonify({'Message': "'upload_folder' in API config is not "
-                             "a valid folder!"}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': "'upload_folder' in API config is not a valid folder!"})
 
             # Get password if present
             if 'archive-password' in request.form:
@@ -542,9 +530,7 @@ def create_task():
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
-                return make_response(
-                    jsonify({'Message': msg}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': msg})
         # Extract a rar
         elif rarfile.is_rarfile(file_):
             r = rarfile.RarFile(file_)
@@ -557,9 +543,7 @@ def create_task():
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
-                return make_response(
-                    jsonify({'Message': msg}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': msg})
     else:
         # File was not an archive to extract
         f_name, full_path = save_hashed_filename(file_)
@@ -572,7 +556,7 @@ def create_task():
     )
 
 
-@app.route('/api/v1/tasks/<int:task_id>/report', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/report', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -585,13 +569,13 @@ def get_report(task_id):
     if success:
         if download == 't' or download == 'y' or download == '1':
             # raw JSON
-            response = make_response(jsonify(report_dict))
+            response = make_response(jsonify(report_dict['Report']))
             response.headers['Content-Type'] = 'application/json'
             response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
             return response
         else:
             # processed JSON intended for web UI
-            report_dict = _pre_process(report_dict)
+            report_dict = _pre_process(report_dict['Report'])
             return jsonify(report_dict)
     else:
         return jsonify(report_dict)
@@ -685,7 +669,7 @@ def get_file_task(task_id):
                 sha256,
                 request.args.get('raw', default='f'))
     else:
-        return jsonify({'Error': 'sha256 invalid or not in report!'})
+        abort(HTTP_BAD_REQUEST, {'Message': 'sha256 invalid or not in report!'})
 
 
 @app.route('/api/v2/tasks/files', methods=['GET'])
@@ -712,14 +696,12 @@ def get_files_task():
                 try:
                     sha256 = db.get_task(t).sample_id
                 except AttributeError:
-                    return make_response(
-                            jsonify({'Error': 'Task {} not found!'.format(t)}),
-                            HTTP_NOT_FOUND)
+                    abort(HTTP_NOT_FOUND, {'Error': 'Task {} not found!'.format(t)})
 
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
                     file_path = safe_join(api_config['api']['upload_folder'], sha256)
                     if not os.path.exists(file_path):
-                        abort(HTTP_NOT_FOUND)
+                        abort(HTTP_NOT_FOUND, {'Message': 'File in request not found!'})
 
                     with open(file_path, 'rb') as fh:
                         fh_content = fh.read()
@@ -730,9 +712,9 @@ def get_files_task():
 
                     zip_command.insert(3, safe_join('/tmp', rawname))
                 else:
-                    return jsonify({'Error': 'sha256 invalid!'})
+                    abort(HTTP_BAD_REQUEST, {'Message': 'sha256 invalid!'})
         except ValueError:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
         proc = subprocess.Popen(zip_command)
         wait_seconds = 30
@@ -790,7 +772,7 @@ def get_maec_report(task_id):
 def get_report_dict(task_id):
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     if task.task_status == 'Complete':
         result = handler.get_report(task.sample_id, task.timestamp)
@@ -820,20 +802,20 @@ def tags(task_id):
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     tag = request.values.get('tag', '')
 
     if request.method == 'POST':
         response = handler.add_tag(task.sample_id, tag)
         if not response:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
         return jsonify({'Message': 'Tag Added'})
 
     elif request.method == 'DELETE':
         response = handler.remove_tag(task.sample_id, tag)
         if not response:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
         return jsonify({'Message': 'Tag Removed'})
 
 
@@ -844,25 +826,26 @@ def get_notes(task_id):
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     if 'ts' in request.args and 'uid' in request.args:
         ts = request.args.get('ts', '')
         uid = request.args.get('uid', '')
-        es_response = handler.get_notes(task.sample_id, [ts, uid])
+        response = handler.get_notes(task.sample_id, [ts, uid])
     else:
-        es_response = handler.get_notes(task.sample_id)
+        response = handler.get_notes(task.sample_id)
 
-    if not es_response:
-        abort(HTTP_BAD_REQUEST)
+    if not response:
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
     notes = []
-    if 'hits' in es_response and 'hits' in es_response['hits']:
-        hits = es_response['hits']['hits']
+    if 'hits' in response and 'hits' in response['hits']:
+        hits = response['hits']['hits']
     try:
         for hit in hits:
             notes.append({
                 'id': hit['_id'],
+                'timestamp': hit['_source']['timestamp'],
                 'text': Markup.escape(hit['_source']['text'])
             })
     except Exception as e:
@@ -878,15 +861,15 @@ def add_note(task_id):
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
-    data = request.form.to_dict()
-    response = handler.add_note(task.sample_id, data)
-    if not response:
-        abort(HTTP_BAD_REQUEST)
+    try:
+        data = request.form.to_dict()
+        handler.add_note(task.sample_id, data)
+    except Exception as e:
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
-    response = { 'id': response['_id'], 'text': response['_source']['text'] }
-    return jsonify(response)
+    return jsonify({'Message': 'Success'})
 
 
 @app.route('/api/v2/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
@@ -896,23 +879,17 @@ def edit_note(task_id, note_id):
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
-    if request.method == 'PUT':
-        try:
-            response = handler.edit_note(task.sample_id, note_id,
-                                         request.form.get('text', ''))
-        except e:
-            abort(HTTP_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        response = handler.delete_note(task.sample_id, note_id)
+    try:
+        if request.method == 'PUT':
+            handler.edit_note(task.sample_id, note_id, request.form.get('text', ''))
+        elif request.method == 'DELETE':
+            handler.delete_note(task.sample_id, note_id)
+    except Exception as e:
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
-    if not response:
-        abort(HTTP_BAD_REQUEST)
-
-    response = { 'id': response['_id'], 'result': response['result'] }
-
-    return jsonify(response)
+    return jsonify({'Message': 'Success'})
 
 
 @app.route('/api/v1/files/<string:sha256>', methods=['GET'])
@@ -926,8 +903,8 @@ def files_get_sha256(sha256):
 
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(sha256, raw)
-    else:
-        return abort(HTTP_BAD_REQUEST)
+
+    abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
 
 def files_get_sha256_helper(sha256, raw='f'):
@@ -936,7 +913,7 @@ def files_get_sha256_helper(sha256, raw='f'):
     '''
     file_path = safe_join(api_config['api']['upload_folder'], sha256)
     if not os.path.exists(file_path):
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, {'Message': 'File associated with SHA256 not found!'})
 
     with open(file_path, 'rb') as fh:
         fh_content = fh.read()
@@ -995,9 +972,7 @@ def run_ssdeep_compare():
             ssdeep_analytic.ssdeep_compare()
             return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
-        return make_response(
-            jsonify({'Message': 'Unable to complete request.'}),
-            HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
 @app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
@@ -1010,9 +985,7 @@ def run_ssdeep_group():
         groups = ssdeep_analytic.ssdeep_group()
         return make_response(jsonify({'groups': groups}))
     except Exception as e:
-        return make_response(
-            jsonify({'Message': 'Unable to complete request.'}),
-            HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
 @app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
