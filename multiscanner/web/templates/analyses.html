@@ -30,7 +30,7 @@
         style: 'multi+shift'
       },
       ajax: {
-        "url": apiLoc + "/api/v1/tasks/search",
+        "url": apiLoc + "/api/v2/tasks/search",
         "data": function ( d ) {
           // Shift column by 1 so sorting works on correct column
           d.order.forEach(function(element){
@@ -116,7 +116,7 @@
         $('.btn-danger').click(function() {
           var t_id = this.dataset.id;
           $.ajax({
-            url: apiLoc + "/api/v1/tasks/" + t_id,
+            url: apiLoc + "/api/v2/tasks/" + t_id,
             type: 'DELETE',
             success: function(data, status) {
               $('td').filter(function() {
