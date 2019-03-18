@@ -34,13 +34,13 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v1/tasks                                       | List of tasks                            |
+| GET    | /api/v2/tasks                                       | List of tasks                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Get a list of tasks in MultiScanner                                                                     |
 |                                                                                                         |
 | DONE: remove Tasks wrapper                                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
-| POST   | /api/v1/tasks                                       | JSON object with ``task_ids`` key,       |
+| POST   | /api/v2/tasks                                       | JSON object with ``task_ids`` key,       |
 |        |                                                     | holding list of IDs                      |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Submit file sample via POST file, and receive a task ID for the analysis of the submission.             |
@@ -52,7 +52,6 @@ View, submit, and search analysis tasks and their resulting reports.
 | Expects a file in the request body named ``file``, and also admits the following HTTP form keys:        |
 |  * ``duplicate`` - either ``rescan`` (do a scan even if this file has been previously submitted)        |
 |      or ``latest`` (use the latest scan that has already been done on this file, if one exists)         |
-|  * ``modules`` - TODO                                                                                   |
 |  * ``archive-analyze`` - set to ``true`` to unpack submission as an archive before analysis             |
 |  * ``archive-password`` - password to use when unpacking archive submission, UTF-8 encoded              |
 |  * ``upload_type`` - use and set to ``import`` to submit a JSON representation of a MultiScanner task   |
@@ -62,13 +61,13 @@ View, submit, and search analysis tasks and their resulting reports.
 | DONE: remove Message wrapper                                                                            |
 |                                                                                                         |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/<task_id>                             | Task                                     |
+| GET    | /api/v2/tasks/<task_id>                             | Task                                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Get information about the task with the given `task_id`                                                 |
 |                                                                                                         |
 | DONE: remove Tasks wrapper                                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
-| DELETE | /api/v1/tasks/<task_id>                             | Confirmation text                        |
+| DELETE | /api/v2/tasks/<task_id>                             | Confirmation text                        |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete task with the given `task_id`                                                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -80,6 +79,7 @@ View, submit, and search analysis tasks and their resulting reports.
 | * TODO: example search params                                                                           |
 | * TODO: extremely brittle; passes on ES errors as 200 responses                                         |
 | * TODO: clean up output to send only task results instead of metadata                                   |
+| * TODO: change name, datatables (not human readable)
 +--------+-----------------------------------------------------+------------------------------------------+
 | GET    | /api/v1/tasks/search/history                        | List of tasks                            |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -121,13 +121,10 @@ These endpoints manipulate tags on a report. To view tags on a report, use the `
 +--------+-----------------------------------------------------+------------------------------------------+
 | Add a tag to a task. Use HTTP from param ``tag``, i.e., ``tag=...`` with                                |
 | ``Content-type: application/x-www-form-urlencoded`` header                                              |
-|                                                                                                         |
-| TODO: sensitive to Content-type -- okay? (same with DELETE delow)                                       |
 +--------+-----------------------------------------------------+------------------------------------------+
 | DELETE | /api/v1/tasks/<task_id>/tags                        | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Remove a tag from a task. Use HTTP from param ``tag``, i.e., ``tag=...`` with                           |
-| ``Content-type: application/x-www-form-urlencoded`` header                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
 
 
@@ -136,29 +133,30 @@ Notes
 
 TODO: Notes are associated with a sample, but here are modified and accessed via ``task_id``. If you ask for notes on two different tasks on the same sample, you get the same notes.
 
-TODO: responses might be needlessly large, with lots of Elastic info -- we really just want the note, not shard info, etc.
+DONE: responses might be needlessly large, with lots of Elastic info -- we really just want the note, not shard info, etc.
 
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v1/tasks/<task_id>/notes                       | List of notes                            |
+| GET    | /api/v2/tasks/<task_id>/notes                       | List of notes                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of this tasks notes                                                                        |
 |                                                                                                         |
 | TODO: Optionally takes ``ts`` and ``uid`` query-string arguments: ``/notes?ts=...&uid=...``             |
 +--------+-----------------------------------------------------+------------------------------------------+
-| POST   | /api/v1/tasks/<task_id>/notes                       | Extensive ES object w/ note's ``_id``    |
+| POST   | /api/v2/tasks/<task_id>/notes                       | Note_                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Add a note to task, using the HTTP parameter ``text=...``                                               |
 |                                                                                                         |
 | * DONE*: should POST body this just be the text itself..? we don't use other fields EV: Just success msg|
 | * DONE*: should response just be the note ID? and optionally text, and maybe sample ID                  |
+| * TODO: add timestamp                                                                                   |
 +--------+-----------------------------------------------------+------------------------------------------+
-| PUT    | /api/v1/tasks/<task_id>/notes/<note_id>             | Extensive ES object w/ note's ``_id``    |
+| PUT    | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Edit a notesing the HTTP parameter ``text=...`` (TODO: same as above)                                   |
+| Edit a notesing the HTTP parameter ``text=...`` (DONE: same as above)                                   |
 +--------+-----------------------------------------------------+------------------------------------------+
-| DELETE | /api/v1/tasks/<task_id>/notes/<note_id>             | Extensive ES object w/ note's ``_id``    |
+| DELETE | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete a note (DONE*: response note above)                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -190,4 +188,49 @@ Modules/Other
 +--------+-----------------------------------------------------+------------------------------------------+
 | Test functionality. Should produce: ``{'Message': 'True'}``  (DONE*: use boolean)                       |
 +---------------------------------------------------------------------------------------------------------+            
+
+
+Data Models
+===========
+
+Task
+----
+
+A task is a created at the time a sample is submitted. It is a "pending" state while the modules produce an analysis, and then it is in a "completed" state.
+
+Task data is expressed as a JSON object with the following keys:
+
++=============+=========+==========================================================================================+
+| task_id     | Integer | Unique ID of the task                                                                    |
++-------------+---------+------------------------------------------------------------------------------------------+
+| sample_id   | String  | ID of the sample submitted. This will be the same for different tasks with identical     |
+|             |         | samples. (Currently, it's a hash of the submitted binary.)                               |
++-------------+---------+------------------------------------------------------------------------------------------+
+| task_status | String  | Initially "Pending", and eventually "Completed"                                          |
++-------------+---------+------------------------------------------------------------------------------------------+
+| timestamp   | String  | ISO 8601 timestamp indicating when the task exited "Pending" (or ``null`` if it is still |
+|             |         | Pending)                                                                                 |
++-------------+---------+------------------------------------------------------------------------------------------+
+
+Note
+----
+
++============+==========+==================================+
+| id         | String   | ID of the note (globally unique) |
++------------+----------+----------------------------------+
+| text       | String   | Text of note                     |
++------------+----------+----------------------------------+
+| timestamp  | String   |                                  |
++------------+---------------------------------------------+
+
+Report
+------
+
++==================+==================+============================================================================================+
+| Report Metadata  | Object           | Object with properties "Scan Time" and "Scan ID" which correspond to task ID and timestamp |
++------------------+------------------+--------------------------------------------------------------------------------------------------+
+| tags             | Array<String>    | List of tags associated with the task                     |
++------------------+----------+----------------------------------+
+| timestamp        | String   |                                  |
++------------------+---------------------------------------------+
 
