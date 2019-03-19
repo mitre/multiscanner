@@ -210,7 +210,7 @@ def extract_http_requests_cuckoo(signature, custom_labels=None):
     return indicators
 
 
-def parse_json_report_to_stix2_bundle(report, custom_labels=None):
+def create_stix2_from_json_report(report, custom_labels=None):
     '''
     Creates a STIX2 bundle from a multiscanner JSON report. This is achieved
     on a best effort approach and does not intend to capture all possible
@@ -296,4 +296,4 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
                                                            'OR')
         }))
 
-    return create_stix2_bundle(all_objects)
+    return all_objects

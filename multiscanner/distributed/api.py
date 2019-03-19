@@ -6,20 +6,20 @@ Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
-GET /api/v1/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v1/files/<sha256>?raw={t|f} ---> Download sample, defaults to passwd protected zip
 GET /api/v1/modules ---> Receive list of modules available
-GET /api/v1/tags ----> Receive list of all tags in use
+GET /api/v1/tags ---> Receive list of all tags in use
 GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
 POST /api/v1/tasks ---> POST file and receive report id
     Sample POST usage:
         curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls
 GET /api/v1/tasks/<task_id> ---> Receive task in JSON format
-DELETE /api/v1/tasks/<task_id> ----> Delete task_id
+DELETE /api/v1/tasks/<task_id> ---> Delete task_id
 GET /api/v1/tasks/search/ ---> Receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> Receive list of most all reports for matching samples
 GET /api/v1/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
-GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
+GET /api/v1/tasks/<task_id>/file?raw={t|f} ---> Download sample, defaults to passwd protected zip
+GET /api/v1/tasks/<task_id>/maec ---> Download the Cuckoo MAEC 5.0 report, if it exists
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
 POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
@@ -31,6 +31,13 @@ POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 GET /api/v1/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
 GET /api/v1/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
+GET /api/v1/tasks/reports?d={t|f}&tasks_ids={task_id} --->
+    Receive a report in JSON, set d=t to download. It will contain data based on the given task ids
+GET /api/v1/tasks/files?tasks_ids={task_id} --->
+    Receive a protected zip with multiple samples given their task ids
+GET /api/v1/tasks/stix2?pretty={t|f}&custom_labels={string}&tasks_ids={task_id} --->
+    Receive a STIX2 Bundle based on data retrieved from multiple reports given their task ids
+
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -585,7 +592,6 @@ def get_report(task_id):
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-
     download = request.args.get('d', default='False', type=str)[0].lower()
 
     report_dict, success = get_report_dict(task_id)
@@ -602,6 +608,46 @@ def get_report(task_id):
             return jsonify(report_dict)
     else:
         return jsonify(report_dict)
+
+
+@app.route('/api/v1/tasks/reports', methods=['GET'])
+def get_reports():
+    '''
+    Given a comma-separated list of Task IDs. Return a JSON dictionary corresponding
+    to the given IDs.
+    '''
+    task_ids = request.args.get('task_ids', default=None)
+    download = request.args.get('d', default='False', type=str)[0].lower()
+
+    if task_ids is not None:
+        task_ids = task_ids.split(',')
+        uuidv4 = str(uuid.uuid4())
+        final_report = []
+
+        try:
+            for task_id in task_ids:
+                t = int(task_id)
+                report_dict, success = get_report_dict(t)
+
+                if success:
+                    report_dict = _pre_process(report_dict)
+                    final_report.append(report_dict)
+                else:
+                    return jsonify({'Message': 'One or more tasks failed to be retrieved.'})
+        except ValueError:
+            abort(HTTP_BAD_REQUEST)
+
+        if download == 't' or download == 'y' or download == '1':
+            # raw JSON
+            response = make_response(jsonify(final_report))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % uuidv4
+            return response
+        else:
+            # processed JSON intended for web UI
+            return jsonify(final_report)
+
+    return jsonify({'Error': 'empty request'})
 
 
 def _pre_process(report_dict):
@@ -1010,7 +1056,7 @@ def run_ssdeep_group():
 
 
 @app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
-def get_pdf_report(task_id):
+def generate_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
     '''
@@ -1027,7 +1073,7 @@ def get_pdf_report(task_id):
 
 
 @app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
-def get_stix2_bundle_from_report(task_id):
+def generate_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
 
@@ -1053,13 +1099,66 @@ def get_stix2_bundle_from_report(task_id):
     # If the report has no key/value pairs that we can use to create
     # STIX representations of this data. The default behavior is to return
     # an empty bundle.
-    bundle = stix2_generator.parse_json_report_to_stix2_bundle(report_dict, custom_labels)
+    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+    bundle = stix2_generator.create_stix2_bundle(stix_objects)
 
     # Setting pretty=True can be an expensive operation!
     response = make_response(bundle.serialize(pretty=formatting))
     response.headers['Content-Type'] = 'application/json'
-    response.headers['Content-Disposition'] = 'attachment; filename=%s_bundle_stix2.json' % task_id
+    response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % bundle["id"]
     return response
+
+
+@app.route('/api/v1/tasks/stix2', methods=['GET'])
+def generate_stix2_bundle_from_multiple_reports():
+    '''
+    Given a list of comma-separated task ids. Generate a STIX2 Bundle with
+    indicators corresponding to Task ID reports.
+
+    custom labels must be comma-separated.
+    '''
+    task_ids = request.args.get('task_ids', default=None)
+    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
+    custom_labels = request.args.get('custom_labels', default='', type=str).split(",")
+
+    if formatting == 't' or formatting == 'y' or formatting == '1':
+        formatting = True
+    else:
+        formatting = False
+
+    # If list is empty or any entry in the list is empty -> clear labels
+    if custom_labels or all(custom_labels) is False:
+        custom_labels = []
+
+    if task_ids is not None:
+        task_ids = task_ids.split(',')
+        all_stix_objects = []
+
+        try:
+            for task_id in task_ids:
+                t = int(task_id)
+                report_dict, success = get_report_dict(t)
+
+                if success:
+                    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+                    all_stix_objects.extend(stix_objects)
+                else:
+                    return jsonify({"Error": "One or more tasks failed to be retrieved"})
+        except ValueError:
+            abort(HTTP_BAD_REQUEST)
+
+        # If the report has no key/value pairs that we can use to create
+        # STIX representations of this data. The default behavior is to return
+        # an empty bundle.
+        bundle = stix2_generator.create_stix2_bundle(all_stix_objects)
+
+        # Setting pretty=True can be an expensive operation!
+        response = make_response(bundle.serialize(pretty=formatting))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % bundle["id"]
+        return response
+
+    return jsonify({'Error': 'empty request'})
 
 
 def _main():
