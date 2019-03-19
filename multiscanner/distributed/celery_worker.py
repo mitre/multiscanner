@@ -109,7 +109,7 @@ class MultiScannerTask(Task):
         scan_time = datetime.now().isoformat()
 
         # Update the task DB with the failure
-        db.update_task(
+        db.db_session.update_task(
             task_id=args[2],
             task_status='Failed',
             timestamp=scan_time,

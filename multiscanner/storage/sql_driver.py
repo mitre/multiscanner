@@ -135,7 +135,9 @@ class Database(object):
         Base.metadata.bind = self.db_engine
         Base.metadata.create_all()
 
-        #unsure why we would want this bounud globably 
+        #unsure why we would want this bouud globably 
+        global Session
+        Session = self.db_session
         """
         # Bind the global Session to our DB engine
         global Session
@@ -231,10 +233,11 @@ class Database(object):
         return output
 
     def delete_task(self, task_id):
-    
+
         task = self.db_session.query(Task).get(task_id)
         if task:
             self.db_session.delete(task)
+            self.db_session.commit()
             return True
         else:
             return False

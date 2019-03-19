@@ -1068,7 +1068,7 @@ def _main():
 
     in_docker = os.getenv("PRODUCTION", False)
     
-    if in_docker:
+    if not in_docker:
         from gevent.pywsgi import WSGIServer
         http_server = WSGIServer((api_config['api']['host'],
         api_config['api']['port']), app)
