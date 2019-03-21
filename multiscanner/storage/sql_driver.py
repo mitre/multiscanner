@@ -178,6 +178,7 @@ class Database(object):
         if task:
             # unbind Task from Session
             self.db_session.expunge(task)
+            self.db_session.commit()
             return task
 
     def get_all_tasks(self):
@@ -187,6 +188,7 @@ class Database(object):
         task_list = []
         for task in rs:
             self.db_session.expunge(task)
+            self.db_session.commit()
             task_list.append(task.to_dict())
         return task_list
 
@@ -229,6 +231,7 @@ class Database(object):
 
         output = rowTable.output_result()
         self.db_session.expunge_all()
+        self.db_session.commit()
 
         return output
 
