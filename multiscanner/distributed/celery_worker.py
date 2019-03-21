@@ -109,15 +109,14 @@ class MultiScannerTask(Task):
         scan_time = datetime.now().isoformat()
 
         # Update the task DB with the failure
-        db.db_session.update_task(
+        db.update_task(
             task_id=args[2],
             task_status='Failed',
             timestamp=scan_time,
         )
-        
+
     def after_return(self, status, retval, task_id, args, kwargs, einfo):
         db.db_session.remove()
-
 
 
 @app.task(base=MultiScannerTask)
