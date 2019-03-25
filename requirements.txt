@@ -21,12 +21,13 @@ stix2
 #Required for PDF
 reportlab
 #Required by API
+datatables
 flask
 psycopg2
 rarfile
 sqlalchemy
 sqlalchemy-utils
-sqlalchemy-datatables
+sqlalchemy-datatables==1.2.0
 #Required by storage modules
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-curator
