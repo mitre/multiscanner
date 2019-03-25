@@ -14,6 +14,8 @@ from celery import Celery, Task
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
+from kombu import Exchange, Queue
+
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
 from multiscanner.common import utils
@@ -60,6 +62,8 @@ storage_config_object.read(storage_configfile)
 config = utils.parse_config(storage_config_object)
 es_storage_config = config.get('ElasticSearchStorage')
 
+default_exchange = Exchange('celery', type='direct')
+
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('protocol'),
     worker_config.get('user'),
@@ -68,6 +72,12 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('vhost'),
 ))
 app.conf.timezone = worker_config.get('tz')
+app.conf.task_queues = [
+    Queue('low_tasks', default_exchange, routing_key='tasks.low', queue_arguments={'x-max-priority': 10}),
+    Queue('medium_tasks', default_exchange, routing_key='tasks.medium', queue_arguments={'x-max-priority': 10}),
+    Queue('high_tasks', default_exchange, routing_key='tasks.high', queue_arguments={'x-max-priority': 10}),
+]
+
 db = database.Database(config=db_config)
 
 
@@ -78,6 +88,11 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
+        **{
+            'queue': 'low_tasks',
+            'routing_key': 'tasks.low',
+            'priority': 1,
+        }
     )
 
     # Delete old metricbeat indices
@@ -86,7 +101,14 @@ def setup_periodic_tasks(sender, **kwargs):
     if metricbeat_enabled:
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
-            metricbeat_rollover.s(days=es_storage_config.get('metricbeat_rollover_days')),
+            metricbeat_rollover_celery.s(),
+            args=(es_storage_config.get('metricbeat_rollover_days')),
+            kwargs=dict(config=MS_CONFIG),
+            **{
+                'queue': 'low_tasks',
+                'routing_key': 'tasks.low',
+                'priority': 1,
+            }
         )
 
 
@@ -222,7 +244,7 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover(days, config=MS_CONFIG):
+def metricbeat_rollover_celery(days, config=MS_CONFIG):
     '''
     Clean up old Elastic Beats indices
     '''

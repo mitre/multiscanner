@@ -86,8 +86,8 @@ class TestCeleryCase(CeleryTestCase):
         self.assertEqual(True, True)
 
     @mock.patch('multiscanner.distributed.celery_worker.multiscanner_celery')
-    def test_success(self, mock_delay):
-        mock_delay.return_value = TEST_REPORT
+    def test_success(self, mock_apply_async):
+        mock_apply_async.return_value = TEST_REPORT
         result = celery_worker.multiscanner_celery(
             file_=TEST_FULL_PATH,
             original_filename=TEST_ORIGINAL_FILENAME,
@@ -96,7 +96,7 @@ class TestCeleryCase(CeleryTestCase):
             metadata=TEST_METADATA,
             config=TEST_CONFIG
         )
-        mock_delay.assert_called_once()
+        mock_apply_async.assert_called_once()
         self.assertEqual(result, TEST_REPORT)
 
     # Patch storage_handler.store(result) inside the celery_worker module

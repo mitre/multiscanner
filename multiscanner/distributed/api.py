@@ -440,7 +440,8 @@ def import_task(file_):
     return task_id
 
 
-def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
+def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
+               queue_name='medium_tasks', priority=5, routing_key='tasks.medium'):
     '''
     Queue up a single new task, for a single non-archive file.
     '''
@@ -457,9 +458,11 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
 
     if DISTRIBUTED:
         # Publish the task to Celery
-        multiscanner_celery.delay(full_path, original_filename,
-                                  task_id, f_name, metadata,
-                                  config=MS_CONFIG)
+        multiscanner_celery.apply_async(
+            args=(full_path, original_filename, task_id, f_name, metadata),
+            kwargs=dict(config=MS_CONFIG),
+            **{'queue': queue_name, 'priority': priority, 'routing_key': routing_key}
+        )
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))
@@ -504,6 +507,9 @@ def create_task():
     task_id_list = []
     extract_dir = None
     rescan = False
+    priority = 5
+    routing_key = 'tasks.medium'
+    queue_name = 'medium_tasks'
     for key in request.form.keys():
         if key in ['file_id', 'archive-password', 'upload_type'] or request.form[key] == '':
             continue
@@ -535,6 +541,22 @@ def create_task():
                     password = bytes(password, 'utf-8')
             else:
                 password = ''
+        elif key == 'priority':
+            try:
+                priority = int(request.form[key])
+                if priority < 1 or priority > 10:
+                    priority = 5
+            except ValueError:
+                pass
+            if 1 <= priority <= 3:
+                routing_key = 'tasks.low'
+                queue_name = 'low_tasks'
+            elif 4 <= priority <= 7:
+                routing_key = 'tasks.medium'
+                queue_name = 'medium_tasks'
+            elif 8 <= priority <= 10:
+                routing_key = 'tasks.high'
+                queue_name = 'high_tasks'
         else:
             metadata[key] = request.form[key]
 
@@ -549,7 +571,8 @@ def create_task():
                 for uzfile in z.namelist():
                     unzipped_file = open(os.path.join(extract_dir, uzfile))
                     f_name, full_path = save_hashed_filename(unzipped_file, True)
-                    tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(uzfile, f_name, full_path, metadata,
+                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -565,7 +588,8 @@ def create_task():
                 for urfile in r.namelist():
                     unrarred_file = open(os.path.join(extract_dir, urfile))
                     f_name, full_path = save_hashed_filename(unrarred_file, True)
-                    tid = queue_task(urfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(urfile, f_name, full_path, metadata,
+                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -576,7 +600,8 @@ def create_task():
     else:
         # File was not an archive to extract
         f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
+        tid = queue_task(original_filename, f_name, full_path, metadata,
+                         rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
         task_id_list = [tid]
 
     msg = {'task_ids': task_id_list}
@@ -1025,8 +1050,10 @@ def run_ssdeep_compare():
     '''
     try:
         if DISTRIBUTED:
-            # Publish task to Celery
-            ssdeep_compare_celery.delay()
+            # Publish to Celery as a medium priority task
+            ssdeep_compare_celery.apply_async(
+                **{'queue': 'medium_tasks', 'priority': 5, 'routing_key': 'tasks.medium'}
+            )
             return make_response(jsonify({'Message': 'Success'}))
         else:
             ssdeep_analytic = SSDeepAnalytic()
