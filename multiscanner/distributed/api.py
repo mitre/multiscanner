@@ -61,7 +61,6 @@ import requests
 from flask import Flask, abort, jsonify, make_response, request, safe_join
 from flask.json import JSONEncoder
 from flask_cors import CORS
-from gevent.pywsgi import WSGIServer
 from jinja2 import Markup
 
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
@@ -1066,9 +1065,10 @@ def _main():
         )
         ms_process.start()
 
-    in_docker = os.getenv("IN_DOCKER_CONTAINER", False)
+    in_docker = str(os.getenv("PRODUCTION", False))
 
-    if in_docker:
+    if in_docker == "True":
+        from gevent.pywsgi import WSGIServer
         http_server = WSGIServer((api_config['api']['host'],
         api_config['api']['port']), app)
         http_server.serve_forever()
