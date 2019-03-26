@@ -21,7 +21,6 @@ stix2
 #Required for PDF
 reportlab
 #Required by API
-datatables
 flask
 psycopg2
 rarfile
