@@ -15,12 +15,12 @@ Download samples that have been submitted to MultiScanner for analysis.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v1/files/<sha256>?raw={t|f}                    | File download                            |
+| GET    | /api/v2/files/<sha256>?raw={t|f}                    | File download                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Download sample with the specified SHA256 hash. Download defaults to password protected zip; use `raw=t`|
 | to download a raw binary instead.                                                                       |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/<task_id>/file?raw={t|f}              | File download                            |
+| GET    | /api/v2/tasks/<task_id>/file?raw={t|f}              | File download                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Download sample associated with the given `task_id`. Download defaults to password protected zip; use   |
 | `raw=t` to download a raw binary instead.                                                               |
@@ -71,7 +71,7 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete task with the given `task_id`                                                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/search                                | List with a single task                  |
+| GET    | /api/v2/tasks/search                                | List with a single task                  |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of most recent report for matching samples. For use with Lucene queries                    |
 |                                                                                                         |
@@ -81,21 +81,21 @@ View, submit, and search analysis tasks and their resulting reports.
 | * TODO: clean up output to send only task results instead of metadata                                   |
 | * TODO: change name, datatables (not human readable)
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/search/history                        | List of tasks                            |
+| GET    | /api/v2/tasks/search/history                        | List of tasks                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all reports for matching samples                                                        |
 |                                                                                                         |
 | Supplies its parameters directly to ElasticSearch (TODO: same as above)                                 |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/<task_id>/maec                        | MAEC file                                |
+| GET    | /api/v2/tasks/<task_id>/maec                        | MAEC file                                |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Download the Cuckoo MAEC 5.0 report, if it exists                                                       |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/<task_id>/pdf                         | Human-readable PDF document              |
+| GET    | /api/v2/tasks/<task_id>/pdf                         | Human-readable PDF document              |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive PDF report for task                                                                             |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/tasks/<task_id>/report?d={t|f}              | Analysis report in JSON                  |
+| GET    | /api/v2/tasks/<task_id>/report?d={t|f}              | Analysis report in JSON                  |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                      |
 |                                                                                                         |
@@ -110,21 +110,21 @@ These endpoints manipulate tags on a report. To view tags on a report, use the `
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v1/tags                                        | List of ``{ key, doc_count }`` objects   |
+| GET    | /api/v2/tags                                        | List of ``{ key, doc_count }`` objects   |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all tags in use. Response is a list of objects each with a ``key`` property (the tag)   |
 | and ``doc_count`` property (the number of documents in which the tag appears).                          |
 |                                                                                                         |
 | * TODO: remove Tags wrapper                                                                             |
 +--------+-----------------------------------------------------+------------------------------------------+
-| POST   | /api/v1/tasks/<task_id>/tags                        | Confirmation message                     |
+| POST   | /api/v2/tasks/<task_id>/tags                        | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Add a tag to a task. Use HTTP from param ``tag``, i.e., ``tag=...`` with                                |
+| Add a tag to a task. Use HTTP form parameter ``tag``, i.e., ``tag=...`` with                            |
 | ``Content-type: application/x-www-form-urlencoded`` header                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
-| DELETE | /api/v1/tasks/<task_id>/tags                        | Confirmation message                     |
+| DELETE | /api/v2/tasks/<task_id>/tags                        | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Remove a tag from a task. Use HTTP from param ``tag``, i.e., ``tag=...`` with                           |
+| Remove a tag from a task. Use HTTP form parameter ``tag``, i.e., ``tag=...`` with                       |
 +--------+-----------------------------------------------------+------------------------------------------+
 
 
@@ -168,7 +168,7 @@ Modules/Other
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v1/modules                                     | JSON object with module names as keys    |
+| GET    | /api/v2/modules                                     | JSON object with module names as keys    |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive an object whose keys are the names of available of modules. The corresponding value of each key |
 | is a boolean that indicates whether the module is currently activated or not.                           |
@@ -220,17 +220,19 @@ Note
 +------------+----------+----------------------------------+
 | text       | String   | Text of note                     |
 +------------+----------+----------------------------------+
-| timestamp  | String   |                                  |
+| timestamp  | String   | Time of creation                 |
 +------------+---------------------------------------------+
 
 Report
 ------
 
+A Report has cutom properties added by each module. Which poperties exist on a report will depend on which modules provided analysis on the analyzed sample.
+
+The following general properties should always exist on a report:
+
 +==================+==================+============================================================================================+
 | Report Metadata  | Object           | Object with properties "Scan Time" and "Scan ID" which correspond to task ID and timestamp |
-+------------------+------------------+--------------------------------------------------------------------------------------------------+
-| tags             | Array<String>    | List of tags associated with the task                     |
-+------------------+----------+----------------------------------+
-| timestamp        | String   |                                  |
-+------------------+---------------------------------------------+
++------------------+------------------+--------------------------------------------------------------------------------------------+
+| tags             | Array<String>    | List of tags associated with the task                                                      |
++------------------+------------------+--------------------------------------------------------------------------------------------+
 
