@@ -88,7 +88,10 @@ class TestURLCase(APITestCase):
 
     def test_get_modules(self):
         resp = self.app.get('/api/v1/modules').get_data().decode('utf-8')
-        self.assertIn('Modules', resp)
+        self.assertIn('AVGScan', resp)
+        self.assertIn('MD5', resp)
+        self.assertIn('SHA256', resp)
+        self.assertIn('libmagic', resp)
 
 
 class TestTaskCreateCase(APITestCase):
