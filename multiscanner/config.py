@@ -23,6 +23,15 @@ MS_WD = os.path.dirname(os.path.abspath(__file__))
 # The directory where the modules are kept
 MODULES_DIR = os.path.join(MS_WD, 'modules')
 
+# The default config file
+CONFIG_FILE = None
+
+# Main MultiScanner config, as a dictionary
+MS_CONFIG = None
+
+# The dictionary of modules and whether they're enabled or not
+MODULE_LIST = None
+
 
 def get_configuration_paths():
     # Possible paths for the configuration file.
@@ -55,7 +64,6 @@ def determine_configuration_path(filepath):
         return config_file
 
 
-# The default config file
 CONFIG_FILE = determine_configuration_path(None)
 
 
@@ -112,7 +120,6 @@ def read_config(config_file, section_name=None, default_config=None):
     return parse_config(config_object)
 
 
-# Main MultiScanner config, as a dictionary
 MS_CONFIG = read_config(CONFIG_FILE)
 
 
@@ -166,7 +173,6 @@ def get_modules():
     return modules
 
 
-# The dictionary of modules and whether they're enabled or not
 MODULE_LIST = get_modules()
 
 
