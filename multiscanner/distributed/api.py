@@ -652,7 +652,7 @@ def get_reports():
 
     if task_ids is not None:
         task_ids = task_ids.split(',')
-        uuidv4 = str(uuid.uuid4())
+        uuidv4 = str(uuid4())
         final_report = []
 
         try:
