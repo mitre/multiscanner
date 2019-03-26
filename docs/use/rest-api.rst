@@ -45,7 +45,7 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Submit file sample via POST file, and receive a task ID for the analysis of the submission.             |
 |                                                                                                         |
-| Sample POST usage: `curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls`                |
+| Sample POST usage: `curl -i -X POST http://localhost:8080/api/v2/tasks -F file=@/bin/ls`                |
 |                                                                                                         |
 | Sample response: ``{ "task_ids": [5, 6, 7] }``                                                          |
 |                                                                                                         |
@@ -55,7 +55,7 @@ View, submit, and search analysis tasks and their resulting reports.
 |  * ``archive-analyze`` - set to ``true`` to unpack submission as an archive before analysis             |
 |  * ``archive-password`` - password to use when unpacking archive submission, UTF-8 encoded              |
 |  * ``upload_type`` - use and set to ``import`` to submit a JSON representation of a MultiScanner task   |
-|       downloaded from  ``/api/v1/tasks/<task_id>/report`` instead of a sample file for analysis         |
+|       downloaded from  ``/api/v2/tasks/<task_id>/report`` instead of a sample file for analysis         |
 |  * Any other keys supplied are saved as keys on the task's metadata                                     |
 |                                                                                                         |
 | DONE: remove Message wrapper                                                                            |
@@ -176,11 +176,11 @@ Modules/Other
 | * DONE: JSON has a native boolean -- use ``true``/``false`` instead of strings                          |
 | * DONE: remove Modules wrapper?                                                                         |
 +--------------------------------------------------------------+------------------------------------------+
-|| GET    | /api/v1/analytics/ssdeep_compare                    | TODO                                    |
+|| GET    | /api/v2/analytics/ssdeep_compare                    | TODO                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Run ssdeep.compare analytic                                                                             |
 +--------------------------------------------------------------+------------------------------------------+
-| GET    | /api/v1/analytics/ssdeep_group                      | TODO                                     |
+| GET    | /api/v2/analytics/ssdeep_group                      | TODO                                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of sample hashes grouped by ssdeep hash                                                    |
 +--------------------------------------------------------------+------------------------------------------+

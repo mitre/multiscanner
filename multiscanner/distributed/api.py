@@ -6,31 +6,31 @@ Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
-GET /api/v1/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
-GET /api/v1/modules ---> Receive list of modules available
-GET /api/v1/tags ----> Receive list of all tags in use
-GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
-POST /api/v1/tasks ---> POST file and receive report id
+GET /api/v2/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v2/modules ---> Receive list of modules available
+GET /api/v2/tags ----> Receive list of all tags in use
+GET /api/v2/tasks ---> Receive list of tasks in MultiScanner
+POST /api/v2/tasks ---> POST file and receive report id
     Sample POST usage:
-        curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls
-GET /api/v1/tasks/<task_id> ---> Receive task in JSON format
-DELETE /api/v1/tasks/<task_id> ----> Delete task_id
-GET /api/v1/tasks/search/ ---> Receive list of most recent report for matching samples
-GET /api/v1/tasks/search/history ---> Receive list of most all reports for matching samples
-GET /api/v1/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
-GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
-GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
-POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
-PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
-DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
-GET /api/v1/tasks/<task_id>/report?d={t|f} ---> Receive report in JSON, set d=t to download
-GET /api/v1/tasks/<task_id>/pdf ---> Receive PDF report
-GET /api/v1/tasks/<task_id>/stix2?pretty={t|f}&custom_labels={string} ---> Receive STIX2 Bundle from report
-POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
-DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
-GET /api/v1/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
-GET /api/v1/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
+        curl -i -X POST http://localhost:8080/api/v2/tasks -F file=@/bin/ls
+GET /api/v2/tasks/<task_id> ---> Receive task in JSON format
+DELETE /api/v2/tasks/<task_id> ----> Delete task_id
+GET /api/v2/tasks/search/ ---> Receive list of most recent report for matching samples
+GET /api/v2/tasks/search/history ---> Receive list of most all reports for matching samples
+GET /api/v2/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
+GET /api/v2/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v2/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
+GET /api/v2/tasks/<task_id>/notes ---> Receive list of this task's notes
+POST /api/v2/tasks/<task_id>/notes ---> Add a note to task
+PUT /api/v2/tasks/<task_id>/notes/<note_id> ---> Edit a note
+DELETE /api/v2/tasks/<task_id>/notes/<note_id> ---> Delete a note
+GET /api/v2/tasks/<task_id>/report?d={t|f} ---> Receive report in JSON, set d=t to download
+GET /api/v2/tasks/<task_id>/pdf ---> Receive PDF report
+GET /api/v2/tasks/<task_id>/stix2?pretty={t|f}&custom_labels={string} ---> Receive STIX2 Bundle from report
+POST /api/v2/tasks/<task_id>/tags ---> Add tags to task
+DELETE /api/v2/tasks/<task_id>/tags ---> Remove tags from task
+GET /api/v2/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
+GET /api/v2/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -741,7 +741,7 @@ def get_files_task():
         return jsonify({'Error': 'empty request'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/maec', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/maec', methods=['GET'])
 def get_maec_report(task_id):
     # try to get report dict
     report_dict, success = get_report_dict(task_id)
@@ -786,7 +786,7 @@ def get_report_dict(task_id):
         return {'Report': 'Task failed'}, False
 
 
-@app.route('/api/v1/tags/', methods=['GET'])
+@app.route('/api/v2/tags/', methods=['GET'])
 def taglist():
     '''
     Return a list of all tags currently in use.
@@ -795,7 +795,7 @@ def taglist():
     return jsonify({'Tags': response})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
@@ -892,8 +892,8 @@ def edit_note(task_id, note_id):
     return jsonify({'Message': 'Success'})
 
 
-@app.route('/api/v1/files/<string:sha256>', methods=['GET'])
-# get raw file - /api/v1/files/get/<sha256>?raw=true
+@app.route('/api/v2/files/<string:sha256>', methods=['GET'])
+# get raw file - /api/v2/files/get/<sha256>?raw=true
 def files_get_sha256(sha256):
     '''
     Returns binary from storage. Defaults to password protected zipfile.
@@ -957,7 +957,7 @@ def files_get_sha256_helper(sha256, raw='f'):
     return response
 
 
-@app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
+@app.route('/api/v2/analytics/ssdeep_compare', methods=['GET'])
 def run_ssdeep_compare():
     '''
     Runs ssdeep compare analytic and returns success / error message.
@@ -975,7 +975,7 @@ def run_ssdeep_compare():
         abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
-@app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
+@app.route('/api/v2/analytics/ssdeep_group', methods=['GET'])
 def run_ssdeep_group():
     '''
     Runs ssdeep group analytic and returns list of groups as a list.
@@ -988,7 +988,7 @@ def run_ssdeep_group():
         abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/pdf', methods=['GET'])
 def get_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
@@ -1005,7 +1005,7 @@ def get_pdf_report(task_id):
     return response
 
 
-@app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/stix2', methods=['GET'])
 def get_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
