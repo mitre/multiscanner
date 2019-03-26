@@ -380,7 +380,6 @@ def _write_missing_module_configs(config, filepath=CONFIG_FILE):
     for modname, module in sorted(six.iteritems(MODULE_LIST)):
         if modname not in config.keys():
             moddir = module[1]
-            print(moddir)
             mod = load_module(modname, [moddir])
             if mod:
                 try:
@@ -516,25 +515,16 @@ def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, pyt
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-def multiscan(Files, recursive=False, config=None, module_list=None):
+def multiscan(Files, config=None, module_list=None):
     """
     The meat and potatoes. Returns the list of module results
 
     Files - A list of files and dirs to be scanned
-    recursive - If true it will search the dirs in Files recursively
     config - A dictionary containing the configuration options to be used.
     module_list - A list of file paths to be used as modules. Each string should end in .py
     """
     # Init some vars
-    # If recursive is False we don't parse the file list and take it as is.
-    if recursive:
-        filelist = parse_file_list(Files, recursive=recursive)
-    else:
-        filelist = Files
-    # If none of the files existed, why continue?
-    if not filelist:
-        raise ValueError("No valid files")
-
+    filelist = Files
     # A list of files in the module dir
     if module_list is None:
         module_list = [modname for modname in MODULE_LIST]

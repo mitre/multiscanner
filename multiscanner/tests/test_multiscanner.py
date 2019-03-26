@@ -26,8 +26,7 @@ class _runmulti_tests(object):
 
 class Test_multiscan(_runmulti_tests):
     def setup(self):
-        self.result = multiscanner.multiscan(
-            self.filelist, recursive=False)
+        self.result = multiscanner.multiscan(self.filelist)
         self.report = multiscanner.parse_reports(self.result, includeMetadata=False, python=True)
         self.report_m = multiscanner.parse_reports(self.result, includeMetadata=True, python=True)
 
