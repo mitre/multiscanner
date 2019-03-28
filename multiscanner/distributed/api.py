@@ -1065,15 +1065,7 @@ def _main():
         )
         ms_process.start()
 
-    in_docker = os.getenv("PRODUCTION", False)
-
-    if in_docker:
-        from gevent.pywsgi import WSGIServer
-        http_server = WSGIServer((api_config['api']['host'],
-        api_config['api']['port']), app)
-        http_server.serve_forever()
-    else:
-        app.run(host=api_config['api']['host'], port=api_config['api']['port'])
+    app.run(host=api_config['api']['host'], port=api_config['api']['port'])
 
     if not DISTRIBUTED:
         ms_process.join()
