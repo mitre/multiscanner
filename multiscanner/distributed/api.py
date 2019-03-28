@@ -196,21 +196,18 @@ def multiscanner_process(work_queue, exit_signal):
             else:
                 continue
 
-        filelist = [item[0] for item in metadata_list]
-        module_list = [item[5] for item in metadata_list]
-        resultlist = multiscan(
-            filelist,
-            module_list=module_list
-        )
-        results = parse_reports(resultlist, python=True)
-
-        scan_time = datetime.now().isoformat()
-
-        if delete_after_scan:
-            for file_name in results:
-                os.remove(file_name)
-
         for item in metadata_list:
+            filelist = [item[0]]
+            module_list = item[5]
+            resultlist = multiscan(
+                filelist,
+                config=MS_CONFIG,
+                module_list=module_list
+            )
+            results = parse_reports(resultlist, python=True)
+
+            scan_time = datetime.now().isoformat()
+
             # Use the original filename as the index instead of the full path
             results[item[1]] = results[item[0]]
             del results[item[0]]
@@ -229,6 +226,10 @@ def multiscanner_process(work_queue, exit_signal):
         metadata_list = []
 
         storage_handler.store(results, wait=False)
+
+        if delete_after_scan:
+            for file_name in results:
+                os.remove(file_name)
 
         filelist = []
         time_stamp = None
@@ -477,6 +478,10 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key].split(',')
+            if 'SHA256' not in module_names:
+                # Elasticsearch won't work without it
+                # TODO: Don't let users enable/disable SHA256 module?
+                module_names.append('SHA256')
             modules = list(set(module_names).intersection(MODULE_LIST.keys()))
 
             # files = utils.parse_dir(MODULES_DIR, True)
@@ -558,7 +563,7 @@ def get_report(task_id):
     to the given task ID.
     '''
 
-    download = request.args.get('d', default='False', type=str)[0].lower()
+    download = request.args.get('d', default='false', type=str)[0].lower()
 
     report_dict, success = get_report_dict(task_id)
     if success:

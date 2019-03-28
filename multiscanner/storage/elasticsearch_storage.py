@@ -170,6 +170,7 @@ class ElasticSearchStorage(storage.Storage):
             try:
                 sample_id = report[filename]['SHA256']
             except KeyError:
+                logger.debug('SHA256 not found in report; generating UUID')
                 sample_id = uuid4()
             # Store metadata with the sample, not the report
             sample = {'doc_type': 'sample', 'filename': filename, 'tags': []}

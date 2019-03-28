@@ -521,7 +521,7 @@ def multiscan(Files, config=None, module_list=None):
 
     Files - A list of files and dirs to be scanned
     config - A dictionary containing the configuration options to be used.
-    module_list - A list of file paths to be used as modules. Each string should end in .py
+    module_list - A list of the names of the modules to run on the files.
     """
     # Init some vars
     filelist = Files

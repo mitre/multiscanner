@@ -134,7 +134,7 @@
         obj['duplicate'] = duplicate_action;
         // Modules options
         var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
-        obj['modules'] = moduleList;
+        obj['modules'] = moduleList.toArray();
         // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
