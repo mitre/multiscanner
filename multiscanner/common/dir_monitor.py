@@ -20,7 +20,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import CONFIG_FILE, MS_CONFIG, get_config_path, update_ms_config_file
+from multiscanner.config import CONFIG_FILE, MS_CONFIG, update_ms_config_file
 from multiscanner.storage import storage
 
 logger = logging.getLogger(__name__)
@@ -80,8 +80,7 @@ def start_observer(directory, work_queue, recursive=False):
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = get_config_path('storage', config)
-    storage_handler = storage.StorageHandler(configfile=storage_conf)
+    storage_handler = storage.StorageHandler()
     while not exit_signal.value:
         time.sleep(1)
         try:

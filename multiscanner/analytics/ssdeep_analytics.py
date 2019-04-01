@@ -36,16 +36,13 @@ except ImportError:
     ssdeep = None
 
 
-from multiscanner.config import get_config_path, read_config
 from multiscanner.storage import storage
 
 
 class SSDeepAnalytic:
 
     def __init__(self, debug=False):
-        storage_conf = get_config_path('storage')
-        conf = read_config(storage_conf)
-        storage_handler = storage.StorageHandler(configfile=storage_conf)
+        storage_handler = storage.StorageHandler()
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
@@ -54,7 +51,7 @@ class SSDeepAnalytic:
 
         # probably not ideal...
         self.es = es_handler.es
-        self.index = conf['ElasticSearchStorage']['index']
+        self.index = es_handler.index
         self.doc_type = '_doc'
 
         self.debug = debug

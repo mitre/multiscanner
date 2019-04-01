@@ -143,8 +143,7 @@ for x in range(0, db_num_retries):
         logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
-storage_conf = get_config_path('storage')
-storage_handler = StorageHandler(configfile=storage_conf)
+storage_handler = StorageHandler()
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
 ms_config_file = MS_CONFIG

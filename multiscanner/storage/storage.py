@@ -18,7 +18,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import MS_CONFIG, get_config_path, parse_config
+from multiscanner.config import get_config_path, parse_config
 
 
 DEFAULTCONF = {
@@ -95,34 +95,27 @@ class StorageHandler(object):
         # Load all storage classes
         storage_classes = _get_storage_classes()
         if configfile is None:
-            configfile = MS_CONFIG
+            configfile = get_config_path('storage')
 
         # Read in config
-        if configfile:
-            configfile = get_config_path('storage')
-            config_object = configparser.ConfigParser()
-            config_object.optionxform = str
-            config_object.read(configfile)
-            if config:
-                file_conf = parse_config(config_object)
-                for key in config:
-                    if key not in file_conf:
-                        file_conf[key] = config[key]
-                        file_conf[key]['_load_default'] = True
-                    else:
-                        file_conf[key].update(config[key])
-                config = file_conf
-            else:
-                config = parse_config(config_object)
+        config_object = configparser.ConfigParser()
+        config_object.optionxform = str
+        config_object.read(configfile)
+        if config:
+            file_conf = parse_config(config_object)
+            for key in config:
+                if key not in file_conf:
+                    file_conf[key] = config[key]
+                    file_conf[key]['_load_default'] = True
+                else:
+                    file_conf[key].update(config[key])
+            config = file_conf
         else:
-            if config is None:
-                config = {}
-                for storage_name in storage_classes:
-                    config[storage_name] = {}
-            config['_load_default'] = True
+            config = parse_config(config_object)
 
-        self.sleep_time = config.get('main', {}).get('retry_time', DEFAULTCONF['retry_time'])
-        self.num_retries = config.get('main', {}).get('retry_num', DEFAULTCONF['retry_num'])
+        config_main = config.get('main', {})
+        self.sleep_time = config_main.get('retry_time', DEFAULTCONF['retry_time'])
+        self.num_retries = config_main.get('retry_num', DEFAULTCONF['retry_num'])
 
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
@@ -335,6 +328,8 @@ def _get_storage_classes(dir_path=STORAGE_DIR):
     dir_list = utils.parse_dir(dir_path, recursive=True)
     dir_list.remove(os.path.join(dir_path, 'storage.py'))
     # dir_list.remove(os.path.join(dir_path, '__init__.py'))
+    # sql_driver is not configurable in storage.ini, and is used by the api
+    # and celery workers rather than by the StorageHandler
     dir_list.remove(os.path.join(dir_path, 'sql_driver.py'))
     for filename in dir_list:
         if filename.endswith('.py'):

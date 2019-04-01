@@ -63,13 +63,15 @@ class Database(object):
         'retry_num': 20,  # Number of times to retry to connect to task database
     }
 
-    def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
+    def __init__(self, config=None, configfile=None, regenconfig=False):
         self.db_connection_string = None
         self.db_engine = None
 
         # Configuration parsing
         config_parser = configparser.ConfigParser()
         config_parser.optionxform = str
+        if configfile is None:
+            configfile = CONFIG_FILE
 
         # (re)generate conf file if necessary
         if regenconfig or not os.path.isfile(configfile):
