@@ -16,7 +16,7 @@
       url: apiLoc + '/api/v2/tasks/sha256/' + sha256,
       contentType: 'application/json; charset=UTF-8',
       success: function(data) {
-        var taskID = parseInt(data.TaskID);
+        var taskID = parseInt(data.task_id);
         window.document.location = "/report/" + taskID;
       }
     });
