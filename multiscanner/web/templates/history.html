@@ -189,7 +189,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/files?task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/files?task_ids=" + request.join();
             }
           }
         });

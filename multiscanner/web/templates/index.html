@@ -216,7 +216,7 @@
     });
 
     // Set up tags
-    $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+    $.get("{{ api_loc }}/api/v2/tags/", function(data, status) {
       $.each(data.Tags, function( index, value ) {
         if (tagNameArray.indexOf(value.key) == -1) {
           tagNameArray.push(value.key);
@@ -233,10 +233,10 @@
     })
 
     // Add options for selecting which modules to run
-    //$.get("{{ api_loc }}/api/v1/modules", function(data) {
+    //$.get("{{ api_loc }}/api/v2/modules", function(data) {
     //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
     //  for (mod in data.Modules) {
-    //    checked = (data.Modules[mod] == "True" ? "checked" : "");
+    //    checked = (data.Modules[mod] ? "checked" : "");
     //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
     //  }
     //  modules += '</div>';

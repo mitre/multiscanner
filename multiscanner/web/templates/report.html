@@ -285,7 +285,7 @@
 
       // Set up tags
       var tagNameArray = {{ tags|safe }};
-      $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
+      $.get("{{ api_loc }}/api/v2/tags/", function(data, status) {
         $.each(data.Tags, function( index, value ) {
           if (tagNameArray.indexOf(value.key) == -1) {
             tagNameArray.push(value.key);
@@ -305,13 +305,13 @@
           }
         });
         $('#tags').on('itemAdded', function(event) {
-            tag_response = $.post("{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
+            tag_response = $.post("{{ api_loc }}/api/v2/tasks/{{ task_id }}/tags", {'tag': event.item}, function(data, status){
             return status;
           });
         });
         $('#tags').on('beforeItemRemove', function(event) {
           tag_response = $.ajax({
-            url: "{{ api_loc }}/api/v1/tasks/{{ task_id }}/tags",
+            url: "{{ api_loc }}/api/v2/tasks/{{ task_id }}/tags",
             type: 'DELETE',
             data: {'tag': event.item},
             success: function(data, status) {
@@ -511,15 +511,15 @@
     // Handle download dropdown
     $('ul.dropdown-menu li').click(function(e) {
       if (this.id == 'getJson') {
-        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/report?d=t";
+        window.location = "{{ api_loc }}/api/v2/tasks/{{ task_id }}/report?d=t";
       } else if (this.id == 'getSample') {
-        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/file?raw=false";
+        window.location = "{{ api_loc }}/api/v2/tasks/{{ task_id }}/file?raw=false";
       } else if (this.id == 'getMAEC') {
-        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/maec";
+        window.location = "{{ api_loc }}/api/v2/tasks/{{ task_id }}/maec";
       } else if (this.id == 'getPDF') {
-        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/pdf";
+        window.location = "{{ api_loc }}/api/v2/tasks/{{ task_id }}/pdf";
       } else if (this.id == 'getSTIX2') {
-        window.location = "{{ api_loc }}/api/v1/tasks/{{ task_id }}/stix2?pretty=true";
+        window.location = "{{ api_loc }}/api/v2/tasks/{{ task_id }}/stix2?pretty=true";
       }
     });
   });

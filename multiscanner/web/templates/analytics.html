@@ -13,7 +13,7 @@
 
   function goToReport(apiLoc, sha256) {
     $.ajax({
-      url: apiLoc + '/api/v1/tasks/sha256/' + sha256,
+      url: apiLoc + '/api/v2/tasks/sha256/' + sha256,
       contentType: 'application/json; charset=UTF-8',
       success: function(data) {
         var taskID = parseInt(data.TaskID);
@@ -24,7 +24,7 @@
 
   function ssdeepGroups(apiLoc) {
     // Get list of tasks and populate the table
-    tasks_data = $.get(apiLoc + "/api/v1/analytics/ssdeep_group", function(data, status){
+    tasks_data = $.get(apiLoc + "/api/v2/analytics/ssdeep_group", function(data, status){
       // Add rows to the table
       $.each(data.groups, function(index, item) {
         createGroupRows(index, item, apiLoc);
