@@ -5,8 +5,6 @@ The MultiScanner RESTful API is provided by a Flask app that supports accessing 
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By default it will allow requests from any port on localhost. Change this setting by modifying the ``cors`` setting in the ``api`` section of the api config file.
 
-TODO: add endpoint-does-not-exist error; currently uses inappropriate "task ID not found"
-
 Download Samples
 ----------------
 
@@ -71,21 +69,15 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete task with the given `task_id`                                                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/search                                | List with a single task                  |
+| GET    | /api/v2/tasks/datatable                             | List with a single task                  |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Receive list of most recent report for matching samples. For use with Lucene queries                    |
-|                                                                                                         |
-| * Supplies its parameters directly to ElasticSearch                                                     |
-| * TODO: example search params                                                                           |
-| * TODO: extremely brittle; passes on ES errors as 200 responses                                         |
-| * TODO: clean up output to send only task results instead of metadata                                   |
-| * TODO: change name, datatables (not human readable)
+| Receive list of most recent report for matching samples. For use with Lucene queries.                   |
+| **Intended for use via DataTables integration, not normal API use.**                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/search/history                        | List of tasks                            |
+| GET    | /api/v2/tasks/datatable/history                     | List of tasks                            |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all reports for matching samples                                                        |
-|                                                                                                         |
-| Supplies its parameters directly to ElasticSearch (TODO: same as above)                                 |
+| **Intended for use via DataTables integration, not normal API use.**                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
 | GET    | /api/v2/tasks/<task_id>/maec                        | MAEC file                                |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -98,8 +90,6 @@ View, submit, and search analysis tasks and their resulting reports.
 | GET    | /api/v2/tasks/<task_id>/report?d={t|f}              | Analysis report in JSON                  |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                      |
-|                                                                                                         |
-| DONE*: remove "Report" wrapper EV: For download response, but unsure if we need internally              |
 +--------+-----------------------------------------------------+------------------------------------------+ 
 
 Tags
@@ -148,17 +138,15 @@ DONE: responses might be needlessly large, with lots of Elastic info -- we reall
 +--------+-----------------------------------------------------+------------------------------------------+
 | Add a note to task, using the HTTP parameter ``text=...``                                               |
 |                                                                                                         |
-| * DONE*: should POST body this just be the text itself..? we don't use other fields EV: Just success msg|
-| * DONE*: should response just be the note ID? and optionally text, and maybe sample ID                  |
 | * TODO: add timestamp                                                                                   |
 +--------+-----------------------------------------------------+------------------------------------------+
 | PUT    | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Edit a notesing the HTTP parameter ``text=...`` (DONE: same as above)                                   |
+| Edit a notesing the HTTP parameter ``text=...``                                                         |
 +--------+-----------------------------------------------------+------------------------------------------+
 | DELETE | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Delete a note (DONE*: response note above)                                                              |
+| Delete a note                                                                                           |
 +--------+-----------------------------------------------------+------------------------------------------+
 
 
@@ -172,21 +160,18 @@ Modules/Other
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive an object whose keys are the names of available of modules. The corresponding value of each key |
 | is a boolean that indicates whether the module is currently activated or not.                           |
-|                                                                                                         |
-| * DONE: JSON has a native boolean -- use ``true``/``false`` instead of strings                          |
-| * DONE: remove Modules wrapper?                                                                         |
 +--------------------------------------------------------------+------------------------------------------+
-|| GET    | /api/v2/analytics/ssdeep_compare                    | TODO                                    |
+|| GET   | /api/v2/analytics/ssdeep_compare                    |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Run ssdeep.compare analytic                                                                             |
 +--------------------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/analytics/ssdeep_group                      | TODO                                     |
+| GET    | /api/v2/analytics/ssdeep_group                      |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of sample hashes grouped by ssdeep hash                                                    |
 +--------------------------------------------------------------+------------------------------------------+
 | GET    | /                                                   | Test response object                     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Test functionality. Should produce: ``{'Message': 'True'}``  (DONE*: use boolean)                       |
+| Test functionality. Should produce: ``{'Message': 'True'}``                                             |
 +---------------------------------------------------------------------------------------------------------+            
 
 
@@ -200,6 +185,8 @@ A task is a created at the time a sample is submitted. It is a "pending" state w
 
 Task data is expressed as a JSON object with the following keys:
 
++-------------+---------+------------------------------------------------------------------------------------------+
+| Property    | Type    | Description                                                                              |
 +=============+=========+==========================================================================================+
 | task_id     | Integer | Unique ID of the task                                                                    |
 +-------------+---------+------------------------------------------------------------------------------------------+
@@ -215,13 +202,15 @@ Task data is expressed as a JSON object with the following keys:
 Note
 ----
 
++------------+----------+----------------------------------+
+| Property   | Type     | Description                      |
 +============+==========+==================================+
 | id         | String   | ID of the note (globally unique) |
 +------------+----------+----------------------------------+
 | text       | String   | Text of note                     |
 +------------+----------+----------------------------------+
 | timestamp  | String   | Time of creation                 |
-+------------+---------------------------------------------+
++------------+----------+----------------------------------+
 
 Report
 ------
@@ -230,6 +219,8 @@ A Report has cutom properties added by each module. Which poperties exist on a r
 
 The following general properties should always exist on a report:
 
++------------------+------------------+--------------------------------------------------------------------------------------------+
+| Property         | Type             | Description                                                                                |
 +==================+==================+============================================================================================+
 | Report Metadata  | Object           | Object with properties "Scan Time" and "Scan ID" which correspond to task ID and timestamp |
 +------------------+------------------+--------------------------------------------------------------------------------------------+

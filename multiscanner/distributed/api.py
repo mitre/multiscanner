@@ -15,8 +15,8 @@ POST /api/v2/tasks ---> POST file and receive report id
         curl -i -X POST http://localhost:8080/api/v2/tasks -F file=@/bin/ls
 GET /api/v2/tasks/<task_id> ---> Receive task in JSON format
 DELETE /api/v2/tasks/<task_id> ----> Delete task_id
-GET /api/v2/tasks/search/ ---> Receive list of most recent report for matching samples
-GET /api/v2/tasks/search/history ---> Receive list of most all reports for matching samples
+GET /api/v2/tasks/datatable/ ---> Receive list of most recent report for matching samples
+GET /api/v2/tasks/datatable/history ---> Receive list of most all reports for matching samples
 GET /api/v2/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
 GET /api/v2/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
 GET /api/v2/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
@@ -321,7 +321,7 @@ def search(params, get_all=False):
         return db.search(params, result)
 
 
-@app.route('/api/v2/tasks/search/history', methods=['GET'])
+@app.route('/api/v2/tasks/datatable/history', methods=['GET'])
 def task_search_history():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -332,7 +332,7 @@ def task_search_history():
     return jsonify(resp)
 
 
-@app.route('/api/v2/tasks/search', methods=['GET'])
+@app.route('/api/v2/tasks/datatable', methods=['GET'])
 def task_search():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
