@@ -217,7 +217,7 @@
 
     // Set up tags
     $.get("{{ api_loc }}/api/v2/tags/", function(data, status) {
-      $.each(data.Tags, function( index, value ) {
+      $.each(data, function( index, value ) {
         if (tagNameArray.indexOf(value.key) == -1) {
           tagNameArray.push(value.key);
         }

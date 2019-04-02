@@ -792,7 +792,7 @@ def taglist():
     Return a list of all tags currently in use.
     '''
     response = handler.get_tags()
-    return jsonify({'Tags': response})
+    return jsonify(response)
 
 
 @app.route('/api/v2/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
