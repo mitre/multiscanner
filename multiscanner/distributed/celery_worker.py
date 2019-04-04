@@ -68,7 +68,6 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('vhost'),
 ))
 app.conf.timezone = worker_config.get('tz')
-db = database.Database(config=db_config)
 
 
 @app.on_after_configure.connect
@@ -95,6 +94,15 @@ class MultiScannerTask(Task):
     Class of tasks that defines call backs to handle signals
     from celery
     '''
+    _db = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = database.Database(config=db_config)
+            self._db.init_db()
+        return self._db
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         '''
         When a task fails, update the task DB with a "Failed"
@@ -103,20 +111,28 @@ class MultiScannerTask(Task):
         logger.error('Task #{} failed'.format(args[2]))
         logger.error('Traceback info:\n{}'.format(einfo))
 
-        # Initialize the connection to the task DB
-        db.init_db()
-
         scan_time = datetime.now().isoformat()
 
         # Update the task DB with the failure
-        db.update_task(
+        self.db.update_task(
             task_id=args[2],
             task_status='Failed',
             timestamp=scan_time,
         )
 
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):
-        db.db_session.remove()
+    def on_success(self, retval, task_id, args, kwargs):
+        '''
+        When a task succeeds, update the task DB with a "Completed"
+        status.
+        '''
+        logger.info('Completed Task #{}'.format(args[2]))
+
+        # Update the task DB to reflect that the task is done
+        self.db.update_task(
+            task_id=args[2],
+            task_status='Complete',
+            timestamp=retval[args[1]]['Scan Metadata']['Scan Time'],
+        )
 
 
 @app.task(base=MultiScannerTask)
@@ -130,10 +146,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     multiscanner_celery.delay(full_path, original_filename, task_id,
                               hashed_filename, metadata, config, module_list)
     '''
-
-    # Initialize the connection to the task DB
-    db.init_db()
-
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
@@ -198,15 +210,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     # of MultiScannerTask
     if not storage_ids:
         raise ValueError('Report failed to index')
-
-    # Update the task DB to reflect that the task is done
-    db.update_task(
-        task_id=task_id,
-        task_status='Complete',
-        timestamp=scan_time,
-    )
-
-    logger.info('Completed Task #{}'.format(task_id))
 
     return results
 

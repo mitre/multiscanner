@@ -10,6 +10,8 @@ import unittest
 CWD = os.path.dirname(os.path.abspath(__file__))
 MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from multiscanner.storage.sql_driver import Database, Task
 
 
@@ -89,6 +91,16 @@ class TestTaskAdd(unittest.TestCase):
         )
         self.assertEqual(resp, task_id)
 
+    def test_add_task_same_id_raises(self):
+        task_id = 1
+        resp = self.sql_db.add_task(
+            task_id=task_id,
+            task_status='Pending',
+            sample_id=None,
+        )
+        self.assertEqual(resp, task_id)
+        self.assertRaises(SQLAlchemyError, self.sql_db.add_task, (task_id, 'Pending', None))
+
     def tearDown(self):
         if DB_CONF['db_type'] == 'sqlite':
             os.remove(TEST_DB_PATH)
@@ -124,10 +136,16 @@ class TestTaskManipulation(unittest.TestCase):
         self.assertDictEqual(resp, {'task_id': 1, 'sample_id': None, 'task_status': 'Complete', 'timestamp': None})
 
     def test_delete_task(self):
-        deleted = self.sql_db.delete_task(task_id=1)
-        self.assertTrue(deleted)
+        self.sql_db.delete_task(task_id=1)
         resp = self.sql_db.get_task(task_id=1)
         self.assertEqual(resp, None)
+
+    def test_delete_task_raises(self):
+        self.sql_db.delete_task(task_id=1)
+        self.assertRaises(SQLAlchemyError, self.sql_db.delete_task, 1)
+
+    def test_delete_non_existing_task(self):
+        self.assertRaises(SQLAlchemyError, self.sql_db.delete_task, 45)
 
     def tearDown(self):
         if DB_CONF['db_type'] == 'sqlite':
@@ -150,7 +168,7 @@ class TestGetAllTasks(unittest.TestCase):
         ]
         resp = self.sql_db.get_all_tasks()
         for i in range(0, 3):
-            self.assertDictEqual(expected_response[i], resp[i])
+            self.assertDictEqual(expected_response[i], resp[i].to_dict())
 
     def tearDown(self):
         if DB_CONF['db_type'] == 'sqlite':
