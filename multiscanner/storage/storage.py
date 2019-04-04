@@ -18,7 +18,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import get_config_path, parse_config
+from multiscanner.config import get_config_path, parse_config, reset_config
 
 
 DEFAULTCONF = {
@@ -261,7 +261,7 @@ def config_init(filepath, overwrite=False, storage_classes=None):
     config_object.optionxform = str
     if overwrite or not os.path.isfile(filepath):
         _write_main_config(config_object)
-        _rewrite_config(storage_classes, config_object, filepath)
+        reset_config(storage_classes, config_object, filepath)
     else:
         config_object.read(filepath)
         _write_main_config(config_object)
@@ -275,19 +275,6 @@ def _write_main_config(config_object):
         config_object.add_section('main')
         for key in DEFAULTCONF:
             config_object.set('main', key, str(DEFAULTCONF[key]))
-
-
-def _rewrite_config(storage_classes, config_object, filepath):
-    keys = list(storage_classes.keys())
-    keys.sort()
-    for class_name in keys:
-        conf = storage_classes[class_name].DEFAULTCONF
-        config_object.add_section(class_name)
-        for key in conf:
-            config_object.set(class_name, key, str(conf[key]))
-
-    with codecs.open(filepath, 'w', 'utf-8') as f:
-        config_object.write(f)
 
 
 def _write_missing_config(config_object, filepath, storage_classes=None):

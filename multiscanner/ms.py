@@ -32,9 +32,9 @@ from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_file_list, queue2list)
 from multiscanner.config import (CONFIG_FILE, MODULE_LIST,
-                                 MS_CONFIG, PY3, determine_configuration_path,
-                                 get_config_path, update_ms_config,
-                                 update_ms_config_file)
+                                 MS_CONFIG, PY3, get_config_path,
+                                 reset_config, update_ms_config,
+                                 update_ms_config_file, update_paths_in_config)
 from multiscanner.storage import storage
 
 
@@ -251,23 +251,6 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
         logger.debug("{} failed check()".format(modname))
 
 
-def _update_DEFAULTCONF(defaultconf, filepath):
-    if 'storage-config' in defaultconf:
-        defaultconf['storage-config'] = filepath.replace('config.ini', 'storage.ini')
-    if 'api-config' in defaultconf:
-        defaultconf['api-config'] = filepath.replace('config.ini', 'api_config.ini')
-    if 'web-config' in defaultconf:
-        defaultconf['web-config'] = filepath.replace('config.ini', 'web_config.ini')
-    if 'ruledir' in defaultconf:
-        defaultconf['ruledir'] = os.path.join(os.path.split(filepath)[0], "etc", "yarasigs")
-    if 'key' in defaultconf:
-        defaultconf['key'] = os.path.join(os.path.split(filepath)[0], 'etc', 'id_rsa')
-    if 'hash_list' in defaultconf:
-        defaultconf['hash_list'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'hash_list')
-    if 'offsets' in defaultconf:
-        defaultconf['offsets'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'offsets')
-
-
 def _copy_to_share(filelist, filedic, sharedir):
     """
     Copies files from filelist to a share and populates the filedic. Returns a
@@ -366,7 +349,7 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
     return ThreadList
 
 
-def _write_missing_module_configs(config, filepath=CONFIG_FILE):
+def _write_missing_module_configs(config, filepath=None):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
@@ -375,7 +358,9 @@ def _write_missing_module_configs(config, filepath=CONFIG_FILE):
     module_list - The list of modules (filenames)
     config - The config object
     """
-    filepath = determine_configuration_path(filepath)
+    if not filepath:
+        filepath = CONFIG_FILE
+
     ConfNeedsWrite = False
     for modname, module in sorted(six.iteritems(MODULE_LIST)):
         if modname not in config.keys():
@@ -395,7 +380,7 @@ def _write_missing_module_configs(config, filepath=CONFIG_FILE):
 
     if 'main' not in config.keys():
         ConfNeedsWrite = True
-        _update_DEFAULTCONF(DEFAULTCONF, filepath)
+        update_paths_in_config(DEFAULTCONF, filepath)
         config['main'] = {}
         for key in DEFAULTCONF:
             config['main'][key] = str(DEFAULTCONF[key])
@@ -410,57 +395,26 @@ def _write_missing_module_configs(config, filepath=CONFIG_FILE):
     return False
 
 
-def _rewrite_config(module_list, config, filepath=CONFIG_FILE):
-    """
-    Write in default config for all modules.
-
-    module_list - The list of modules
-    config - The config object
-    """
-    filepath = determine_configuration_path(filepath)
-    logger.info('Rewriting config...')
-    for modname, module in sorted(six.iteritems(module_list)):
-        moddir = module[1]
-        mod = load_module(modname, [moddir])
-        if mod:
-            try:
-                conf = mod.DEFAULTCONF
-            except Exception as e:
-                logger.warning(e)
-                continue
-            _update_DEFAULTCONF(conf, filepath)
-            config.add_section(modname)
-            for key in conf:
-                config.set(modname, key, str(conf[key]))
-
-    _update_DEFAULTCONF(DEFAULTCONF, filepath)
-    config.add_section('main')
-    for key in DEFAULTCONF:
-        config.set('main', key, str(DEFAULTCONF[key]))
-
-    with codecs.open(filepath, 'w', 'utf-8') as f:
-        config.write(f)
-
-    # Set global main config
-    update_ms_config(config)
-
-
-def config_init(filepath, module_list=None):
+def config_init(filepath=None):
     """
     Creates a new config file at filepath
 
     filepath - The config file to create
     """
-    if module_list is None:
-        module_list = MODULE_LIST
+    # Compile all the sections to go in the config
+    module_list = {}
+    module_list['main'] = sys.modules[__name__]  # current module
+    for modname, module in sorted(six.iteritems(MODULE_LIST)):
+        moddir = module[1]
+        mod = load_module(modname, [moddir])
+        if mod:
+            module_list[modname] = mod
+
     config = configparser.ConfigParser()
     config.optionxform = str
 
-    if filepath:
-        _rewrite_config(module_list, config, filepath)
-    else:
-        filepath = determine_configuration_path(filepath)
-        _rewrite_config(module_list, config, filepath)
+    reset_config(module_list, config, filepath)
+    update_ms_config(config)  # Set global main config
     logger.info('Configuration file initialized at {}'.format(filepath))
 
 
@@ -848,7 +802,7 @@ def _main():
         args.config = CONFIG_FILE
     else:
         update_ms_config_file(args.config)
-        _update_DEFAULTCONF(DEFAULTCONF, CONFIG_FILE)
+        update_paths_in_config(DEFAULTCONF, CONFIG_FILE)
 
     # Send all logs to stderr and set verbose
     if args.debug or args.verbose > 1:

@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 
-from six import PY3  # noqa F401
+from six import PY3, iteritems  # noqa F401
 from multiscanner.common.utils import parse_dir
 
 logger = logging.getLogger(__name__)
@@ -196,3 +196,63 @@ def update_ms_config_file(config_file):
     global CONFIG_FILE, MS_CONFIG
     CONFIG_FILE = config_file
     MS_CONFIG = read_config(CONFIG_FILE)
+
+
+def update_paths_in_config(conf, filepath):
+    """Rewrite config values containing paths to point to a new multiscanner config directory.
+    """
+    base_dir = os.path.split(filepath)[0]
+    if 'storage-config' in conf:
+        conf['storage-config'] = os.path.join(base_dir, 'storage.ini')
+    if 'api-config' in conf:
+        conf['api-config'] = os.path.join(base_dir, 'api_config.ini')
+    if 'web-config' in conf:
+        conf['web-config'] = os.path.join(base_dir, 'web_config.ini')
+    if 'ruledir' in conf:
+        conf['ruledir'] = os.path.join(base_dir, "etc", "yarasigs")
+    if 'key' in conf:
+        conf['key'] = os.path.join(base_dir, 'etc', 'id_rsa')
+    if 'hash_list' in conf:
+        conf['hash_list'] = os.path.join(base_dir, 'etc', 'nsrl', 'hash_list')
+    if 'offsets' in conf:
+        conf['offsets'] = os.path.join(base_dir, 'etc', 'nsrl', 'offsets')
+
+
+def reset_config(sections, config, filepath=None):
+    """
+    Reset specific sections of a config file to their factory defaults.
+
+    sections - Dictionary mapping section names to the Python module containing its DEFAULTCONF
+    config - ConfigParser object in which to store config
+    filepath - Path to the config file
+
+    Returns:
+        The ConfigParser object that was written to the file.
+    """
+    if not filepath:
+        CONFIG_FILE
+
+    # Read in the old config to preserve any sections not being reset
+    if os.path.isfile(filepath):
+        config.read(filepath)
+
+    logger.info('Rewriting config at {}...'.format(filepath))
+
+    keys = list(sections.keys())
+    keys.sort()
+    for section_name in keys:
+        try:
+            conf = sections[section_name].DEFAULTCONF
+        except Exception as e:
+            logger.warning(e)
+            continue
+
+        update_paths_in_config(conf, filepath)
+        if not config.has_section(section_name):
+            config.add_section(section_name)
+        for key in conf:
+            config.set(section_name, key, str(conf[key]))
+
+    with codecs.open(filepath, 'w', 'utf-8') as f:
+        config.write(f)
+    return config

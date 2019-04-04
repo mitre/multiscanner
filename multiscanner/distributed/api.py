@@ -112,7 +112,7 @@ api_config = read_config(api_config_file, 'api', DEFAULTCONF)
 from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
-db = database.Database(config=api_config.get('Database'))
+db = database.Database(config=api_config.get('Database'), regenconfig=False)
 # To run under Apache, we need to set up the DB outside of __main__
 # Sleep and retry until database connection is successful
 try:
