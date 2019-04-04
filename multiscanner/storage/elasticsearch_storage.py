@@ -16,15 +16,6 @@ from elasticsearch.exceptions import TransportError
 from multiscanner import MS_WD
 from multiscanner.storage import storage
 
-# METADATA_FIELDS = [
-#     'MD5',
-#     'SHA1',
-#     'SHA256',
-#     'ssdeep',
-#     'tags',
-#     'Metadata',
-# ]
-
 ES_MAX = 2147483647
 ES_TEMPLATE = os.path.join(MS_WD, 'storage', 'templates', 'elasticsearch_template.json')
 ES_TEMPLATE_NAME = 'multiscanner_template'
@@ -176,21 +167,20 @@ class ElasticSearchStorage(storage.Storage):
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
-                # 'filename': filename,
-                'filemeta': report[filename]['filemeta'],
                 'ssdeep': report[filename]['ssdeep'],
                 'tags': [],
             }
+
+            # move filemeta entries to top level
+            sample.update(
+                {k: v for k, v in report[filename]['filemeta'].items()})
+
             try:
                 del report[filename]['filemeta']
                 del report[filename]['ssdeep']
             except Exception as e:
                 pass
-            # for field in METADATA_FIELDS:
-            #     if field in report[filename]:
-            #         if len(report[filename][field]) != 0:
-            #             sample[field] = report[filename][field]
-            #         del report[filename][field]
+
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
             report[filename]['filename'] = filename
             sample_tags[sample_id] = sample.get('tags', [])

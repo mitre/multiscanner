@@ -254,19 +254,29 @@
         $('#tags').val(tags.toString());
       }
 
+      // grab scan metadata
+      if (data.Report.hasOwnProperty('Scan Metadata')) {
+        scanMeta = data.Report['Scan Metadata'];
+        delete data.Report['Scan Metadata'];
+      }
+
       // Take some report data and put it at the top of the report
       var top_fields_list = [
+          'sha256',
           'filename',
-          'Scan Time',
-          'Scan Metadata',
+          'filesize',
+          'filetype',
+          'mimetype',
           'md5',
           'sha1',
-          'sha256'
+          'sha512',
+          'crc32',
+          'entropy',
       ]
       top_fields_list.forEach(function(elem) {
-        if (data.Report.filemeta.hasOwnProperty(elem)) {
-          val = data.Report.filemeta[elem];
-          delete data.Report.filemeta[elem];
+        if (data.Report.hasOwnProperty(elem)) {
+          val = data.Report[elem];
+          delete data.Report[elem];
           $('tbody:first').append(determineType(elem, val));
         }
       });
@@ -275,6 +285,9 @@
       $.each(data.Report, function(index, item) {
         $('tbody:first').append(determineType(index, item));
       });
+
+      // add on scan metadata
+      $('tbody:first').append(determineType('Scan Metadata', scanMeta));
 
       // Handle row expanson
       $('.expander').each(function(idx, elem) {
