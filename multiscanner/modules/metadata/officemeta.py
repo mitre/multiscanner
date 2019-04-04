@@ -36,7 +36,7 @@ def scan(filelist, conf=DEFAULTCONF):
     filemeta_results, _ = REQUIRES[0]
     for fname, filemeta_result in filemeta_results:
         # TODO: better office doc detection
-        if filemeta_result.get('filetype', '').startswith('Composite Document') or True:
+        if filemeta_result.get('filetype', '').startswith('Composite Document'):
             ret = None
             try:
                 with open(fname, 'rb') as fh:
