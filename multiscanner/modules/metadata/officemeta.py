@@ -9,7 +9,7 @@ from builtins import *  # noqa 401,403
 
 from multiscanner.ext.office_meta import OfficeParser
 
-__author__ = "Patrick Coplenad"
+__author__ = "Patrick Copeland"
 __credits__ = ["Mike Goffin"]
 __license__ = "MPL 2.0"
 
@@ -56,7 +56,6 @@ def scan(filelist, conf=DEFAULTCONF):
 def run(data):
     ret = {}
     ret['directory'] = {}
-    # ret['doc_meta'] = []
     ret['doc_meta'] = {}
     oparser = OfficeParser(data)
     oparser.parse_office_doc()
