@@ -167,6 +167,7 @@ class Database(object):
         db_session = Session()
         try:
             yield db_session
+            db_session.commit()
         except SQLAlchemyError as e:
             # TODO: log exception
             db_session.rollback()
@@ -183,7 +184,7 @@ class Database(object):
                 timestamp=timestamp,
             )
             db_session.add(task)
-            db_session.commit()
+            db_session.flush()
             return task.task_id
 
     def update_task(self, task_id, task_status, timestamp=None):
@@ -193,7 +194,7 @@ class Database(object):
                 task.task_status = task_status
                 if timestamp:
                     task.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
-                db_session.commit()
+                db_session.flush()
                 return task.to_dict()
 
     def get_task(self, task_id):
@@ -202,7 +203,6 @@ class Database(object):
             if task:
                 # unbind Task from Session
                 db_session.expunge(task)
-                db_session.commit()
                 return task
 
     def get_all_tasks(self):
@@ -212,7 +212,6 @@ class Database(object):
 
             # unbind Tasks from Session
             db_session.expunge_all()
-            db_session.commit()
             return rs
 
     def search(self, params, id_list=None, search_by_value=False, return_all=False):
@@ -255,16 +254,12 @@ class Database(object):
             rowTable = DataTables(params, query, columns)
 
             output = rowTable.output_result()
-            # unbind Tasks from Session
-            db_session.expunge_all()
-            db_session.commit()
             return output
 
     def delete_task(self, task_id):
         with self.db_session_scope() as db_session:
             task = db_session.query(Task).get(task_id)
             db_session.delete(task)
-            db_session.commit()
 
     def exists(self, sample_id):
         '''Checks if any tasks exist in the database with the given sample_id.
@@ -282,7 +277,4 @@ class Database(object):
                 Task.sample_id == sample_id, Task.timestamp == subquery
             ).first()
             if task:
-                # unbind Task from Session
-                db_session.expunge(task)
-                db_session.commit()
                 return task.task_id

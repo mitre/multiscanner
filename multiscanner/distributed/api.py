@@ -63,6 +63,8 @@ from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
 
+from sqlalchemy.exc import SQLAlchemyError
+
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
 from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
 from multiscanner.common import utils, pdf_generator, stix2_generator
@@ -378,7 +380,10 @@ def delete_task(task_id):
     es_result = handler.delete_by_task_id(task_id)
     if not es_result:
         abort(HTTP_NOT_FOUND)
-    sql_result = db.delete_task(task_id)
+    try:
+        sql_result = db.delete_task(task_id)
+    except SQLAlchemyError:
+        sql_result = None
     if not sql_result:
         abort(HTTP_NOT_FOUND)
     return jsonify({'Message': 'Deleted'})
