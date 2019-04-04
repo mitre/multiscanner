@@ -58,7 +58,6 @@ import re
 import shutil
 import subprocess
 import time
-import uuid
 import zipfile
 from datetime import datetime
 
@@ -68,6 +67,7 @@ from flask import Flask, abort, jsonify, make_response, request, safe_join
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
+from uuid import uuid4
 
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
 from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
@@ -430,8 +430,14 @@ def import_task(file_):
         logger.debug(e)
         raise InvalidScanTimeFormatError()
 
+    try:
+        sample_id = report['filemeta']['sha256']
+    except KeyError:
+        logger.warn("Unable to find sha256 hash for sample_id")
+        sample_id = uuid4()
+
     task_id = db.add_task(
-        sample_id=report['SHA256'],
+        sample_id=sample_id,
         task_status='Complete',
         timestamp=report['Scan Time'],
     )
@@ -646,7 +652,7 @@ def get_reports():
 
     if task_ids is not None:
         task_ids = task_ids.split(',')
-        uuidv4 = str(uuid.uuid4())
+        uuidv4 = str(uuid4())
         final_report = []
 
         try:
@@ -753,7 +759,7 @@ def get_file_task(task_id):
         return jsonify(report_dict)
 
     # okay, we have report dict; get sha256
-    sha256 = report_dict.get('Report', {}).get('SHA256', '')
+    sha256 = report_dict.get('Report', {}).get('filemeta', {}).get('sha256', '')
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
@@ -771,7 +777,7 @@ def get_files_task():
 
     if task_ids is not None:
         task_ids = task_ids.split(',')
-        uuidv4 = str(uuid.uuid4())
+        uuidv4 = str(uuid4())
         zipname = uuidv4 + '.zip'
         zip_command = ['/usr/bin/zip', '-j',
                        safe_join('/tmp', zipname),
