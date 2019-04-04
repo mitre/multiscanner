@@ -38,7 +38,7 @@ class TestES(unittest.TestCase):
         sample_args = args[1][0]
         self.assertEqual(sample_args['pipeline'], 'dedot')
         self.assertEqual(sample_args['_id'], TEST_ID)
-        self.assertEqual(sample_args['_source']['filemeta']['sha256'], TEST_ID)
+        self.assertEqual(sample_args['_source']['sha256'], TEST_ID)
         self.assertEqual(sample_args['_source']['tags'], [])
 
         report_args, report_kwargs = mock_index.call_args_list[0]
