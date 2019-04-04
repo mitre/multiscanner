@@ -6,7 +6,7 @@ from __future__ import division, absolute_import, with_statement, unicode_litera
 import os
 import subprocess
 
-from multiscanner.config import CONFIG_FILE
+import multiscanner as ms
 from multiscanner.common.utils import list2cmdline, sshconnect, SSH
 
 subprocess.list2cmdline = list2cmdline
@@ -18,7 +18,7 @@ TYPE = "Antivirus"
 NAME = "Microsoft Security Essentials"
 # These are overwritten by the config file
 # SSH Key
-KEY = os.path.join(os.path.split(CONFIG_FILE)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")

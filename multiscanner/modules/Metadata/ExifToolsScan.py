@@ -8,7 +8,7 @@ import os
 import subprocess
 import re
 
-from multiscanner.config import CONFIG_FILE
+import multiscanner as ms
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
 
 subprocess.list2cmdline = list2cmdline
@@ -20,7 +20,7 @@ TYPE = "Metadata"
 NAME = "ExifTool"
 # These are overwritten by the config file
 HOST = ("MultiScanner", 22, "User")
-KEY = os.path.join(os.path.split(CONFIG_FILE)[0], "etc", "id_rsa")
+KEY = os.path.join(os.path.split(ms.CONFIG_FILE)[0], "etc", "id_rsa")
 PATHREPLACE = "X:\\"
 # Entries to be removed from the final results
 REMOVEENTRY = ["ExifTool Version Number", "File Name", "Directory", "File Modification Date/Time",

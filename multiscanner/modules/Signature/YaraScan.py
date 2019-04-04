@@ -7,7 +7,7 @@ import logging
 import os
 import time
 
-from multiscanner.config import CONFIG_FILE
+import multiscanner as ms
 from multiscanner.common.utils import parse_dir
 
 
@@ -17,7 +17,7 @@ __license__ = "MPL 2.0"
 TYPE = "Signature"
 NAME = "Yara"
 DEFAULTCONF = {
-    "ruledir": os.path.join(os.path.split(CONFIG_FILE)[0], "etc", "yarasigs"),
+    "ruledir": os.path.join(os.path.split(ms.CONFIG_FILE)[0], "etc", "yarasigs"),
     "fileextensions": [".yar", ".yara", ".sig"],
     "ignore-tags": ["TLPRED"],
     "includes": False,

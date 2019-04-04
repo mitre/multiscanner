@@ -12,7 +12,7 @@ from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import MS_CONFIG, get_config_path, read_config
+from multiscanner import config as msconf
 from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
@@ -31,13 +31,13 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-configfile = get_config_path('api')
-config = read_config(configfile, 'celery', DEFAULTCONF)
+configfile = msconf.get_config_path('api')
+config = msconf.read_config(configfile, 'celery', DEFAULTCONF)
 worker_config = config.get('celery')
 db_config = config.get('Database')
 
-storage_configfile = get_config_path('storage')
-storage_config = read_config(storage_configfile)
+storage_configfile = msconf.get_config_path('storage')
+storage_config = msconf.read_config(storage_configfile)
 es_storage_config = storage_config.get('ElasticSearchStorage')
 
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
@@ -115,8 +115,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     # Get the storage config
     if config is None:
-        config = MS_CONFIG
-    storage_conf = get_config_path('storage', config)
+        config = msconf.MS_CONFIG
+    storage_conf = msconf.get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscan(

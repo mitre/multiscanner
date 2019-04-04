@@ -60,7 +60,7 @@ from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
 
-from multiscanner import CONFIG_FILE, MODULE_LIST, MS_CONFIG, MS_WD, multiscan, parse_reports
+import multiscanner as ms
 from multiscanner.common import pdf_generator, stix2_generator
 from multiscanner.config import PY3, get_config_path, read_config
 from multiscanner.storage import StorageHandler
@@ -146,7 +146,7 @@ for x in range(0, db_num_retries):
 storage_handler = StorageHandler()
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_file = MS_CONFIG
+ms_config_file = ms.MS_CONFIG
 ms_config = read_config(ms_config_file)
 
 try:
@@ -198,12 +198,12 @@ def multiscanner_process(work_queue, exit_signal):
         for item in metadata_list:
             filelist = [item[0]]
             module_list = item[5]
-            resultlist = multiscan(
+            resultlist = ms.multiscan(
                 filelist,
-                config=MS_CONFIG,
+                config=ms.MS_CONFIG,
                 module_list=module_list
             )
-            results = parse_reports(resultlist, python=True)
+            results = ms.parse_reports(resultlist, python=True)
 
             scan_time = datetime.now().isoformat()
 
@@ -262,7 +262,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    return jsonify({name: mod[0] for (name, mod) in MODULE_LIST.items()})
+    return jsonify({name: mod[0] for (name, mod) in ms.MODULE_LIST.items()})
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -369,7 +369,7 @@ def save_hashed_filename(f, zipped=False):
     # TODO: should we check if the file is already there
     # and skip this step if it is?
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
-    full_path = os.path.join(MS_WD, file_path)
+    full_path = os.path.join(ms.MS_WD, file_path)
     if zipped:
         shutil.copy2(f.name, full_path)
     else:
@@ -421,7 +421,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False, mod
         # Publish the task to Celery
         multiscanner_celery.delay(full_path, original_filename,
                                   task_id, f_name, metadata,
-                                  config=MS_CONFIG, module_list=module_list)
+                                  config=ms.MS_CONFIG, module_list=module_list)
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata, module_list))
@@ -481,7 +481,7 @@ def create_task():
                 # Elasticsearch won't work without it
                 # TODO: Don't let users enable/disable SHA256 module?
                 module_names.append('SHA256')
-            modules = list(set(module_names).intersection(MODULE_LIST.keys()))
+            modules = list(set(module_names).intersection(ms.MODULE_LIST.keys()))
 
             # files = utils.parse_dir(MODULES_DIR, True)
             # modules = []
@@ -995,7 +995,7 @@ def get_pdf_report(task_id):
     if not success:
         return jsonify(report_dict)
 
-    pdf = pdf_generator.create_pdf_document(CONFIG_FILE, report_dict)
+    pdf = pdf_generator.create_pdf_document(ms.CONFIG_FILE, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id

@@ -7,7 +7,7 @@ import os
 import subprocess
 import re
 
-from multiscanner.config import CONFIG_FILE
+import multiscanner as ms
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
 
 subprocess.list2cmdline = list2cmdline
@@ -19,7 +19,7 @@ TYPE = "Antivirus"
 NAME = "McAfee"
 # These are overwritten by the config file
 # SSH Key
-KEY = os.path.join(os.path.split(CONFIG_FILE)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")

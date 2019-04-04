@@ -31,8 +31,8 @@ standard_library.install_aliases()
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_file_list, queue2list)
-from multiscanner.config import (CONFIG_FILE, MODULE_LIST,
-                                 MS_CONFIG, PY3, get_config_path,
+from multiscanner import config as msconf
+from multiscanner.config import (PY3, get_config_path,
                                  reset_config, update_ms_config,
                                  update_ms_config_file, update_paths_in_config)
 from multiscanner.storage import storage
@@ -42,9 +42,9 @@ from multiscanner.storage import storage
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": CONFIG_FILE.replace('config.ini', 'storage.ini'),
-    "api-config": CONFIG_FILE.replace('config.ini', 'api_config.ini'),
-    "web-config": CONFIG_FILE.replace('config.ini', 'web_config.ini'),
+    "storage-config": msconf.CONFIG_FILE.replace('config.ini', 'storage.ini'),
+    "api-config": msconf.CONFIG_FILE.replace('config.ini', 'api_config.ini'),
+    "web-config": msconf.CONFIG_FILE.replace('config.ini', 'web_config.ini'),
 }
 
 logger = logging.getLogger(__name__)
@@ -305,9 +305,9 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
         # TODO: What if the module isn't specified in the config
 
         try:
-            moddir = MODULE_LIST[modname][1]
+            moddir = msconf.MODULE_LIST[modname][1]
         except KeyError:
-            logger.warning(MODULE_LIST)
+            logger.warning(msconf.MODULE_LIST)
             logger.warning("{} not a valid module...".format(modname))
             continue
 
@@ -347,75 +347,6 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
     for thread in ThreadList:
         thread.start()
     return ThreadList
-
-
-def _write_missing_module_configs(config, filepath=None):
-    """
-    Write in default config for modules not in config file. Returns True if config was written, False if not.
-
-    Also adds a '[main]' section if not present.
-
-    module_list - The list of modules (filenames)
-    config - The config object
-    """
-    if not filepath:
-        filepath = CONFIG_FILE
-
-    ConfNeedsWrite = False
-    for modname, module in sorted(six.iteritems(MODULE_LIST)):
-        if modname not in config.keys():
-            moddir = module[1]
-            mod = load_module(modname, [moddir])
-            if mod:
-                try:
-                    conf = mod.DEFAULTCONF
-                except Exception as e:
-                    logger.warning(e)
-                    continue
-                if modname not in config.keys():
-                    ConfNeedsWrite = True
-                    config[modname] = {}
-                    for key in conf:
-                        config[modname][key] = str(conf[key])
-
-    if 'main' not in config.keys():
-        ConfNeedsWrite = True
-        update_paths_in_config(DEFAULTCONF, filepath)
-        config['main'] = {}
-        for key in DEFAULTCONF:
-            config['main'][key] = str(DEFAULTCONF[key])
-
-    if ConfNeedsWrite:
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
-        config_object.read_dict(config)
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-        return True
-    return False
-
-
-def config_init(filepath=None):
-    """
-    Creates a new config file at filepath
-
-    filepath - The config file to create
-    """
-    # Compile all the sections to go in the config
-    module_list = {}
-    module_list['main'] = sys.modules[__name__]  # current module
-    for modname, module in sorted(six.iteritems(MODULE_LIST)):
-        moddir = module[1]
-        mod = load_module(modname, [moddir])
-        if mod:
-            module_list[modname] = mod
-
-    config = configparser.ConfigParser()
-    config.optionxform = str
-
-    reset_config(module_list, config, filepath)
-    update_ms_config(config)  # Set global main config
-    logger.info('Configuration file initialized at {}'.format(filepath))
 
 
 def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, python=False):
@@ -481,7 +412,7 @@ def multiscan(Files, config=None, module_list=None):
     filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = [modname for modname in MODULE_LIST]
+        module_list = [modname for modname in msconf.MODULE_LIST]
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
@@ -721,7 +652,7 @@ def _parse_args():
     Parses arguments
     """
     # argparse stuff
-    desc = "MultiScanner v{} - Analyse files against multiple engines"
+    desc = "MultiScanner v{} - Analyze files against multiple engines"
     parser = argparse.ArgumentParser(description=desc.format(MS_VERSION))
     parser.add_argument("-c", "--config", required=False, default=None,
                         help="The config file to use")
@@ -750,11 +681,83 @@ def _parse_args():
     parser.add_argument("--resume", action="store_true",
                         help="Read in the report file and continue where we left off")
     parser.add_argument('Files', nargs='+',
-                        help="Files and Directories to analyse")
+                        help="Files and Directories to analyze")
     return parser.parse_args()
 
 
+def _write_missing_module_configs(config, filepath=None):
+    """
+    Write in default config for modules not in config file. Returns True if config was written, False if not.
+
+    Also adds a '[main]' section if not present.
+
+    module_list - The list of modules (filenames)
+    config - The config object
+    """
+    if not filepath:
+        filepath = msconf.CONFIG_FILE
+
+    ConfNeedsWrite = False
+    for modname, module in sorted(six.iteritems(msconf.MODULE_LIST)):
+        if modname not in config.keys():
+            moddir = module[1]
+            mod = load_module(modname, [moddir])
+            if mod:
+                try:
+                    conf = mod.DEFAULTCONF
+                except Exception as e:
+                    logger.warning(e)
+                    continue
+                if modname not in config.keys():
+                    ConfNeedsWrite = True
+                    config[modname] = {}
+                    for key in conf:
+                        config[modname][key] = str(conf[key])
+
+    if 'main' not in config.keys():
+        ConfNeedsWrite = True
+        update_paths_in_config(DEFAULTCONF, filepath)
+        config['main'] = {}
+        for key in DEFAULTCONF:
+            config['main'][key] = str(DEFAULTCONF[key])
+
+    if ConfNeedsWrite:
+        config_object = configparser.ConfigParser()
+        config_object.optionxform = str
+        config_object.read_dict(config)
+        with codecs.open(filepath, 'w', 'utf-8') as f:
+            config_object.write(f)
+        return True
+    return False
+
+
+def config_init(filepath=None):
+    """
+    Creates a new config file at filepath
+
+    filepath - The config file to create
+    """
+    # Compile all the sections to go in the config
+    module_list = {}
+    module_list['main'] = sys.modules[__name__]  # current module
+    for modname, module in sorted(six.iteritems(msconf.MODULE_LIST)):
+        moddir = module[1]
+        mod = load_module(modname, [moddir])
+        if mod:
+            module_list[modname] = mod
+
+    config = configparser.ConfigParser()
+    config.optionxform = str
+
+    reset_config(module_list, config, filepath)
+    update_ms_config(config)  # Set global main config
+    logger.info('Configuration file initialized at {}'.format(filepath))
+
+
 def _init(args):
+    if args.config is None:
+        args.config = msconf.CONFIG_FILE
+
     # Initialize configuration file
     if os.path.isfile(args.config):
         logger.warning('{} already exists, overwriting will destroy changes'.format(args.config))
@@ -767,7 +770,7 @@ def _init(args):
             config_init(args.config)
         else:
             logger.info('Checking for missing modules in configuration...')
-            config = MS_CONFIG  # MS_CONFIG will already have been set in main()
+            config = msconf.MS_CONFIG  # MS_CONFIG will already have been set in main()
             _write_missing_module_configs(config, filepath=args.config)
     else:
         config_init(args.config)
@@ -797,12 +800,6 @@ def _init(args):
 def _main():
     # Get args
     args = _parse_args()
-    # Set config or update locations
-    if args.config is None:
-        args.config = CONFIG_FILE
-    else:
-        update_ms_config_file(args.config)
-        update_paths_in_config(DEFAULTCONF, CONFIG_FILE)
 
     # Send all logs to stderr and set verbose
     if args.debug or args.verbose > 1:
@@ -819,15 +816,22 @@ def _main():
         logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(message)s",
                             stream=sys.stderr, level=log_lvl)
 
-    # Checks if user is trying to initialize
+    # Check if user is trying to initialize
     if str(args.Files) == "['init']" and not os.path.isfile('init'):
         _init(args)
+
+    # Set config or update locations
+    if args.config is None:
+        args.config = msconf.CONFIG_FILE
+    else:
+        update_ms_config_file(args.config)
+        update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILE)
 
     if not os.path.isfile(args.config):
         config_init(args.config)
     else:
         # Write the default configure settings for any missing modules
-        _write_missing_module_configs(MS_CONFIG, filepath=CONFIG_FILE)
+        _write_missing_module_configs(msconf.MS_CONFIG, filepath=msconf.CONFIG_FILE)
 
     # Make sure report is not a dir
     if args.json:
@@ -887,13 +891,13 @@ def _main():
         starttime = str(datetime.datetime.now())
 
         # Run the multiscan
-        results = multiscan(filelist, config=MS_CONFIG)
+        results = multiscan(filelist, config=msconf.MS_CONFIG)
 
         # We need to read in the config for the parseReports call
         config = configparser.ConfigParser()
         config.optionxform = str
         config.read(args.config)
-        config = MS_CONFIG['main']
+        config = msconf.MS_CONFIG['main']
         # Make sure we have a group-types
         if "group-types" not in config or not config["group-types"]:
             config["group-types"] = []

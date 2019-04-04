@@ -20,7 +20,7 @@ from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.config import CONFIG_FILE, MS_CONFIG, update_ms_config_file
+from multiscanner import config as msconf
 from multiscanner.storage import storage
 
 logger = logging.getLogger(__name__)
@@ -116,8 +116,8 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 
 def _main():
     args = _parse_args()
-    if args.config != CONFIG_FILE:
-        update_ms_config_file(args.config)
+    if args.config != msconf.CONFIG_FILE:
+        msconf.update_ms_config_file(args.config)
 
     work_queue = multiprocessing.Queue()
     exit_signal = multiprocessing.Value('b')
@@ -125,7 +125,7 @@ def _main():
     observer = start_observer(args.Directory, work_queue, args.recursive)
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
-        args=(work_queue, MS_CONFIG, args.batch, args.seconds, args.delete, exit_signal))
+        args=(work_queue, msconf.MS_CONFIG, args.batch, args.seconds, args.delete, exit_signal))
     ms_process.start()
     try:
         while True:
@@ -142,7 +142,7 @@ def _main():
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
     parser.add_argument("-c", "--config", help="The config file to use", required=False,
-                        default=CONFIG_FILE)
+                        default=msconf.CONFIG_FILE)
     parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
                         required=False, default=120, type=int)
     parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,

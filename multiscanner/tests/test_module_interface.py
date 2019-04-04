@@ -12,7 +12,7 @@ def add_int(x, y):
     return x + y
 
 
-@mock.patch('multiscanner.ms.MODULE_LIST', mock_modlist)
+@mock.patch('multiscanner.config.MODULE_LIST', mock_modlist)
 def test_subscan():
     m = multiscanner.multiscan(
         ['fake.zip'],
