@@ -132,8 +132,19 @@ class TestTaskManipulation(unittest.TestCase):
             task_id=1,
             task_status='Complete',
         )
-        self.assertDictEqual(resp.to_dict(), self.sql_db.get_task(1).to_dict())
-        self.assertDictEqual(resp.to_dict(), {'task_id': 1, 'sample_id': None, 'task_status': 'Complete', 'timestamp': None})
+        self.assertDictEqual(
+            resp.to_dict(),
+            self.sql_db.get_task(1).to_dict()
+        )
+        self.assertDictEqual(
+            resp.to_dict(),
+            {
+                'task_id': 1,
+                'sample_id': None,
+                'task_status': 'Complete',
+                'timestamp': None
+            }
+        )
 
     def test_delete_task(self):
         self.sql_db.delete_task(task_id=1)
