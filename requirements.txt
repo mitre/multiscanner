@@ -27,7 +27,6 @@ rarfile
 sqlalchemy
 sqlalchemy-utils
 sqlalchemy-datatables
-gevent
 #Required by storage modules
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-curator

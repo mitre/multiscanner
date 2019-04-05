@@ -4,7 +4,6 @@ import configparser
 from flask import Flask, render_template, request
 import os
 import re
-import sys
 
 from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import __version__
@@ -112,17 +111,9 @@ def system_health():
 
 
 def _main():
-    in_docker = str(os.getenv("PRODUCTION", False))
-
-    if in_docker == "True":
-        from gevent.pywsgi import WSGIServer
-        http_server = WSGIServer((app.config.get('HOST', DEFAULTCONF['HOST']),
-        app.config.get('PORT', DEFAULTCONF['PORT'])), app, log=sys.stdout)
-        http_server.serve_forever()
-    else:
-        app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
-                port=app.config.get('PORT', DEFAULTCONF['PORT']),
-                host=app.config.get('HOST', DEFAULTCONF['HOST']))
+    app.run(debug=app.config.get('DEBUG', DEFAULTCONF['DEBUG']),
+            port=app.config.get('PORT', DEFAULTCONF['PORT']),
+            host=app.config.get('HOST', DEFAULTCONF['HOST']))
 
 
 if __name__ == "__main__":
