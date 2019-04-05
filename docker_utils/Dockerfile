@@ -4,7 +4,6 @@ MAINTAINER Patrick Copeland ptcnop
 ENV YARA_VERSION 3.8.1
 ENV YARA_PY_VERSION 3.8.1
 ENV SSDEEP ssdeep-2.13
-ENV PRODUCTION False
 
 COPY requirements.txt /opt/multiscanner/
 
@@ -71,12 +70,14 @@ RUN apk add --no-cache \
   && cd /opt/multiscanner \
   && pip3 install --upgrade pip \
   && pip3 install -r requirements.txt \
+  && pip3 install gevent \
   # clean up
   && rm -rf /tmp/* \
   && apk del --purge .build-deps
 
 COPY . /opt/multiscanner
 COPY ./docker_utils/*.ini /opt/multiscanner/
+COPY ./docker_utils/docker_deploy.py /opt/multiscanner
 COPY ./etc/pdf_config.json /opt/multiscanner/
 COPY ./etc/ember_model_2017.txt /opt/multiscanner/etc/ember/
 
