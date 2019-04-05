@@ -23,7 +23,6 @@ from multiscanner import CONFIG
 CONFIG_FILE = os.path.join(os.path.split(CONFIG)[0], "api_config.ini")
 
 Base = declarative_base()
-Session = scoped_session(sessionmaker(autocommit=False, autoflush=False))
 
 
 class Task(Base):
@@ -53,6 +52,7 @@ class Database(object):
     a SQLAlchemy dialect: sqlite, mysql, postgresql, oracle, or mssql. The driver can optionally be
     specified as well, i.e., 'postgresql+psycopg2' (see http://docs.sqlalchemy.org/en/latest/core/engines.html).
     '''
+    # More info engine creation: https://docs.sqlalchemy.org/en/latest/core/engines.html#engine-creation-api
     DEFAULTCONF = {
         'db_type': 'sqlite',
         'host_string': 'localhost',

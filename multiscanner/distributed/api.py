@@ -481,6 +481,10 @@ def create_task():
             return make_response(
                 jsonify({'Message': 'Cannot import non-JSON files!'}),
                 HTTP_BAD_REQUEST)
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not import task due backend error'}),
+                HTTP_BAD_REQUEST)
 
         return make_response(
             jsonify({'Message': {'task_ids': [task_id]}}),
@@ -541,9 +545,13 @@ def create_task():
                     tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan)
                     task_id_list.append(tid)
             except RuntimeError as e:
-                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                msg = 'ERROR: Failed to extract ' + str(file_) + ' - ' + str(e)
                 return make_response(
                     jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
                     HTTP_BAD_REQUEST)
         # Extract a rar
         elif rarfile.is_rarfile(file_):
@@ -560,11 +568,20 @@ def create_task():
                 return make_response(
                     jsonify({'Message': msg}),
                     HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                    HTTP_BAD_REQUEST)
     else:
-        # File was not an archive to extract
-        f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
-        task_id_list = [tid]
+        try:
+            # File was not an archive to extract
+            f_name, full_path = save_hashed_filename(file_)
+            tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
+            task_id_list = [tid]
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                HTTP_BAD_REQUEST)
 
     msg = {'task_ids': task_id_list}
     return make_response(
