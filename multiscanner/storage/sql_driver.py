@@ -4,6 +4,7 @@ from __future__ import print_function
 import codecs
 import configparser
 import json
+import logging
 import os
 from contextlib import contextmanager
 from datetime import datetime
@@ -23,6 +24,7 @@ from multiscanner import CONFIG
 CONFIG_FILE = os.path.join(os.path.split(CONFIG)[0], "api_config.ini")
 
 Base = declarative_base()
+logger = logging.getLogger(__name__)
 
 
 class Task(Base):
@@ -74,7 +76,7 @@ class Database(object):
         self.db_engine = None
 
         # Configuration parsing
-        config_parser = configparser.SafeConfigParser()
+        config_parser = configparser.ConfigParser()
         config_parser.optionxform = str
 
         # (re)generate conf file if necessary
@@ -169,7 +171,7 @@ class Database(object):
             yield db_session
             db_session.commit()
         except SQLAlchemyError as e:
-            # TODO: log exception
+            logger.exception(e)
             db_session.rollback()
             raise
         finally:
