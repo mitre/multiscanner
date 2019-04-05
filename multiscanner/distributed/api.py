@@ -311,8 +311,8 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the tasks DB.
     '''
-
-    return jsonify({'Tasks': db.get_all_tasks()})
+    tasks = db.get_all_tasks() or []
+    return jsonify({'Tasks': [t.to_dict() for t in tasks]})
 
 
 def search(params, get_all=False):
@@ -393,12 +393,10 @@ def delete_task(task_id):
     if not es_result:
         abort(HTTP_NOT_FOUND)
     try:
-        sql_result = db.delete_task(task_id)
+        db.delete_task(task_id)
+        return jsonify({'Message': 'Deleted'})
     except SQLAlchemyError:
-        sql_result = None
-    if not sql_result:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Message': 'Deleted'})
 
 
 def save_hashed_filename(f, zipped=False):

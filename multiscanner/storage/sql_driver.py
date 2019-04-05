@@ -197,7 +197,8 @@ class Database(object):
                 if timestamp:
                     task.timestamp = datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
                 db_session.flush()
-                return task.to_dict()
+                db_session.expunge(task)
+                return task
 
     def get_task(self, task_id):
         with self.db_session_scope() as db_session:
