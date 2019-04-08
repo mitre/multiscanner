@@ -32,11 +32,9 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v2/tasks                                       | List of tasks                            |
+| GET    | /api/v2/tasks                                       | List of `tasks <#task>`_                 |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Get a list of tasks in MultiScanner                                                                     |
-|                                                                                                         |
-| DONE: remove Tasks wrapper                                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
 | POST   | /api/v2/tasks                                       | JSON object with ``task_ids`` key,       |
 |        |                                                     | holding list of IDs                      |
@@ -55,26 +53,21 @@ View, submit, and search analysis tasks and their resulting reports.
 |  * ``upload_type`` - use and set to ``import`` to submit a JSON representation of a MultiScanner task   |
 |       downloaded from  ``/api/v2/tasks/<task_id>/report`` instead of a sample file for analysis         |
 |  * Any other keys supplied are saved as keys on the task's metadata                                     |
-|                                                                                                         |
-| DONE: remove Message wrapper                                                                            |
-|                                                                                                         |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/<task_id>                             | Task                                     |
+| GET    | /api/v2/tasks/<task_id>                             | `Task`_                                  |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Get information about the task with the given `task_id`                                                 |
-|                                                                                                         |
-| DONE: remove Tasks wrapper                                                                              |
 +--------+-----------------------------------------------------+------------------------------------------+
 | DELETE | /api/v2/tasks/<task_id>                             | Confirmation text                        |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete task with the given `task_id`                                                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/datatable                             | List with a single task                  |
+| GET    | /api/v2/tasks/datatable                             | List with a single `task`_               |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of most recent report for matching samples. For use with Lucene queries.                   |
 | **Intended for use via DataTables integration, not normal API use.**                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/datatable/history                     | List of tasks                            |
+| GET    | /api/v2/tasks/datatable/history                     | List of `tasks <#task>`_                 |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all reports for matching samples                                                        |
 | **Intended for use via DataTables integration, not normal API use.**                                    |
@@ -87,7 +80,7 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive PDF report for task                                                                             |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/<task_id>/report?d={t|f}              | Analysis report in JSON                  |
+| GET    | /api/v2/tasks/<task_id>/report?d={t|f}              | Analysis `report`_ in JSON               |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                      |
 +--------+-----------------------------------------------------+------------------------------------------+ 
@@ -104,8 +97,6 @@ These endpoints manipulate tags on a report. To view tags on a report, use the `
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all tags in use. Response is a list of objects each with a ``key`` property (the tag)   |
 | and ``doc_count`` property (the number of documents in which the tag appears).                          |
-|                                                                                                         |
-| * TODO: remove Tags wrapper                                                                             |
 +--------+-----------------------------------------------------+------------------------------------------+
 | POST   | /api/v2/tasks/<task_id>/tags                        | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -121,30 +112,24 @@ These endpoints manipulate tags on a report. To view tags on a report, use the `
 Notes
 -----
 
-TODO: Notes are associated with a sample, but here are modified and accessed via ``task_id``. If you ask for notes on two different tasks on the same sample, you get the same notes.
-
-DONE: responses might be needlessly large, with lots of Elastic info -- we really just want the note, not shard info, etc.
+Notes are a way for analyists to add freeform commentary on samples. Notes are associated with a task's sample, so two tasks run on an identical sample share the same set of notes.
 
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
 +========+=====================================================+==========================================+
-| GET    | /api/v2/tasks/<task_id>/notes                       | List of notes                            |
+| GET    | /api/v2/tasks/<task_id>/notes                       | List of `notes <#note>`_                 |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Receive list of this tasks notes                                                                        |
-|                                                                                                         |
-| TODO: Optionally takes ``ts`` and ``uid`` query-string arguments: ``/notes?ts=...&uid=...``             |
+| Get a list of notes on this task's sample                                                               |
 +--------+-----------------------------------------------------+------------------------------------------+
-| POST   | /api/v2/tasks/<task_id>/notes                       | Note_                                    |
+| POST   | /api/v2/tasks/<task_id>/notes                       | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Add a note to task, using the HTTP parameter ``text=...``                                               |
-|                                                                                                         |
-| * TODO: add timestamp                                                                                   |
 +--------+-----------------------------------------------------+------------------------------------------+
 | PUT    | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Edit a notesing the HTTP parameter ``text=...``                                                         |
 +--------+-----------------------------------------------------+------------------------------------------+
-| DELETE | /api/v2/tasks/<task_id>/notes/<note_id>             |                                          |
+| DELETE | /api/v2/tasks/<task_id>/notes/<note_id>             | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete a note                                                                                           |
 +--------+-----------------------------------------------------+------------------------------------------+
@@ -159,15 +144,15 @@ Modules/Other
 | GET    | /api/v2/modules                                     | JSON object with module names as keys    |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive an object whose keys are the names of available of modules. The corresponding value of each key |
-| is a boolean that indicates whether the module is currently activated or not.                           |
+| is a ``true``/``false`` boolean that indicates whether the module is currently activated or not.        |
 +--------------------------------------------------------------+------------------------------------------+
-|| GET   | /api/v2/analytics/ssdeep_compare                    |                                          |
+|| GET   | /api/v2/analytics/ssdeep_compare                    | Confirmation message                     |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Run ssdeep.compare analytic                                                                             |
 +--------------------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/analytics/ssdeep_group                      |                                          |
+| GET    | /api/v2/analytics/ssdeep_group                      | List of lists of SHA256 hash strings     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| Receive list of sample hashes grouped by ssdeep hash                                                    |
+| Receive list of sample hashes grouped into lists by ssdeep hash                                         |
 +--------------------------------------------------------------+------------------------------------------+
 | GET    | /                                                   | Test response object                     |
 +--------+-----------------------------------------------------+------------------------------------------+

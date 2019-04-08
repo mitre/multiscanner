@@ -983,7 +983,7 @@ def run_ssdeep_group():
     try:
         ssdeep_analytic = SSDeepAnalytic()
         groups = ssdeep_analytic.ssdeep_group()
-        return make_response(jsonify({'groups': groups}))
+        return make_response(jsonify(groups))
     except Exception as e:
         abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
