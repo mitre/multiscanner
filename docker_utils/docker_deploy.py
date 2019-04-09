@@ -14,14 +14,14 @@ def _parse_args():
     parser = argparse.ArgumentParser(description="Small script to deploy WSGI Server in Docker")
     parser.add_argument("-l", "--logging-level", help="Logging level to use", action="store", default="DEBUG",
                         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-    parser.add_argument("exec", help="Which type of application to run")
+    parser.add_argument("run", help="Which type of application to run")
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = _parse_args()
 
-    if args.exec == 'api':
+    if args.run == 'api':
         from multiscanner.distributed.api import app as api_app
         from multiscanner.distributed.api import api_config, multiscanner_process, work_queue
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
         ms_process.join()
 
-    elif args.exec == 'web':
+    elif args.run == 'web':
         from multiscanner.web.app import app as web_app
         from multiscanner.web.app import DEFAULTCONF
 
