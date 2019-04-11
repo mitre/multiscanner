@@ -1,3 +1,3 @@
-from .storage import config_init, Storage, StorageHandler
+from .storage import Storage, StorageHandler
 
 __all__ = ['config_init', 'Storage', 'StorageHandler', ]

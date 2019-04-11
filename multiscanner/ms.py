@@ -32,9 +32,9 @@ from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_file_list, queue2list)
 from multiscanner import config as msconf
-from multiscanner.config import (PY3, get_config_path,
-                                 reset_config, update_ms_config,
-                                 update_ms_config_file, update_paths_in_config)
+from multiscanner.config import (PY3, config_init, get_config_path,
+                                 update_ms_config, update_ms_config_file,
+                                 update_paths_in_config, write_missing_config)
 from multiscanner.storage import storage
 
 
@@ -685,59 +685,7 @@ def _parse_args():
     return parser.parse_args()
 
 
-def _write_missing_module_configs(config, filepath=None):
-    """
-    Write in default config for modules not in config file. Returns True if config was written, False if not.
-
-    Also adds a '[main]' section if not present.
-
-    module_list - The list of modules (filenames)
-    config - The config object
-    """
-    if not filepath:
-        filepath = msconf.CONFIG_FILE
-
-    ConfNeedsWrite = False
-    for modname, module in sorted(six.iteritems(msconf.MODULE_LIST)):
-        if modname not in config.keys():
-            moddir = module[1]
-            mod = load_module(modname, [moddir])
-            if mod:
-                try:
-                    conf = mod.DEFAULTCONF
-                except Exception as e:
-                    logger.warning(e)
-                    continue
-                if modname not in config.keys():
-                    ConfNeedsWrite = True
-                    config[modname] = {}
-                    for key in conf:
-                        config[modname][key] = str(conf[key])
-
-    if 'main' not in config.keys():
-        ConfNeedsWrite = True
-        update_paths_in_config(DEFAULTCONF, filepath)
-        config['main'] = {}
-        for key in DEFAULTCONF:
-            config['main'][key] = str(DEFAULTCONF[key])
-
-    if ConfNeedsWrite:
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
-        config_object.read_dict(config)
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-        return True
-    return False
-
-
-def config_init(filepath=None):
-    """
-    Creates a new config file at filepath
-
-    filepath - The config file to create
-    """
-    # Compile all the sections to go in the config
+def _get_main_modules():
     module_list = {}
     module_list['main'] = sys.modules[__name__]  # current module
     for modname, module in sorted(six.iteritems(msconf.MODULE_LIST)):
@@ -745,20 +693,17 @@ def config_init(filepath=None):
         mod = load_module(modname, [moddir])
         if mod:
             module_list[modname] = mod
-
-    config = configparser.ConfigParser()
-    config.optionxform = str
-
-    reset_config(module_list, config, filepath)
-    update_ms_config(config)  # Set global main config
-    logger.info('Configuration file initialized at {}'.format(filepath))
+    return module_list
 
 
 def _init(args):
+    # Initialize configuration file
     if args.config is None:
         args.config = msconf.CONFIG_FILE
 
-    # Initialize configuration file
+    # Compile all the sections to go in the config
+    module_list = _get_main_modules()
+
     if os.path.isfile(args.config):
         logger.warning('{} already exists, overwriting will destroy changes'.format(args.config))
         try:
@@ -767,16 +712,22 @@ def _init(args):
             logger.warn(e)
             answer = 'N'
         if answer == 'y':
-            config_init(args.config)
+            config = config_init(args.config, module_list)
+            update_ms_config(config)  # Set global main config
+            logger.info('Main configuration file initialized at {}'.format(args.config))
         else:
-            logger.info('Checking for missing modules in configuration...')
+            logger.info('Checking for missing modules in main configuration...')
             config = msconf.MS_CONFIG  # MS_CONFIG will already have been set in main()
-            _write_missing_module_configs(config, filepath=args.config)
+            write_missing_config(module_list, config, args.config)
     else:
-        config_init(args.config)
+        config = config_init(args.config, module_list)
+        update_ms_config(config)  # Set global main config
+        logger.info('Main configuration file initialized at {}'.format(args.config))
 
     # Init storage
     storage_config = get_config_path('storage')
+    storage_classes = storage._get_storage_classes()
+    storage_classes['main'] = sys.modules[storage.__name__]
     if os.path.isfile(storage_config):
         logger.warning('{} already exists, overwriting will destroy changes'.format(storage_config))
         try:
@@ -785,13 +736,13 @@ def _init(args):
             logger.warn(e)
             answer = 'N'
         if answer == 'y':
-            storage.config_init(storage_config, overwrite=True)
+            config_init(storage_config, storage_classes, overwrite=True)
             logger.info('Storage configuration file initialized at {}'.format(storage_config))
         else:
             logger.info('Checking for missing modules in storage configuration...')
-            storage.config_init(storage_config, overwrite=False)
+            config_init(storage_config, storage_classes, overwrite=False)
     else:
-        storage.config_init(storage_config)
+        config_init(storage_config, storage_classes)
         logger.info('Storage configuration file initialized at {}'.format(storage_config))
 
     exit(0)
@@ -831,7 +782,8 @@ def _main():
         config_init(args.config)
     else:
         # Write the default configure settings for any missing modules
-        _write_missing_module_configs(msconf.MS_CONFIG, filepath=msconf.CONFIG_FILE)
+        module_list = _get_main_modules()
+        write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILE)
 
     # Make sure report is not a dir
     if args.json:

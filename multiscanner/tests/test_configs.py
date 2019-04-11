@@ -47,7 +47,8 @@ def test_config_api_with_empty_file():
 def test_config_api_with_real_file():
     config = {'test_conf': {'a': 'z'}}
     config_file = tempfile.mkstemp()[1]
-    multiscanner.config_init(config_file)
+    module_list = multiscanner._get_main_modules()
+    multiscanner.config_init(config_file, module_list)
     multiscanner.update_ms_config_file(config_file)
     results, metadata = multiscanner.multiscan(
         filelist, config=config,

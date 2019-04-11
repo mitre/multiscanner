@@ -218,6 +218,58 @@ def update_paths_in_config(conf, filepath):
         conf['offsets'] = os.path.join(base_dir, 'etc', 'nsrl', 'offsets')
 
 
+def config_init(filepath, sections, overwrite=False):
+    """
+    Creates a new config file at filepath
+
+    filepath - The config file to create
+    sections - Dictionary mapping section names to the Python module containing its DEFAULTCONF
+    overwrite - Whether to overwrite the config file at filepath, if it already exists
+    """
+
+    config = configparser.ConfigParser()
+    config.optionxform = str
+
+    if overwrite or not os.path.isfile(filepath):
+        return reset_config(sections, config, filepath)
+    else:
+        config.read(filepath)
+        write_missing_config(sections, config, filepath)
+        return config
+
+
+def write_missing_config(sections, config_object, filepath):
+    """
+    Write in default config for modules not in config file. Returns True if config was written, False if not.
+
+    config_object - The config object
+    filepath - The path to the config file
+    sections - Dictionary mapping section names to the Python module containing its DEFAULTCONF
+    """
+    ConfNeedsWrite = False
+    keys = list(sections.keys())
+    keys.sort()
+    for section_name in keys:
+        if section_name in config_object:
+            continue
+        try:
+            conf = sections[section_name].DEFAULTCONF
+        except Exception as e:
+            logger.warning(e)
+            continue
+        ConfNeedsWrite = True
+        update_paths_in_config(conf, filepath)
+        config_object.add_section(section_name)
+        for key in conf:
+            config_object.set(section_name, key, str(conf[key]))
+
+    if ConfNeedsWrite:
+        with codecs.open(filepath, 'w', 'utf-8') as f:
+            config_object.write(f)
+        return True
+    return False
+
+
 def reset_config(sections, config, filepath=None):
     """
     Reset specific sections of a config file to their factory defaults.

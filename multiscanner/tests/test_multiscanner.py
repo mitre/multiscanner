@@ -16,7 +16,7 @@ class _runmulti_tests(object):
         multiscanner.MODULES_DIR = os.path.join(CWD, "modules")
         cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
         config_file = '.tmpfile.ini'
-        multiscanner.config_init(config_file)
+        multiscanner.config_init(config_file, multiscanner._get_main_modules())
         multiscanner.update_ms_config_file(config_file)
 
     @classmethod

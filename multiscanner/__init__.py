@@ -5,12 +5,12 @@
 
 from .config import (  # noqa F401
     CONFIG_FILE, MS_WD, MS_CONFIG, MODULES_DIR, MODULE_LIST, PY3,
-    update_ms_config, update_ms_config_file
+    config_init, update_ms_config, update_ms_config_file
 )
 
 from .ms import (  # noqa F401
-    config_init, multiscan, parse_reports, _ModuleInterface,
-    _GlobalModuleInterface, _Thread, _run_module, _main
+    multiscan, parse_reports, _ModuleInterface,
+    _GlobalModuleInterface, _Thread, _run_module, _main, _get_main_modules
 )
 
 from .version import __version__  # noqa F401

@@ -4,7 +4,6 @@
 
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
-import codecs
 import configparser
 import inspect
 import logging
@@ -18,7 +17,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import get_config_path, parse_config, reset_config
+from multiscanner.config import get_config_path, parse_config
 
 
 DEFAULTCONF = {
@@ -252,62 +251,6 @@ class StorageHandler(object):
             return True
         else:
             return self.storage_counter.is_done()
-
-
-def config_init(filepath, overwrite=False, storage_classes=None):
-    if storage_classes is None:
-        storage_classes = _get_storage_classes()
-    config_object = configparser.ConfigParser()
-    config_object.optionxform = str
-    if overwrite or not os.path.isfile(filepath):
-        _write_main_config(config_object)
-        reset_config(storage_classes, config_object, filepath)
-    else:
-        config_object.read(filepath)
-        _write_main_config(config_object)
-        _write_missing_config(config_object, filepath, storage_classes=storage_classes)
-
-
-def _write_main_config(config_object):
-    """Write default config for storage config's [main] section
-    """
-    if not config_object.has_section('main'):
-        config_object.add_section('main')
-        for key in DEFAULTCONF:
-            config_object.set('main', key, str(DEFAULTCONF[key]))
-
-
-def _write_missing_config(config_object, filepath, storage_classes=None):
-    """
-    Write in default config for modules not in config file. Returns True if config was written, False if not.
-
-    config_object - The config object
-    filepath - The path to the config file
-    storage_classes - The dictionary object from _get_storage_classes. If None we call _get_storage_classes()
-    """
-    if storage_classes is None:
-        storage_classes = _get_storage_classes()
-    ConfNeedsWrite = False
-    keys = list(storage_classes.keys())
-    keys.sort()
-    for module in keys:
-        if module in config_object:
-            continue
-        try:
-            conf = module.DEFAULTCONF
-        except Exception as e:
-            logger.warning(e)
-            continue
-        ConfNeedsWrite = True
-        config_object.add_section(module)
-        for key in conf:
-            config_object.set(module, key, str(conf[key]))
-
-    if ConfNeedsWrite:
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-        return True
-    return False
 
 
 def _get_storage_classes(dir_path=STORAGE_DIR):
