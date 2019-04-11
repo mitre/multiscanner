@@ -16,7 +16,7 @@ __license__ = "MPL 2.0"
 TYPE = "Database"
 NAME = "NSRL"
 
-REQUIRES = ["SHA1", "MD5"]
+REQUIRES = ["filemeta"]
 
 DEFAULTCONF = {
     'hash_list': os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'nsrl', 'hash_list'),
@@ -52,14 +52,12 @@ def scan(filelist, conf=DEFAULTCONF):
     else:
         hash_list = open(conf['hash_list'], 'r')
 
-    sha1_data = REQUIRES[0][0]
-    sha1_data.sort()
-
-    md5_data = dict(REQUIRES[1][0])
+    filemeta = REQUIRES[0][0]
 
     results = []
     i = 0
-    for filename, sha1 in sha1_data:
+    for filename, filemeta_result in filemeta:
+        sha1 = filemeta_result.get('sha1', '')
         offset_val = int(sha1[0:5], 16)
         offset_handle.seek(offset_val * 12)
         pointer, count = struct.unpack('QI', offset_handle.read(12))
@@ -68,7 +66,7 @@ def scan(filelist, conf=DEFAULTCONF):
             line = hash_list.readline().split('\t')
             i += 1
             if sha1 == line[0]:
-                if md5_data[filename] == line[1]:
+                if filemeta[filename] == line[1]:
                     results.append((filename, line[2].strip()))
                     continue
     hash_list.close()

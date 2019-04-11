@@ -11,6 +11,8 @@ from celery import Celery, Task
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 
+from kombu import Exchange, Queue
+
 from multiscanner import multiscan, parse_reports
 from multiscanner import config as msconf
 from multiscanner.storage import elasticsearch_storage, storage
@@ -40,6 +42,8 @@ storage_configfile = msconf.get_config_path('storage')
 storage_config = msconf.read_config(storage_configfile)
 es_storage_config = storage_config.get('ElasticSearchStorage')
 
+default_exchange = Exchange('celery', type='direct')
+
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('protocol'),
     worker_config.get('user'),
@@ -48,7 +52,11 @@ app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
     worker_config.get('vhost'),
 ))
 app.conf.timezone = worker_config.get('tz')
-db = database.Database(config=db_config)
+app.conf.task_queues = [
+    Queue('low_tasks', default_exchange, routing_key='tasks.low', queue_arguments={'x-max-priority': 10}),
+    Queue('medium_tasks', default_exchange, routing_key='tasks.medium', queue_arguments={'x-max-priority': 10}),
+    Queue('high_tasks', default_exchange, routing_key='tasks.high', queue_arguments={'x-max-priority': 10}),
+]
 
 
 @app.on_after_configure.connect
@@ -58,6 +66,11 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
         crontab(hour=2, minute=0),
         ssdeep_compare_celery.s(),
+        **{
+            'queue': 'low_tasks',
+            'routing_key': 'tasks.low',
+            'priority': 1,
+        }
     )
 
     # Delete old metricbeat indices
@@ -66,7 +79,14 @@ def setup_periodic_tasks(sender, **kwargs):
     if metricbeat_enabled:
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
-            metricbeat_rollover.s(days=es_storage_config.get('metricbeat_rollover_days')),
+            metricbeat_rollover_celery.s(),
+            args=(es_storage_config.get('metricbeat_rollover_days')),
+            kwargs=dict(config=msconf.MS_CONFIG),
+            **{
+                'queue': 'low_tasks',
+                'routing_key': 'tasks.low',
+                'priority': 1,
+            }
         )
 
 
@@ -75,6 +95,15 @@ class MultiScannerTask(Task):
     Class of tasks that defines call backs to handle signals
     from celery
     '''
+    _db = None
+
+    @property
+    def db(self):
+        if self._db is None:
+            self._db = database.Database(config=db_config)
+            self._db.init_db()
+        return self._db
+
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         '''
         When a task fails, update the task DB with a "Failed"
@@ -83,16 +112,27 @@ class MultiScannerTask(Task):
         logger.error('Task #{} failed'.format(args[2]))
         logger.error('Traceback info:\n{}'.format(einfo))
 
-        # Initialize the connection to the task DB
-        db.init_db()
-
         scan_time = datetime.now().isoformat()
 
         # Update the task DB with the failure
-        db.update_task(
+        self.db.update_task(
             task_id=args[2],
             task_status='Failed',
             timestamp=scan_time,
+        )
+
+    def on_success(self, retval, task_id, args, kwargs):
+        '''
+        When a task succeeds, update the task DB with a "Completed"
+        status.
+        '''
+        logger.info('Completed Task #{}'.format(args[2]))
+
+        # Update the task DB to reflect that the task is done
+        self.db.update_task(
+            task_id=args[2],
+            task_status='Complete',
+            timestamp=retval[args[1]]['Scan Metadata']['Scan Time'],
         )
 
 
@@ -107,10 +147,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     multiscanner_celery.delay(full_path, original_filename, task_id,
                               hashed_filename, metadata, config, module_list)
     '''
-
-    # Initialize the connection to the task DB
-    db.init_db()
-
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
@@ -174,15 +210,6 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     if not storage_ids:
         raise ValueError('Report failed to index')
 
-    # Update the task DB to reflect that the task is done
-    db.update_task(
-        task_id=task_id,
-        task_status='Complete',
-        timestamp=scan_time,
-    )
-
-    logger.info('Completed Task #{}'.format(task_id))
-
     return results
 
 
@@ -200,7 +227,7 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover(days):
+def metricbeat_rollover_celery(days):
     '''
     Clean up old Elastic Beats indices
     '''

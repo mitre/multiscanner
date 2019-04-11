@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
+import binascii
 import logging
 import os
 import time
@@ -20,6 +21,7 @@ DEFAULTCONF = {
     "ruledir": os.path.join(os.path.split(ms.CONFIG_FILE)[0], "etc", "yarasigs"),
     "fileextensions": [".yar", ".yara", ".sig"],
     "ignore-tags": ["TLPRED"],
+    "string-threshold": 30,
     "includes": False,
     "ENABLED": True
 }
@@ -42,8 +44,9 @@ def check(conf=DEFAULTCONF):
 
 
 def scan(filelist, conf=DEFAULTCONF):
-    ruleDir = conf["ruledir"]
-    extlist = conf["fileextensions"]
+    ruleDir = conf['ruledir']
+    extlist = conf['fileextensions']
+    string_threshold = conf['string-threshold']
     includes = 'includes' in conf and conf['includes']
 
     ruleset = {}
@@ -61,7 +64,6 @@ def scan(filelist, conf=DEFAULTCONF):
 
     # Ran into a weird issue with file locking, this fixes it
     goodtogo = False
-    i = 0
     yararules = None
     while not goodtogo:
         try:
@@ -92,28 +94,66 @@ def scan(filelist, conf=DEFAULTCONF):
                 time.sleep(3)
                 i += 1
         try:
-            hit = yararules.match(data=f.read())
+            hits = yararules.match(data=f.read())
         except Exception as e:
             logger.error(e)
             continue
         finally:
             f.close()
-        if hit:
+        if hits:
             hdict = {}
-            for h in hit:
+            for h in hits:
                 if not set(h.tags).intersection(set(conf["ignore-tags"])):
                     hit_dict = {
-                        'meta': h.meta,
                         'namespace': h.namespace,
-                        'rule': h.rule,
-                        'tags': h.tags,
+                        'rule': h.rule
                     }
                     try:
                         h_key = '{}:{}'.format(hit_dict['namespace'].split('/')[-1], hit_dict['rule'])
                     except IndexError:
                         h_key = '{}'.format(hit_dict['rule'])
-                    hdict[h_key] = hit_dict
-            matches.append((m, hdict))
+
+                    if h_key not in hdict:
+                        if h.tags:
+                            hit_dict['tags'] = h.tags
+                        if h.meta:
+                            hit_dict['meta'] = h.meta
+
+                        if len(h.strings) > string_threshold:
+                            msg = 'String matches from YARA rule {} were not included because they surpass ' \
+                                  'the threshold of {}. Found {}.'
+                            logger.warning(msg.format(h_key, string_threshold, len(h.strings)))
+
+                        else:
+                            # Largely based on:
+                            # https://github.com/crits/crits_services/blob/master/yara_service/__init__.py#L261
+                            strings_dict = {}
+
+                            for s in h.strings:
+                                s_name = s[1]
+                                s_offset = s[0]
+
+                                try:
+                                    s_data = s[2].decode('ascii')
+                                except UnicodeError:
+                                    s_data = 'Hex: {}'.format(binascii.hexlify(s[2]).decode('ascii'))
+
+                                s_key = '{0}-{1}'.format(s_name, s_data)
+
+                                if s_key in strings_dict:
+                                    strings_dict[s_key]['offset'].append(s_offset)
+                                else:
+                                    strings_dict[s_key] = {
+                                        'offset': [s_offset],
+                                        'name': s_name,
+                                        'data': s_data,
+                                    }
+
+                            if strings_dict:
+                                hit_dict['strings'] = [x for x in strings_dict.values()]
+                        hdict[h_key] = hit_dict
+
+            matches.append((m, [x for x in hdict.values()]))
 
     metadata = {}
     rulelist = list(ruleset)

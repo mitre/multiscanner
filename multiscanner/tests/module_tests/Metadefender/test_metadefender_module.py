@@ -10,7 +10,7 @@ import json
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
-from multiscanner.modules.Antivirus import Metadefender
+from multiscanner.modules.antivirus import Metadefender
 
 RANDOM_INPUT_FILES = ['input1', 'input2', 'input3']
 

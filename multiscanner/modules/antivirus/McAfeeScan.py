@@ -1,6 +1,6 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
 import os
@@ -16,21 +16,20 @@ __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
 
 TYPE = "Antivirus"
-NAME = "AVG 2014"
+NAME = "McAfee"
 # These are overwritten by the config file
-# Hostname, port, username
-HOST = ("MultiScanner", 22, "User")
 # SSH Key
 KEY = os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
+HOST = ("MultiScanner", 22, "User")
 DEFAULTCONF = {
-    "path": "C:\\Program Files\\AVG\\AVG2014\\avgscanx.exe",
+    "path": "C:\\vscl-w32-604-e\\scan.exe",
     "key": KEY,
-    "cmdline": ['/A', '/H', '/PRIORITY=High'],
+    "cmdline": ["/ALL"],
     "host": HOST,
     "replacement path": PATHREPLACE,
-    "ENABLED": True
+    "ENABLED": False
 }
 
 
@@ -48,16 +47,16 @@ def scan(filelist, conf=DEFAULTCONF):
         local = True
     else:
         local = False
-
     cmdline = conf["cmdline"]
+    path = conf["path"]
+    # Fixes list2cmd so we can actually quote things...
+    subprocess.list2cmdline = list2cmdline
     # Generate scan option
-    scan = '/SCAN='
     for item in filelist:
-        scan += '"' + item + '";'
+        cmdline.append('"' + item + '"')
 
     # Create full command line
-    cmdline.insert(0, conf["path"])
-    cmdline.append(scan)
+    cmdline.insert(0, path)
     if local:
         try:
             output = subprocess.check_output(cmdline)
@@ -70,32 +69,20 @@ def scan(filelist, conf=DEFAULTCONF):
         except Exception as e:
             # TODO: log exception
             return None
-    # Parse output
-    output = output.decode("utf-8", errors='replace')
-    virusresults = re.findall(r"(?:\([^\)]*\) )?([^\s]+) (.+)\s+$", output, re.MULTILINE)
-    results = []
-    for (file, result) in virusresults[:]:
-        if result.endswith(' '):
-            result = result[:-1]
-        result = result.split(' ')
-        if file not in filelist:
-            file = file.split(':')[0]
-            while file not in filelist and result:
-                file = file + ' ' + result.pop(0)
-            if file not in filelist or not result:
-                continue
-        result = result[-1]
-        results.append((file, result))
 
+    # Parse output
+    output = output.decode("utf-8")
+    virusresults = re.findall(r"([^\n\r]+) ... Found: ([^\n\r]+)", output, re.MULTILINE)
     metadata = {}
-    verinfo = re.search(r"Program version ([\d\.]+), engine ([\d\.]+)", output)
+    verinfo = re.search(r"McAfee VirusScan Command Line for \S+ Version: ([\d.]+)", output)
     metadata["Name"] = NAME
     metadata["Type"] = TYPE
     if verinfo:
         metadata["Program version"] = verinfo.group(1)
-        metadata["Engine version"] = verinfo.group(2)
-    verinfo = re.search(r"Virus Database: Version ([\d/]+) ([\d-]+)", output)
-    if verinfo:
+        verinfo = re.search(r"AV Engine version: ([\d\.]+)\s", output)
+        metadata["Engine version"] = verinfo.group(1)
+        verinfo = re.search(r"Dat set version: (\d+) created (\w+ (?:\d|\d\d) \d\d\d\d)", output)
         metadata["Definition version"] = verinfo.group(1)
         metadata["Definition date"] = verinfo.group(2)
-    return (results, metadata)
+
+    return (virusresults, metadata)

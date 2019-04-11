@@ -182,8 +182,10 @@
         }
       ]
     },
-    "MD5": "34303fdb55e5d0f1142bb07eed2064cb",
-    "SHA1": "91fd2d2935aedcb47271b54cd22f8fe3b30c17fd",
-    "SHA256": "90b1e39282dbda2341d91b87ca161afe564b7d3b4f82f25b3f1dce3fa857226c"
+    "filemeta": {
+        "md5": "34303fdb55e5d0f1142bb07eed2064cb",
+        "sha1": "91fd2d2935aedcb47271b54cd22f8fe3b30c17fd",
+        "sha256": "90b1e39282dbda2341d91b87ca161afe564b7d3b4f82f25b3f1dce3fa857226c"
+    }
   }
 }

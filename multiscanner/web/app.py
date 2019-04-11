@@ -61,7 +61,7 @@ def tasks():
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
-def reports(task_id=1):
+def reports(task_id):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,

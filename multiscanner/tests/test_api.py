@@ -43,7 +43,7 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
-def mock_delay(*args, **kwargs):
+def mock_apply_async(args, kwargs, **options):
     pass
 
 
@@ -66,7 +66,7 @@ class APITestCase(unittest.TestCase):
 class TestURLCase(APITestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        api.multiscanner_celery.delay = mock_delay
+        api.multiscanner_celery.apply_async = mock_apply_async
 
     def test_index(self):
         expected_response = {'Message': 'True'}
@@ -326,3 +326,50 @@ class TestSHA256DownloadSampleCase(APITestCase):
         resp = self.app.get('/api/v1/files/26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f?raw=t')
 
         self.assertEqual(resp.status_code, api.HTTP_NOT_FOUND)
+
+
+class TestCeleryPriorityQueues(APITestCase):
+
+    def mock_async_call(self, args, kwargs, **options):
+        priority = options.get('priority', 5)
+
+        if 1 <= priority <= 3:
+            self.low_tasks.append((priority, [args, kwargs, options]))
+        elif 4 <= priority <= 7:
+            self.medium_tasks.append((priority, [args, kwargs, options]))
+        elif 8 <= priority <= 10:
+            self.high_tasks.append((priority, [args, kwargs, options]))
+
+    def setUp(self):
+        super(TestCeleryPriorityQueues, self).setUp()
+        self.high_tasks = []
+        self.medium_tasks = []
+        self.low_tasks = []
+        api.multiscanner_celery.apply_async = self.mock_async_call
+
+    def test_priority_queue_high(self):
+        # populate the DB w/ a task
+        self.app.post(
+            '/api/v1/tasks',
+            data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), 'priority': 10}
+        )
+
+        self.assertEqual(len(self.high_tasks), 1)
+
+    def test_priority_queue_medium(self):
+        # populate the DB w/ a task
+        self.app.post(
+            '/api/v1/tasks',
+            data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), 'priority': 5}
+        )
+
+        self.assertEqual(len(self.medium_tasks), 1)
+
+    def test_priority_queue_low(self):
+        # populate the DB w/ a task
+        self.app.post(
+            '/api/v1/tasks',
+            data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), 'priority': 1}
+        )
+
+        self.assertEqual(len(self.low_tasks), 1)
