@@ -69,6 +69,8 @@ from flask_cors import CORS
 from jinja2 import Markup
 from uuid import uuid4
 
+from sqlalchemy.exc import SQLAlchemyError
+
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
 from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
 from multiscanner.common import utils, pdf_generator, stix2_generator
@@ -309,8 +311,8 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the tasks DB.
     '''
-
-    return jsonify({'Tasks': db.get_all_tasks()})
+    tasks = db.get_all_tasks() or []
+    return jsonify({'Tasks': [t.to_dict() for t in tasks]})
 
 
 def search(params, get_all=False):
@@ -390,10 +392,11 @@ def delete_task(task_id):
     es_result = handler.delete_by_task_id(task_id)
     if not es_result:
         abort(HTTP_NOT_FOUND)
-    sql_result = db.delete_task(task_id)
-    if not sql_result:
+    try:
+        db.delete_task(task_id)
+        return jsonify({'Message': 'Deleted'})
+    except SQLAlchemyError:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Message': 'Deleted'})
 
 
 def save_hashed_filename(f, zipped=False):
@@ -501,6 +504,10 @@ def create_task():
             return make_response(
                 jsonify({'Message': 'Cannot import non-JSON files!'}),
                 HTTP_BAD_REQUEST)
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not import task due backend error'}),
+                HTTP_BAD_REQUEST)
 
         return make_response(
             jsonify({'Message': {'task_ids': [task_id]}}),
@@ -581,10 +588,14 @@ def create_task():
                                      rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
-                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                msg = 'ERROR: Failed to extract ' + str(file_) + ' - ' + str(e)
                 logger.error(msg)
                 return make_response(
                     jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
                     HTTP_BAD_REQUEST)
         # Extract a rar
         elif rarfile.is_rarfile(file_):
@@ -603,12 +614,21 @@ def create_task():
                 return make_response(
                     jsonify({'Message': msg}),
                     HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                    HTTP_BAD_REQUEST)
     else:
-        # File was not an archive to extract
-        f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata,
-                         rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
-        task_id_list = [tid]
+        try:
+            # File was not an archive to extract
+            f_name, full_path = save_hashed_filename(file_)
+            tid = queue_task(original_filename, f_name, full_path, metadata,
+                             rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
+            task_id_list = [tid]
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                HTTP_BAD_REQUEST)
 
     msg = {'task_ids': task_id_list}
     return make_response(
