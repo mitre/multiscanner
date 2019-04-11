@@ -210,7 +210,7 @@ def extract_http_requests_cuckoo(signature, custom_labels=None):
     return indicators
 
 
-def parse_json_report_to_stix2_bundle(report, custom_labels=None):
+def create_stix2_from_json_report(report, custom_labels=None):
     '''
     Creates a STIX2 bundle from a multiscanner JSON report. This is achieved
     on a best effort approach and does not intend to capture all possible
@@ -255,10 +255,10 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
         labels.extend(custom_labels)
 
     file_name = r.get('filename', '')
-    sha1_value = r.get('SHA1', '')
-    sha256_value = r.get('SHA256', '')
-    md5_value = r.get('MD5', '')
-    ssdeep_value = r.get('ssdeep', {})
+    sha1_value = r.get('filemeta', {}).get('sha1', '')
+    sha256_value = r.get('filemeta', {}).get('sha256', '')
+    md5_value = r.get('filemeta', {}).get('md5', '')
+    ssdeep_value = r.get('ssdeep')
 
     if file_name:
         submission_pattern.append(
@@ -296,4 +296,4 @@ def parse_json_report_to_stix2_bundle(report, custom_labels=None):
                                                            'OR')
         }))
 
-    return create_stix2_bundle(all_objects)
+    return all_objects

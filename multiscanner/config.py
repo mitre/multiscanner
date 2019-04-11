@@ -1,13 +1,16 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import logging
 import os
 import sys
 
 from six import PY3  # noqa F401
 
+logger = logging.getLogger(__name__)
+
 if sys.version_info < (2, 7) or sys.version_info > (4,):
-    print("WARNING: You're running an untested version of python")
+    logger.warning("You're running an untested version of python")
 
 
 # Gets the directory that this file is in

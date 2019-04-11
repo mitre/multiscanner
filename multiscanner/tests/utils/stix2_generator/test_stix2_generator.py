@@ -145,7 +145,7 @@ def test_extract_http_requests_cuckoo():
     assert all(x in all_indicators_expressions for x in extracted_indicator_expressions)
 
 
-def test_parse_json_report_to_stix2_bundle():
+def test_create_stix2_from_json_report():
     all_indicators_expressions = [
         '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' OR file:hashes.\'ssdeep\' = \'3072:v8O0PPXlpAmOvDtu31DunkJdmAOIAT3B/WAyU98SJ4MWFYAkOymiTG4czJE:kdPP1Cm+OKYdmoqH8SSpkOye4czO\' ]',
         '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' OR file:hashes.\'ssdeep\' = \'6144:63hJxWjDKn4yTxz12wj/CF6J2Os+WX+ugnZJFNpluJHA4:6RJWDsTxzIwj/CF6FR6+zcO4\' ]',
@@ -172,9 +172,46 @@ def test_parse_json_report_to_stix2_bundle():
 
     with open(os.path.join(CWD, 'sample_report.json')) as sample_report:
         sample_json = json.load(sample_report)
-        bundle = stix2_generator.parse_json_report_to_stix2_bundle(sample_json)
+        stix_objects = stix2_generator.create_stix2_from_json_report(sample_json)
 
-        for x in bundle.objects:
+        for x in stix_objects:
+            if isinstance(x, v20.Indicator):
+                extracted_indicator_expressions.append(x.pattern)
+
+    assert all(x in all_indicators_expressions for x in extracted_indicator_expressions)
+
+
+def test_create_and_test_bundle():
+    all_indicators_expressions = [
+        '[ file:name = \'s2429.exe.zip\' OR file:hashes.\'SHA-1\' = \'388e6816aff442e13cb546cfacd0c1d75b59b5b1\' OR file:hashes.\'SHA-256\' = \'1acf42374fb021fd1172df27a06f72e0e59f69a0bfaaaaea56f28dff6af01110\' OR file:hashes.\'MD5\' = \'d659e8900ea3fabe425882debed0c494\' OR file:hashes.\'ssdeep\' = \'3072:v8O0PPXlpAmOvDtu31DunkJdmAOIAT3B/WAyU98SJ4MWFYAkOymiTG4czJE:kdPP1Cm+OKYdmoqH8SSpkOye4czO\' ]',
+        '[ file:name = \'s2429.exe\' OR file:hashes.\'SHA-1\' = \'ddf811f21e6c066b644d03e6751e16efb0fbecce\' OR file:hashes.\'SHA-256\' = \'f9449897f9ca99b99837ad322c8b6737e7a47e3827b6a4c073c6ca8911d8c340\' OR file:hashes.\'MD5\' = \'13b0085a03720e67fb8c73db3f14609e\' OR file:hashes.\'ssdeep\' = \'6144:63hJxWjDKn4yTxz12wj/CF6J2Os+WX+ugnZJFNpluJHA4:6RJWDsTxzIwj/CF6FR6+zcO4\' ]',
+        '[ url:value = \'http://www.msftncsi.com/ncsi.txt\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?ec38990cc55170ab\' ]',
+        '[ url:value = \'http://tools.google.com/service/update2?cup2key=6:2144477707&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc\' ]',
+        '[ url:value = \'http://tools.google.com/service/update2?cup2key=6:3255292227&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc\' ]',
+        '[ url:value = \'http://tools.google.com/service/update2?cup2key=6:1128284371&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc\' ]',
+        '[ url:value = \'http://tools.google.com/service/update2?cup2key=6:1439439368&cup2hreq=a6c83ff1daef97153eb6f265f9181edc5cea9a80f527aea825c28f6307c1fdfc\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab?075dc50dacf9f2bb\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?31308c2120fea4bc\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?6ecb1b8de9d8006f\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?91c8a9092e8cb67a\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?1390637153eb96bd\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?b16bed41061b4861\' ]',
+        '[ url:value = \'http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab?9a8ede518893069d\' ]',
+        '[ url:value = \'http://go.microsoft.com/fwlink/?LinkId=544713\' ]',
+        '[ url:value = \'http://ns.adobe.com/xap/1.0/mm/\' ]',
+        '[ url:value = \'http://ns.adobe.com/xap/1.0/sType/ResourceRef\' ]',
+        '[ url:value = \'http://ns.adobe.com/xap/1.0/\' ]',
+        '[ file:hashes.\'SHA-1\' = \'91fd2d2935aedcb47271b54cd22f8fe3b30c17fd\' OR file:hashes.\'SHA-256\' = \'90b1e39282dbda2341d91b87ca161afe564b7d3b4f82f25b3f1dce3fa857226c\' OR file:hashes.\'MD5\' = \'34303fdb55e5d0f1142bb07eed2064cb\' ]'
+    ]
+    extracted_indicator_expressions = []
+
+    with open(os.path.join(CWD, 'sample_report.json')) as sample_report:
+        sample_json = json.load(sample_report)
+        stix_objects = stix2_generator.create_stix2_from_json_report(sample_json)
+        bundle = stix2_generator.create_stix2_bundle(stix_objects)
+
+        for x in bundle["objects"]:
             if isinstance(x, v20.Indicator):
                 extracted_indicator_expressions.append(x.pattern)
 

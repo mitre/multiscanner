@@ -6,20 +6,20 @@ Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
-GET /api/v1/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v1/files/<sha256>?raw={t|f} ---> Download sample, defaults to passwd protected zip
 GET /api/v1/modules ---> Receive list of modules available
-GET /api/v1/tags ----> Receive list of all tags in use
+GET /api/v1/tags ---> Receive list of all tags in use
 GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
 POST /api/v1/tasks ---> POST file and receive report id
     Sample POST usage:
         curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls
 GET /api/v1/tasks/<task_id> ---> Receive task in JSON format
-DELETE /api/v1/tasks/<task_id> ----> Delete task_id
+DELETE /api/v1/tasks/<task_id> ---> Delete task_id
 GET /api/v1/tasks/search/ ---> Receive list of most recent report for matching samples
 GET /api/v1/tasks/search/history ---> Receive list of most all reports for matching samples
 GET /api/v1/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
-GET /api/v1/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
+GET /api/v1/tasks/<task_id>/file?raw={t|f} ---> Download sample, defaults to passwd protected zip
+GET /api/v1/tasks/<task_id>/maec ---> Download the Cuckoo MAEC 5.0 report, if it exists
 GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
 POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
 PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
@@ -31,6 +31,13 @@ POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
 DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
 GET /api/v1/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
 GET /api/v1/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
+GET /api/v1/tasks/reports?d={t|f}&tasks_ids={task_id} --->
+    Receive a report in JSON, set d=t to download. It will contain data based on the given task ids
+GET /api/v1/tasks/files?tasks_ids={task_id} --->
+    Receive a protected zip with multiple samples given their task ids
+GET /api/v1/tasks/stix2?pretty={t|f}&custom_labels={string}&tasks_ids={task_id} --->
+    Receive a STIX2 Bundle based on data retrieved from multiple reports given their task ids
+
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -39,12 +46,11 @@ by modifying the 'cors' setting in the 'api' section of the api config file.
 TODO:
 * Add doc strings to functions
 '''
-from __future__ import print_function
-
 import codecs
 import configparser
 import hashlib
 import json
+import logging
 import multiprocessing
 import os
 import queue
@@ -52,7 +58,6 @@ import re
 import shutil
 import subprocess
 import time
-import uuid
 import zipfile
 from datetime import datetime
 
@@ -62,6 +67,9 @@ from flask import Flask, abort, jsonify, make_response, request, safe_join
 from flask.json import JSONEncoder
 from flask_cors import CORS
 from jinja2 import Markup
+from uuid import uuid4
+
+from sqlalchemy.exc import SQLAlchemyError
 
 # TODO: Why do we need to parseDir(MODULEDIR) multiple times?
 from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
@@ -92,6 +100,8 @@ DEFAULTCONF = {
                            # submitted to the create/ API
 }
 
+logger = logging.getLogger(__name__)
+
 
 # Customize timestamp format output of jsonify()
 class CustomJSONEncoder(JSONEncoder):
@@ -106,7 +116,7 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_object = configparser.SafeConfigParser()
+api_config_object = configparser.ConfigParser()
 api_config_object.optionxform = str
 # TODO: Why does this multiscanner.common instead of just common?
 api_config_file = utils.get_config_path(MS_CONFIG, 'api')
@@ -132,12 +142,14 @@ db = database.Database(config=api_config.get('Database'))
 try:
     # wait this many seconds between tries
     db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
-except (configparser.NoSectionError, configparser.NoOptionError):
+except (configparser.NoSectionError, configparser.NoOptionError) as e:
+    logger.debug(e)
     db_sleep_time = database.Database.DEFAULTCONF['retry_time']
 try:
     # max number of times to retry
     db_num_retries = int(api_config_object.get('Database', 'retry_num'))
-except (configparser.NoSectionError, configparser.NoOptionError):
+except (configparser.NoSectionError, configparser.NoOptionError) as e:
+    logger.debug(e)
     db_num_retries = database.Database.DEFAULTCONF['retry_num']
 
 for x in range(0, db_num_retries):
@@ -145,21 +157,21 @@ for x in range(0, db_num_retries):
         db.init_db()
     except Exception as excinfo:
         db_error = excinfo
-        print("ERROR: Can't connect to task database.", excinfo)
+        logger.error("Can't connect to task database. {}".format(excinfo))
     else:
         break
 
     if db_error:
         if x == db_num_retries - 1:
             raise StorageNotLoadedError()
-        print("Retrying...")
+        logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
 storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
 storage_handler = StorageHandler(configfile=storage_conf)
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_object = configparser.SafeConfigParser()
+ms_config_object = configparser.ConfigParser()
 ms_config_object.optionxform = str
 ms_configfile = MS_CONFIG
 ms_config_object.read(ms_configfile)
@@ -167,7 +179,8 @@ ms_config = utils.parse_config(ms_config_object)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
-except KeyError:
+except KeyError as e:
+    logger.debug("Distributed set to False - {}".format(e))
     DISTRIBUTED = False
 
 if not DISTRIBUTED:
@@ -175,7 +188,8 @@ if not DISTRIBUTED:
 
 try:
     cors_origins = api_config['api']['cors']
-except KeyError:
+except KeyError as e:
+    logger.debug("Loaded from default configuration - {}".format(e))
     cors_origins = DEFAULTCONF['cors']
 CORS(app, origins=cors_origins)
 
@@ -279,15 +293,15 @@ def modules():
     filenames = [os.path.splitext(os.path.basename(f)) for f in files]
     module_names = [m[0] for m in filenames if m[1] == '.py']
 
-    ms_config = configparser.SafeConfigParser()
+    ms_config = configparser.ConfigParser()
     ms_config.optionxform = str
     ms_config.read(MS_CONFIG)
     modules = {}
     for module in module_names:
         try:
             modules[module] = ms_config.get(module, 'ENABLED')
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            pass
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            logger.debug(e)
     return jsonify({'Modules': modules})
 
 
@@ -297,8 +311,8 @@ def task_list():
     Return a JSON dictionary containing all the tasks
     in the tasks DB.
     '''
-
-    return jsonify({'Tasks': db.get_all_tasks()})
+    tasks = db.get_all_tasks() or []
+    return jsonify({'Tasks': [t.to_dict() for t in tasks]})
 
 
 def search(params, get_all=False):
@@ -378,10 +392,11 @@ def delete_task(task_id):
     es_result = handler.delete_by_task_id(task_id)
     if not es_result:
         abort(HTTP_NOT_FOUND)
-    sql_result = db.delete_task(task_id)
-    if not sql_result:
+    try:
+        db.delete_task(task_id)
+        return jsonify({'Message': 'Deleted'})
+    except SQLAlchemyError:
         abort(HTTP_NOT_FOUND)
-    return jsonify({'Message': 'Deleted'})
 
 
 def save_hashed_filename(f, zipped=False):
@@ -414,11 +429,18 @@ def import_task(file_):
     report = json.loads(file_.read().decode('utf-8'))
     try:
         report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
-    except ValueError:
+    except ValueError as e:
+        logger.debug(e)
         raise InvalidScanTimeFormatError()
 
+    try:
+        sample_id = report['filemeta']['sha256']
+    except KeyError:
+        logger.warn("Unable to find sha256 hash for sample_id")
+        sample_id = uuid4()
+
     task_id = db.add_task(
-        sample_id=report['SHA256'],
+        sample_id=sample_id,
         task_status='Complete',
         timestamp=report['Scan Time'],
     )
@@ -427,7 +449,8 @@ def import_task(file_):
     return task_id
 
 
-def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
+def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
+               queue_name='medium_tasks', priority=5, routing_key='tasks.medium'):
     '''
     Queue up a single new task, for a single non-archive file.
     '''
@@ -444,9 +467,11 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False):
 
     if DISTRIBUTED:
         # Publish the task to Celery
-        multiscanner_celery.delay(full_path, original_filename,
-                                  task_id, f_name, metadata,
-                                  config=MS_CONFIG)
+        multiscanner_celery.apply_async(
+            args=(full_path, original_filename, task_id, f_name, metadata),
+            kwargs=dict(config=MS_CONFIG),
+            **{'queue': queue_name, 'priority': priority, 'routing_key': routing_key}
+        )
     else:
         # Put the task on the queue
         work_queue.put((full_path, original_filename, task_id, f_name, metadata))
@@ -464,17 +489,24 @@ def create_task():
     if request.form.get('upload_type', None) == 'import':
         try:
             task_id = import_task(file_)
-        except KeyError:
+        except KeyError as e:
+            logger.debug('Cannot import report missing \'Scan Time\' field! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
                 HTTP_BAD_REQUEST)
-        except InvalidScanTimeFormatError:
+        except InvalidScanTimeFormatError as e:
+            logger.debug('Cannot import report with \'Scan Time\' of invalid format! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import report with \'Scan Time\' of invalid format!'}),
                 HTTP_BAD_REQUEST)
-        except (UnicodeDecodeError, ValueError):
+        except (UnicodeDecodeError, ValueError) as e:
+            logger.debug('Cannot import non-JSON files! - {}'.format(e))
             return make_response(
                 jsonify({'Message': 'Cannot import non-JSON files!'}),
+                HTTP_BAD_REQUEST)
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not import task due backend error'}),
                 HTTP_BAD_REQUEST)
 
         return make_response(
@@ -488,6 +520,9 @@ def create_task():
     task_id_list = []
     extract_dir = None
     rescan = False
+    priority = 5
+    routing_key = 'tasks.medium'
+    queue_name = 'medium_tasks'
     for key in request.form.keys():
         if key in ['file_id', 'archive-password', 'upload_type'] or request.form[key] == '':
             continue
@@ -519,6 +554,22 @@ def create_task():
                     password = bytes(password, 'utf-8')
             else:
                 password = ''
+        elif key == 'priority':
+            try:
+                priority = int(request.form[key])
+                if priority < 1 or priority > 10:
+                    priority = 5
+            except ValueError:
+                pass
+            if 1 <= priority <= 3:
+                routing_key = 'tasks.low'
+                queue_name = 'low_tasks'
+            elif 4 <= priority <= 7:
+                routing_key = 'tasks.medium'
+                queue_name = 'medium_tasks'
+            elif 8 <= priority <= 10:
+                routing_key = 'tasks.high'
+                queue_name = 'high_tasks'
         else:
             metadata[key] = request.form[key]
 
@@ -533,12 +584,18 @@ def create_task():
                 for uzfile in z.namelist():
                     unzipped_file = open(os.path.join(extract_dir, uzfile))
                     f_name, full_path = save_hashed_filename(unzipped_file, True)
-                    tid = queue_task(uzfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(uzfile, f_name, full_path, metadata,
+                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
-                msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                msg = 'ERROR: Failed to extract ' + str(file_) + ' - ' + str(e)
+                logger.error(msg)
                 return make_response(
                     jsonify({'Message': msg}),
+                    HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
                     HTTP_BAD_REQUEST)
         # Extract a rar
         elif rarfile.is_rarfile(file_):
@@ -548,18 +605,30 @@ def create_task():
                 for urfile in r.namelist():
                     unrarred_file = open(os.path.join(extract_dir, urfile))
                     f_name, full_path = save_hashed_filename(unrarred_file, True)
-                    tid = queue_task(urfile, f_name, full_path, metadata, rescan=rescan)
+                    tid = queue_task(urfile, f_name, full_path, metadata,
+                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
+                logger.error(msg)
                 return make_response(
                     jsonify({'Message': msg}),
                     HTTP_BAD_REQUEST)
+            except SQLAlchemyError:
+                return make_response(
+                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                    HTTP_BAD_REQUEST)
     else:
-        # File was not an archive to extract
-        f_name, full_path = save_hashed_filename(file_)
-        tid = queue_task(original_filename, f_name, full_path, metadata, rescan=rescan)
-        task_id_list = [tid]
+        try:
+            # File was not an archive to extract
+            f_name, full_path = save_hashed_filename(file_)
+            tid = queue_task(original_filename, f_name, full_path, metadata,
+                             rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
+            task_id_list = [tid]
+        except SQLAlchemyError:
+            return make_response(
+                jsonify({'Message': 'Could not queue task(s) due backend error'}),
+                HTTP_BAD_REQUEST)
 
     msg = {'task_ids': task_id_list}
     return make_response(
@@ -574,7 +643,6 @@ def get_report(task_id):
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
-
     download = request.args.get('d', default='False', type=str)[0].lower()
 
     report_dict, success = get_report_dict(task_id)
@@ -593,28 +661,64 @@ def get_report(task_id):
         return jsonify(report_dict)
 
 
-def _pre_process(report_dict={}):
+@app.route('/api/v1/tasks/reports', methods=['GET'])
+def get_reports():
+    '''
+    Given a comma-separated list of Task IDs. Return a JSON dictionary corresponding
+    to the given IDs.
+    '''
+    task_ids = request.args.get('task_ids', default=None)
+    download = request.args.get('d', default='False', type=str)[0].lower()
+
+    if task_ids is not None:
+        task_ids = task_ids.split(',')
+        uuidv4 = str(uuid4())
+        final_report = []
+
+        try:
+            for task_id in task_ids:
+                t = int(task_id)
+                report_dict, success = get_report_dict(t)
+
+                if success:
+                    report_dict = _pre_process(report_dict)
+                    final_report.append(report_dict)
+                else:
+                    return jsonify({'Message': 'One or more tasks failed to be retrieved.'})
+        except ValueError:
+            abort(HTTP_BAD_REQUEST)
+
+        if download == 't' or download == 'y' or download == '1':
+            # raw JSON
+            response = make_response(jsonify(final_report))
+            response.headers['Content-Type'] = 'application/json'
+            response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % uuidv4
+            return response
+        else:
+            # processed JSON intended for web UI
+            return jsonify(final_report)
+
+    return jsonify({'Error': 'empty request'})
+
+
+def _pre_process(report_dict):
     '''
     Returns a JSON dictionary where a series of pre-processing steps are
     executed on report_dict.
     '''
+    if not report_dict:
+        report_dict = {}
 
     # TODO: create way to mark certain data as internal only (e.g., does
     # not need to be part of generated report)
-    # pop unecessary keys
+    # pop unnecessary keys
     if report_dict.get('Report', {}).get('ssdeep', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            try:
-                report_dict['Report']['ssdeep'].pop(k)
-            except KeyError as e:
-                pass
+            report_dict['Report']['ssdeep'].pop(k, None)
 
     if report_dict.get('Report', {}).get('impfuzzy', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            try:
-                report_dict['Report']['impfuzzy'].pop(k)
-            except KeyError as e:
-                pass
+            report_dict['Report']['impfuzzy'].pop(k, None)
 
     report_dict = _add_links(report_dict)
 
@@ -675,7 +779,7 @@ def get_file_task(task_id):
         return jsonify(report_dict)
 
     # okay, we have report dict; get sha256
-    sha256 = report_dict.get('Report', {}).get('SHA256', '')
+    sha256 = report_dict.get('Report', {}).get('filemeta', {}).get('sha256', '')
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
@@ -693,7 +797,7 @@ def get_files_task():
 
     if task_ids is not None:
         task_ids = task_ids.split(',')
-        uuidv4 = str(uuid.uuid4())
+        uuidv4 = str(uuid4())
         zipname = uuidv4 + '.zip'
         zip_command = ['/usr/bin/zip', '-j',
                        safe_join('/tmp', zipname),
@@ -708,8 +812,10 @@ def get_files_task():
                 try:
                     sha256 = db.get_task(t).sample_id
                 except AttributeError:
+                    msg = 'Task {} not found!'.format(t)
+                    logger.error(msg)
                     return make_response(
-                            jsonify({'Error': 'Task {} not found!'.format(t)}),
+                            jsonify({'Error': msg}),
                             HTTP_NOT_FOUND)
 
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
@@ -765,7 +871,8 @@ def get_maec_report(task_id):
     # okay, we have report dict; get cuckoo task ID
     try:
         cuckoo_task_id = report_dict['Report']['Cuckoo Sandbox']['info']['id']
-    except KeyError:
+    except KeyError as e:
+        logger.debug('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
 
     # Get the MAEC report from Cuckoo
@@ -774,7 +881,7 @@ def get_maec_report(task_id):
             '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
         )
     except Exception as e:
-        # TODO: log exception
+        logger.warning('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
     # raw JSON
     response = make_response(jsonify(maec_report.json()))
@@ -858,8 +965,7 @@ def get_notes(task_id):
         for hit in response:
             hit['_source']['text'] = Markup.escape(hit['_source']['text'])
     except Exception as e:
-        # TODO: log exception
-        pass
+        logger.warning(e)
     return jsonify(response)
 
 
@@ -970,14 +1076,17 @@ def run_ssdeep_compare():
     '''
     try:
         if DISTRIBUTED:
-            # Publish task to Celery
-            ssdeep_compare_celery.delay()
+            # Publish to Celery as a medium priority task
+            ssdeep_compare_celery.apply_async(
+                **{'queue': 'medium_tasks', 'priority': 5, 'routing_key': 'tasks.medium'}
+            )
             return make_response(jsonify({'Message': 'Success'}))
         else:
             ssdeep_analytic = SSDeepAnalytic()
             ssdeep_analytic.ssdeep_compare()
             return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
+        logger.debug('Unable to complete request - {}'.format(e))
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
             HTTP_BAD_REQUEST)
@@ -993,13 +1102,14 @@ def run_ssdeep_group():
         groups = ssdeep_analytic.ssdeep_group()
         return make_response(jsonify({'groups': groups}))
     except Exception as e:
+        logger.debug('Unable to complete request - {}'.format(e))
         return make_response(
             jsonify({'Message': 'Unable to complete request.'}),
             HTTP_BAD_REQUEST)
 
 
 @app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
-def get_pdf_report(task_id):
+def generate_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
     '''
@@ -1016,7 +1126,7 @@ def get_pdf_report(task_id):
 
 
 @app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
-def get_stix2_bundle_from_report(task_id):
+def generate_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
 
@@ -1042,18 +1152,71 @@ def get_stix2_bundle_from_report(task_id):
     # If the report has no key/value pairs that we can use to create
     # STIX representations of this data. The default behavior is to return
     # an empty bundle.
-    bundle = stix2_generator.parse_json_report_to_stix2_bundle(report_dict, custom_labels)
+    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+    bundle = stix2_generator.create_stix2_bundle(stix_objects)
 
     # Setting pretty=True can be an expensive operation!
     response = make_response(bundle.serialize(pretty=formatting))
     response.headers['Content-Type'] = 'application/json'
-    response.headers['Content-Disposition'] = 'attachment; filename=%s_bundle_stix2.json' % task_id
+    response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % bundle["id"]
     return response
+
+
+@app.route('/api/v1/tasks/stix2', methods=['GET'])
+def generate_stix2_bundle_from_multiple_reports():
+    '''
+    Given a list of comma-separated task ids. Generate a STIX2 Bundle with
+    indicators corresponding to Task ID reports.
+
+    custom labels must be comma-separated.
+    '''
+    task_ids = request.args.get('task_ids', default=None)
+    formatting = request.args.get('pretty', default='False', type=str)[0].lower()
+    custom_labels = request.args.get('custom_labels', default='', type=str).split(",")
+
+    if formatting == 't' or formatting == 'y' or formatting == '1':
+        formatting = True
+    else:
+        formatting = False
+
+    # If list is empty or any entry in the list is empty -> clear labels
+    if custom_labels or all(custom_labels) is False:
+        custom_labels = []
+
+    if task_ids is not None:
+        task_ids = task_ids.split(',')
+        all_stix_objects = []
+
+        try:
+            for task_id in task_ids:
+                t = int(task_id)
+                report_dict, success = get_report_dict(t)
+
+                if success:
+                    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+                    all_stix_objects.extend(stix_objects)
+                else:
+                    return jsonify({"Error": "One or more tasks failed to be retrieved"})
+        except ValueError:
+            abort(HTTP_BAD_REQUEST)
+
+        # If the report has no key/value pairs that we can use to create
+        # STIX representations of this data. The default behavior is to return
+        # an empty bundle.
+        bundle = stix2_generator.create_stix2_bundle(all_stix_objects)
+
+        # Setting pretty=True can be an expensive operation!
+        response = make_response(bundle.serialize(pretty=formatting))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % bundle["id"]
+        return response
+
+    return jsonify({'Error': 'empty request'})
 
 
 def _main():
     if not os.path.isdir(api_config['api']['upload_folder']):
-        print('Creating upload dir')
+        logger.info('Creating upload dir')
         os.makedirs(api_config['api']['upload_folder'])
 
     if not DISTRIBUTED:

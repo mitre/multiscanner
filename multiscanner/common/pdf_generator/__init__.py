@@ -35,7 +35,7 @@ def create_pdf_document(DIR, report):
 
     summary_data = [
         ['Date Submitted', report.get('Report', {}).get('Scan Time', 'N/A')],
-        ['Artifact ID', report.get('Report', {}).get('SHA256', 'N/A')],
+        ['Artifact ID', report.get('Report', {}).get('sha256', 'N/A')],
         ['Description', pdf_components.get('summary_description', 'N/A')],
         ['Files Processed', '1'],
         ['', report.get('Report', {}).get('filename', 'NO FILENAME AVAILABLE')]
@@ -63,14 +63,19 @@ def create_pdf_document(DIR, report):
             file_data.append(['File Name', r.get('filename', '')])
         if 'Scan Time' in r:
             file_data.append(['Scan Time', r.get('Scan Time', '')])
-        if 'libmagic' in r:
-            file_data.append(['Type', r.get('libmagic', '')])
-        if 'MD5' in r:
-            file_data.append(['MD5', r.get('MD5', '')])
-        if 'SHA1' in r:
-            file_data.append(['SHA1', r.get('SHA1', '')])
-        if 'SHA256' in r:
-            file_data.append(['SHA256', r.get('SHA256', '')])
+
+        # filemeta
+        filemeta = r.get('filemeta', {})
+        if 'libmagic' in filemeta:
+            file_data.append(['Type', filemeta.get('libmagic', '')])
+        if 'md5' in filemeta:
+            file_data.append(['MD5', filemeta.get('md5', '')])
+        if 'sha1' in filemeta:
+            file_data.append(['SHA1', filemeta.get('sha1', '')])
+        if 'sha256' in filemeta:
+            file_data.append(['SHA256', filemeta.get('sha256', '')])
+        # -- end filemeata --
+
         if 'ssdeep' in r:
             file_data.append(['SSDEEP', r.get('ssdeep', {}).get('ssdeep_hash', '')])
 
