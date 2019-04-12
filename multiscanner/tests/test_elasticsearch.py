@@ -20,9 +20,10 @@ TEST_TS = "2017-09-26T16:48:05.395004"
 
 
 class TestES(unittest.TestCase):
+    @classmethod
     @mock.patch.object(IndicesClient, 'exists_template')
     @mock.patch.object(IngestClient, 'get_pipeline')
-    def setUp(self, mock_pipe, mock_exists):
+    def setUpClass(self, mock_pipe, mock_exists):
         mock_pipe.return_value = True
         mock_exists.return_value = True
         self.handler = ElasticSearchStorage(config=ElasticSearchStorage.DEFAULTCONF)
@@ -225,5 +226,6 @@ class TestES(unittest.TestCase):
         self.assertEqual(doc_type, '_doc')
         self.assertEqual(report_id, TEST_ID)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.handler.teardown()
