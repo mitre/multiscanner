@@ -20,12 +20,11 @@ def _parse_args():
 
 if __name__ == '__main__':
     args = _parse_args()
+    logging.basicConfig(level=logging.getLevelName(args.logging_level))
 
     if args.run == 'api':
         from multiscanner.distributed.api import app as api_app
         from multiscanner.distributed.api import api_config, multiscanner_process, work_queue
-
-        logging.basicConfig(level=logging.getLevelName(args.logging_level))
 
         if not os.path.isdir(api_config['api']['upload_folder']):
             logging.info('Creating upload dir')
@@ -49,7 +48,6 @@ if __name__ == '__main__':
         from multiscanner.web.app import app as web_app
         from multiscanner.web.app import DEFAULTCONF
 
-        logging.basicConfig(level=logging.getLevelName(args.logging_level))
         http_server = WSGIServer((web_app.config.get('HOST', DEFAULTCONF['HOST']),
                                   web_app.config.get('PORT', DEFAULTCONF['PORT'])), web_app)
         http_server.serve_forever()
