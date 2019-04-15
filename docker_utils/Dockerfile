@@ -1,9 +1,9 @@
 FROM alpine
 MAINTAINER Patrick Copeland ptcnop
 
-ENV YARA_VERSION 3.8.1
-ENV YARA_PY_VERSION 3.8.1
-ENV SSDEEP ssdeep-2.13
+ENV YARA_VERSION 3.9.0
+ENV YARA_PY_VERSION 3.9.0
+ENV SSDEEP_VERSION 2.14.1
 
 COPY requirements.txt /opt/multiscanner/
 
@@ -39,9 +39,10 @@ RUN apk add --no-cache \
   # ssdeep
   && echo "Install ssdeep from source..." \
   && cd /tmp \
-  && wget -O /tmp/$SSDEEP.tar.gz https://downloads.sourceforge.net/project/ssdeep/$SSDEEP/$SSDEEP.tar.gz \
-  && tar zxvf $SSDEEP.tar.gz \
-  && cd $SSDEEP \
+  && wget -O /tmp/$SSDEEP_VERSION.tar.gz https://github.com/ssdeep-project/ssdeep/releases/download/release-$SSDEEP_VERSION/ssdeep-$SSDEEP_VERSION.tar.gz \
+  && tar zxvf $SSDEEP_VERSION.tar.gz \
+  && cd ssdeep-$SSDEEP_VERSION \
+  && ./bootstrap \
   && ./configure \
   && make \
   && make install \
@@ -66,6 +67,7 @@ RUN apk add --no-cache \
   && python3 setup.py install \
   && echo "Downloading yara signatures..." \
   && git clone --depth 1 https://github.com/Yara-Rules/rules.git /opt/multiscanner/etc/yarasigs/Yara-Rules \
+  && rm -rf /opt/multiscanner/etc/yarasigs/Yara-Rules/Mobile_Malware \
   # install ms dependencies
   && cd /opt/multiscanner \
   && pip3 install --upgrade pip \
