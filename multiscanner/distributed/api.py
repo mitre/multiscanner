@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 '''
-THIS APP IS NOT PRODUCTION READY!! DO NOT USE!
-
 Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
 GET / ---> Test functionality. {'Message': 'True'}
-<<<<<<< HEAD
 GET /api/v2/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
 GET /api/v2/modules ---> Receive list of modules available
 GET /api/v2/tags ----> Receive list of all tags in use
