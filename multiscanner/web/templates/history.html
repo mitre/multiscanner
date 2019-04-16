@@ -209,7 +209,7 @@
                 alert('Cannot generate reports on pending tasks...');
               }
               else {
-                window.location = "{{ api_loc }}/api/v1/tasks/reports?d=t&task_ids=" + request.join();
+                window.location = "{{ api_loc }}/api/v2/tasks/reports?d=t&task_ids=" + request.join();
               }
             }
           }
@@ -228,7 +228,7 @@
                 alert('Cannot generate STIX2 on pending tasks...');
               }
               else {
-                window.location = "{{ api_loc }}/api/v1/tasks/stix2?task_ids=" + request.join();
+                window.location = "{{ api_loc }}/api/v2/tasks/stix2?task_ids=" + request.join();
               }
             }
           }

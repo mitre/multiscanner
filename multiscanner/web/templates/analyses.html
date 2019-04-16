@@ -198,7 +198,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/reports?d=t&task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/reports?d=t&task_ids=" + request.join();
             }
           }
           else if (this.id == 'getSTIX2') {
@@ -208,7 +208,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/stix2?task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/stix2?task_ids=" + request.join();
             }
           }
         });
