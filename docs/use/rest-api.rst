@@ -3,7 +3,9 @@ RESTful API
 
 The MultiScanner RESTful API is provided by a Flask app that supports accessing submitted samples, and information about tasks, reports, and modules.
 
-The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By default it will allow requests from any port on localhost. Change this setting by modifying the ``cors`` setting in the ``api`` section of the api config file.
+Most endpoints prodive a JSON response. The only exceptions are those endpoints that provide downloadable files and documents (e.g., submitted samples, STIX documents, PDFs).
+
+The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By default it will allow requests from any port on localhost. Change this setting by modifying the ``cors`` setting in the ``api`` section of the API config file.
 
 Download Samples
 ----------------
@@ -22,12 +24,18 @@ Download samples that have been submitted to MultiScanner for analysis.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Download sample associated with the given `task_id`. Download defaults to password protected zip; use   |
 | `raw=t` to download a raw binary instead.                                                               |
-+--------+------------------------------------------------------------------------------------------------+
++--------+-----------------------------------------------------+------------------------------------------+
+| GET    | /api/v2/tasks/files?tasks_ids=<task_ids>            | Zip file download                        |
++--------+-----------------------------------------------------+------------------------------------------+
+| Given a comma-separated list of task IDs, receive a protected zip with multiple samples. The password   |
+| of the zip archive is ``infected``.                                                                     |
++---------------------------------------------------------------------------------------------------------+
+
 
 Tasks
 -----
 
-View, submit, and search analysis tasks and their resulting reports.
+View, submit, and search analysis tasks.
 
 +--------+-----------------------------------------------------+------------------------------------------+
 | Method | URI                                                 | Response type                            |
@@ -71,19 +79,39 @@ View, submit, and search analysis tasks and their resulting reports.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all reports for matching samples                                                        |
 | **Intended for use via DataTables integration, not normal API use.**                                    |
-+--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/<task_id>/maec                        | MAEC file                                |
-+--------+-----------------------------------------------------+------------------------------------------+
-| Download the Cuckoo MAEC 5.0 report, if it exists                                                       |
-+--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/<task_id>/pdf                         | Human-readable PDF document              |
-+--------+-----------------------------------------------------+------------------------------------------+
-| Receive PDF report for task                                                                             |
-+--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/<task_id>/report?d={t|f}              | Analysis `report`_ in JSON               |
-+--------+-----------------------------------------------------+------------------------------------------+
-| Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                      |
-+--------+-----------------------------------------------------+------------------------------------------+ 
++---------------------------------------------------------------------------------------------------------+
+
+Reporting
+---------
+
+View anlysis information gathered by a task in various formats.
+
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| GET    | /api/v2/tasks/<task_id>/report?d={t|f}                                       | Analysis `report`_ in JSON        |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| Receive report in JSON; set ``d=t`` to download or ``d=f`` to view                                                        |
++--------+------------------------------------------------------------------------------+-----------------------------------+ 
+| GET    | /api/v2/tasks/reports?d={t|f}&tasks_ids=<task_ids>                           | List of JSON `reports <#report>`_ |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| Given a comma-separated list of task IDs, receive a list of reports in JSON. Set ``d=t`` to download                      |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| GET    | /api/v2/tasks/<task_id>/pdf                                                  | Human-readable PDF document       |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| Receive PDF report for task                                                                                               |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| GET    | /api/v2/tasks/<task_id>/maec                                                 | MAEC file                         |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| Download the Cuckoo MAEC 5.0 report, if it exists                                                                         |
++--------+-----------------------------------------------------+------------------------+-----------------------------------+
+| GET    | /api/v2/tasks/<task_id>/stix2?pretty={t|f}&custom_labels=<labels>            | STIX 2 Bundle                     |
++--------+-----------------------------------------------------+------------------------+-----------------------------------+
+| Receive STIX2 Bundle based on the analysis task identified by ID. Also accepts a comma-separated list of ``custom_labels``|
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| GET    | /api/v2/tasks/stix2?pretty={t|f}&custom_labels=<labels>&tasks_ids=<task_ids> | List of Stix 2 Bundles            |
++--------+------------------------------------------------------------------------------+-----------------------------------+
+| Receive a list of STIX 2 Bundles based the anlysis tasks identified by comma-separated IDs. Also accepts a                |
+| comma-separated list of ``custom_labels``                                                                                 |
++---------------------------------------------------------------------------------------------------------------------------+
 
 Tags
 ----
