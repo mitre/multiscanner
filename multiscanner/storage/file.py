@@ -37,38 +37,38 @@ class File(storage.Storage):
                     if self.config['gzip'] is True:
                         self.file_handle.write(
                             json.dumps(writedata, sort_keys=True, separators=(',', ':'),
-                            ensure_ascii=False).encode('utf8', 'replace'))
+                                       ensure_ascii=False).encode('utf8', 'replace'))
                         self.file_handle.write(b'\n')
                     else:
                         self.file_handle.write(
                             json.dumps(writedata, sort_keys=True, separators=(',', ':'),
-                            ensure_ascii=False))
+                                       ensure_ascii=False))
                         self.file_handle.write('\n')
                     i = 0
                     writedata = {}
             if writedata:
                 if metadata:
-                        writedata = {'Files': writedata, 'Metadata': metadata}
+                    writedata = {'Files': writedata, 'Metadata': metadata}
                 if self.config['gzip'] is True:
                     self.file_handle.write(
                         json.dumps(writedata, sort_keys=True, separators=(',', ':'),
-                        ensure_ascii=False).encode('utf8', 'replace'))
+                                   ensure_ascii=False).encode('utf8', 'replace'))
                     self.file_handle.write(b'\n')
                 else:
                     self.file_handle.write(
                         json.dumps(writedata, sort_keys=True, separators=(',', ':'),
-                        ensure_ascii=False))
+                                   ensure_ascii=False))
                     self.file_handle.write('\n')
         else:
             if self.config['gzip'] is True:
                 self.file_handle.write(
                     json.dumps(results, sort_keys=True, separators=(',', ':'),
-                    ensure_ascii=False).encode('utf8', 'replace'))
+                               ensure_ascii=False).encode('utf8', 'replace'))
                 self.file_handle.write(b'\n')
             else:
                 self.file_handle.write(
                     json.dumps(results, sort_keys=True, separators=(',', ':'),
-                    ensure_ascii=False))
+                               ensure_ascii=False))
                 self.file_handle.write('\n')
 
     def teardown(self):

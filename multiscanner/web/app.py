@@ -32,7 +32,7 @@ DEFAULTCONF = {
 app = Flask(__name__)
 
 # Finagle Flask to read config from .ini file instead of .py file
-web_config_object = configparser.SafeConfigParser()
+web_config_object = configparser.ConfigParser()
 web_config_object.optionxform = str
 web_config_file = utils.get_config_path(MS_CONFIG, 'web')
 web_config_object.read(web_config_file)
@@ -76,7 +76,7 @@ def tasks():
 
 
 @app.route('/report/<int:task_id>', methods=['GET'])
-def reports(task_id=1):
+def reports(task_id):
     term = re.escape(request.args.get('st', ''))
 
     return render_template('report.html', task_id=task_id,

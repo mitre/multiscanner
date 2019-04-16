@@ -173,6 +173,8 @@
           '</button>' +
           '<ul class="dropdown-menu dropdown-menu-right">' +
             '<li id="getSamples"><a href="#">Samples</a></li>' +
+            '<li id="getReports"><a href="#">JSON</a></li>' +
+            '<li id="getSTIX2"><a href="#">STIX2</a></li>' +
           '</ul>' +
         '</div>');
         $('#DataTables_Table_0_filter').append(downloadOptions);
@@ -187,6 +189,26 @@
                 request.push(selected[x][0]);
               }
               window.location = "{{ api_loc }}/api/v2/tasks/files?task_ids=" + request.join();
+            }
+          }
+          else if (this.id == 'getReports') {
+            if (table.rows('.selected').data().length > 0) {
+              var selected = table.rows('.selected').data();
+              var request = [];
+              for (x = 0; x < selected.length; x++) {
+                request.push(selected[x][0]);
+              }
+              window.location = "{{ api_loc }}/api/v1/tasks/reports?d=t&task_ids=" + request.join();
+            }
+          }
+          else if (this.id == 'getSTIX2') {
+            if (table.rows('.selected').data().length > 0) {
+              var selected = table.rows('.selected').data();
+              var request = [];
+              for (x = 0; x < selected.length; x++) {
+                request.push(selected[x][0]);
+              }
+              window.location = "{{ api_loc }}/api/v1/tasks/stix2?task_ids=" + request.join();
             }
           }
         });

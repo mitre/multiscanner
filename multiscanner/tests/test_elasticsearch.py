@@ -13,7 +13,7 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 from multiscanner.storage.elasticsearch_storage import ElasticSearchStorage
 
-TEST_MS_OUTPUT = {'test.txt': {'SHA1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'MD5': 'd74129f99f532292de5db9a90ec9d424', 'libmagic': 'ASCII text, with very long lines, with no line terminators', 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'SHA256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}    # noqa: E501
+TEST_MS_OUTPUT = {'test.txt': {'filemeta': {'sha256': '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6', 'sha1': '02bed644797a7adb7d9e3fe8246cc3e1caed0dfe', 'md5': 'd74129f99f532292de5db9a90ec9d424', 'filetype': 'ASCII text, with very long lines, with no line terminators'}, 'ssdeep': '6:BLWw/ELmRCp8o7cu5eul3tkxZBBCGAAIwLE/mUz9kLTCDFM1K7NBVn4+MUq08:4w/ELmR48oJh1exX8G7TW+wM1uFwp', 'Metadata': {}, "Scan Time": "2017-09-26T16:48:05.395004"}}    # noqa: E501
 TEST_ID = '03a634eb98ec54d5f7a3c964a82635359611d84dd4ba48e860e6d4817d4ca2a6'
 TEST_NOTE_ID = 'eba3d3de-1a7e-4018-8fb3-a4635b4b7ab1'
 TEST_TS = "2017-09-26T16:48:05.395004"
@@ -38,14 +38,15 @@ class TestES(unittest.TestCase):
         sample_args = args[1][0]
         self.assertEqual(sample_args['pipeline'], 'dedot')
         self.assertEqual(sample_args['_id'], TEST_ID)
-        self.assertEqual(sample_args['_source']['SHA256'], TEST_ID)
+        self.assertEqual(sample_args['_source']['sha256'], TEST_ID)
         self.assertEqual(sample_args['_source']['tags'], [])
 
         report_args, report_kwargs = mock_index.call_args_list[0]
         self.assertEqual(report_kwargs['routing'], TEST_ID)
-        self.assertEqual(
-            report_kwargs['body']['libmagic'],
-            'ASCII text, with very long lines, with no line terminators')
+        # MOVED FILETYPE TO sample
+        # self.assertEqual(
+        #     report_kwargs['body']['filetype'],
+        #     'ASCII text, with very long lines, with no line terminators')
         self.assertEqual(report_kwargs['pipeline'], 'dedot')
 
         self.assertIn(TEST_ID, resp)
@@ -192,7 +193,6 @@ class TestES(unittest.TestCase):
         note_id = kwargs['id']
         parent = kwargs['routing']
         body = kwargs['body']
-        print(body)
 
         self.assertEqual(doc_type, '_doc')
         self.assertEqual(parent, TEST_ID)

@@ -73,7 +73,7 @@
           '<div class="form-group-sm tags-group">\n' +
           '   <label for="{previewId}-Tags" class="col-md-2 control-label">Tags</label>\n' +
           '   <div class="input-group col-md-10">\n' +
-          '     <input type="text" class="form-control" id="{previewId}-Tags" name="{previewId}-Tags"></input>\n' +
+          '     <input type="text" class="form-control" id="{previewId}-Tags" name="{previewId}-Tags" />\n' +
           '   </div>\n' +
           '</div>\n' +
           {% for metadata in metadata_fields %}
@@ -81,7 +81,7 @@
           {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
           '    <label for="{previewId}-{{field}}" class="col-md-2 control-label">{{metadata}}</label>\n' +
           '    <div class="input-group col-md-10">\n' +
-                  '<input type="text" class="form-control" id="{previewId}-{{field}}" name="{previewId}-{{field}}"></input>\n' +
+                  '<input type="text" class="form-control" id="{previewId}-{{field}}" name="{previewId}-{{field}}" />\n' +
           '    </div>\n' +
           '    </div>\n' +
           {% endfor %}
@@ -237,7 +237,7 @@
     //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
     //  for (mod in data) {
     //    checked = (data[mod] ? "checked" : "");
-    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+'>'+mod+'</label> </div>';
+    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+' />'+mod+'</label> </div>';
     //  }
     //  modules += '</div>';
     //  $('#adv-options').prepend(modules);
@@ -281,13 +281,13 @@
     <h1 class="text-center">MultiScanner</h1>
     <br />
 
-    <form class="form-horizontal" id="scan-form" enctype="multipart/form-data">
+    <form class="form-horizontal" id="scan-form" enctype="multipart/form-data" method="post">
       <fieldset>
         <legend>Submit Files For Analysis</legend>
 
         <div class="form-group">
           <div class="input-group" id="file-group">
-            <input type="file" class="file-loading" id="filesUpload" name="file" multiple></input>
+            <input type="file" class="file-loading" id="filesUpload" name="file" multiple />
           </div>
         </div>
 
@@ -296,35 +296,70 @@
         </div>
         <div id="adv-options" class="collapse form-group text-center">
           <div id="upload-opts" class="opt-section">
-            <div class="btn-group btn-toggle" data-toggle="buttons">
+            <div class="btn-group btn-toggle" data-toggle="buttons" role="group">
               <label class="btn btn-primary active">
-                <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked> Scan
+                <input name="upload" value="scan" type="radio" title="Scan and generate a new report" checked /> Scan
               </label>
               <label class="btn btn-primary">
-                <input name="upload" value="import" type="radio" title="Import an already generated report"> Import
+                <input name="upload" value="import" type="radio" title="Import an already generated report" /> Import
+              </label>
+            </div>
+          </div>
+          <div id="priority-opts" class="opt-section">
+            <label class="col-md-5">Submission Priority</label>
+            <div class="btn-group btn-toggle" data-toggle="buttons" role="group">
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="1" /> 1
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="2" /> 2
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="3" /> 3
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="4" /> 4
+              </label>
+              <label class="btn btn-primary active">
+                <input type="radio" name="priority" value="5" checked /> 5
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="6" /> 6
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="7" /> 7
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="8" /> 8
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="9" /> 9
+              </label>
+              <label class="btn btn-primary">
+                <input type="radio" name="priority" value="10" /> 10
               </label>
             </div>
           </div>
           <div id="duplicate-opts" class="opt-section">
             <label class="col-md-5">How to handle resubmissions?</label>
-            <div class="btn-group btn-toggle" data-toggle="buttons">
+            <div class="btn-group btn-toggle" data-toggle="buttons" role="group">
               <label class="btn btn-primary active">
-                <input name="duplicate" value="latest" type="radio" title="Pull the latest report" checked> Pull latest
+                <input name="duplicate" value="latest" type="radio" title="Pull the latest report" checked /> Pull latest
               </label>
               <label class="btn btn-primary">
-                <input name="duplicate" value="rescan" type="radio" title="Re-scan and generate a new report"> Re-scan
+                <input name="duplicate" value="rescan" type="radio" title="Re-scan and generate a new report" /> Re-scan
               </label>
             </div>
           </div>
           <div id="archive-opts" class="opt-section">
             <h4>Archives</h4>
             <div class="checkbox col-md-4">
-              <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze">Extract .zip/.rar archives and analyze contents?</label>
+              <label><input type="checkbox" value="" id="archive-analyze" name="archive-analyze" />Extract .zip/.rar archives and analyze contents?</label>
             </div>
             <div class="form-group archive-group">
               <label for="archive-password" class="col-md-2 control-label">Archive Password</label>
               <div class="input-group col-md-5">
-                <input type="text" class="form-control" id="archive-password" name="archive-password"></input>
+                <input type="text" class="form-control" id="archive-password" name="archive-password" />
               </div>
             </div>
           </div>
@@ -334,7 +369,7 @@
             <div class="form-group metadata-group tags-group">
               <label for="metadata-Tags" class="col-md-2 control-label">Tags</label>
               <div class="input-group col-md-10">
-                <input type="text" class="form-control" id="metadata-Tags" name="metadata-Tags"></input>
+                <input type="text" class="form-control" id="metadata-Tags" name="metadata-Tags" />
               </div>
             </div>
             {% for metadata in metadata_fields %}
@@ -342,7 +377,7 @@
               {% set field = metadata|replace(" ", "-")|replace(".", "-")|replace("#", "-")%}
               <label for="metadata-{{field}}" class="col-md-2 control-label">{{metadata}}</label>
               <div class="input-group col-md-10">
-                <input type="text" class="form-control" id="metadata-{{field}}" name="metadata-{{field}}"></input>
+                <input type="text" class="form-control" id="metadata-{{field}}" name="metadata-{{field}}" />
               </div>
             </div>
             {% endfor %}

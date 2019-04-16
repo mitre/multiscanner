@@ -12,7 +12,7 @@ Example Module
    NAME = "include example"
    REQUIRES = ["libmagic", "MD5"]
    DEFAULTCONF = {
-       'ENABLED': True,
+       'ENABLED': False,
    }
 
    def check(conf=DEFAULTCONF):

@@ -22,11 +22,7 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # the celery worker
 MODULE_LIST = utils.parseDir(multiscanner.MODULESDIR, recursive=True)
 DESIRED_MODULES = [
-    'entropy.py',
-    'MD5.py',
-    'SHA1.py',
-    'SHA256.py',
-    'libmagic.py',
+    'filemeta.py',
     'ssdeep.py'
 ]
 MODULES_TO_TEST = [i for e in DESIRED_MODULES for i in MODULE_LIST if e in i]
@@ -48,9 +44,12 @@ TEST_METADATA = {}
 TEST_CONFIG = multiscanner.CONFIG
 
 TEST_REPORT = {
-    'MD5': '96b47da202ddba8d7a6b91fecbf89a41',
-    'SHA256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f',
-    'libmagic': 'a /bin/python script text executable',
+    'filemeta': {
+        'entropy': 2.0,
+        'md5': '96b47da202ddba8d7a6b91fecbf89a41',
+        'sha256': '26d11f0ea5cc77a59b6e47deee859440f26d2d14440beb712dbac8550d35ef1f',
+        'filetype': 'a /bin/python script text executable',
+    },
     'filename': '/opt/other_file'
 }
 
@@ -86,8 +85,8 @@ class TestCeleryCase(CeleryTestCase):
         self.assertEqual(True, True)
 
     @mock.patch('multiscanner.distributed.celery_worker.multiscanner_celery')
-    def test_success(self, mock_delay):
-        mock_delay.return_value = TEST_REPORT
+    def test_success(self, mock_apply_async):
+        mock_apply_async.return_value = TEST_REPORT
         result = celery_worker.multiscanner_celery(
             file_=TEST_FULL_PATH,
             original_filename=TEST_ORIGINAL_FILENAME,
@@ -96,7 +95,7 @@ class TestCeleryCase(CeleryTestCase):
             metadata=TEST_METADATA,
             config=TEST_CONFIG
         )
-        mock_delay.assert_called_once()
+        mock_apply_async.assert_called_once()
         self.assertEqual(result, TEST_REPORT)
 
     # Patch storage_handler.store(result) inside the celery_worker module
@@ -107,7 +106,7 @@ class TestCeleryCase(CeleryTestCase):
         expected_MD5 = 'ba1f2511fc30423bdbb183fe33f3dd0f'
         expected_SHA1 = 'a8fdc205a9f19cc1c7507a60c4f01b13d11d7fd0'
         expected_SHA256 = '181210f8f9c779c26da1d9b2075bde0127302ee0e3fca38c9a83f5b1dd8e5d3b'
-        expected_libmagic = 'ASCII text'
+        expected_filetype = 'ASCII text'
 
         # run the multiscanner celery worker on our test file
         result = celery_worker.multiscanner_celery(
@@ -120,22 +119,22 @@ class TestCeleryCase(CeleryTestCase):
         )
 
         self.assertEqual(
-            result.get(TEST_ORIGINAL_FILENAME, {}).get('entropy'),
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('filemeta', {}).get('entropy'),
             expected_entropy
         )
         self.assertEqual(
-            result.get(TEST_ORIGINAL_FILENAME, {}).get('MD5'),
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('filemeta', {}).get('md5'),
             expected_MD5
         )
         self.assertEqual(
-            result.get(TEST_ORIGINAL_FILENAME, {}).get('SHA1'),
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('filemeta', {}).get('sha1'),
             expected_SHA1
         )
         self.assertEqual(
-            result.get(TEST_ORIGINAL_FILENAME, {}).get('SHA256'),
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('filemeta', {}).get('sha256'),
             expected_SHA256
         )
         self.assertEqual(
-            result.get(TEST_ORIGINAL_FILENAME, {}).get('libmagic'),
-            expected_libmagic
+            result.get(TEST_ORIGINAL_FILENAME, {}).get('filemeta', {}).get('filetype'),
+            expected_filetype
         )
