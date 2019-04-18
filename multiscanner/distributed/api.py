@@ -391,13 +391,13 @@ def delete_task(task_id):
     es_result = handler.delete_by_task_id(task_id)
     if not es_result:
         abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
+
     try:
-        sql_result = db.delete_task(task_id)
-        if not sql_result:
-            abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
+        db.delete_task(task_id)
     except SQLAlchemyError:
         abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
-    return jsonify({'Message': 'Deleted'})
+
+    return jsonify({'Message': True})
 
 
 def save_hashed_filename(f, zipped=False):
