@@ -88,7 +88,7 @@ class TestURLCase(APITestCase):
 
     def test_get_modules(self):
         resp = self.app.get('/api/v2/modules').get_data().decode('utf-8')
-        self.assertTrue(json.loads(resp).keys() > 1)
+        self.assertTrue(len(json.loads(resp).keys()) > 1)
 
 
 class TestTaskCreateCase(APITestCase):
