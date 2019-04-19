@@ -859,7 +859,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.warn(e)
+            logger.warning(e)
             answer = 'N'
         if answer == 'y':
             config_init(args.config)
@@ -883,7 +883,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.warn(e)
+            logger.warning(e)
             answer = 'N'
         if answer == 'y':
             storage.config_init(config["storage-config"], overwrite=True)

@@ -156,13 +156,13 @@ class ElasticSearchStorage(storage.Storage):
         sample_list = []
         sample_tags = {}  # track in case we need to update sample instead of create
 
-        logger.warn(report)
+        logger.warning(report)
         for filename in report:
             report[filename]['filename'] = filename
             try:
                 sample_id = report[filename]['filemeta']['sha256']
             except KeyError:
-                logger.warn("Unable to find sha256 hash for sample_id")
+                logger.warning("Unable to find sha256 hash for sample_id")
                 sample_id = uuid4()
             # Store metadata with the sample, not the report
             sample = {

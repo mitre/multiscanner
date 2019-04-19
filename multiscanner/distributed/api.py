@@ -436,7 +436,7 @@ def import_task(file_):
     try:
         sample_id = report['filemeta']['sha256']
     except KeyError:
-        logger.warn("Unable to find sha256 hash for sample_id")
+        logger.warning("Unable to find sha256 hash for sample_id")
         sample_id = uuid4()
 
     task_id = db.add_task(
