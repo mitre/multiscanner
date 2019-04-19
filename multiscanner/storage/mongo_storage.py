@@ -53,7 +53,7 @@ class MongoStorage(storage.Storage):
             try:
                 report_id = report[filename]['filemeta']['sha256']
             except KeyError:
-                report_id = uuid4()
+                report_id = str(uuid4())
             report_id_list.append(report_id)
 
             self.collection.update(

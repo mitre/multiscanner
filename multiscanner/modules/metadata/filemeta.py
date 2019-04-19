@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 try:
     import magic
 except ImportError:
-    logger.warn("python-magic module not installed...")
+    logger.warning("python-magic module not installed...")
     magic = False
 
 __author__ = "Patrick Copeland"
