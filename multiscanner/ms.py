@@ -779,7 +779,8 @@ def _main():
         update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILE)
 
     if not os.path.isfile(args.config):
-        config_init(args.config)
+        module_list = _get_main_modules()
+        config_init(args.config, module_list)
     else:
         # Write the default configure settings for any missing modules
         module_list = _get_main_modules()

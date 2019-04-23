@@ -18,7 +18,7 @@ __license__ = "MPL 2.0"
 TYPE = "Signature"
 NAME = "Yara"
 DEFAULTCONF = {
-    "ruledir": os.path.join(os.path.split(ms.CONFIG_FILE)[0], "etc", "yarasigs"),
+    "ruledir": os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], "etc", "yarasigs"),
     "fileextensions": [".yar", ".yara", ".sig"],
     "ignore-tags": ["TLPRED"],
     "string-threshold": 30,

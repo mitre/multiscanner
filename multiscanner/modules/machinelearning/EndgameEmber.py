@@ -30,7 +30,7 @@ NAME = "EndgameEmber"
 REQUIRES = ['libmagic']
 DEFAULTCONF = {
     'ENABLED': False,
-    'path-to-model': os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'ember', 'ember_model_2017.txt'),
+    'path-to-model': os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], 'etc', 'ember', 'ember_model_2017.txt'),
 }
 LGBM_MODEL = None
 

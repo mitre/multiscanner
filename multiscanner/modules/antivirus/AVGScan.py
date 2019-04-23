@@ -21,7 +21,7 @@ NAME = "AVG 2014"
 # Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
 # SSH Key
-KEY = os.path.join(os.path.split(ms.CONFIG_FILE)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {
