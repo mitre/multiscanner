@@ -191,7 +191,7 @@ class TestReportCase(APITestCase):
     @mock.patch('multiscanner.distributed.api.handler')
     def test_get_report(self, mock_handler):
         mock_handler.get_report.return_value = TEST_REPORT
-        expected_response = {'Report': TEST_REPORT}
+        expected_response = TEST_REPORT
         resp = self.app.get('/api/v1/tasks/1/report')
         self.assertEqual(resp.status_code, api.HTTP_OK)
         self.assertDictEqual(json.loads(resp.get_data().decode()), expected_response)
