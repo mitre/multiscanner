@@ -422,13 +422,10 @@ class InvalidScanTimeFormatError(ValueError):
     pass
 
 
-def import_task(file_):
-    '''
-    Import a JSON report that was downloaded from MultiScanner.
-    '''
-    report = json.loads(file_.read().decode('utf-8'))
+def insert_report(report):
+    '''Inserts the report to the backend storage and returns an id'''
     try:
-        report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+        report['Scan Metadata']['Scan Time'] = datetime.strptime(report['Scan Metadata']['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
     except ValueError as e:
         logger.debug(e)
         raise InvalidScanTimeFormatError()
@@ -436,17 +433,38 @@ def import_task(file_):
     try:
         sample_id = report['filemeta']['sha256']
     except KeyError:
-        logger.warning("Unable to find sha256 hash for sample_id")
-        sample_id = str(uuid4())
+        logger.warning("Unable to find sha256 hash for sample_id.")
+        raise
 
     task_id = db.add_task(
         sample_id=sample_id,
         task_status='Complete',
-        timestamp=report['Scan Time'],
+        timestamp=report['Scan Metadata']['Scan Time'],
     )
     storage_handler.store({report['filename']: report}, wait=False)
 
     return task_id
+
+
+def import_task(file_):
+    '''
+    Imports a JSON report that was downloaded from MultiScanner.
+    It can be a list of reports or a single report.
+    '''
+    document = json.load(file_)
+    task_ids = []
+
+    if isinstance(document, list):
+        for report in document:
+            task_ids.append(insert_report(report))
+    elif isinstance(document, dict):
+        task_ids.append(insert_report(document))
+    else:
+        # Whatever was provided does not appear
+        # to be a JSON object that we can process.
+        raise ValueError
+
+    return task_ids
 
 
 def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
@@ -490,9 +508,10 @@ def create_task():
         try:
             task_id = import_task(file_)
         except KeyError as e:
-            logger.debug('Cannot import report missing \'Scan Time\' field! - {}'.format(e))
+            msg = 'Cannot import report missing due to missing required property! - {}'.format(e)
+            logger.debug(msg)
             return make_response(
-                jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
+                jsonify({'Message': msg}),
                 HTTP_BAD_REQUEST)
         except InvalidScanTimeFormatError as e:
             logger.debug('Cannot import report with \'Scan Time\' of invalid format! - {}'.format(e))
@@ -510,7 +529,7 @@ def create_task():
                 HTTP_BAD_REQUEST)
 
         return make_response(
-            jsonify({'Message': {'task_ids': [task_id]}}),
+            jsonify({'Message': {'task_ids': task_id}}),
             HTTP_CREATED
         )
 
@@ -898,7 +917,7 @@ def get_report_dict(task_id):
     if task.task_status == 'Complete':
         result = handler.get_report(task.sample_id, task.timestamp)
         if result:
-            return {'Report': result}, True
+            return result, True
         else:
             return {'Report': 'Error occurred in ElasticSearch'}, False
     elif task.task_status == 'Pending':

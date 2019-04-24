@@ -162,8 +162,9 @@ class ElasticSearchStorage(storage.Storage):
             try:
                 sample_id = report[filename]['filemeta']['sha256']
             except KeyError:
-                logger.warning("Unable to find sha256 hash for sample_id")
-                sample_id = str(uuid4())
+                logger.warning("Unable to find sha256 hash for sample_id.")
+                raise
+
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
@@ -171,29 +172,20 @@ class ElasticSearchStorage(storage.Storage):
                 'tags': [],
             }
 
-            # move filemeta entries to top level
-            sample.update(
-                {k: v for k, v in report[filename]['filemeta'].items()})
-
-            try:
-                del report[filename]['filemeta']
-                del report[filename]['ssdeep']
-            except Exception as e:
-                pass
-
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
             report[filename]['filename'] = filename
             sample_tags[sample_id] = sample.get('tags', [])
 
             # If there is Cuckoo results in the report, some
             # cleanup is needed for the report
-            if 'Cuckoo Sandbox' in report[filename].keys():
+            if 'Cuckoo Sandbox' in report[filename]:
                 cuckoo_report = report[filename]['Cuckoo Sandbox']
                 cuckoo_doc = {
                     'target': cuckoo_report.get('target'),
                     'summary': cuckoo_report.get('behavior', {}).get('summary'),
                     'info': cuckoo_report.get('info')
                 }
+
                 signatures = cuckoo_report.get('signatures')
                 if signatures:
                     cuckoo_doc['signatures'] = process_cuckoo_signatures(signatures)
@@ -231,8 +223,8 @@ class ElasticSearchStorage(storage.Storage):
                     },
                     'ERROR': 'Failed to index the full report in Elasticsearch',
                 }
-                if 'Scan Time' in report[filename]:
-                    report_body_fail['Scan Time'] = report[filename]['Scan Time']
+                if 'Scan Time' in report[filename]['Scan Metadata']:
+                    report_body_fail['Scan Time'] = report[filename]['Scan Metadata']['Scan Time']
                 report_result = self.es.index(index=self.index, doc_type=self.doc_type,
                                               body=report_body_fail,
                                               pipeline='dedot', routing=sample_id)
