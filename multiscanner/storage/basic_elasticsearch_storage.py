@@ -2,7 +2,6 @@
 Storage module that will interact with elasticsearch in a simple way.
 """
 import logging
-from uuid import uuid4
 
 from elasticsearch import Elasticsearch
 
@@ -42,7 +41,8 @@ class BasicElasticSearchStorage(storage.Storage):
             try:
                 report_id = report[filename]['filemeta']['sha256']
             except KeyError:
-                report_id = str(uuid4())
+                logger.warning("Unable to find sha256 hash for sample_id.")
+                raise
             report_id_list.append(report_id)
             report_data = self.dedot(report[filename])
             report_data = self.same_type_lists(report_data)

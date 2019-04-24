@@ -14,11 +14,13 @@ functions:
         specified report.
 '''
 import json
-from uuid import uuid4
+import logging
 
 from pymongo import MongoClient
 
 from multiscanner.storage import storage
+
+logger = logging.getLogger(__name__)
 
 
 class MongoStorage(storage.Storage):
@@ -53,7 +55,8 @@ class MongoStorage(storage.Storage):
             try:
                 report_id = report[filename]['filemeta']['sha256']
             except KeyError:
-                report_id = str(uuid4())
+                logger.warning("Unable to find sha256 hash for sample_id.")
+                raise
             report_id_list.append(report_id)
 
             self.collection.update(
