@@ -79,11 +79,15 @@ from multiscanner.storage.storage import StorageNotLoadedError
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
+TASK_STILL_PROCESSING = {'Message': 'Task still pending'}
+TASK_FAILED = {'Message': 'Task failed'}
 
 HTTP_OK = 200
 HTTP_CREATED = 201
+HTTP_STILL_PROCESSING = 202
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
+HTTP_SERVER_FAILED = 500
 
 DEFAULTCONF = {
     'host': 'localhost',
@@ -631,20 +635,20 @@ def get_report(task_id):
     to the given task ID.
     '''
     download = request.args.get('d', default='False', type=str)[0].lower()
+    report_dict = get_report_dict(task_id)
 
-    report_dict, success = get_report_dict(task_id)
-    if success:
-        if download == 't' or download == 'y' or download == '1':
-            # raw JSON
-            response = make_response(jsonify(report_dict['Report']))
-            response.headers['Content-Type'] = 'application/json'
-            response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
-            return response
-        else:
-            # processed JSON intended for web UI
-            report_dict = _pre_process(report_dict['Report'])
-            return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+
+    if download == 't' or download == 'y' or download == '1':
+        # raw JSON
+        response = make_response(jsonify(report_dict))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+        return response
     else:
+        # processed JSON intended for web UI
+        report_dict = _pre_process(report_dict)
         return jsonify(report_dict)
 
 
@@ -665,13 +669,11 @@ def get_reports():
         try:
             for task_id in task_ids:
                 t = int(task_id)
-                report_dict, success = get_report_dict(t)
-
-                if success:
-                    report_dict = _pre_process(report_dict)
-                    final_report.append(report_dict)
-                else:
-                    return abort(HTTP_NOT_FOUND, {'Message': 'One or more tasks failed to be retrieved.'})
+                report_dict = get_report_dict(t)
+                if report_dict == TASK_STILL_PROCESSING:
+                    return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+                report_dict = _pre_process(report_dict)
+                final_report.append(report_dict)
         except ValueError:
             abort(HTTP_BAD_REQUEST)
 
@@ -760,13 +762,13 @@ def get_file_task(task_id):
     '''
     Download a single sample. Either raw binary or enclosed in a zip file.
     '''
-    # try to get report dict
-    report_dict, success = get_report_dict(task_id)
-    if not success:
-        return jsonify(report_dict)
+    report_dict = get_report_dict(task_id)
+
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     # okay, we have report dict; get sha256
-    sha256 = report_dict.get('Report', {}).get('filemeta', {}).get('sha256', '')
+    sha256 = report_dict.get('filemeta', {}).get('sha256', '')
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
@@ -848,13 +850,14 @@ def get_files_task():
 @app.route('/api/v2/tasks/<int:task_id>/maec', methods=['GET'])
 def get_maec_report(task_id):
     # try to get report dict
-    report_dict, success = get_report_dict(task_id)
-    if not success:
-        return jsonify(report_dict)
+    report_dict = get_report_dict(task_id)
+
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     # okay, we have report dict; get cuckoo task ID
     try:
-        cuckoo_task_id = report_dict['Report']['Cuckoo Sandbox']['info']['id']
+        cuckoo_task_id = report_dict['Cuckoo Sandbox']['info']['id']
     except KeyError as e:
         logger.debug('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
@@ -882,13 +885,13 @@ def get_report_dict(task_id):
     if task.task_status == 'Complete':
         result = handler.get_report(task.sample_id, task.timestamp)
         if result:
-            return {'Report': result}, True
+            return result
         else:
-            return {'Report': 'Error occurred in ElasticSearch'}, False
+            abort(HTTP_SERVER_FAILED, 'Error occured in ElasticSearch')
     elif task.task_status == 'Pending':
-        return {'Report': 'Task still pending'}, False
+        return TASK_STILL_PROCESSING
     else:
-        return {'Report': 'Task failed'}, False
+        abort(HTTP_SERVER_FAILED, TASK_FAILED)
 
 
 @app.route('/api/v2/tags/', methods=['GET'])
@@ -1101,10 +1104,10 @@ def generate_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
     '''
-    report_dict, success = get_report_dict(task_id)
+    report_dict = get_report_dict(task_id)
 
-    if not success:
-        return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
     response = make_response(pdf)
@@ -1120,10 +1123,10 @@ def generate_stix2_bundle_from_report(task_id):
 
     custom labels must be comma-separated.
     '''
-    report_dict, success = get_report_dict(task_id)
+    report_dict = get_report_dict(task_id)
 
-    if not success:
-        return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     formatting = request.args.get('pretty', default='False', type=str)[0].lower()
     custom_labels = request.args.get('custom_labels', default='', type=str).split(",")
@@ -1178,13 +1181,11 @@ def generate_stix2_bundle_from_multiple_reports():
         try:
             for task_id in task_ids:
                 t = int(task_id)
-                report_dict, success = get_report_dict(t)
-
-                if success:
-                    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
-                    all_stix_objects.extend(stix_objects)
-                else:
-                    return abort(HTTP_NOT_FOUND, {"Error": "One or more tasks failed to be retrieved"})
+                report_dict = get_report_dict(t)
+                if report_dict == TASK_STILL_PROCESSING:
+                    return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+                stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+                all_stix_objects.extend(stix_objects)
         except ValueError:
             abort(HTTP_BAD_REQUEST)
 

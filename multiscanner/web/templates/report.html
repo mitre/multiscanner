@@ -226,21 +226,19 @@
   function getReport() {
     // Get report and populate the table
     $.get("{{ api_loc }}/api/v2/tasks/{{ task_id }}/report", function(data, status) {
-      if (data.hasOwnProperty('Report')) {
-        if (data.Report == 'Task still pending') {
-          // Check again in 5 seconds
-          console.log("Check again in 5 seconds");
-          setTimeout(getReport, 5000);
-          return;
-        }
-        else if (data.Report == 'Task failed') {
-          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
-          return;
-        }
-        else if (data.Report == 'Error occurred in ElasticSearch') {
-          $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ElasticSearch Error!</h3>');
-          return;
-        }
+      if (data.Message == 'Task still pending') {
+        // Check again in 5 seconds
+        console.log("Check again in 5 seconds");
+        setTimeout(getReport, 5000);
+        return;
+      }
+      else if (data == 'Task failed') {
+        $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> Scan Failed!</h3>');
+        return;
+      }
+      else if (data == 'Error occurred in ElasticSearch') {
+        $('#pending').html('<h3 class="text-center"><span class="glyphicon glyphicon-exclamation-sign" style="margin-bottom:10px"></span><br/> ElasticSearch Error!</h3>');
+        return;
       }
 
       $('#pending').hide();
@@ -255,9 +253,9 @@
       }
 
       // grab scan metadata
-      if (data.Report.hasOwnProperty('Scan Metadata')) {
-        scanMeta = data.Report['Scan Metadata'];
-        delete data.Report['Scan Metadata'];
+      if (data.hasOwnProperty('Scan Metadata')) {
+        scanMeta = data['Scan Metadata'];
+        delete data['Scan Metadata'];
       }
 
       // Take some report data and put it at the top of the report

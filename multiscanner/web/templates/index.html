@@ -165,7 +165,7 @@
       // If file was a zip, it will go to the first file
       $('#' + previewId).css('cursor', 'pointer');
       $('#' + previewId).click(function() {
-        window.location = "report/" + data.response.Message.task_ids[0];
+        window.location = "report/" + data.response.task_ids[0];
       })
     });
 

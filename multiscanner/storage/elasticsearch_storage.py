@@ -167,16 +167,12 @@ class ElasticSearchStorage(storage.Storage):
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
+                'filemeta': report[filename]['filemeta'],
                 'ssdeep': report[filename]['ssdeep'],
                 'tags': [],
             }
 
-            # move filemeta entries to top level
-            sample.update(
-                {k: v for k, v in report[filename]['filemeta'].items()})
-
             try:
-                del report[filename]['filemeta']
                 del report[filename]['ssdeep']
             except Exception as e:
                 pass
