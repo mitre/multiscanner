@@ -3,7 +3,7 @@
 Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
-GET / ---> Test functionality. {'Message': 'True'}
+GET / ---> Test functionality. {'Message': true}
 GET /api/v2/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
 GET /api/v2/modules ---> Receive list of modules available
 GET /api/v2/tags ----> Receive list of all tags in use
@@ -515,7 +515,7 @@ def create_task():
                 HTTP_BAD_REQUEST)
 
         return make_response(
-            jsonify({'task_ids': [task_id]}),
+            jsonify([task_id]),
             HTTP_CREATED
         )
 
@@ -623,7 +623,7 @@ def create_task():
             abort(HTTP_BAD_REQUEST, {'Message': 'Could not queue task(s) due backend error'})
 
     return make_response(
-        jsonify({'task_ids': task_id_list}),
+        jsonify(task_id_list),
         HTTP_CREATED
     )
 

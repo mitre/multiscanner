@@ -44,14 +44,13 @@ View, submit, and search analysis tasks.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Get a list of tasks in MultiScanner                                                                     |
 +--------+-----------------------------------------------------+------------------------------------------+
-| POST   | /api/v2/tasks                                       | JSON object with ``task_ids`` key,       |
-|        |                                                     | holding list of IDs                      |
+| POST   | /api/v2/tasks                                       | List of task IDs                         |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Submit file sample via POST file, and receive a task ID for the analysis of the submission.             |
 |                                                                                                         |
 | Sample POST usage: `curl -i -X POST http://localhost:8080/api/v2/tasks -F file=@/bin/ls`                |
 |                                                                                                         |
-| Sample response: ``{ "task_ids": [5, 6, 7] }``                                                          |
+| Sample response: ``[5, 6, 7]``                                                          |
 |                                                                                                         |
 | Expects a file in the request body named ``file``, and also admits the following HTTP form keys:        |
 |  * ``duplicate`` - either ``rescan`` (do a scan even if this file has been previously submitted)        |
