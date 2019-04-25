@@ -69,12 +69,15 @@ View, submit, and search analysis tasks.
 +--------+-----------------------------------------------------+------------------------------------------+
 | Delete task with the given `task_id`                                                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/datatable                             | List with a single `task`_               |
+| GET    | /api/v2/tasks/sha256/<sha256>                       | Receive a { task_id: ... } object for    |
+|        |                                                     | the most recent scan of sample           |
++--------+-----------------------------------------------------+------------------------------------------+
+| GET    | /api/v2/tasks/_datatable                            | List with a single `task`_               |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of most recent report for matching samples. For use with Lucene queries.                   |
 | **Intended for use via DataTables integration, not normal API use.**                                    |
 +--------+-----------------------------------------------------+------------------------------------------+
-| GET    | /api/v2/tasks/datatable/history                     | List of `tasks <#task>`_                 |
+| GET    | /api/v2/tasks/_datatable/history                    | List of `tasks <#task>`_                 |
 +--------+-----------------------------------------------------+------------------------------------------+
 | Receive list of all reports for matching samples                                                        |
 | **Intended for use via DataTables integration, not normal API use.**                                    |

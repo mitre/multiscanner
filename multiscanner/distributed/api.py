@@ -336,7 +336,7 @@ def search(params, get_all=False):
         return db.search(params, result)
 
 
-@app.route('/api/v2/tasks/datatable/history', methods=['GET'])
+@app.route('/api/v2/tasks/_datatable/history', methods=['GET'])
 def task_search_history():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -347,7 +347,7 @@ def task_search_history():
     return jsonify(resp)
 
 
-@app.route('/api/v2/tasks/datatable', methods=['GET'])
+@app.route('/api/v2/tasks/_datatable', methods=['GET'])
 def task_search():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
