@@ -81,7 +81,7 @@ class TestURLCase(APITestCase):
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
 
     def test_create_first_task(self):
-        expected_response = {'task_ids': [1]}
+        expected_response = [1]
         resp = post_file(self.app)
         self.assertEqual(resp.status_code, api.HTTP_CREATED)
         self.assertEqual(json.loads(resp.get_data().decode()), expected_response)
@@ -201,7 +201,7 @@ class TestReportCase(APITestCase):
     @mock.patch('multiscanner.distributed.api.handler')
     def test_search_analyses(self, mock_handler, mock_db):
         mock_handler.search.return_value = [1]
-        self.app.get('/api/v2/tasks/datatable?search[value]=other_file')
+        self.app.get('/api/v2/tasks/_datatable?search[value]=other_file')
 
         hargs, hkwargs = mock_handler.search.call_args_list[0]
         self.assertEqual(hargs[0], 'other_file')
@@ -215,7 +215,7 @@ class TestReportCase(APITestCase):
     @mock.patch('multiscanner.distributed.api.handler')
     def test_search_history(self, mock_handler, mock_db):
         mock_handler.search.return_value = [1]
-        self.app.get('/api/v2/tasks/datatable/history?search[value]=other_file')
+        self.app.get('/api/v2/tasks/_datatable/history?search[value]=other_file')
 
         hargs, hkwargs = mock_handler.search.call_args_list[0]
         self.assertEqual(hargs[0], 'other_file')
