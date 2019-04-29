@@ -315,27 +315,14 @@ def _start_module_threads(filelist, module_list, config, global_module_interface
         if not mod:
             logger.warning("{} not a valid module...".format(modname))
             continue
-        conf = None
+        try:
+            conf = mod.DEFAULTCONF
+        except Exception as e:
+            logger.error(e)
+            conf = {}
         if modname in config:
-            if '_load_default' in config or '_load_default' in config[modname]:
-                try:
-                    conf = mod.DEFAULTCONF
-                    conf.update(config[modname])
-                except Exception as e:
-                    logger.warning(e)
-                    conf = config[modname]
-                # Remove _load_default from config
-                if '_load_default' in conf:
-                    del conf['_load_default']
-            else:
-                conf = config[modname]
+            conf.update(config[modname])
 
-        # Try and read in the default conf if one was not passed
-        if not conf:
-            try:
-                conf = mod.DEFAULTCONF
-            except Exception as e:
-                logger.error(e)
         thread = _Thread(
             target=_run_module,
             args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
@@ -416,12 +403,9 @@ def multiscan(Files, config=None, module_list=None):
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
-    print(dict(config.items()))
     # Read in config
     if config is None:
         config = {}
-    else:
-        config['_load_default'] = True
     if 'main' in config:
         main_config = config['main']
     else:
