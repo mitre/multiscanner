@@ -26,11 +26,20 @@ MODULES_DIR = os.path.join(MS_WD, 'modules')
 # The default config file
 CONFIG_FILE = None
 
-# Main MultiScanner config, as a dictionary
+# Main MultiScanner config, as a ConfigParser object
 MS_CONFIG = None
 
 # The dictionary of modules and whether they're enabled or not
 MODULE_LIST = None
+
+
+def get_with_default(config, section, option, default):
+    """Get 'option' from the named 'section' in given ConfigParser object.
+    If option is not present, returns the provided default."""
+    if config.has_option(section, option):
+        return config.get(section, option)
+    else:
+        return default
 
 
 def get_configuration_paths():
@@ -68,7 +77,7 @@ CONFIG_FILE = determine_configuration_path(None)
 
 
 def parse_config(config_object):
-    """Converts a config object to a dictionary"""
+    """Converts a ConfigParser object to a dictionary"""
     return_var = {}
     for section in config_object.sections():
         section_dict = dict(config_object.items(section))
@@ -82,6 +91,20 @@ def parse_config(config_object):
                 logger.debug(e)
         return_var[section] = section_dict
     return return_var
+
+
+def dict_to_config(dictionary):
+    """Converts a dictionary to a ConfigParser object"""
+    config = configparser.ConfigParser()
+    config.optionxform = str
+
+    for name, section in dictionary.items():
+        if name == '_load_default':
+            continue
+        config.add_section(name)
+        for key in section.keys():
+            config.set(name, key, str(section[key]))
+    return config
 
 
 def write_config(config_object, config_file, section_name, default_config):
@@ -101,7 +124,7 @@ def write_config(config_object, config_file, section_name, default_config):
 
 
 def read_config(config_file, section_name=None, default_config=None):
-    """Parse a config file into a dictionary
+    """Parse a config file into a ConfigParser object
 
     Can optionally set a default configuration by providing 'section_name' and
     'default_config' arguments.
@@ -117,7 +140,7 @@ def read_config(config_file, section_name=None, default_config=None):
            (not config_object.has_section(section_name) or not os.path.isfile(config_file)):
         # Write default config
         write_config(config_object, config_file, section_name, default_config)
-    return parse_config(config_object)
+    return config_object
 
 
 MS_CONFIG = read_config(CONFIG_FILE)
@@ -177,15 +200,15 @@ MODULE_LIST = get_modules()
 
 
 def update_ms_config(config):
-    """Update global config dictionary.
+    """Update global config object.
 
     config - the ConfigParser object or dictionary to replace MS_CONFIG with
     """
     global MS_CONFIG
     if isinstance(config, configparser.ConfigParser):
-        MS_CONFIG = parse_config(config)
-    else:
         MS_CONFIG = config
+    else:
+        MS_CONFIG = dict_to_config(config)
 
 
 def update_ms_config_file(config_file):
@@ -242,7 +265,7 @@ def write_missing_config(sections, config_object, filepath):
     """
     Write in default config for modules not in config file. Returns True if config was written, False if not.
 
-    config_object - The config object
+    config_object - The ConfigParser object
     filepath - The path to the config file
     sections - Dictionary mapping section names to the Python module containing its DEFAULTCONF
     """

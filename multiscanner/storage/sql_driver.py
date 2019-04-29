@@ -17,7 +17,7 @@ from sqlalchemy.orm import aliased, scoped_session, sessionmaker
 from sqlalchemy.pool import QueuePool
 from sqlalchemy_utils import create_database, database_exists
 
-from multiscanner.config import get_config_path, reset_config
+from multiscanner.config import dict_to_config, get_config_path, reset_config
 
 CONFIG_FILE = get_config_path('api')
 
@@ -101,7 +101,7 @@ class Database(object):
         if config:
             for key_ in config:
                 config_from_file[key_] = config[key_]
-        self.config = config_from_file
+        self.config = dict_to_config(config_from_file)
 
     def init_db(self):
         """

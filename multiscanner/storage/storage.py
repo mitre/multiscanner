@@ -17,7 +17,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import get_config_path, parse_config
+from multiscanner.config import get_config_path, get_with_default
 
 
 DEFAULTCONF = {
@@ -101,20 +101,16 @@ class StorageHandler(object):
         config_object.optionxform = str
         config_object.read(configfile)
         if config:
-            file_conf = parse_config(config_object)
             for key in config:
-                if key not in file_conf:
-                    file_conf[key] = config[key]
-                    file_conf[key]['_load_default'] = True
+                if key not in config_object:
+                    config_object[key] = config[key]
+                    config_object[key]['_load_default'] = True
                 else:
-                    file_conf[key].update(config[key])
-            config = file_conf
-        else:
-            config = parse_config(config_object)
+                    config_object[key].update(config[key])
+        config = config_object
 
-        config_main = config.get('main', {})
-        self.sleep_time = config_main.get('retry_time', DEFAULTCONF['retry_time'])
-        self.num_retries = config_main.get('retry_num', DEFAULTCONF['retry_num'])
+        self.sleep_time = get_with_default(config, 'main', 'retry_time', DEFAULTCONF['retry_time'])
+        self.num_retries = get_with_default(config, 'main', 'retry_num', DEFAULTCONF['retry_num'])
 
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
@@ -125,7 +121,7 @@ class StorageHandler(object):
                         del config[storage_name]['_load_default']
                     # Update the default storage config
                     storage_classes[storage_name].config = storage_classes[storage_name].DEFAULTCONF
-                    storage_classes[storage_name].config.update(config[storage_name])
+                    storage_classes[storage_name].config.read_dict(config[storage_name])
                 else:
                     storage_classes[storage_name].config = config[storage_name]
 

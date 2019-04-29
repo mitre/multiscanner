@@ -416,6 +416,7 @@ def multiscan(Files, config=None, module_list=None):
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
+    print(dict(config.items()))
     # Read in config
     if config is None:
         config = {}
@@ -782,7 +783,7 @@ def _main():
         module_list = _get_main_modules()
         config_init(args.config, module_list)
     else:
-        # Write the default configure settings for any missing modules
+        # Write the default config settings for any missing modules
         module_list = _get_main_modules()
         write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILE)
 
