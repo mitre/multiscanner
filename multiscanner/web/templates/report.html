@@ -438,8 +438,9 @@
     // Handle submission of notes
     $('#note-form').submit(function( event ) {
       var text = {"text": $('#note-input').val()};
-      $.post("{{ api_loc }}/api/v2/tasks/{{ task_id }}/notes", text);
-      getNotes(true);
+      $.post("{{ api_loc }}/api/v2/tasks/{{ task_id }}/notes", text, function() {
+          getNotes(true);
+      });
       event.preventDefault();
     });
 

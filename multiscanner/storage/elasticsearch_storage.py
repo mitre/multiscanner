@@ -463,7 +463,7 @@ class ElasticSearchStorage(storage.Storage):
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.index(
             index=self.index, doc_type=self.doc_type, body=data,
-            routing=sample_id
+            routing=sample_id, refresh="wait_for"
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])
