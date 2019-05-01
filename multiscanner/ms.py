@@ -7,7 +7,6 @@ from __future__ import (absolute_import, division, unicode_literals, with_statem
 
 import argparse
 import codecs
-import configparser
 import datetime
 import json
 import logging
@@ -32,7 +31,7 @@ from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
                                        parse_file_list, queue2list)
 from multiscanner import config as msconf
-from multiscanner.config import (PY3, config_init, get_config_path,
+from multiscanner.config import (MSConfigParser, PY3, config_init, get_config_path,
                                  update_ms_config, update_ms_config_file,
                                  update_paths_in_config, write_missing_config)
 from multiscanner.storage import storage
@@ -415,6 +414,9 @@ def multiscan(Files, config=None, module_list=None):
     if "copyfilesto" not in main_config:
         main_config["copyfilesto"] = False
     if main_config["copyfilesto"]:
+        print(str(type(config)))
+        print(str(type(main_config)))
+        print(str(type(main_config['copyfilesto'])))
         if os.path.isdir(main_config["copyfilesto"]):
             filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
         else:
@@ -832,8 +834,7 @@ def _main():
         results = multiscan(filelist, config=msconf.MS_CONFIG)
 
         # We need to read in the config for the parseReports call
-        config = configparser.ConfigParser()
-        config.optionxform = str
+        config = MSConfigParser()
         config.read(args.config)
         config = msconf.MS_CONFIG['main']
         # Make sure we have a group-types

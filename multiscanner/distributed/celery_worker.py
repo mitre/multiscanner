@@ -35,23 +35,25 @@ DEFAULTCONF = {
 
 configfile = msconf.get_config_path('api')
 config = msconf.read_config(configfile, 'celery', DEFAULTCONF)
-worker_config = config.get('celery')
-db_config = config.get('Database')
+db_config = dict(config.items('Database'))
 
 storage_configfile = msconf.get_config_path('storage')
 storage_config = msconf.read_config(storage_configfile)
-es_storage_config = storage_config.get('ElasticSearchStorage')
+try:
+    es_storage_config = storage_config['ElasticSearchStorage']
+except KeyError:
+    es_storage_config = {}
 
 default_exchange = Exchange('celery', type='direct')
 
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
-    worker_config.get('protocol'),
-    worker_config.get('user'),
-    worker_config.get('password'),
-    worker_config.get('host'),
-    worker_config.get('vhost'),
+    config.get('celery', 'protocol'),
+    config.get('celery', 'user'),
+    config.get('celery', 'password'),
+    config.get('celery', 'host'),
+    config.get('celery', 'vhost'),
 ))
-app.conf.timezone = worker_config.get('tz')
+app.conf.timezone = config.get('celery', 'tz')
 app.conf.task_queues = [
     Queue('low_tasks', default_exchange, routing_key='tasks.low', queue_arguments={'x-max-priority': 10}),
     Queue('medium_tasks', default_exchange, routing_key='tasks.medium', queue_arguments={'x-max-priority': 10}),
@@ -80,7 +82,7 @@ def setup_periodic_tasks(sender, **kwargs):
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
             metricbeat_rollover_celery.s(),
-            args=(es_storage_config.get('metricbeat_rollover_days')),
+            args=(es_storage_config.get('metricbeat_rollover_days'), 7),
             kwargs=dict(config=msconf.MS_CONFIG),
             **{
                 'queue': 'low_tasks',
@@ -241,7 +243,7 @@ def metricbeat_rollover_celery(days):
             return
 
         if not days:
-            days = es_storage_config.get('metricbeat_rollover_days')
+            days = es_storage_config.get('metricbeat_rollover_days', 7)
         if not days:
             raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
 

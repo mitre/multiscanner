@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
-import configparser
 import os
 import sys
 
@@ -71,8 +70,7 @@ class TestMissingConfig(_runmulti_tests):
         multiscanner._main()
 
     def test_config_init(self):
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
+        config_object = multiscanner.MSConfigParser()
         config_object.read(TEST_CONFIG_FILE)
 
         assert config_object.has_section('main')
@@ -81,8 +79,7 @@ class TestMissingConfig(_runmulti_tests):
 
     def test_fill_in_missing_config_sections(self):
         # Simulate a section missing from config file before multiscanner is imported/run
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
+        config_object = multiscanner.MSConfigParser()
         config_object.read(TEST_CONFIG_FILE)
         config_object.remove_section('main')
         config_object.remove_section('test_1')

@@ -38,7 +38,7 @@ TEST_TASK_ID = 1
 with open(TEST_FULL_PATH, 'r') as f:
     TEST_FILE_HASH = hashlib.sha256(f.read().encode('utf-8')).hexdigest()
 TEST_METADATA = {}
-TEST_CONFIG = multiscanner.MS_CONFIG
+TEST_CONFIG = multiscanner.config.MS_CONFIG
 
 TEST_REPORT = {
     'filemeta': {

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import configparser
 import json
 import logging
 import os
@@ -17,7 +16,7 @@ from sqlalchemy.orm import aliased, scoped_session, sessionmaker
 from sqlalchemy.pool import QueuePool
 from sqlalchemy_utils import create_database, database_exists
 
-from multiscanner.config import dict_to_config, get_config_path, reset_config
+from multiscanner.config import MSConfigParser, get_config_path, reset_config
 
 CONFIG_FILE = get_config_path('api')
 
@@ -74,8 +73,7 @@ class Database(object):
         self.db_engine = None
 
         # Configuration parsing
-        config_parser = configparser.ConfigParser()
-        config_parser.optionxform = str
+        config_parser = MSConfigParser()
         if configfile is None:
             configfile = CONFIG_FILE
 
@@ -101,7 +99,7 @@ class Database(object):
         if config:
             for key_ in config:
                 config_from_file[key_] = config[key_]
-        self.config = dict_to_config(config_from_file)
+        self.config = config_from_file
 
     def init_db(self):
         """

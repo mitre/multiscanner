@@ -22,7 +22,7 @@ stix2
 reportlab
 #Required by API
 flask
-psycopg2
+psycopg2-binary
 rarfile
 sqlalchemy
 sqlalchemy-utils

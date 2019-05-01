@@ -4,7 +4,6 @@
 
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
-import configparser
 import inspect
 import logging
 import os
@@ -17,7 +16,7 @@ standard_library.install_aliases()
 
 
 from multiscanner.common import utils
-from multiscanner.config import get_config_path, get_with_default
+from multiscanner.config import MSConfigParser, get_config_path
 
 
 DEFAULTCONF = {
@@ -97,8 +96,7 @@ class StorageHandler(object):
             configfile = get_config_path('storage')
 
         # Read in config
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
+        config_object = MSConfigParser()
         config_object.read(configfile)
         if config:
             for key in config:
@@ -109,9 +107,8 @@ class StorageHandler(object):
                     config_object[key].update(config[key])
         config = config_object
 
-        self.sleep_time = get_with_default(config, 'main', 'retry_time', DEFAULTCONF['retry_time'])
-        self.num_retries = get_with_default(config, 'main', 'retry_num', DEFAULTCONF['retry_num'])
-
+        self.sleep_time = config.get('main', 'retry_time', fallback=DEFAULTCONF['retry_time'])
+        self.num_retries = config.get('main', 'retry_num', fallback=DEFAULTCONF['retry_num'])
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
             if storage_name in config:

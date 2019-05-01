@@ -33,13 +33,22 @@ MS_CONFIG = None
 MODULE_LIST = None
 
 
-def get_with_default(config, section, option, default):
-    """Get 'option' from the named 'section' in given ConfigParser object.
-    If option is not present, returns the provided default."""
-    if config.has_option(section, option):
-        return config.get(section, option)
-    else:
-        return default
+class MSConfigParser(configparser.ConfigParser):
+    def __init__(self, *args, **kwargs):
+        super(MSConfigParser, self).__init__(*args, **kwargs)
+        self.optionxform = str  # Preserve case
+
+    def __getitem__(self, key):
+        """Attempts to convert value to a Python literal if possible."""
+        value = super(MSConfigParser, self).__getitem__(key)
+        try:
+            return ast.literal_eval(value)
+        except (SyntaxError, ValueError) as e:
+            # Ignore if config value isn't convertible to a Python literal
+            pass
+        except Exception as e:
+            logger.debug(e)
+        return value
 
 
 def get_configuration_paths():
@@ -95,8 +104,7 @@ def parse_config(config_object):
 
 def dict_to_config(dictionary):
     """Converts a dictionary to a ConfigParser object"""
-    config = configparser.ConfigParser()
-    config.optionxform = str
+    config = MSConfigParser()
 
     for name, section in dictionary.items():
         if name == '_load_default':
@@ -133,8 +141,7 @@ def read_config(config_file, section_name=None, default_config=None):
     section_name - the name of the section of defaults to be added
     default_config - values to set this configuration to
     """
-    config_object = configparser.ConfigParser()
-    config_object.optionxform = str
+    config_object = MSConfigParser()
     config_object.read(config_file)
     if section_name is not None and default_config is not None and \
            (not config_object.has_section(section_name) or not os.path.isfile(config_file)):
@@ -205,7 +212,7 @@ def update_ms_config(config):
     config - the ConfigParser object or dictionary to replace MS_CONFIG with
     """
     global MS_CONFIG
-    if isinstance(config, configparser.ConfigParser):
+    if isinstance(config, MSConfigParser):
         MS_CONFIG = config
     else:
         MS_CONFIG = dict_to_config(config)
@@ -250,8 +257,7 @@ def config_init(filepath, sections, overwrite=False):
     overwrite - Whether to overwrite the config file at filepath, if it already exists
     """
 
-    config = configparser.ConfigParser()
-    config.optionxform = str
+    config = MSConfigParser()
 
     if overwrite or not os.path.isfile(filepath):
         return reset_config(sections, config, filepath)

@@ -121,7 +121,7 @@ api_config = read_config(api_config_file, 'api', DEFAULTCONF)
 from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
-db = database.Database(config=api_config['Database'], regenconfig=False)
+db = database.Database(config=dict(api_config.items('Database')), regenconfig=False)
 # To run under Apache, we need to set up the DB outside of __main__
 # Sleep and retry until database connection is successful
 try:
@@ -155,7 +155,7 @@ for x in range(0, db_num_retries):
 storage_handler = StorageHandler()
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_file = ms.MS_CONFIG
+ms_config_file = ms.config.MS_CONFIG
 ms_config = read_config(ms_config_file)
 
 try:
@@ -439,7 +439,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
         # Publish the task to Celery
         multiscanner_celery.apply_async(
             args=(full_path, original_filename, task_id, f_name, metadata),
-            kwargs=dict(config=ms.MS_CONFIG, module_list=module_list),
+            kwargs=dict(config=ms.config.MS_CONFIG, module_list=module_list),
             **{'queue': queue_name, 'priority': priority, 'routing_key': routing_key}
         )
     else:
@@ -861,7 +861,7 @@ def get_maec_report(task_id):
     # Get the MAEC report from Cuckoo
     try:
         maec_report = requests.get(
-            '{}/v1/tasks/report/{}/maec'.format(ms_config['Cuckoo'].get('API URL', ''), cuckoo_task_id)
+            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', 'API URL', fallback=''), cuckoo_task_id)
         )
     except Exception as e:
         logger.warning('No MAEC report found for that task! - {}'.format(e))
