@@ -168,9 +168,15 @@ class ElasticSearchStorage(storage.Storage):
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
+                'filemeta': report[filename]['filemeta'],
                 'ssdeep': report[filename]['ssdeep'],
                 'tags': [],
             }
+
+            try:
+                del report[filename]['ssdeep']
+            except Exception as e:
+                pass
 
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
             report[filename]['filename'] = filename
@@ -459,7 +465,7 @@ class ElasticSearchStorage(storage.Storage):
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.index(
             index=self.index, doc_type=self.doc_type, body=data,
-            routing=sample_id
+            routing=sample_id, refresh="wait_for"
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])

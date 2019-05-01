@@ -1,43 +1,40 @@
 #!/usr/bin/env python
 '''
-THIS APP IS NOT PRODUCTION READY!! DO NOT USE!
-
 Flask app that provides a RESTful API to MultiScanner.
 
 Supported operations:
-GET / ---> Test functionality. {'Message': 'True'}
-GET /api/v1/files/<sha256>?raw={t|f} ---> Download sample, defaults to passwd protected zip
-GET /api/v1/modules ---> Receive list of modules available
-GET /api/v1/tags ---> Receive list of all tags in use
-GET /api/v1/tasks ---> Receive list of tasks in MultiScanner
-POST /api/v1/tasks ---> POST file and receive report id
+GET / ---> Test functionality. {'Message': true}
+GET /api/v2/files/<sha256>?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v2/modules ---> Receive list of modules available
+GET /api/v2/tags ----> Receive list of all tags in use
+GET /api/v2/tasks ---> Receive list of tasks in MultiScanner
+POST /api/v2/tasks ---> POST file and receive report id
     Sample POST usage:
-        curl -i -X POST http://localhost:8080/api/v1/tasks -F file=@/bin/ls
-GET /api/v1/tasks/<task_id> ---> Receive task in JSON format
-DELETE /api/v1/tasks/<task_id> ---> Delete task_id
-GET /api/v1/tasks/search/ ---> Receive list of most recent report for matching samples
-GET /api/v1/tasks/search/history ---> Receive list of most all reports for matching samples
-GET /api/v1/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
-GET /api/v1/tasks/<task_id>/file?raw={t|f} ---> Download sample, defaults to passwd protected zip
-GET /api/v1/tasks/<task_id>/maec ---> Download the Cuckoo MAEC 5.0 report, if it exists
-GET /api/v1/tasks/<task_id>/notes ---> Receive list of this task's notes
-POST /api/v1/tasks/<task_id>/notes ---> Add a note to task
-PUT /api/v1/tasks/<task_id>/notes/<note_id> ---> Edit a note
-DELETE /api/v1/tasks/<task_id>/notes/<note_id> ---> Delete a note
-GET /api/v1/tasks/<task_id>/report?d={t|f} ---> Receive report in JSON, set d=t to download
-GET /api/v1/tasks/<task_id>/pdf ---> Receive PDF report
-GET /api/v1/tasks/<task_id>/stix2?pretty={t|f}&custom_labels={string} ---> Receive STIX2 Bundle from report
-POST /api/v1/tasks/<task_id>/tags ---> Add tags to task
-DELETE /api/v1/tasks/<task_id>/tags ---> Remove tags from task
-GET /api/v1/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
-GET /api/v1/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
-GET /api/v1/tasks/reports?d={t|f}&tasks_ids={task_id} --->
+        curl -i -X POST http://localhost:8080/api/v2/tasks -F file=@/bin/ls
+GET /api/v2/tasks/<task_id> ---> Receive task in JSON format
+DELETE /api/v2/tasks/<task_id> ----> Delete task_id
+GET /api/v2/tasks/datatable/ ---> Receive list of most recent report for matching samples
+GET /api/v2/tasks/datatable/history ---> Receive list of most all reports for matching samples
+GET /api/v2/tasks/sha256/<sha256> ---> Receive the task id for most recent scan of sample
+GET /api/v2/tasks/<task_id>/file?raw={t|f} ----> Download sample, defaults to passwd protected zip
+GET /api/v2/tasks/<task_id>/maec ----> Download the Cuckoo MAEC 5.0 report, if it exists
+GET /api/v2/tasks/<task_id>/notes ---> Receive list of this task's notes
+POST /api/v2/tasks/<task_id>/notes ---> Add a note to task
+PUT /api/v2/tasks/<task_id>/notes/<note_id> ---> Edit a note
+DELETE /api/v2/tasks/<task_id>/notes/<note_id> ---> Delete a note
+GET /api/v2/tasks/<task_id>/report?d={t|f} ---> Receive report in JSON, set d=t to download
+GET /api/v2/tasks/<task_id>/pdf ---> Receive PDF report
+GET /api/v2/tasks/<task_id>/stix2?pretty={t|f}&custom_labels={string} ---> Receive STIX2 Bundle from report
+POST /api/v2/tasks/<task_id>/tags ---> Add tags to task
+DELETE /api/v2/tasks/<task_id>/tags ---> Remove tags from task
+GET /api/v2/analytics/ssdeep_compare ---> Run ssdeep.compare analytic
+GET /api/v2/analytics/ssdeep_group ---> Receive list of sample hashes grouped by ssdeep hash
+GET /api/v2/tasks/reports?d={t|f}&tasks_ids={task_id} --->
     Receive a report in JSON, set d=t to download. It will contain data based on the given task ids
-GET /api/v1/tasks/files?tasks_ids={task_id} --->
+GET /api/v2/tasks/files?tasks_ids={task_id} --->
     Receive a protected zip with multiple samples given their task ids
-GET /api/v1/tasks/stix2?pretty={t|f}&custom_labels={string}&tasks_ids={task_id} --->
+GET /api/v2/tasks/stix2?pretty={t|f}&custom_labels={string}&tasks_ids={task_id} --->
     Receive a STIX2 Bundle based on data retrieved from multiple reports given their task ids
-
 
 The API endpoints all have Cross Origin Resource Sharing (CORS) enabled. By
 default it will allow requests from any port on localhost. Change this setting
@@ -80,13 +77,17 @@ from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
 
 
-TASK_NOT_FOUND = {'Message': 'No task or report with that ID found!'}
+TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
+TASK_STILL_PROCESSING = {'Message': 'Task still pending'}
+TASK_FAILED = {'Message': 'Task failed'}
 
 HTTP_OK = 200
 HTTP_CREATED = 201
+HTTP_STILL_PROCESSING = 202
 HTTP_BAD_REQUEST = 400
 HTTP_NOT_FOUND = 404
+HTTP_SERVER_FAILED = 500
 
 DEFAULTCONF = {
     'host': 'localhost',
@@ -265,13 +266,13 @@ def multiscanner_process(work_queue, exit_signal):
 @app.errorhandler(HTTP_BAD_REQUEST)
 def invalid_request(error):
     '''Return a 400 with the INVALID_REQUEST message.'''
-    return make_response(jsonify(INVALID_REQUEST), HTTP_BAD_REQUEST)
+    return make_response(jsonify(error.description), HTTP_BAD_REQUEST)
 
 
 @app.errorhandler(HTTP_NOT_FOUND)
 def not_found(error):
     '''Return a 404 with a TASK_NOT_FOUND message.'''
-    return make_response(jsonify(TASK_NOT_FOUND), HTTP_NOT_FOUND)
+    return make_response(jsonify(error.description), HTTP_NOT_FOUND)
 
 
 @app.route('/')
@@ -280,10 +281,10 @@ def index():
     Return a default standard message
     for testing connectivity.
     '''
-    return jsonify({'Message': 'True'})
+    return jsonify({'Message': True})
 
 
-@app.route('/api/v1/modules', methods=['GET'])
+@app.route('/api/v2/modules', methods=['GET'])
 def modules():
     '''
     Return a list of module names available for MultiScanner to use,
@@ -299,20 +300,24 @@ def modules():
     modules = {}
     for module in module_names:
         try:
-            modules[module] = ms_config.get(module, 'ENABLED')
+            is_enabled = ms_config.get(module, 'ENABLED')
+            if is_enabled == "True":
+                modules[module] = True
+            else:
+                modules[module] = False
         except (configparser.NoSectionError, configparser.NoOptionError) as e:
             logger.debug(e)
-    return jsonify({'Modules': modules})
+    return jsonify(modules)
 
 
-@app.route('/api/v1/tasks', methods=['GET'])
+@app.route('/api/v2/tasks', methods=['GET'])
 def task_list():
     '''
     Return a JSON dictionary containing all the tasks
     in the tasks DB.
     '''
     tasks = db.get_all_tasks() or []
-    return jsonify({'Tasks': [t.to_dict() for t in tasks]})
+    return jsonify([t.to_dict() for t in tasks])
 
 
 def search(params, get_all=False):
@@ -320,18 +325,18 @@ def search(params, get_all=False):
     search_term = params.get('search[value]')
     search_type = params.pop('search_type', 'default')
     if not search_term:
-        es_result = None
+        result = None
     else:
-        es_result = handler.search(search_term, search_type)
+        result = handler.search(search_term, search_type)
 
     # Search the task db for the ids we got from Elasticsearch
     if get_all:
-        return db.search(params, es_result, return_all=True)
+        return db.search(params, result, return_all=True)
     else:
-        return db.search(params, es_result)
+        return db.search(params, result)
 
 
-@app.route('/api/v1/tasks/search/history', methods=['GET'])
+@app.route('/api/v2/tasks/_datatable/history', methods=['GET'])
 def task_search_history():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -342,7 +347,7 @@ def task_search_history():
     return jsonify(resp)
 
 
-@app.route('/api/v1/tasks/search', methods=['GET'])
+@app.route('/api/v2/tasks/_datatable', methods=['GET'])
 def task_search():
     '''
     Handle query between jQuery Datatables, the task DB, and Elasticsearch.
@@ -353,7 +358,7 @@ def task_search():
     return jsonify(resp)
 
 
-@app.route('/api/v1/tasks/<int:task_id>', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>', methods=['GET'])
 def get_task(task_id):
     '''
     Return a JSON dictionary corresponding
@@ -361,12 +366,12 @@ def get_task(task_id):
     '''
     task = db.get_task(task_id)
     if task:
-        return jsonify({'Task': task.to_dict()})
+        return jsonify(task.to_dict())
     else:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
 
-@app.route('/api/v1/tasks/sha256/<string:sha256>', methods=['GET'])
+@app.route('/api/v2/tasks/sha256/<string:sha256>', methods=['GET'])
 def get_task_sha256(sha256):
     '''
     Return the task ID number for the most recent scan of the sample with the
@@ -375,28 +380,28 @@ def get_task_sha256(sha256):
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         task_id = db.exists(sha256)
         if task_id:
-            return make_response(
-                jsonify({'TaskID': int(task_id)}),
-                HTTP_OK)
+            return make_response(jsonify({"task_id": int(task_id)}), HTTP_OK)
         else:
-            abort(HTTP_NOT_FOUND)
+            abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
     else:
-        abort(HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
 
-@app.route('/api/v1/tasks/<int:task_id>', methods=['DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     '''
     Delete the specified task. Return deleted message.
     '''
     es_result = handler.delete_by_task_id(task_id)
     if not es_result:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
+
     try:
         db.delete_task(task_id)
-        return jsonify({'Message': 'Deleted'})
     except SQLAlchemyError:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
+
+    return jsonify({'Message': True})
 
 
 def save_hashed_filename(f, zipped=False):
@@ -497,7 +502,7 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
     return task_id
 
 
-@app.route('/api/v1/tasks', methods=['POST'])
+@app.route('/api/v2/tasks', methods=['POST'])
 def create_task():
     '''
     Create a new task for a submitted file. Save the submitted file to
@@ -529,7 +534,7 @@ def create_task():
                 HTTP_BAD_REQUEST)
 
         return make_response(
-            jsonify({'Message': {'task_ids': task_id}}),
+            jsonify([task_id]),
             HTTP_CREATED
         )
 
@@ -561,10 +566,7 @@ def create_task():
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
             if not os.path.isdir(extract_dir):
-                return make_response(
-                    jsonify({'Message': "'upload_folder' in API config is not "
-                             "a valid folder!"}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': "'upload_folder' in API config is not a valid folder!"})
 
             # Get password if present
             if 'archive-password' in request.form:
@@ -609,13 +611,9 @@ def create_task():
             except RuntimeError as e:
                 msg = 'ERROR: Failed to extract ' + str(file_) + ' - ' + str(e)
                 logger.error(msg)
-                return make_response(
-                    jsonify({'Message': msg}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': msg})
             except SQLAlchemyError:
-                return make_response(
-                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': 'Could not queue task(s) due backend error'})
         # Extract a rar
         elif rarfile.is_rarfile(file_):
             r = rarfile.RarFile(file_)
@@ -630,13 +628,9 @@ def create_task():
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
                 logger.error(msg)
-                return make_response(
-                    jsonify({'Message': msg}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': msg})
             except SQLAlchemyError:
-                return make_response(
-                    jsonify({'Message': 'Could not queue task(s) due backend error'}),
-                    HTTP_BAD_REQUEST)
+                abort(HTTP_BAD_REQUEST, {'Message': 'Could not queue task(s) due backend error'})
     else:
         try:
             # File was not an archive to extract
@@ -645,42 +639,39 @@ def create_task():
                              rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
             task_id_list = [tid]
         except SQLAlchemyError:
-            return make_response(
-                jsonify({'Message': 'Could not queue task(s) due backend error'}),
-                HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, {'Message': 'Could not queue task(s) due backend error'})
 
-    msg = {'task_ids': task_id_list}
     return make_response(
-        jsonify({'Message': msg}),
+        jsonify(task_id_list),
         HTTP_CREATED
     )
 
 
-@app.route('/api/v1/tasks/<int:task_id>/report', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/report', methods=['GET'])
 def get_report(task_id):
     '''
     Return a JSON dictionary corresponding
     to the given task ID.
     '''
     download = request.args.get('d', default='False', type=str)[0].lower()
+    report_dict = get_report_dict(task_id)
 
-    report_dict, success = get_report_dict(task_id)
-    if success:
-        if download == 't' or download == 'y' or download == '1':
-            # raw JSON
-            response = make_response(jsonify(report_dict))
-            response.headers['Content-Type'] = 'application/json'
-            response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
-            return response
-        else:
-            # processed JSON intended for web UI
-            report_dict = _pre_process(report_dict)
-            return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+
+    if download == 't' or download == 'y' or download == '1':
+        # raw JSON
+        response = make_response(jsonify(report_dict))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=%s.json' % task_id
+        return response
     else:
+        # processed JSON intended for web UI
+        report_dict = _pre_process(report_dict)
         return jsonify(report_dict)
 
 
-@app.route('/api/v1/tasks/reports', methods=['GET'])
+@app.route('/api/v2/tasks/reports', methods=['GET'])
 def get_reports():
     '''
     Given a comma-separated list of Task IDs. Return a JSON dictionary corresponding
@@ -697,13 +688,11 @@ def get_reports():
         try:
             for task_id in task_ids:
                 t = int(task_id)
-                report_dict, success = get_report_dict(t)
-
-                if success:
-                    report_dict = _pre_process(report_dict)
-                    final_report.append(report_dict)
-                else:
-                    return jsonify({'Message': 'One or more tasks failed to be retrieved.'})
+                report_dict = get_report_dict(t)
+                if report_dict == TASK_STILL_PROCESSING:
+                    return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+                report_dict = _pre_process(report_dict)
+                final_report.append(report_dict)
         except ValueError:
             abort(HTTP_BAD_REQUEST)
 
@@ -717,7 +706,7 @@ def get_reports():
             # processed JSON intended for web UI
             return jsonify(final_report)
 
-    return jsonify({'Error': 'empty request'})
+    abort(HTTP_BAD_REQUEST, {'Error': 'empty request'})
 
 
 def _pre_process(report_dict):
@@ -787,27 +776,27 @@ def _linkify(s, url, new_tab=True):
         s=s)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/file', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/file', methods=['GET'])
 def get_file_task(task_id):
     '''
     Download a single sample. Either raw binary or enclosed in a zip file.
     '''
-    # try to get report dict
-    report_dict, success = get_report_dict(task_id)
-    if not success:
-        return jsonify(report_dict)
+    report_dict = get_report_dict(task_id)
+
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     # okay, we have report dict; get sha256
-    sha256 = report_dict.get('Report', {}).get('filemeta', {}).get('sha256', '')
+    sha256 = report_dict.get('filemeta', {}).get('sha256', '')
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(
                 sha256,
                 request.args.get('raw', default='f'))
     else:
-        return jsonify({'Error': 'sha256 invalid or not in report!'})
+        abort(HTTP_BAD_REQUEST, {'Message': 'sha256 invalid or not in report!'})
 
 
-@app.route('/api/v1/tasks/files', methods=['GET'])
+@app.route('/api/v2/tasks/files', methods=['GET'])
 def get_files_task():
     '''
     Given a comma-separated list of task ids. Download the samples enclosed in a zip file.
@@ -833,14 +822,11 @@ def get_files_task():
                 except AttributeError:
                     msg = 'Task {} not found!'.format(t)
                     logger.error(msg)
-                    return make_response(
-                            jsonify({'Error': msg}),
-                            HTTP_NOT_FOUND)
-
+                    abort(HTTP_NOT_FOUND, {'Error': msg})
                 if re.match(r'^[a-fA-F0-9]{64}$', sha256):
                     file_path = safe_join(api_config['api']['upload_folder'], sha256)
                     if not os.path.exists(file_path):
-                        abort(HTTP_NOT_FOUND)
+                        abort(HTTP_NOT_FOUND, {'Message': 'File in request not found!'})
 
                     with open(file_path, 'rb') as fh:
                         fh_content = fh.read()
@@ -851,9 +837,9 @@ def get_files_task():
 
                     zip_command.insert(3, safe_join('/tmp', rawname))
                 else:
-                    return jsonify({'Error': 'sha256 invalid!'})
+                    abort(HTTP_BAD_REQUEST, {'Message': 'sha256 invalid!'})
         except ValueError:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
         proc = subprocess.Popen(zip_command)
         wait_seconds = 30
@@ -880,16 +866,17 @@ def get_files_task():
         return jsonify({'Error': 'empty request'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/maec', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/maec', methods=['GET'])
 def get_maec_report(task_id):
     # try to get report dict
-    report_dict, success = get_report_dict(task_id)
-    if not success:
-        return jsonify(report_dict)
+    report_dict = get_report_dict(task_id)
+
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     # okay, we have report dict; get cuckoo task ID
     try:
-        cuckoo_task_id = report_dict['Report']['Cuckoo Sandbox']['info']['id']
+        cuckoo_task_id = report_dict['Cuckoo Sandbox']['info']['id']
     except KeyError as e:
         logger.debug('No MAEC report found for that task! - {}'.format(e))
         return jsonify({'Error': 'No MAEC report found for that task!'})
@@ -912,61 +899,61 @@ def get_maec_report(task_id):
 def get_report_dict(task_id):
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     if task.task_status == 'Complete':
         result = handler.get_report(task.sample_id, task.timestamp)
         if result:
-            return result, True
+            return result
         else:
-            return {'Report': 'Error occurred in ElasticSearch'}, False
+            abort(HTTP_SERVER_FAILED, 'Error occured in ElasticSearch')
     elif task.task_status == 'Pending':
-        return {'Report': 'Task still pending'}, False
+        return TASK_STILL_PROCESSING
     else:
-        return {'Report': 'Task failed'}, False
+        abort(HTTP_SERVER_FAILED, TASK_FAILED)
 
 
-@app.route('/api/v1/tags/', methods=['GET'])
+@app.route('/api/v2/tags/', methods=['GET'])
 def taglist():
     '''
     Return a list of all tags currently in use.
     '''
     response = handler.get_tags()
-    return jsonify({'Tags': response})
+    return jsonify(response)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>/tags', methods=['POST', 'DELETE'])
 def tags(task_id):
     '''
     Add/Remove the specified tag to the specified task.
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     tag = request.values.get('tag', '')
 
     if request.method == 'POST':
         response = handler.add_tag(task.sample_id, tag)
         if not response:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
         return jsonify({'Message': 'Tag Added'})
 
     elif request.method == 'DELETE':
         response = handler.remove_tag(task.sample_id, tag)
         if not response:
-            abort(HTTP_BAD_REQUEST)
+            abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
         return jsonify({'Message': 'Tag Removed'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/notes', methods=['GET'])
 def get_notes(task_id):
     '''
     Get one or more analyst notes/comments associated with the specified task.
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
     if 'ts' in request.args and 'uid' in request.args:
         ts = request.args.get('ts', '')
@@ -976,55 +963,63 @@ def get_notes(task_id):
         response = handler.get_notes(task.sample_id)
 
     if not response:
-        abort(HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
+    notes = []
     if 'hits' in response and 'hits' in response['hits']:
-        response = response['hits']['hits']
+        hits = response['hits']['hits']
     try:
-        for hit in response:
-            hit['_source']['text'] = Markup.escape(hit['_source']['text'])
+        for hit in hits:
+            notes.append({
+                'id': hit['_id'],
+                'timestamp': hit['_source']['timestamp'],
+                'text': Markup.escape(hit['_source']['text'])
+            })
     except Exception as e:
         logger.warning(e)
-    return jsonify(response)
+    return jsonify(notes)
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes', methods=['POST'])
+@app.route('/api/v2/tasks/<int:task_id>/notes', methods=['POST'])
 def add_note(task_id):
     '''
     Add an analyst note/comment to the specified task.
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
-    response = handler.add_note(task.sample_id, request.form.to_dict())
-    if not response:
-        abort(HTTP_BAD_REQUEST)
-    return jsonify(response)
+    try:
+        data = request.form.to_dict()
+        handler.add_note(task.sample_id, data)
+    except Exception as e:
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
+
+    return jsonify({'Message': 'Success'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
+@app.route('/api/v2/tasks/<int:task_id>/notes/<string:note_id>', methods=['PUT', 'DELETE'])
 def edit_note(task_id, note_id):
     '''
     Modify/remove the specified analyst note/comment.
     '''
     task = db.get_task(task_id)
     if not task:
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, TASK_NOT_FOUND)
 
-    if request.method == 'PUT':
-        response = handler.edit_note(task.sample_id, note_id,
-                                     Markup(request.form.get('text', '')).striptags())
-    elif request.method == 'DELETE':
-        response = handler.delete_note(task.sample_id, note_id)
+    try:
+        if request.method == 'PUT':
+            handler.edit_note(task.sample_id, note_id, request.form.get('text', ''))
+        elif request.method == 'DELETE':
+            handler.delete_note(task.sample_id, note_id)
+    except Exception as e:
+        abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
-    if not response:
-        abort(HTTP_BAD_REQUEST)
-    return jsonify(response)
+    return jsonify({'Message': 'Success'})
 
 
-@app.route('/api/v1/files/<string:sha256>', methods=['GET'])
-# get raw file - /api/v1/files/get/<sha256>?raw=true
+@app.route('/api/v2/files/<string:sha256>', methods=['GET'])
+# get raw file - /api/v2/files/get/<sha256>?raw=true
 def files_get_sha256(sha256):
     '''
     Returns binary from storage. Defaults to password protected zipfile.
@@ -1034,8 +1029,8 @@ def files_get_sha256(sha256):
 
     if re.match(r'^[a-fA-F0-9]{64}$', sha256):
         return files_get_sha256_helper(sha256, raw)
-    else:
-        return abort(HTTP_BAD_REQUEST)
+
+    abort(HTTP_BAD_REQUEST, INVALID_REQUEST)
 
 
 def files_get_sha256_helper(sha256, raw='f'):
@@ -1044,7 +1039,7 @@ def files_get_sha256_helper(sha256, raw='f'):
     '''
     file_path = safe_join(api_config['api']['upload_folder'], sha256)
     if not os.path.exists(file_path):
-        abort(HTTP_NOT_FOUND)
+        abort(HTTP_NOT_FOUND, {'Message': 'File associated with SHA256 not found!'})
 
     with open(file_path, 'rb') as fh:
         fh_content = fh.read()
@@ -1088,7 +1083,7 @@ def files_get_sha256_helper(sha256, raw='f'):
     return response
 
 
-@app.route('/api/v1/analytics/ssdeep_compare', methods=['GET'])
+@app.route('/api/v2/analytics/ssdeep_compare', methods=['GET'])
 def run_ssdeep_compare():
     '''
     Runs ssdeep compare analytic and returns success / error message.
@@ -1106,12 +1101,10 @@ def run_ssdeep_compare():
             return make_response(jsonify({'Message': 'Success'}))
     except Exception as e:
         logger.debug('Unable to complete request - {}'.format(e))
-        return make_response(
-            jsonify({'Message': 'Unable to complete request.'}),
-            HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
-@app.route('/api/v1/analytics/ssdeep_group', methods=['GET'])
+@app.route('/api/v2/analytics/ssdeep_group', methods=['GET'])
 def run_ssdeep_group():
     '''
     Runs ssdeep group analytic and returns list of groups as a list.
@@ -1119,23 +1112,21 @@ def run_ssdeep_group():
     try:
         ssdeep_analytic = SSDeepAnalytic()
         groups = ssdeep_analytic.ssdeep_group()
-        return make_response(jsonify({'groups': groups}))
+        return make_response(jsonify(groups))
     except Exception as e:
         logger.debug('Unable to complete request - {}'.format(e))
-        return make_response(
-            jsonify({'Message': 'Unable to complete request.'}),
-            HTTP_BAD_REQUEST)
+        abort(HTTP_BAD_REQUEST, {'Message': 'Unable to complete request.'})
 
 
-@app.route('/api/v1/tasks/<int:task_id>/pdf', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/pdf', methods=['GET'])
 def generate_pdf_report(task_id):
     '''
     Generates a PDF version of a JSON report.
     '''
-    report_dict, success = get_report_dict(task_id)
+    report_dict = get_report_dict(task_id)
 
-    if not success:
-        return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
     response = make_response(pdf)
@@ -1144,17 +1135,17 @@ def generate_pdf_report(task_id):
     return response
 
 
-@app.route('/api/v1/tasks/<int:task_id>/stix2', methods=['GET'])
+@app.route('/api/v2/tasks/<int:task_id>/stix2', methods=['GET'])
 def generate_stix2_bundle_from_report(task_id):
     '''
     Generates a STIX2 Bundle with indicators generated of a JSON report.
 
     custom labels must be comma-separated.
     '''
-    report_dict, success = get_report_dict(task_id)
+    report_dict = get_report_dict(task_id)
 
-    if not success:
-        return jsonify(report_dict)
+    if report_dict == TASK_STILL_PROCESSING:
+        return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
     formatting = request.args.get('pretty', default='False', type=str)[0].lower()
     custom_labels = request.args.get('custom_labels', default='', type=str).split(",")
@@ -1181,7 +1172,7 @@ def generate_stix2_bundle_from_report(task_id):
     return response
 
 
-@app.route('/api/v1/tasks/stix2', methods=['GET'])
+@app.route('/api/v2/tasks/stix2', methods=['GET'])
 def generate_stix2_bundle_from_multiple_reports():
     '''
     Given a list of comma-separated task ids. Generate a STIX2 Bundle with
@@ -1209,13 +1200,11 @@ def generate_stix2_bundle_from_multiple_reports():
         try:
             for task_id in task_ids:
                 t = int(task_id)
-                report_dict, success = get_report_dict(t)
-
-                if success:
-                    stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
-                    all_stix_objects.extend(stix_objects)
-                else:
-                    return jsonify({"Error": "One or more tasks failed to be retrieved"})
+                report_dict = get_report_dict(t)
+                if report_dict == TASK_STILL_PROCESSING:
+                    return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
+                stix_objects = stix2_generator.create_stix2_from_json_report(report_dict, custom_labels)
+                all_stix_objects.extend(stix_objects)
         except ValueError:
             abort(HTTP_BAD_REQUEST)
 
