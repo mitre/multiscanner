@@ -52,7 +52,7 @@
 
   $(document).ready(function() {
     $("#filesUpload").fileinput({
-      uploadUrl: "{{ api_loc }}/api/v1/tasks",
+      uploadUrl: "{{ api_loc }}/api/v2/tasks",
       browseOnZoneClick: true,
       allowedPreviewTypes: [],
       showUpload: false,
@@ -165,7 +165,7 @@
       // If file was a zip, it will go to the first file
       $('#' + previewId).css('cursor', 'pointer');
       $('#' + previewId).click(function() {
-        window.location = "report/" + data.response.Message.task_ids[0];
+        window.location = "report/" + data.response[0];
       })
     });
 
@@ -216,8 +216,8 @@
     });
 
     // Set up tags
-    $.get("{{ api_loc }}/api/v1/tags/", function(data, status) {
-      $.each(data.Tags, function( index, value ) {
+    $.get("{{ api_loc }}/api/v2/tags/", function(data, status) {
+      $.each(data, function( index, value ) {
         if (tagNameArray.indexOf(value.key) == -1) {
           tagNameArray.push(value.key);
         }
@@ -233,10 +233,10 @@
     })
 
     // Add options for selecting which modules to run
-    //$.get("{{ api_loc }}/api/v1/modules", function(data) {
+    //$.get("{{ api_loc }}/api/v2/modules", function(data) {
     //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
-    //  for (mod in data.Modules) {
-    //    checked = (data.Modules[mod] == "True" ? "checked" : "");
+    //  for (mod in data) {
+    //    checked = (data[mod] ? "checked" : "");
     //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+' />'+mod+'</label> </div>';
     //  }
     //  modules += '</div>';

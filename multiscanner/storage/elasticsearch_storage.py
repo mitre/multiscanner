@@ -167,16 +167,12 @@ class ElasticSearchStorage(storage.Storage):
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
+                'filemeta': report[filename]['filemeta'],
                 'ssdeep': report[filename]['ssdeep'],
                 'tags': [],
             }
 
-            # move filemeta entries to top level
-            sample.update(
-                {k: v for k, v in report[filename]['filemeta'].items()})
-
             try:
-                del report[filename]['filemeta']
                 del report[filename]['ssdeep']
             except Exception as e:
                 pass
@@ -467,7 +463,7 @@ class ElasticSearchStorage(storage.Storage):
         data['timestamp'] = datetime.now().isoformat()
         result = self.es.index(
             index=self.index, doc_type=self.doc_type, body=data,
-            routing=sample_id
+            routing=sample_id, refresh="wait_for"
         )
         if result['result'] == 'created':
             return self.get_note(sample_id, result['_id'])
