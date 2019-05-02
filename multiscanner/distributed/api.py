@@ -720,13 +720,13 @@ def _pre_process(report_dict):
     # TODO: create way to mark certain data as internal only (e.g., does
     # not need to be part of generated report)
     # pop unnecessary keys
-    if report_dict.get('Report', {}).get('ssdeep', {}):
+    if report_dict.get('ssdeep_analytics', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            report_dict['Report']['ssdeep'].pop(k, None)
+            report_dict['ssdeep_analytics'].pop(k, None)
 
-    if report_dict.get('Report', {}).get('impfuzzy', {}):
+    if report_dict.get('impfuzzy', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            report_dict['Report']['impfuzzy'].pop(k, None)
+            report_dict['impfuzzy'].pop(k, None)
 
     report_dict = _add_links(report_dict)
 
@@ -741,9 +741,11 @@ def _add_links(report_dict):
 
     web_loc = api_config['api']['web_loc']
 
+    if web_loc.endswith('/'):
+        web_loc = web_loc.rstrip('/')
+
     # ssdeep matches
-    matches_dict = report_dict.get('Report', {}) \
-                              .get('ssdeep', {}) \
+    matches_dict = report_dict.get('ssdeep_analytics', {}) \
                               .get('matches', {})
 
     if matches_dict:
@@ -759,7 +761,7 @@ def _add_links(report_dict):
                 links_dict[k] = v
 
         # replace with updated dict
-        report_dict['Report']['ssdeep']['matches'] = links_dict
+        report_dict['ssdeep_analytics']['matches'] = links_dict
 
     return report_dict
 
@@ -906,7 +908,7 @@ def get_report_dict(task_id):
         if result:
             return result
         else:
-            abort(HTTP_SERVER_FAILED, 'Error occured in ElasticSearch')
+            abort(HTTP_SERVER_FAILED, 'Error occurred in ElasticSearch')
     elif task.task_status == 'Pending':
         return TASK_STILL_PROCESSING
     else:

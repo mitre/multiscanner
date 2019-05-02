@@ -34,7 +34,7 @@ try:
     import ssdeep
 except ImportError:
     logger.error("ssdeep module not installed...")
-    ssdeep = None
+    ssdeep = False
 
 
 from multiscanner import CONFIG as MS_CONFIG
@@ -63,17 +63,17 @@ class SSDeepAnalytic:
         self.doc_type = '_doc'
 
     def ssdeep_compare(self):
-        if ssdeep is None:
+        if not ssdeep:
             logger.error("ssdeep module not installed... can't perform ssdeep_compare()")
             return
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {
-            '_source': ['ssdeep', 'filemeta'],
+            '_source': ['ssdeep_analytics', 'filemeta'],
             'query': {
                 'bool': {
                     'must': [
-                        {'match': {'ssdeep.analyzed': 'false'}}
+                        {'match': {'ssdeep_analytics.analyzed': 'false'}}
                     ]
                 }
             }
@@ -94,21 +94,21 @@ class SSDeepAnalytic:
 
         for new_ssdeep_hit in records_list:
             new_ssdeep_hit_src = new_ssdeep_hit.get('_source')
-            chunksize = new_ssdeep_hit_src.get('ssdeep').get('chunksize')
-            chunk = new_ssdeep_hit_src.get('ssdeep').get('chunk')
-            double_chunk = new_ssdeep_hit_src.get('ssdeep').get('double_chunk')
+            chunksize = new_ssdeep_hit_src.get('ssdeep_analytics', {}).get('chunksize')
+            chunk = new_ssdeep_hit_src.get('ssdeep_analytics', {}).get('chunk')
+            double_chunk = new_ssdeep_hit_src.get('ssdeep_analytics', {}).get('double_chunk')
             new_sha256 = new_ssdeep_hit_src.get('filemeta', {}).get('sha256')
 
             # build new query for docs that match our optimizations
             # https://github.com/intezer/ssdeep-elastic/blob/master/ssdeep_elastic/ssdeep_querying.py#L35
             opti_query = {
-                '_source': ['ssdeep', 'filemeta'],
+                '_source': ['ssdeep_analytics', 'filemeta'],
                 'query': {
                     'bool': {
                         'must': [
                             {
                                 'terms': {
-                                    'ssdeep.chunksize': [chunksize, chunksize / 2, chunksize * 2]
+                                    'ssdeep_analytics.chunksize': [chunksize, chunksize / 2, chunksize * 2]
                                 }
                             },
                             {
@@ -116,14 +116,14 @@ class SSDeepAnalytic:
                                     'should': [
                                         {
                                             'match': {
-                                                'ssdeep.chunk': {
+                                                'ssdeep_analytics.chunk': {
                                                     'query': chunk
                                                 }
                                             }
                                         },
                                         {
                                             'match': {
-                                                'ssdeep.double_chunk': {
+                                                'ssdeep_analytics.double_chunk': {
                                                     'query': double_chunk
                                                 }
                                             }
@@ -171,17 +171,18 @@ class SSDeepAnalytic:
                     opti_hit_src = opti_hit.get('_source')
                     opti_sha256 = opti_hit_src.get('filemeta', {}).get('sha256')
                     result = ssdeep.compare(
-                                new_ssdeep_hit_src.get('ssdeep').get('ssdeep_hash'),
-                                opti_hit_src.get('ssdeep').get('ssdeep_hash'))
+                        new_ssdeep_hit_src.get('filemeta', {}).get('ssdeep'),
+                        opti_hit_src.get('filemeta', {}).get('ssdeep')
+                    )
 
-                    msg = {'doc': {'ssdeep': {'matches': {opti_sha256: result}}}}
+                    msg = {'doc': {'ssdeep_analytics': {'matches': {opti_sha256: result}}}}
                     self.es.update(
                         index=self.index,
                         doc_type=self.doc_type,
                         id=new_ssdeep_hit.get('_id'),
                         body=json.dumps(msg))
 
-                    msg = {'doc': {'ssdeep': {'matches': {new_sha256: result}}}}
+                    msg = {'doc': {'ssdeep_analytics': {'matches': {new_sha256: result}}}}
                     self.es.update(
                         index=self.index,
                         doc_type=self.doc_type,
@@ -192,7 +193,7 @@ class SSDeepAnalytic:
                     opti_page = self.es.scroll(scroll_id=opti_sid, scroll='2m')
 
             # analytic has run against sample, set ssdeep.analyzed = true
-            msg = {'doc': {'ssdeep': {'analyzed': 'true'}}}
+            msg = {'doc': {'ssdeep_analytics': {'analyzed': 'true'}}}
             self.es.update(
                 index=self.index,
                 doc_type=self.doc_type,
@@ -203,10 +204,10 @@ class SSDeepAnalytic:
         # get all of the samples where ssdeep_compare has not been run
         # e.g., ssdeepmeta.analyzed == false
         query = {
-            '_source': ['ssdeep', 'filemeta'],
+            '_source': ['ssdeep_analytics', 'filemeta'],
             'query': {
                 'exists': {
-                    'field': 'ssdeep.matches'
+                    'field': 'ssdeep_analytics.matches'
                 }
             }
         }
@@ -221,7 +222,7 @@ class SSDeepAnalytic:
         while len(page['hits']['hits']) > 0:
             for hit in page['hits']['hits']:
                 hit_src = hit.get('_source')
-                records[hit_src.get('filemeta', {}).get('sha256')] = hit_src.get('ssdeep', {}) \
+                records[hit_src.get('filemeta', {}).get('sha256')] = hit_src.get('ssdeep_analytics', {}) \
                                                                             .get('matches', {})
             sid = page['_scroll_id']
             page = self.es.scroll(scroll_id=sid, scroll='2m')

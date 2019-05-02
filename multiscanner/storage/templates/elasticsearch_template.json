@@ -30,8 +30,15 @@
                     }
                 },
                 "filename": {"type": "text"},
-                "ssdeep": {
+                "filemeta": {
                     "properties": {
+                        "sha256": {"type": "keyword"},
+                        "ssdeep": {"type": "keyword"}
+                    }
+                },
+                "ssdeep_analytics": {
+                    "properties": {
+                        "analyzed": {"type": "boolean"},
                         "chunksize": {"type": "integer"},
                         "chunk": {
                             "analyzer": "ssdeep_analyzer",
@@ -40,11 +47,16 @@
                         "double_chunk": {
                             "analyzer": "ssdeep_analyzer",
                             "type": "text"
-                        },
-                        "ssdeep_hash": {"type": "keyword"}
+                        }
                     }
                 },
-                "timestamp": {"type": "date"}
+                "timestamp": {"type": "date"},
+                "Scan Metadata": {
+                    "properties": {
+                        "Scan Time": {"type": "date"},
+                        "Task ID": {"type": "integer"}
+                    }
+                }
             }
         }
     }

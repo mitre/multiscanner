@@ -6,7 +6,6 @@ import logging
 import os
 import re
 from datetime import datetime
-from uuid import uuid4
 
 import curator
 
@@ -169,17 +168,17 @@ class ElasticSearchStorage(storage.Storage):
             sample = {
                 'doc_type': 'sample',
                 'filemeta': report[filename]['filemeta'],
-                'ssdeep': report[filename]['ssdeep'],
+                'ssdeep_analytics': report[filename]['ssdeep_analytics'],
                 'tags': [],
             }
 
             try:
-                del report[filename]['ssdeep']
+                del report[filename]['ssdeep_analytics']
+                del report[filename]['filemeta']
             except Exception as e:
                 pass
 
             report[filename]['doc_type'] = {'name': 'report', 'parent': sample_id}
-            report[filename]['filename'] = filename
             sample_tags[sample_id] = sample.get('tags', [])
 
             # If there is Cuckoo results in the report, some
