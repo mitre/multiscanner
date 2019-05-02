@@ -430,7 +430,9 @@ class InvalidScanTimeFormatError(ValueError):
 def insert_report(report):
     '''Inserts the report to the backend storage and returns an id'''
     try:
-        report['Scan Metadata']['Scan Time'] = datetime.strptime(report['Scan Metadata']['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+        report['Scan Metadata']['Scan Time'] = datetime.strptime(
+            report['Scan Metadata']['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f'
+        )
     except ValueError as e:
         logger.debug(e)
         raise InvalidScanTimeFormatError()
