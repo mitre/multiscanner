@@ -67,7 +67,8 @@ def scan(filelist, conf=DEFAULTCONF):
             result['trid'] = tridr
         if vtr:
             result['vt'] = vtr
-        results.append((fname, result))
+        if result:
+            results.append((fname, result))
 
     metadata = {}
     metadata['Name'] = NAME

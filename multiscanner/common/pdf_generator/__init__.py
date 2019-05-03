@@ -77,7 +77,7 @@ def create_pdf_document(DIR, report):
     # -- end filemeata --
 
     if 'ssdeep' in report:
-        file_data.append(['SSDEEP', report.get('ssdeep', {}).get('ssdeep_hash', '')])
+        file_data.append(['SSDEEP', report.get('filemeta', {}).get('ssdeep', '')])
 
     if 'Yara' in report:
         for v in report.get('Yara', {}):

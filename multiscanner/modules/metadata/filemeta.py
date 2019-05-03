@@ -14,8 +14,15 @@ logger = logging.getLogger(__name__)
 try:
     import magic
 except ImportError:
-    logger.warn("python-magic module not installed...")
+    logger.warning("python-magic module not installed...")
     magic = False
+
+try:
+    import ssdeep
+except ImportError:
+    logger.warning("ssdeep module not installed...")
+    ssdeep = False
+
 
 __author__ = "Patrick Copeland"
 __license__ = "MPL 2.0"
@@ -53,6 +60,10 @@ def scan(filelist):
         # magic
         if magic:
             filemeta_d.update(get_magic(buf))
+
+        # ssdeep
+        if ssdeep:
+            filemeta_d['ssdeep'] = ssdeep.hash_from_file(fname)
 
         results.append((fname, filemeta_d))
 

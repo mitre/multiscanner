@@ -3,56 +3,43 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import division, absolute_import, with_statement, unicode_literals
 import logging
-import time
 
 logger = logging.getLogger(__name__)
-
-try:
-    import ssdeep
-except ImportError:
-    logger.error("ssdeep module not installed...")
-    ssdeep = False
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
 
 TYPE = "Metadata"
-NAME = "ssdeep"
+NAME = "ssdeep_analytics"
+REQUIRES = ["filemeta"]
 
 
 def check():
-    if ssdeep:
-        return True
-    else:
-        return False
+    return True
 
 
 def scan(filelist):
     results = []
-    for fname in filelist:
-        goodtogo = False
-        i = 0
-        # Ran into a weird issue with file locking, this fixes it
-        while not goodtogo and i < 5:
-            try:
-                ssdeep_hash = ssdeep.hash_from_file(fname)
-                chunksize, chunk, double_chunk = ssdeep_hash.split(':')
-                chunksize = int(chunksize)
-                doc = {
-                    'ssdeep_hash': ssdeep_hash,
-                    'chunksize': chunksize,
-                    'chunk': chunk,
-                    'double_chunk': double_chunk,
-                    'analyzed': 'false',
-                    'matches': {},
-                }
+    filemeta_results, _ = REQUIRES[0]
 
-                results.append((fname, doc))
-                goodtogo = True
-            except Exception as e:
-                logger.error(e)
-                time.sleep(3)
-                i += 1
+    for fname, filemeta_result in filemeta_results:
+        if fname not in filelist:
+            logger.debug("File not in filelist: {}".format(fname))
+            continue
+
+        ssdeep_hash = filemeta_result.get('ssdeep')
+        if ssdeep_hash:
+            chunksize, chunk, double_chunk = ssdeep_hash.split(':')
+            chunksize = int(chunksize)
+            doc = {
+                'chunksize': chunksize,
+                'chunk': chunk,
+                'double_chunk': double_chunk,
+                'analyzed': 'false',
+                'matches': {},
+            }
+
+            results.append((fname, doc))
 
     metadata = {}
     metadata["Name"] = NAME

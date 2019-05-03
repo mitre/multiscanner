@@ -427,13 +427,12 @@ class InvalidScanTimeFormatError(ValueError):
     pass
 
 
-def import_task(file_):
-    '''
-    Import a JSON report that was downloaded from MultiScanner.
-    '''
-    report = json.loads(file_.read().decode('utf-8'))
+def insert_report(report):
+    '''Inserts the report to the backend storage and returns an id'''
     try:
-        report['Scan Time'] = datetime.strptime(report['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f')
+        report['Scan Metadata']['Scan Time'] = datetime.strptime(
+            report['Scan Metadata']['Scan Time'], '%Y-%m-%dT%H:%M:%S.%f'
+        )
     except ValueError as e:
         logger.debug(e)
         raise InvalidScanTimeFormatError()
@@ -441,17 +440,38 @@ def import_task(file_):
     try:
         sample_id = report['filemeta']['sha256']
     except KeyError:
-        logger.warn("Unable to find sha256 hash for sample_id")
-        sample_id = uuid4()
+        logger.warning("Unable to find sha256 hash for sample_id.")
+        raise
 
     task_id = db.add_task(
         sample_id=sample_id,
         task_status='Complete',
-        timestamp=report['Scan Time'],
+        timestamp=report['Scan Metadata']['Scan Time'],
     )
     storage_handler.store({report['filename']: report}, wait=False)
 
     return task_id
+
+
+def import_task(file_):
+    '''
+    Imports a JSON report that was downloaded from MultiScanner.
+    It can be a list of reports or a single report.
+    '''
+    document = json.load(file_)
+    task_ids = []
+
+    if isinstance(document, list):
+        for report in document:
+            task_ids.append(insert_report(report))
+    elif isinstance(document, dict):
+        task_ids.append(insert_report(document))
+    else:
+        # Whatever was provided does not appear
+        # to be a JSON object that we can process.
+        raise ValueError
+
+    return task_ids
 
 
 def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
@@ -495,9 +515,10 @@ def create_task():
         try:
             task_id = import_task(file_)
         except KeyError as e:
-            logger.debug('Cannot import report missing \'Scan Time\' field! - {}'.format(e))
+            msg = 'Cannot import report missing due to missing required property! - {}'.format(e)
+            logger.debug(msg)
             return make_response(
-                jsonify({'Message': 'Cannot import report missing \'Scan Time\' field!'}),
+                jsonify({'Message': msg}),
                 HTTP_BAD_REQUEST)
         except InvalidScanTimeFormatError as e:
             logger.debug('Cannot import report with \'Scan Time\' of invalid format! - {}'.format(e))
@@ -701,13 +722,13 @@ def _pre_process(report_dict):
     # TODO: create way to mark certain data as internal only (e.g., does
     # not need to be part of generated report)
     # pop unnecessary keys
-    if report_dict.get('Report', {}).get('ssdeep', {}):
+    if report_dict.get('ssdeep_analytics', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            report_dict['Report']['ssdeep'].pop(k, None)
+            report_dict['ssdeep_analytics'].pop(k, None)
 
-    if report_dict.get('Report', {}).get('impfuzzy', {}):
+    if report_dict.get('impfuzzy', {}):
         for k in ['chunksize', 'chunk', 'double_chunk']:
-            report_dict['Report']['impfuzzy'].pop(k, None)
+            report_dict['impfuzzy'].pop(k, None)
 
     report_dict = _add_links(report_dict)
 
@@ -722,9 +743,11 @@ def _add_links(report_dict):
 
     web_loc = api_config['api']['web_loc']
 
+    if web_loc.endswith('/'):
+        web_loc = web_loc.rstrip('/')
+
     # ssdeep matches
-    matches_dict = report_dict.get('Report', {}) \
-                              .get('ssdeep', {}) \
+    matches_dict = report_dict.get('ssdeep_analytics', {}) \
                               .get('matches', {})
 
     if matches_dict:
@@ -740,7 +763,7 @@ def _add_links(report_dict):
                 links_dict[k] = v
 
         # replace with updated dict
-        report_dict['Report']['ssdeep']['matches'] = links_dict
+        report_dict['ssdeep_analytics']['matches'] = links_dict
 
     return report_dict
 
@@ -887,7 +910,7 @@ def get_report_dict(task_id):
         if result:
             return result
         else:
-            abort(HTTP_SERVER_FAILED, 'Error occured in ElasticSearch')
+            abort(HTTP_SERVER_FAILED, 'Error occurred in ElasticSearch')
     elif task.task_status == 'Pending':
         return TASK_STILL_PROCESSING
     else:
