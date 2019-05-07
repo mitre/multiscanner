@@ -405,22 +405,14 @@ def multiscan(Files, config=None, module_list=None):
     # Read in config
     if config is None:
         config = {}
-    if 'main' in config:
-        main_config = config['main']
-    else:
-        main_config = DEFAULTCONF
 
     # Copy files to a share if configured
-    if "copyfilesto" not in main_config:
-        main_config["copyfilesto"] = False
-    if main_config["copyfilesto"]:
-        print(str(type(config)))
-        print(str(type(main_config)))
-        print(str(type(main_config['copyfilesto'])))
-        if os.path.isdir(main_config["copyfilesto"]):
-            filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
+    copyfilesto = config.get('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
+    if copyfilesto:
+        if os.path.isdir(copyfilesto):
+            filelist = _copy_to_share(filelist, filedic, copyfilesto)
         else:
-            raise IOError('The copyfilesto dir "' + main_config["copyfilesto"] + '" is not a valid dir')
+            raise IOError('The copyfilesto dir "' + copyfilesto + '" is not a valid dir')
 
     # Create the global module interface
     global_module_interface = _GlobalModuleInterface()
@@ -456,7 +448,7 @@ def multiscan(Files, config=None, module_list=None):
         time.sleep(1)
 
     # Delete copied files
-    if main_config["copyfilesto"]:
+    if copyfilesto:
         for item in filelist:
             try:
                 os.remove(item)
@@ -498,20 +490,20 @@ def multiscan(Files, config=None, module_list=None):
                     from_filename = filedic[base]
                     subscan_list[i] = (file_path, from_filename, module_name)
 
-        results.extend(_subscan(subscan_list, config, main_config, module_list, global_module_interface))
+        results.extend(_subscan(subscan_list, config, copyfilesto, module_list, global_module_interface))
 
     global_module_interface._cleanup()
 
     return results
 
 
-def _subscan(subscan_list, config, main_config, module_list, global_module_interface):
+def _subscan(subscan_list, config, copyfilesto, module_list, global_module_interface):
     """
     Scans files created by modules
 
     subscan_list - The result of _get_subscan_list() from the global module interface
     config - The configuration dictionary
-    main_config - A dictionary of the configuration for main
+    copyfilesto - Directory to copy files to; if False files will not be copied
     module_list - The list of modules
     global_module_interface - The global module interface
     """
@@ -560,10 +552,8 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
     del subscan_list, subfiles_dict
 
     # Copy files to a share if configured
-    if "copyfilesto" not in main_config:
-        main_config["copyfilesto"] = False
-    if main_config["copyfilesto"]:
-        filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
+    if copyfilesto:
+        filelist = _copy_to_share(filelist, filedic, copyfilesto)
 
     # Start a thread for each module
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
@@ -590,7 +580,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
         time.sleep(1)
 
     # Delete copied files
-    if main_config["copyfilesto"]:
+    if copyfilesto:
         for item in filelist:
             os.remove(item)
 
@@ -629,7 +619,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
                 null, from_filename = file_mapping[from_filename]
             subscan_list[i] = (file_path, from_filename, module_name)
 
-        results.extend(_subscan(subscan_list, config, main_config, module_list, global_module_interface))
+        results.extend(_subscan(subscan_list, config, copyfilesto, module_list, global_module_interface))
 
     return results
 
