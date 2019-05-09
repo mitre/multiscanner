@@ -52,7 +52,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
             else:
                 continue
 
-        resultlist = multiscan(filelist, configfile=config)
+        resultlist = multiscan(filelist, config=config)
         results = parse_reports(resultlist, python=True)
         if delete:
             for file_name in results:

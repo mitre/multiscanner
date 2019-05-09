@@ -391,7 +391,7 @@ def multiscan(Files, config=None, module_list=None):
     The meat and potatoes. Returns the list of module results
 
     Files - A list of files and dirs to be scanned
-    config - A dictionary containing the configuration options to be used.
+    config - ConfigParser object containing the configuration options to be used.
     module_list - A list of the names of the modules to run on the files.
     """
     # Init some vars
@@ -402,12 +402,11 @@ def multiscan(Files, config=None, module_list=None):
     # A dictionary used for the copyfileto parameter
     filedic = {}
 
-    # Read in config
     if config is None:
-        config = {}
+        config = MSConfigParser()
 
     # Copy files to a share if configured
-    copyfilesto = config.get('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
+    copyfilesto = config.getboolean('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
     if copyfilesto:
         if os.path.isdir(copyfilesto):
             filelist = _copy_to_share(filelist, filedic, copyfilesto)

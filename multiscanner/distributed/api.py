@@ -114,9 +114,10 @@ class CustomJSONEncoder(JSONEncoder):
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_file = get_config_path('api')
-api_config = read_config(api_config_file, 'api', DEFAULTCONF)
+api_config = read_config(api_config_file, {'api': DEFAULTCONF, 'Database': database.Database.DEFAULTCONF})
 
 # TODO: fix this mess
+# TODO: test moving these imports up with the others
 # Needs api_config in order to function properly
 from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
@@ -271,7 +272,7 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    return jsonify({name: mod[0] for (name, mod) in ms.MODULE_LIST.items()})
+    return jsonify({name: mod[0] for (name, mod) in ms.config.MODULE_LIST.items()})
 
 
 @app.route('/api/v1/tasks', methods=['GET'])

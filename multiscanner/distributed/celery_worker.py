@@ -34,7 +34,7 @@ DEFAULTCONF = {
 }
 
 configfile = msconf.get_config_path('api')
-config = msconf.read_config(configfile, 'celery', DEFAULTCONF)
+config = msconf.read_config(configfile, {'celery': DEFAULTCONF, 'Database': database.Database.DEFAULTCONF})
 db_config = dict(config.items('Database'))
 
 storage_configfile = msconf.get_config_path('storage')

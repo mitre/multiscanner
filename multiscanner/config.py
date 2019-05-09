@@ -107,46 +107,44 @@ def dict_to_config(dictionary):
     config = MSConfigParser()
 
     for name, section in dictionary.items():
-        if name == '_load_default':
-            continue
         config.add_section(name)
         for key in section.keys():
             config.set(name, key, str(section[key]))
     return config
 
 
-def write_config(config_object, config_file, section_name, default_config):
+def write_config(config_object, config_file, default_config):
     """Write the default configuration to the given config file
 
     config_object - the ConfigParser object
     config_file - the filename of the config file
-    section_name - the name of the section of defaults to be added
-    default_config - values to set this configuration to
+    default_config - dictionary of section names and values to set within this configuration
     """
-    if section_name not in config_object.sections():
-        config_object.add_section(section_name)
-    for key in default_config:
-        config_object.set(section_name, key, str(default_config[key]))
+    for section_name, section in default_config.items():
+        if section_name not in config_object.sections():
+            config_object.add_section(section_name)
+        for key in section:
+            config_object.set(section_name, key, str(default_config[section_name][key]))
     with codecs.open(config_file, 'w', 'utf-8') as conffile:
         config_object.write(conffile)
 
 
-def read_config(config_file, section_name=None, default_config=None):
+def read_config(config_file, default_config=None):
     """Parse a config file into a ConfigParser object
 
     Can optionally set a default configuration by providing 'section_name' and
     'default_config' arguments.
 
     config_file - the filename of the config file
-    section_name - the name of the section of defaults to be added
-    default_config - values to set this configuration to
+    default_config - dictionary of section names and values to set within this configuration
     """
     config_object = MSConfigParser()
     config_object.read(config_file)
-    if section_name is not None and default_config is not None and \
-           (not config_object.has_section(section_name) or not os.path.isfile(config_file)):
-        # Write default config
-        write_config(config_object, config_file, section_name, default_config)
+    if default_config is not None:
+        contains_sections = set(default_config.keys()).issubset(config_object.sections())
+        if not contains_sections or not os.path.isfile(config_file):
+            # Write default config
+            write_config(config_object, config_file, default_config)
     return config_object
 
 
