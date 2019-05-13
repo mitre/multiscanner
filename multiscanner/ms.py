@@ -406,7 +406,7 @@ def multiscan(Files, config=None, module_list=None):
         config = MSConfigParser()
 
     # Copy files to a share if configured
-    copyfilesto = config.getboolean('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
+    copyfilesto = config.get('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
     if copyfilesto:
         if os.path.isdir(copyfilesto):
             filelist = _copy_to_share(filelist, filedic, copyfilesto)

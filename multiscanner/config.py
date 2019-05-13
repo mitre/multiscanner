@@ -39,16 +39,24 @@ class MSConfigParser(configparser.ConfigParser):
         self.optionxform = str  # Preserve case
 
     def __getitem__(self, key):
-        """Attempts to convert value to a Python literal if possible."""
         value = super(MSConfigParser, self).__getitem__(key)
-        try:
-            return ast.literal_eval(value)
-        except (SyntaxError, ValueError) as e:
-            # Ignore if config value isn't convertible to a Python literal
-            pass
-        except Exception as e:
-            logger.debug(e)
-        return value
+        return _convert_to_literal(value)
+
+    def get(self, *args, **kwargs):
+        value = super(MSConfigParser, self).get(*args, **kwargs)
+        return _convert_to_literal(value)
+
+
+def _convert_to_literal(value):
+    """Attempts to convert value to a Python literal if possible."""
+    try:
+        return ast.literal_eval(value)
+    except (SyntaxError, ValueError) as e:
+        # Ignore if config value isn't convertible to a Python literal
+        pass
+    except Exception as e:
+        logger.debug(e)
+    return value
 
 
 def get_configuration_paths():
