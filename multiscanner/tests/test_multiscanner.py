@@ -85,6 +85,7 @@ class TestMissingConfig(_runmulti_tests):
         config_object.remove_section('test_1')
         with open(TEST_CONFIG_FILE, 'w') as conf_file:
             config_object.write(conf_file)
+        multiscanner.update_ms_config_file(TEST_CONFIG_FILE)
 
         # Run MultiScanner
         sys.argv = ['-c', TEST_CONFIG_FILE, os.path.join(CWD, 'files')]

@@ -754,12 +754,11 @@ def _main():
         update_ms_config_file(args.config)
         update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILE)
 
+    module_list = _get_main_modules()
     if not os.path.isfile(args.config):
-        module_list = _get_main_modules()
         config_init(args.config, module_list)
     else:
         # Write the default config settings for any missing modules
-        module_list = _get_main_modules()
         write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILE)
 
     # Make sure report is not a dir
@@ -823,8 +822,6 @@ def _main():
         results = multiscan(filelist, config=msconf.MS_CONFIG)
 
         # We need to read in the config for the parseReports call
-        config = MSConfigParser()
-        config.read(args.config)
         config = msconf.MS_CONFIG['main']
         # Make sure we have a group-types
         if "group-types" not in config or not config["group-types"]:
