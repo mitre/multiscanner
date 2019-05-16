@@ -69,7 +69,7 @@ def get_configuration_paths():
     ]
 
 
-def determine_configuration_path(filepath):
+def determine_configuration_path(filepath=None):
     if filepath:
         return filepath
 
@@ -90,7 +90,7 @@ def determine_configuration_path(filepath):
         return config_file
 
 
-CONFIG_FILE = determine_configuration_path(None)
+CONFIG_FILE = determine_configuration_path()
 
 
 def parse_config(config_object):
@@ -317,7 +317,7 @@ def reset_config(sections, config, filepath=None):
         The ConfigParser object that was written to the file.
     """
     if not filepath:
-        CONFIG_FILE
+        filepath = CONFIG_FILE
 
     # Read in the old config to preserve any sections not being reset
     if os.path.isfile(filepath):

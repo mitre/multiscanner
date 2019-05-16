@@ -1,4 +1,5 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
+import mock
 import os
 import sys
 
@@ -10,6 +11,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 TEST_CONFIG_FILE = '.tmpfile.ini'
 TEST_REPORT = 'tmp_report.json'
+TEST_FILES = os.path.join(CWD, 'files')
 
 
 class _runmulti_tests(object):
@@ -19,7 +21,7 @@ class _runmulti_tests(object):
         cls.real_mod_list = multiscanner.config.MODULE_LIST
         multiscanner.config.MODULES_DIR = os.path.join(CWD, "modules")
         multiscanner.config.MODULE_LIST = multiscanner.config.get_modules()
-        cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
+        cls.filelist = utils.parse_dir(TEST_FILES)
 
     @classmethod
     def teardown_class(cls):
@@ -59,15 +61,21 @@ class TestMain(_runmulti_tests):
             pass
 
     def test_basic_main(self):
-        sys.argv = ['-z', '-j', TEST_REPORT]
-        sys.argv.extend(self.filelist)
-        multiscanner._main()
+        with mock.patch.object(sys, 'argv', ['ms.py', '-z', '-j', TEST_REPORT] + self.filelist):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
 
 
 class TestMissingConfig(_runmulti_tests):
     def setup(self):
-        sys.argv = ['-c', TEST_CONFIG_FILE, 'init']
-        multiscanner._main()
+        with mock.patch.object(sys, 'argv', ['ms.py', '-c', TEST_CONFIG_FILE, 'init']), \
+                mock.patch('multiscanner.ms.input', return_value='y'):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
 
     def test_config_init(self):
         config_object = multiscanner.MSConfigParser()
@@ -88,11 +96,17 @@ class TestMissingConfig(_runmulti_tests):
         multiscanner.update_ms_config_file(TEST_CONFIG_FILE)
 
         # Run MultiScanner
-        sys.argv = ['-c', TEST_CONFIG_FILE, os.path.join(CWD, 'files')]
-        multiscanner._main()
+        with mock.patch.object(sys, 'argv', ['ms.py', '-c', TEST_CONFIG_FILE, TEST_FILES]):
+            multiscanner._main()
         with open(TEST_CONFIG_FILE, 'r') as conf_file:
             conf = conf_file.read()
             assert 'test_1' in conf
+
+    def test_read_config_with_default(self):
+        multiscanner.config.read_config(TEST_CONFIG_FILE, {'test': {'foo': 'bar'}})
+        with open(TEST_CONFIG_FILE, 'r') as conf_file:
+            conf = conf_file.read()
+            assert 'foo' in conf
 
     def teardown(self):
         os.remove(TEST_CONFIG_FILE)

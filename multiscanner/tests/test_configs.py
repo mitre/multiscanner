@@ -14,6 +14,14 @@ filelist = utils.parse_dir(os.path.join(CWD, 'files'))
 module_list = ['test_conf']
 
 
+def test_config_parse_round_trip():
+    conf_dict = {'test': {'a': 'b', 'c': 'd'}}
+    conf_parser = multiscanner.config.dict_to_config(conf_dict)
+    assert conf_parser.get('test', 'a') == 'b'
+    conf_dict2 = multiscanner.config.parse_config(conf_parser)
+    assert conf_dict == conf_dict2
+
+
 @mock.patch('multiscanner.config.MODULE_LIST', mock_modlist)
 def test_no_config():
     results, metadata = multiscanner.multiscan(
