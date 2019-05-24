@@ -4,7 +4,11 @@ A test module which has a required module and a config
 TYPE = "Test"
 NAME = "test_2"
 REQUIRES = ["test_1"]
-DEFAULTCONF = {'a': 1, 'b': 2}
+DEFAULTCONF = {
+    'ENABLED': True,
+    'a': 1,
+    'b': 2
+}
 
 
 def check(conf=DEFAULTCONF):

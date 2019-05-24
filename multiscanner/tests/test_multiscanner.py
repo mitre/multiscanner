@@ -50,7 +50,6 @@ class TestMain(_runmulti_tests):
     def setup(self):
         multiscanner.config_init(TEST_CONFIG_FILE, multiscanner._get_main_modules())
         multiscanner.update_ms_config_file(TEST_CONFIG_FILE)
-        sys.argv = ['']
 
     def teardown(self):
         try:
@@ -61,11 +60,36 @@ class TestMain(_runmulti_tests):
             pass
 
     def test_basic_main(self):
-        with mock.patch.object(sys, 'argv', ['ms.py', '-z', '-j', TEST_REPORT] + self.filelist):
+        with mock.patch.object(sys, 'argv', ['ms.py', '-j', TEST_REPORT] + self.filelist):
             try:
                 multiscanner._main()
             except SystemExit:
                 pass
+
+
+@mock.patch.object(multiscanner.config, 'CONFIG_FILE', TEST_CONFIG_FILE)
+class TestInitNoConfig(_runmulti_tests):
+    def test_basic_main(self):
+        with mock.patch.object(sys, 'argv', ['ms.py', 'init']), \
+                mock.patch('multiscanner.ms.input', return_value='y'):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
+
+        with mock.patch.object(sys, 'argv', ['ms.py', '-j', TEST_REPORT] + self.filelist):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
+
+    def teardown(self):
+        try:
+            os.remove(TEST_CONFIG_FILE)
+            os.remove(TEST_REPORT)
+        except Exception as e:
+            # TODO: log exception
+            pass
 
 
 class TestMissingConfig(_runmulti_tests):
@@ -107,6 +131,49 @@ class TestMissingConfig(_runmulti_tests):
         with open(TEST_CONFIG_FILE, 'r') as conf_file:
             conf = conf_file.read()
             assert 'foo' in conf
+
+    def test_overwriting_config_on_reset(self):
+        # Change a config val from default
+        config_object = multiscanner.MSConfigParser()
+        config_object.read(TEST_CONFIG_FILE)
+        config_object.set('test_2', 'ENABLED', 'False')
+        with open(TEST_CONFIG_FILE, 'w') as conf_file:
+            config_object.write(conf_file)
+
+        # Trigger reset_config and it gets overwritten
+        self.setup()
+        with mock.patch.object(sys, 'argv', ['ms.py', '-c', TEST_CONFIG_FILE, '-j', TEST_REPORT, self.filelist[0]]):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
+
+        with open(TEST_REPORT, 'r') as report_file:
+            report = report_file.read()
+        assert 'test_2' in report
+
+        # teardown
+        os.remove(TEST_REPORT)
+
+    def test_config_init_no_overwrite(self):
+        # Remove a section from config file
+        config_object = multiscanner.MSConfigParser()
+        config_object.read(TEST_CONFIG_FILE)
+        config_object.remove_section('test_1')
+        with open(TEST_CONFIG_FILE, 'w') as conf_file:
+            config_object.write(conf_file)
+
+        # this time we answer 'no' so config won't be overwritten, but missing modules' configs will be regenerated
+        with mock.patch.object(sys, 'argv', ['ms.py', '-c', TEST_CONFIG_FILE, 'init']), \
+                mock.patch('multiscanner.ms.input', return_value='n'):
+            try:
+                multiscanner._main()
+            except SystemExit:
+                pass
+
+        with open(TEST_CONFIG_FILE, 'r') as conf_file:
+            conf = conf_file.read()
+            assert 'test_1' in conf
 
     def teardown(self):
         os.remove(TEST_CONFIG_FILE)

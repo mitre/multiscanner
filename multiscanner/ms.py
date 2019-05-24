@@ -688,13 +688,13 @@ def _init(args):
             logger.warn(e)
             answer = 'N'
         if answer == 'y':
-            config = config_init(args.config, module_list)
+            config = config_init(args.config, module_list, overwrite=True)
             update_ms_config(config)  # Set global main config
             logger.info('Main configuration file initialized at {}'.format(args.config))
         else:
             logger.info('Checking for missing modules in main configuration...')
-            config = msconf.MS_CONFIG  # MS_CONFIG will already have been set in main()
-            write_missing_config(module_list, config, args.config)
+            config = config_init(args.config, module_list, overwrite=False)
+            update_ms_config(config)  # Set global main config
     else:
         config = config_init(args.config, module_list)
         update_ms_config(config)  # Set global main config
