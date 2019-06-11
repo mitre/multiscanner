@@ -1,4 +1,3 @@
-from collections import namedtuple
 from flask import Flask, render_template, request
 import re
 
@@ -29,9 +28,8 @@ app = Flask(__name__)
 
 # Finagle Flask to read config from .ini file instead of .py file
 web_config_file = get_config_path('web')
-web_config = dict(read_config(web_config_file, {'web': DEFAULTCONF}).items('web'))
-conf_tuple = namedtuple('WebConfig', web_config.keys())(*web_config.values())
-app.config.from_object(conf_tuple)
+web_config = read_config(web_config_file, {'web': DEFAULTCONF}).get_section('web')
+app.config.update(**web_config)
 
 
 @app.context_processor

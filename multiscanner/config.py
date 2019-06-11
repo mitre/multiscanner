@@ -46,6 +46,10 @@ class MSConfigParser(configparser.ConfigParser):
         value = super(MSConfigParser, self).get(*args, **kwargs)
         return _convert_to_literal(value)
 
+    def get_section(self, section_name):
+        section = self.items(section_name)
+        return {k: _convert_to_literal(v) for k, v in section}
+
 
 def _convert_to_literal(value):
     """Attempts to convert value to a Python literal if possible."""
@@ -201,6 +205,9 @@ def get_modules():
 
         if filename[1] == '.py':
             module = filename[0]
+            if module == 'filemeta' or module == 'ssdeeper':
+                modules[module] = [True, folder]
+                continue
             try:
                 modules[module] = [MS_CONFIG[module]['ENABLED'], folder]
             except KeyError as e:

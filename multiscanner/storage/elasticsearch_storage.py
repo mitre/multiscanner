@@ -164,10 +164,15 @@ class ElasticSearchStorage(storage.Storage):
             except KeyError:
                 logger.warn("Unable to find sha256 hash for sample_id; generating UUID")
                 sample_id = uuid4()
+            try:
+                ssdeep = report[filename]['ssdeep']
+            except KeyError:
+                logger.warn("Unable to find ssdeep hash for sample_id")
+                ssdeep = None
             # Store metadata with the sample, not the report
             sample = {
                 'doc_type': 'sample',
-                'ssdeep': report[filename]['ssdeep'],
+                'ssdeep': ssdeep,
                 'tags': [],
             }
 

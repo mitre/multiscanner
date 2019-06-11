@@ -156,9 +156,6 @@ for x in range(0, db_num_retries):
 storage_handler = StorageHandler()
 handler = storage_handler.load_required_module('ElasticSearchStorage')
 
-ms_config_file = ms.config.MS_CONFIG
-ms_config = read_config(ms_config_file)
-
 try:
     DISTRIBUTED = api_config['api']['distributed']
 except KeyError as e:
@@ -210,7 +207,7 @@ def multiscanner_process(work_queue, exit_signal):
             module_list = item[5]
             resultlist = ms.multiscan(
                 filelist,
-                config=ms.MS_CONFIG,
+                config=ms.config.MS_CONFIG,
                 module_list=module_list
             )
             results = ms.parse_reports(resultlist, python=True)
@@ -272,7 +269,10 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    return jsonify({name: mod[0] for (name, mod) in ms.config.MODULE_LIST.items()})
+    modlist = {name: mod[0] for (name, mod) in ms.config.MODULE_LIST.items()}
+    del modlist['filemeta']
+    del modlist['ssdeeper']
+    return jsonify(modlist)
 
 
 @app.route('/api/v1/tasks', methods=['GET'])
@@ -438,9 +438,10 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
 
     if DISTRIBUTED:
         # Publish the task to Celery
+        tmp_config = ms.config.parse_config(ms.config.MS_CONFIG)
         multiscanner_celery.apply_async(
             args=(full_path, original_filename, task_id, f_name, metadata),
-            kwargs=dict(config=ms.config.MS_CONFIG, module_list=module_list),
+            kwargs=dict(config=tmp_config, module_list=module_list),
             **{'queue': queue_name, 'priority': priority, 'routing_key': routing_key}
         )
     else:
@@ -505,18 +506,9 @@ def create_task():
                 rescan = True
         elif key == 'modules':
             module_names = request.form[key].split(',')
-            if 'SHA256' not in module_names:
-                # Elasticsearch won't work without it
-                # TODO: Don't let users enable/disable SHA256 module?
-                module_names.append('SHA256')
-            modules = list(set(module_names).intersection(ms.MODULE_LIST.keys()))
-
-            # files = utils.parse_dir(MODULES_DIR, True)
-            # modules = []
-            # for f in files:
-            #     split = os.path.splitext(os.path.basename(f))
-            #     if split[0] in module_names and split[1] == '.py':
-            #         modules.append(f)
+            modules = list(set(module_names).intersection(ms.config.MODULE_LIST.keys()))
+            modules.append('filemeta')
+            modules.append('ssdeeper')
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
             if not os.path.isdir(extract_dir):
@@ -861,8 +853,9 @@ def get_maec_report(task_id):
 
     # Get the MAEC report from Cuckoo
     try:
+        cuckoo_report = ms.config.MS_CONFIG.get('Cuckoo', 'API URL', fallback='')
         maec_report = requests.get(
-            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', 'API URL', fallback=''), cuckoo_task_id)
+            '{}/v1/tasks/report/{}/maec'.format(cuckoo_report, cuckoo_task_id)
         )
     except Exception as e:
         logger.warning('No MAEC report found for that task! - {}'.format(e))
