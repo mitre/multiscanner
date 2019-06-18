@@ -34,11 +34,11 @@ def create_pdf_document(DIR, report):
     gen_pdf.pdf_list.extend(summary)
 
     summary_data = [
-        ['Date Submitted', report.get('Report', {}).get('Scan Time', 'N/A')],
-        ['Artifact ID', report.get('Report', {}).get('sha256', 'N/A')],
+        ['Date Submitted', report.get('Scan Metadata', {}).get('Scan Time', 'N/A')],
+        ['Artifact ID', report.get('filemeta', {}).get('sha256', 'N/A')],
         ['Description', pdf_components.get('summary_description', 'N/A')],
         ['Files Processed', '1'],
-        ['', report.get('Report', {}).get('filename', 'NO FILENAME AVAILABLE')]
+        ['', report.get('filename', 'NO FILENAME AVAILABLE')]
     ]
 
     gen_pdf.vertical_table(summary_data)
@@ -57,45 +57,45 @@ def create_pdf_document(DIR, report):
     # This list will store AV results. This is a horizontal table.
     av_data = [['Antivirus', 'Scan Result']]
 
-    if 'Report' in report:
-        r = report.get('Report', {})
-        if 'filename' in r:
-            file_data.append(['File Name', r.get('filename', '')])
-        if 'Scan Time' in r:
-            file_data.append(['Scan Time', r.get('Scan Time', '')])
+    if 'filename' in report:
+        file_data.append(['File Name', report.get('filename', '')])
+    if 'Scan Time' in report:
+        file_data.append(['Scan Time', report.get('Scan Time', '')])
 
-        # filemeta
-        filemeta = r.get('filemeta', {})
-        if 'libmagic' in filemeta:
-            file_data.append(['Type', filemeta.get('libmagic', '')])
-        if 'md5' in filemeta:
-            file_data.append(['MD5', filemeta.get('md5', '')])
-        if 'sha1' in filemeta:
-            file_data.append(['SHA1', filemeta.get('sha1', '')])
-        if 'sha256' in filemeta:
-            file_data.append(['SHA256', filemeta.get('sha256', '')])
-        # -- end filemeata --
+    # filemeta
+    filemeta = report.get('filemeta', {})
+    for k, v in filemeta.items():
+        file_data.append([k, str(v)])
+    # if 'libmagic' in filemeta:
+    #     file_data.append(['Type', filemeta.get('libmagic', '')])
+    # if 'md5' in filemeta:
+    #     file_data.append(['MD5', filemeta.get('md5', '')])
+    # if 'sha1' in filemeta:
+    #     file_data.append(['SHA1', filemeta.get('sha1', '')])
+    # if 'sha256' in filemeta:
+    #     file_data.append(['SHA256', filemeta.get('sha256', '')])
+    # -- end filemeata --
 
-        if 'ssdeep' in r:
-            file_data.append(['SSDEEP', r.get('ssdeep', {}).get('ssdeep_hash', '')])
+    if 'ssdeep' in report:
+        file_data.append(['SSDEEP', report.get('filemeta', {}).get('ssdeep', '')])
 
-        if 'Yara' in r:
-            for v in r.get('Yara', {}).values():
-                if 'meta' in v:
-                    yara_data.append([v.get('rule', 'NO RULE NAME'),
-                                      v.get('meta', {}).get('description', 'NO RULE DESCRIPTION')])
-        if 'AVG 2014' in r:
-            av_data.append(['AVG 2014', r.get('AVG 2014', '')])
-        if 'Microsoft Security Essentials' in r:
-            av_data.append(['Microsoft Security Essentials', r.get('Microsoft Security Essentials', '')])
+    if 'Yara' in report:
+        for v in report.get('Yara', {}):
+            if 'meta' in v:
+                yara_data.append([v.get('rule', 'NO RULE NAME'),
+                                  v.get('meta', {}).get('description', 'NO RULE DESCRIPTION')])
+    if 'AVG 2014' in report:
+        av_data.append(['AVG 2014', report.get('AVG 2014', '')])
+    if 'Microsoft Security Essentials' in report:
+        av_data.append(['Microsoft Security Essentials', report.get('Microsoft Security Essentials', '')])
 
-        if 'Metadefender' in r:
-            engine_results = r.get('Metadefender', {}).get('engine_results', {})
-            for av in engine_results:
-                threat_found = av.get('threat_found')
-                if not threat_found:
-                    threat_found = 'No threats found'
-                av_data.append([av.get('engine_name'), threat_found])
+    if 'Metadefender' in report:
+        engine_results = report.get('Metadefender', {}).get('engine_results', {})
+        for av in engine_results:
+            threat_found = av.get('threat_found')
+            if not threat_found:
+                threat_found = 'No threats found'
+            av_data.append([av.get('engine_name'), threat_found])
 
     if file_data:
         gen_pdf.vertical_table(file_data)

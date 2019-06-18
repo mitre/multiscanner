@@ -230,9 +230,8 @@ def create_stix2_from_json_report(report, custom_labels=None):
 
     '''
     all_objects = []
-    r = report.get('Report', {})
 
-    cuckoo = r.get('Cuckoo Sandbox', {})
+    cuckoo = report.get('Cuckoo Sandbox', {})
 
     for signature in cuckoo.get('signatures', []):
         if ('description' in signature and 'HTTP request'
@@ -254,11 +253,11 @@ def create_stix2_from_json_report(report, custom_labels=None):
     if custom_labels:
         labels.extend(custom_labels)
 
-    file_name = r.get('filename', '')
-    sha1_value = r.get('filemeta', {}).get('sha1', '')
-    sha256_value = r.get('filemeta', {}).get('sha256', '')
-    md5_value = r.get('filemeta', {}).get('md5', '')
-    ssdeep_value = r.get('ssdeep')
+    file_name = report.get('filename', '')
+    sha1_value = report.get('filemeta', {}).get('sha1', '')
+    sha256_value = report.get('filemeta', {}).get('sha256', '')
+    md5_value = report.get('filemeta', {}).get('md5', '')
+    ssdeep_value = report.get('filemeta', {}).get('ssdeep', '')
 
     if file_name:
         submission_pattern.append(
@@ -283,10 +282,10 @@ def create_stix2_from_json_report(report, custom_labels=None):
                                                md5_value)
         )
 
-    if ssdeep_value and ssdeep_value.get('ssdeep_hash', ''):
+    if ssdeep_value:
         submission_pattern.append(
             create_stix2_comparison_expression('file:hashes.\'ssdeep\'', '=',
-                                               ssdeep_value.get('ssdeep_hash'))
+                                               ssdeep_value)
         )
 
     if submission_pattern:

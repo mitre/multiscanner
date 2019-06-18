@@ -205,6 +205,7 @@ def get_modules():
 
         if filename[1] == '.py':
             module = filename[0]
+            # Always run these modules
             if module == 'filemeta' or module == 'ssdeeper':
                 modules[module] = [True, folder]
                 continue

@@ -14,6 +14,8 @@ services:
       context: .
       dockerfile: docker_utils/Dockerfile
     command: multiscanner-web
+    # wsgi cmd
+    # command: python3 docker_deploy.py web
     ports:
      - "127.0.0.1:8000:8000"
   api:
@@ -21,6 +23,8 @@ services:
       context: .
       dockerfile: docker_utils/Dockerfile
     command: /wait-for-it.sh elastic:9200 -- multiscanner-api
+    # wsgi cmd
+    # command: /wait-for-it.sh elastic:9200 -- python3 docker_deploy.py api
     ports:
      - "127.0.0.1:8080:8080"
     depends_on:

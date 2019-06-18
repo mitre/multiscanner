@@ -30,7 +30,7 @@
         style: 'multi+shift'
       },
       ajax: {
-        "url": apiLoc + "/api/v1/tasks/search",
+        "url": apiLoc + "/api/v2/tasks/_datatable",
         "data": function ( d ) {
           // Shift column by 1 so sorting works on correct column
           d.order.forEach(function(element){
@@ -116,7 +116,7 @@
         $('.btn-danger').click(function() {
           var t_id = this.dataset.id;
           $.ajax({
-            url: apiLoc + "/api/v1/tasks/" + t_id,
+            url: apiLoc + "/api/v2/tasks/" + t_id,
             type: 'DELETE',
             success: function(data, status) {
               $('td').filter(function() {
@@ -188,7 +188,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/files?task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/files?task_ids=" + request.join();
             }
           }
           else if (this.id == 'getReports') {
@@ -198,7 +198,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/reports?d=t&task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/reports?d=t&task_ids=" + request.join();
             }
           }
           else if (this.id == 'getSTIX2') {
@@ -208,7 +208,7 @@
               for (x = 0; x < selected.length; x++) {
                 request.push(selected[x][0]);
               }
-              window.location = "{{ api_loc }}/api/v1/tasks/stix2?task_ids=" + request.join();
+              window.location = "{{ api_loc }}/api/v2/tasks/stix2?task_ids=" + request.join();
             }
           }
         });

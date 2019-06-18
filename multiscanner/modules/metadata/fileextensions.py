@@ -59,11 +59,16 @@ def scan(filelist, conf=DEFAULTCONF):
             vtr = []
 
         result = {}
-        result['libmagic'] = libmagicr
-        result['tika'] = tikar
-        result['trid'] = tridr
-        result['vt'] = vtr
-        results.append((fname, result))
+        if libmagicr:
+            result['libmagic'] = libmagicr
+        if tikar:
+            result['tika'] = tikar
+        if tridr:
+            result['trid'] = tridr
+        if vtr:
+            result['vt'] = vtr
+        if result:
+            results.append((fname, result))
 
     metadata = {}
     metadata['Name'] = NAME

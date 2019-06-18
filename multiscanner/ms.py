@@ -685,7 +685,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.warn(e)
+            logger.warning(e)
             answer = 'N'
         if answer == 'y':
             config = config_init(args.config, module_list, overwrite=True)
@@ -709,7 +709,7 @@ def _init(args):
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
-            logger.warn(e)
+            logger.warning(e)
             answer = 'N'
         if answer == 'y':
             config_init(storage_config, storage_classes, overwrite=True)
@@ -744,7 +744,8 @@ def _main():
                             stream=sys.stderr, level=log_lvl)
 
     # Check if user is trying to initialize
-    if str(args.Files) == "['init']" and not os.path.isfile('init'):
+    # if str(args.Files) == "['init']" and not os.path.isfile('init'):
+    if args.Files == ['init'] and not os.path.isfile('init'):
         _init(args)
 
     # Set config or update locations
