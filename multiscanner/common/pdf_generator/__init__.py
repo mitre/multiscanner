@@ -1,13 +1,13 @@
 from __future__ import (division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
-import json
 import os
 
 from reportlab.lib import colors, units
 from reportlab.platypus import TableStyle
 
 from multiscanner.common.pdf_generator import generic_pdf
+from multiscanner import config as msconf
 
 
 def create_pdf_document(DIR, report):
@@ -15,13 +15,12 @@ def create_pdf_document(DIR, report):
     Method to create a PDF report based of a multiscanner JSON report.
 
     Args:
-        DIR: Represents the a directory containing the 'pdf_config.json' file.
+        DIR: Represents the a directory containing the 'pdf_config.ini' file.
         report: A JSON object.
 
     '''
-    with open(os.path.join(os.path.split(DIR)[0], 'pdf_config.json')) as data_file:
-        pdf_components = json.load(data_file)
-
+    pdf_config = os.path.join(DIR, 'pdf_config.ini')
+    pdf_components = msconf.read_config(pdf_config).get_section('pdf')
     gen_pdf = generic_pdf.GenericPDF(pdf_components)
 
     notice = []

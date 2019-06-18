@@ -1105,7 +1105,8 @@ def generate_pdf_report(task_id):
     if report_dict == TASK_STILL_PROCESSING:
         return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
-    pdf = pdf_generator.create_pdf_document(ms.CONFIG_FILE, report_dict)
+    config_dir = os.path.split(ms.config.CONFIG_FILE)[0]
+    pdf = pdf_generator.create_pdf_document(config_dir, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id
