@@ -19,8 +19,8 @@ NAME = "NSRL"
 REQUIRES = ["filemeta"]
 
 DEFAULTCONF = {
-    'hash_list': os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], 'etc', 'nsrl', 'hash_list'),
-    'offsets': os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], 'etc', 'nsrl', 'offsets'),
+    'hash_list': os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'nsrl', 'hash_list'),
+    'offsets': os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
 }
 

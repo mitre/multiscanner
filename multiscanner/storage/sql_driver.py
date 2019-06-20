@@ -18,7 +18,7 @@ from sqlalchemy_utils import create_database, database_exists
 
 from multiscanner.config import MSConfigParser, get_config_path, reset_config
 
-CONFIG_FILE = get_config_path('api')
+CONFIG_FILEPATH = get_config_path('api')
 
 Base = declarative_base()
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class Database(object):
         # Configuration parsing
         config_parser = MSConfigParser()
         if configfile is None:
-            configfile = CONFIG_FILE
+            configfile = CONFIG_FILEPATH
 
         section_name = self.__class__.__name__
         # (re)generate conf file if necessary
@@ -109,7 +109,7 @@ class Database(object):
         db_name = self.config['db_name']
         if db_type == 'sqlite':
             # we can ignore host, username, password, etc
-            sql_lite_db_path = os.path.join(os.path.split(CONFIG_FILE)[0], db_name)
+            sql_lite_db_path = os.path.join(os.path.split(CONFIG_FILEPATH)[0], db_name)
             self.db_connection_string = 'sqlite:///{}'.format(sql_lite_db_path)
         else:
             username = self.config['username']

@@ -24,7 +24,7 @@ MS_WD = os.path.dirname(os.path.abspath(__file__))
 MODULES_DIR = os.path.join(MS_WD, 'modules')
 
 # The default config file
-CONFIG_FILE = None
+CONFIG_FILEPATH = None
 
 # Main MultiScanner config, as a ConfigParser object
 MS_CONFIG = None
@@ -83,6 +83,7 @@ def determine_configuration_path(filepath=None):
     for config_path in config_paths:
         if os.path.exists(config_path):
             config_file = config_path
+            break
 
     if not config_file:
         # If the local storage folder doesn't exist, we create it.
@@ -94,7 +95,7 @@ def determine_configuration_path(filepath=None):
         return config_file
 
 
-CONFIG_FILE = determine_configuration_path()
+CONFIG_FILEPATH = determine_configuration_path()
 
 
 def parse_config(config_object):
@@ -160,7 +161,7 @@ def read_config(config_file, default_config=None):
     return config_object
 
 
-MS_CONFIG = read_config(CONFIG_FILE)
+MS_CONFIG = read_config(CONFIG_FILEPATH)
 
 
 def get_config_path(component, config=None):
@@ -235,11 +236,11 @@ def update_ms_config(config):
 def update_ms_config_file(config_file):
     """Update config globals to a different file than the default.
 
-    config_file - the file to be assigned to CONFIG_FILE and read into MS_CONFIG
+    config_file - the file to be assigned to CONFIG_FILEPATH and read into MS_CONFIG
     """
-    global CONFIG_FILE, MS_CONFIG
-    CONFIG_FILE = config_file
-    MS_CONFIG = read_config(CONFIG_FILE)
+    global CONFIG_FILEPATH, MS_CONFIG
+    CONFIG_FILEPATH = config_file
+    MS_CONFIG = read_config(CONFIG_FILEPATH)
 
 
 def update_paths_in_config(conf, filepath):
@@ -325,7 +326,7 @@ def reset_config(sections, config, filepath=None):
         The ConfigParser object that was written to the file.
     """
     if not filepath:
-        filepath = CONFIG_FILE
+        filepath = CONFIG_FILEPATH
 
     # Read in the old config to preserve any sections not being reset
     if os.path.isfile(filepath):

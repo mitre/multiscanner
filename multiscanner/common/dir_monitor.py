@@ -116,7 +116,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 
 def _main():
     args = _parse_args()
-    if args.config != msconf.CONFIG_FILE:
+    if args.config != msconf.CONFIG_FILEPATH:
         msconf.update_ms_config_file(args.config)
 
     work_queue = multiprocessing.Queue()
@@ -142,7 +142,7 @@ def _main():
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
     parser.add_argument("-c", "--config", help="The config file to use", required=False,
-                        default=msconf.CONFIG_FILE)
+                        default=msconf.CONFIG_FILEPATH)
     parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
                         required=False, default=120, type=int)
     parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,

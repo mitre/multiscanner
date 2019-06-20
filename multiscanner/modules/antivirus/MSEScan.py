@@ -18,7 +18,7 @@ TYPE = "Antivirus"
 NAME = "Microsoft Security Essentials"
 # These are overwritten by the config file
 # SSH Key
-KEY = os.path.join(os.path.split(ms.config.CONFIG_FILE)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 HOST = ("MultiScanner", 22, "User")

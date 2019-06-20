@@ -41,9 +41,9 @@ from multiscanner.storage import storage
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": msconf.CONFIG_FILE.replace('config.ini', 'storage.ini'),
-    "api-config": msconf.CONFIG_FILE.replace('config.ini', 'api_config.ini'),
-    "web-config": msconf.CONFIG_FILE.replace('config.ini', 'web_config.ini'),
+    "storage-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'storage.ini'),
+    "api-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'api_config.ini'),
+    "web-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'web_config.ini'),
 }
 
 logger = logging.getLogger(__name__)
@@ -675,7 +675,7 @@ def _get_main_modules():
 def _init(args):
     # Initialize configuration file
     if args.config is None:
-        args.config = msconf.CONFIG_FILE
+        args.config = msconf.CONFIG_FILEPATH
 
     # Compile all the sections to go in the config
     module_list = _get_main_modules()
@@ -744,23 +744,22 @@ def _main():
                             stream=sys.stderr, level=log_lvl)
 
     # Check if user is trying to initialize
-    # if str(args.Files) == "['init']" and not os.path.isfile('init'):
     if args.Files == ['init'] and not os.path.isfile('init'):
         _init(args)
 
     # Set config or update locations
     if args.config is None:
-        args.config = msconf.CONFIG_FILE
+        args.config = msconf.CONFIG_FILEPATH
     else:
         update_ms_config_file(args.config)
-        update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILE)
+        update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILEPATH)
 
     module_list = _get_main_modules()
     if not os.path.isfile(args.config):
         config_init(args.config, module_list)
     else:
         # Write the default config settings for any missing modules
-        write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILE)
+        write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILEPATH)
 
     # Make sure report is not a dir
     if args.json:
@@ -823,7 +822,7 @@ def _main():
         results = multiscan(filelist, config=msconf.MS_CONFIG)
 
         # We need to read in the config for the parseReports call
-        config = msconf.MS_CONFIG['main']
+        config = msconf.MS_CONFIG.get_section('main')
         # Make sure we have a group-types
         if "group-types" not in config or not config["group-types"]:
             config["group-types"] = []

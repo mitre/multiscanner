@@ -123,7 +123,7 @@ api_config = read_config(api_config_file, {'api': DEFAULTCONF, 'Database': datab
 from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
-db = database.Database(config=dict(api_config.items('Database')), regenconfig=False)
+db = database.Database(config=api_config.get_section('Database'), regenconfig=False)
 # To run under Apache, we need to set up the DB outside of __main__
 # Sleep and retry until database connection is successful
 try:
@@ -1105,7 +1105,7 @@ def generate_pdf_report(task_id):
     if report_dict == TASK_STILL_PROCESSING:
         return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
-    config_dir = os.path.split(ms.config.CONFIG_FILE)[0]
+    config_dir = os.path.split(ms.config.CONFIG_FILEPATH)[0]
     pdf = pdf_generator.create_pdf_document(config_dir, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
