@@ -67,12 +67,13 @@ from uuid import uuid4
 from sqlalchemy.exc import SQLAlchemyError
 
 import multiscanner as ms
+from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 from multiscanner.common import pdf_generator, stix2_generator
 from multiscanner.config import PY3, get_config_path, read_config
+from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.storage import StorageHandler
 from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
-
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -116,12 +117,6 @@ app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
 api_config_file = get_config_path('api')
 api_config = read_config(api_config_file, {'api': DEFAULTCONF, 'Database': database.Database.DEFAULTCONF})
-
-# TODO: fix this mess
-# TODO: test moving these imports up with the others
-# Needs api_config in order to function properly
-from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
-from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
 
 db = database.Database(config=api_config.get_section('Database'), regenconfig=False)
 # To run under Apache, we need to set up the DB outside of __main__
@@ -230,16 +225,15 @@ def multiscanner_process(work_queue, exit_signal):
                 task_status='Complete',
                 timestamp=scan_time,
             )
-        metadata_list = []
 
-        storage_handler.store(results, wait=False)
+            storage_handler.store(results, wait=False)
 
-        if delete_after_scan:
-            for file_name in results:
-                os.remove(file_name)
+            if delete_after_scan:
+                for file_name in results:
+                    os.remove(file_name)
 
-        filelist = []
         time_stamp = None
+        metadata_list = []
     storage_handler.close()
 
 
