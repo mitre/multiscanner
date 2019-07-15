@@ -404,6 +404,8 @@ def multiscan(Files, config=None, module_list=None):
 
     if config is None:
         config = MSConfigParser()
+    elif isinstance(config, dict):
+        config = msconf.dict_to_config(config)
 
     # Copy files to a share if configured
     copyfilesto = config.get('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
@@ -411,7 +413,7 @@ def multiscan(Files, config=None, module_list=None):
         if os.path.isdir(copyfilesto):
             filelist = _copy_to_share(filelist, filedic, copyfilesto)
         else:
-            raise IOError('The copyfilesto dir "' + copyfilesto + '" is not a valid dir')
+            raise IOError('The copyfilesto dir "{}" is not a valid dir'.format(copyfilesto))
 
     # Create the global module interface
     global_module_interface = _GlobalModuleInterface()
