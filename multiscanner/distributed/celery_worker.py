@@ -154,6 +154,8 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     # Get the storage config
     if config is None:
         config = msconf.MS_CONFIG
+    elif isinstance(config, dict):
+        config = msconf.dict_to_config(config)
     storage_conf = msconf.get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 
