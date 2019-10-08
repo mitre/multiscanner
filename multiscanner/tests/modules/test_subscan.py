@@ -3,16 +3,19 @@ A test module which tests that config handling works
 """
 TYPE = "Test"
 NAME = "test_subscan"
+DEFAULTCONF = {
+    'ENABLED': True
+}
 
 # Overwritten in multiscanner
 multiscanner = None
 
 
-def check():
+def check(conf=DEFAULTCONF):
     return True
 
 
-def scan(filelist):
+def scan(filelist, conf=DEFAULTCONF):
     results = []
 
     for f in filelist:

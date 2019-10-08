@@ -22,7 +22,6 @@ Set of analytics based on ssdeep hash.
 '''
 
 import argparse
-import configparser
 import json
 import logging
 import sys
@@ -37,20 +36,13 @@ except ImportError:
     ssdeep = False
 
 
-from multiscanner import CONFIG as MS_CONFIG
-from multiscanner.common import utils
 from multiscanner.storage import storage
 
 
 class SSDeepAnalytic:
 
     def __init__(self):
-        storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
-        config_object.read(storage_conf)
-        conf = utils.parse_config(config_object)
-        storage_handler = storage.StorageHandler(configfile=storage_conf)
+        storage_handler = storage.StorageHandler()
         es_handler = storage_handler.load_required_module('ElasticSearchStorage')
 
         if not es_handler:
@@ -59,7 +51,7 @@ class SSDeepAnalytic:
 
         # probably not ideal...
         self.es = es_handler.es
-        self.index = conf['ElasticSearchStorage']['index']
+        self.index = es_handler.index
         self.doc_type = '_doc'
 
     def ssdeep_compare(self):

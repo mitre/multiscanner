@@ -4,12 +4,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from .config import (  # noqa F401
-    PY3, MS_WD, CONFIG, MODULESDIR
+    MSConfigParser, MS_WD, PY3, config_init, update_ms_config, update_ms_config_file
 )
 
 from .ms import (  # noqa F401
-    config_init, multiscan, parse_reports, _ModuleInterface,
-    _GlobalModuleInterface, _Thread, _run_module, _main
+    multiscan, parse_reports, _ModuleInterface,
+    _GlobalModuleInterface, _Thread, _run_module, _main, _get_main_modules
 )
 
 from .version import __version__  # noqa F401

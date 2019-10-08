@@ -3,14 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
-import ast
-import configparser
 import imp
 import logging
 import os
-import sys
 
-from multiscanner.config import PY3
+from six import PY3
 
 logger = logging.getLogger(__name__)
 
@@ -76,42 +73,6 @@ def convert_encoding(data, encoding='UTF-8', errors='replace'):
         return data
 
 
-def parse_config(config_object):
-    """Take a config object and returns it as a dictionary"""
-    return_var = {}
-    for section in config_object.sections():
-        section_dict = dict(config_object.items(section))
-        for key in section_dict:
-            try:
-                section_dict[key] = ast.literal_eval(section_dict[key])
-            except Exception as e:
-                logger.debug(e)
-        return_var[section] = section_dict
-    return return_var
-
-
-def get_config_path(config_file, component):
-    """Gets the location of the config file for the given multiscanner component
-    from the multiscanner config file
-
-    Components:
-        storage
-        api
-        web"""
-    conf = configparser.ConfigParser()
-    conf.read(config_file)
-    conf = parse_config(conf)
-    try:
-        return conf['main']['%s-config' % component]
-    except KeyError:
-        logger.error(
-            "Couldn't find '{}-config' value in 'main' section "
-            "of config file. Have you run 'python multiscanner.py init'?"
-            .format(component)
-        )
-        sys.exit()
-
-
 def dirname(path):
     """OS independent version of os.path.dirname"""
     split = path.split('/')
@@ -134,7 +95,7 @@ def basename(path):
         return split[-1]
 
 
-def parseDir(directory, recursive=False, exclude=['__init__']):
+def parse_dir(directory, recursive=False, exclude=['__init__']):
     """
     Returns a list of files in a directory.
 
@@ -148,7 +109,7 @@ def parseDir(directory, recursive=False, exclude=['__init__']):
         item = os.path.join(directory, item)
         if os.path.isdir(item):
             if recursive:
-                filelist.extend(parseDir(item, recursive))
+                filelist.extend(parse_dir(item, recursive))
             else:
                 continue
         else:
@@ -162,7 +123,7 @@ def parseDir(directory, recursive=False, exclude=['__init__']):
     return filelist
 
 
-def parseFileList(FileList, recursive=False):
+def parse_file_list(FileList, recursive=False):
     """
     Takes a list of files and directories and returns a list of files.
 
@@ -173,7 +134,7 @@ def parseFileList(FileList, recursive=False):
     filelist = []
     for item in FileList:
         if os.path.isdir(item):
-            filelist.extend(parseDir(item, recursive))
+            filelist.extend(parse_dir(item, recursive))
         elif os.path.isfile(item):
             if not PY3:
                 filelist.append(item.decode('utf8'))

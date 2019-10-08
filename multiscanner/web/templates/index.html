@@ -134,7 +134,7 @@
         obj['duplicate'] = duplicate_action;
         // Modules options
         var moduleList = $("#module-opts input:checked").map(function(){return $(this).attr("name");});
-        obj['modules'] = moduleList;
+        obj['modules'] = moduleList.toArray();
         // Archive options
         if ($('#archive-analyze').is(':checked')) {
           obj['archive-analyze'] = 'true';
@@ -233,15 +233,15 @@
     })
 
     // Add options for selecting which modules to run
-    //$.get("{{ api_loc }}/api/v2/modules", function(data) {
-    //  var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
-    //  for (mod in data) {
-    //    checked = (data[mod] ? "checked" : "");
-    //    modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+' />'+mod+'</label> </div>';
-    //  }
-    //  modules += '</div>';
-    //  $('#adv-options').prepend(modules);
-    //});
+    $.get("{{ api_loc }}/api/v2/modules", function(data) {
+      var modules = '<div id="module-opts" class="opt-section"><h4>Modules</h4><p>Select which modules to use:</p>';
+      for (mod in data) {
+        checked = (data[mod] ? "checked" : "");
+        modules += '<div class="checkbox col-md-4"> <label><input type="checkbox" name="'+mod+'" '+checked+' />'+mod+'</label> </div>';
+      }
+      modules += '</div>';
+      $('#adv-options').append(modules);
+    });
 
     // Set metadata field values for all files
     $('#adv-options .metadata-group input').change(function() {

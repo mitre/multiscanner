@@ -8,7 +8,7 @@ import os
 import subprocess
 import re
 
-from multiscanner.config import CONFIG
+import multiscanner as ms
 from multiscanner.common.utils import list2cmdline, sshexec, SSH
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ NAME = "TrID"
 # Hostname, port, username
 HOST = ("MultiScanner", 22, "User")
 # SSH Key
-KEY = os.path.join(os.path.split(CONFIG)[0], 'etc', 'id_rsa')
+KEY = os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'id_rsa')
 # Replacement path for SSH connections
 PATHREPLACE = "X:\\"
 DEFAULTCONF = {

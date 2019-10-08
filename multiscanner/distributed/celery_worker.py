@@ -4,9 +4,6 @@ $ celery -A celery_worker worker
 from the utils/ directory.
 '''
 
-import codecs
-import configparser
-import os
 from datetime import datetime
 from socket import gethostname
 
@@ -16,9 +13,8 @@ from celery.utils.log import get_task_logger
 
 from kombu import Exchange, Queue
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
-from multiscanner.common import utils
+from multiscanner import config as msconf
 from multiscanner.storage import elasticsearch_storage, storage
 from multiscanner.storage import sql_driver as database
 from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
@@ -37,41 +33,27 @@ DEFAULTCONF = {
     'tz': 'US/Eastern',
 }
 
-config_object = configparser.ConfigParser()
-config_object.optionxform = str
-configfile = utils.get_config_path(MS_CONFIG, 'api')
-config_object.read(configfile)
+configfile = msconf.get_config_path('api')
+config = msconf.read_config(configfile, {'celery': DEFAULTCONF, 'Database': database.Database.DEFAULTCONF})
+db_config = dict(config.items('Database'))
 
-if not config_object.has_section('celery') or not os.path.isfile(configfile):
-    # Write default config
-    config_object.add_section('celery')
-    for key in DEFAULTCONF:
-        config_object.set('celery', key, str(DEFAULTCONF[key]))
-    conffile = codecs.open(configfile, 'w', 'utf-8')
-    config_object.write(conffile)
-    conffile.close()
-config = utils.parse_config(config_object)
-api_config = config.get('api')
-worker_config = config.get('celery')
-db_config = config.get('Database')
-
-storage_config_object = configparser.ConfigParser()
-storage_config_object.optionxform = str
-storage_configfile = utils.get_config_path(MS_CONFIG, 'storage')
-storage_config_object.read(storage_configfile)
-config = utils.parse_config(storage_config_object)
-es_storage_config = config.get('ElasticSearchStorage')
+storage_configfile = msconf.get_config_path('storage')
+storage_config = msconf.read_config(storage_configfile)
+try:
+    es_storage_config = storage_config['ElasticSearchStorage']
+except KeyError:
+    es_storage_config = {}
 
 default_exchange = Exchange('celery', type='direct')
 
 app = Celery(broker='{0}://{1}:{2}@{3}/{4}'.format(
-    worker_config.get('protocol'),
-    worker_config.get('user'),
-    worker_config.get('password'),
-    worker_config.get('host'),
-    worker_config.get('vhost'),
+    config.get('celery', 'protocol'),
+    config.get('celery', 'user'),
+    config.get('celery', 'password'),
+    config.get('celery', 'host'),
+    config.get('celery', 'vhost'),
 ))
-app.conf.timezone = worker_config.get('tz')
+app.conf.timezone = config.get('celery', 'tz')
 app.conf.task_queues = [
     Queue('low_tasks', default_exchange, routing_key='tasks.low', queue_arguments={'x-max-priority': 10}),
     Queue('medium_tasks', default_exchange, routing_key='tasks.medium', queue_arguments={'x-max-priority': 10}),
@@ -100,8 +82,8 @@ def setup_periodic_tasks(sender, **kwargs):
         sender.add_periodic_task(
             crontab(hour=3, minute=0),
             metricbeat_rollover_celery.s(),
-            args=(es_storage_config.get('metricbeat_rollover_days')),
-            kwargs=dict(config=MS_CONFIG),
+            args=(es_storage_config.get('metricbeat_rollover_days'), 7),
+            kwargs=dict(config=msconf.MS_CONFIG),
             **{
                 'queue': 'low_tasks',
                 'routing_key': 'tasks.low',
@@ -158,7 +140,7 @@ class MultiScannerTask(Task):
 
 @app.task(base=MultiScannerTask)
 def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
-                        config=MS_CONFIG, module_list=None):
+                        config=None, module_list=None):
     '''
     Queue up multiscanner tasks
 
@@ -170,12 +152,16 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
     logger.info('\n\n{}{}Got file: {}.\nOriginal filename: {}.\n'.format('=' * 48, '\n', file_hash, original_filename))
 
     # Get the storage config
-    storage_conf = utils.get_config_path(config, 'storage')
+    if config is None:
+        config = msconf.MS_CONFIG
+    elif isinstance(config, dict):
+        config = msconf.dict_to_config(config)
+    storage_conf = msconf.get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
 
     resultlist = multiscan(
         [file_],
-        configfile=config,
+        config=config,
         module_list=module_list
     )
     results = parse_reports(resultlist, python=True)
@@ -184,26 +170,22 @@ def multiscanner_celery(file_, original_filename, task_id, file_hash, metadata,
 
     # Get the Scan Config that the task was run with and
     # add it to the task metadata
-    scan_config_object = configparser.ConfigParser()
-    scan_config_object.optionxform = str
-    scan_config_object.read(config)
-    full_conf = utils.parse_config(scan_config_object)
     sub_conf = {}
-    # Count number of modules enabled out of total possible
+    # Count number of modules enabled out of total possible (-1 for main)
     # and add it to the Scan Metadata
     total_enabled = 0
-    total_modules = len(full_conf.keys())
+    total_modules = len(config.keys()) - 1
 
     # Get the count of modules enabled from the module_list
     # if it exists, else count via the config
     if module_list:
         total_enabled = len(module_list)
     else:
-        for key in full_conf:
+        for key in config:
             if key == 'main':
                 continue
             sub_conf[key] = {}
-            sub_conf[key]['ENABLED'] = full_conf[key]['ENABLED']
+            sub_conf[key]['ENABLED'] = config[key]['ENABLED']
             if sub_conf[key]['ENABLED'] is True:
                 total_enabled += 1
 
@@ -249,7 +231,7 @@ def ssdeep_compare_celery():
 
 
 @app.task()
-def metricbeat_rollover_celery(days, config=MS_CONFIG):
+def metricbeat_rollover_celery(days):
     '''
     Clean up old Elastic Beats indices
     '''
@@ -263,7 +245,7 @@ def metricbeat_rollover_celery(days, config=MS_CONFIG):
             return
 
         if not days:
-            days = es_storage_config.get('metricbeat_rollover_days')
+            days = es_storage_config.get('metricbeat_rollover_days', 7)
         if not days:
             raise NameError("name 'days' is not defined, check storage.ini for 'metricbeat_rollover_days' setting")
 

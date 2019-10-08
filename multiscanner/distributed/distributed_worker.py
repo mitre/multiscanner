@@ -5,8 +5,6 @@
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
 import argparse
-import codecs
-import configparser
 import logging
 import multiprocessing
 import os
@@ -18,7 +16,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 from multiscanner import multiscan, parse_reports
-from multiscanner.common import utils
+from multiscanner.config import get_config_path, read_config, update_ms_config_file
 from multiscanner.storage import storage
 
 
@@ -33,7 +31,7 @@ logger = logging.getLogger(__name__)
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = utils.get_config_path(config, 'storage')
+    storage_conf = get_config_path('storage', config)
     storage_handler = storage.StorageHandler(configfile=storage_conf)
     while not exit_signal.value:
         time.sleep(1)
@@ -54,7 +52,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
             else:
                 continue
 
-        resultlist = multiscan(filelist, configfile=config)
+        resultlist = multiscan(filelist, config=config)
         results = parse_reports(resultlist, python=True)
         if delete:
             for file_name in results:
@@ -68,19 +66,13 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
     storage_handler.close()
 
 
-def _read_conf(file_path):
-    conf = configparser.ConfigParser()
-    conf.optionxform = str
-    with codecs.open(file_path, 'r', encoding='utf-8') as fp:
-        conf.readfp(fp)
-    return utils.parse_config(conf)
-
-
 def _main():
     args = _parse_args()
     # Pull config options
-    conf = _read_conf(args.config)
+    conf = read_config(args.config)
     multiscanner_config = conf['worker']['multiscanner_config']
+    update_ms_config_file(multiscanner_config)
+    config = read_config(multiscanner_config)
 
     # Start worker task
     work_queue = multiprocessing.Queue()
@@ -88,7 +80,7 @@ def _main():
     exit_signal.value = False
     ms_process = multiprocessing.Process(
             target=multiscanner_process,
-            args=(work_queue, multiscanner_config, args.delete, exit_signal))
+            args=(work_queue, config, args.delete, exit_signal))
     ms_process.start()
 
     # Start message pickup task

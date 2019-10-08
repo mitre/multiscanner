@@ -20,6 +20,8 @@ SCAN_IDS = ['hyayv9g1x4hmxahvkmyimh3j3tj3ivvk',
 MSG_SERVER_UNAVAILABLE = 'Server unavailable, try again later'
 FILE_200_COMPLETE_REPORT = 'retrieval_responses/200_found_complete.json'
 FILE_200_INCOMPLETE_REPORT = 'retrieval_responses/200_found_incomplete.json'
+MDF_GET = 'multiscanner.modules.antivirus.Metadefender.requests.get'
+MDF_POST = 'multiscanner.modules.antivirus.Metadefender.requests.post'
 
 
 class MockResponse(object):
@@ -146,7 +148,7 @@ class MetadefenderTest(unittest.TestCase):
     # possible responses to sample submission requests
     # ---------------------------------------------------------------------
 
-    @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
+    @mock.patch(MDF_POST, side_effect=mocked_requests_post_sample_submitted)
     def test_submit_sample_success(self, mock_get):
         '''
         Tests Metadefender._submit_sample()'s handling of a successful response from
@@ -158,7 +160,7 @@ class MetadefenderTest(unittest.TestCase):
         self.assertEqual(submit_resp['error'], None)
         self.assertEqual(submit_resp['scan_id'], generate_scan_id(RANDOM_INPUT_FILES[0]))
 
-    @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_failed_w_msg)
+    @mock.patch(MDF_POST, side_effect=mocked_requests_post_sample_failed_w_msg)
     def test_submit_sample_fail_unavailable(self, mock_get):
         '''
         Tests Metadefender._submit_sample()'s handling of a submission that fails due to
@@ -170,7 +172,7 @@ class MetadefenderTest(unittest.TestCase):
         self.assertEqual(submit_resp['error'], MSG_SERVER_UNAVAILABLE)
         self.assertEqual(submit_resp['scan_id'], None)
 
-    @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_failed_no_msg)
+    @mock.patch(MDF_POST, side_effect=mocked_requests_post_sample_failed_no_msg)
     def test_submit_sample_fail_unavailable_no_msg(self, mock_get):
         '''
         Tests Metadefender._submit_sample()'s handling of a submission that fails due to
@@ -186,7 +188,7 @@ class MetadefenderTest(unittest.TestCase):
     # This section tests the logic for parsing Metadefender's responses
     # to requests for analysis results
     # ---------------------------------------------------------------------
-    @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_success)
+    @mock.patch(MDF_GET, side_effect=mocked_requests_get_sample_200_success)
     def test_get_results_200_success(self, mock_get):
         '''
         Tests Metadefender._parse_scan_result()'s handling of a complete
@@ -218,7 +220,7 @@ class MetadefenderTest(unittest.TestCase):
             else:
                 self.fail('Unexpected Engine: %s' % engine_name)
 
-    @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_not_found)
+    @mock.patch(MDF_GET, side_effect=mocked_requests_get_sample_200_not_found)
     def test_get_results_200_not_found(self, mock_get):
         '''
         Tests Metadefender._parse_scan_result()'s handling of a 200 response
@@ -235,7 +237,7 @@ class MetadefenderTest(unittest.TestCase):
         if len(engine_results) != 0:
             self.fail('Engine result list should be empty')
 
-    @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_in_progress)
+    @mock.patch(MDF_GET, side_effect=mocked_requests_get_sample_200_in_progress)
     def test_get_results_200_succes_in_progress(self, mock_get):
         '''
         Tests Metadefender._parse_scan_result()'s handling of a 200 response
@@ -256,8 +258,8 @@ class MetadefenderTest(unittest.TestCase):
     # ---------------------------------------------------------------------
     # This section tests the entire scan() method
     # ---------------------------------------------------------------------
-    @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_success)
-    @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
+    @mock.patch(MDF_GET, side_effect=mocked_requests_get_sample_200_success)
+    @mock.patch(MDF_POST, side_effect=mocked_requests_post_sample_submitted)
     def test_scan_complete_success(self, mock_post, mock_get):
         '''
         Test for a perfect scan. No submission errors, no retrieval errors
@@ -269,8 +271,8 @@ class MetadefenderTest(unittest.TestCase):
         for scan_res in resultlist:
             self.assertEqual(scan_res[1]['overall_status'], Metadefender.STATUS_SUCCESS)
 
-    @mock.patch('Metadefender.requests.get', side_effect=mocked_requests_get_sample_200_in_progress)
-    @mock.patch('Metadefender.requests.post', side_effect=mocked_requests_post_sample_submitted)
+    @mock.patch(MDF_GET, side_effect=mocked_requests_get_sample_200_in_progress)
+    @mock.patch(MDF_POST, side_effect=mocked_requests_post_sample_submitted)
     def test_scan_timeout_scan_in_progress(self, mock_post, mock_get):
         '''
         Test for a scan where analysis time exceeds timeout period

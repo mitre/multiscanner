@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import codecs
-import configparser
 import json
 import logging
 import os
@@ -18,10 +16,9 @@ from sqlalchemy.orm import aliased, scoped_session, sessionmaker
 from sqlalchemy.pool import QueuePool
 from sqlalchemy_utils import create_database, database_exists
 
-from multiscanner import CONFIG
+from multiscanner.config import MSConfigParser, get_config_path, reset_config
 
-
-CONFIG_FILE = os.path.join(os.path.split(CONFIG)[0], "api_config.ini")
+CONFIG_FILEPATH = get_config_path('api')
 
 Base = declarative_base()
 logger = logging.getLogger(__name__)
@@ -71,52 +68,38 @@ class Database(object):
         'strategy': 'threadlocal'
     }
 
-    def __init__(self, config=None, configfile=CONFIG_FILE, regenconfig=False):
+    def __init__(self, config=None, configfile=None, regenconfig=False):
         self.db_connection_string = None
         self.db_engine = None
 
         # Configuration parsing
-        config_parser = configparser.ConfigParser()
-        config_parser.optionxform = str
+        config_parser = MSConfigParser()
+        if configfile is None:
+            configfile = CONFIG_FILEPATH
 
+        section_name = self.__class__.__name__
         # (re)generate conf file if necessary
         if regenconfig or not os.path.isfile(configfile):
-            self._rewrite_config(config_parser, configfile, config)
+            sections = {section_name: self}
+            reset_config(sections, config_parser, configfile)
+
         # now read in and parse the conf file
         config_parser.read(configfile)
         # If we didn't regen the config file in the above check, it's possible
         # that the file is missing our DB settings...
-        if not config_parser.has_section(self.__class__.__name__):
-            self._rewrite_config(config_parser, configfile, config)
-            config_parser.read(configfile)
+        if not config_parser.has_section(section_name):
+            sections = {section_name: self}
+            reset_config(sections, config_parser, configfile)
 
         # If configuration was specified, use what was stored in the config file
         # as a base and then override specific settings as contained in the user's
         # config. This allows the user to specify ONLY the config settings they want to
         # override
-        config_from_file = dict(config_parser.items(self.__class__.__name__))
+        config_from_file = dict(config_parser.items(section_name))
         if config:
             for key_ in config:
                 config_from_file[key_] = config[key_]
         self.config = config_from_file
-
-    def _rewrite_config(self, config_parser, configfile, usr_override_config):
-        """
-        Regenerates the Database-specific part of the API config file
-        """
-        if os.path.isfile(configfile):
-            # Read in the old config
-            config_parser.read(configfile)
-        if not config_parser.has_section(self.__class__.__name__):
-            config_parser.add_section(self.__class__.__name__)
-        if not usr_override_config:
-            usr_override_config = self.DEFAULTCONF
-        # Update config
-        for key_ in usr_override_config:
-            config_parser.set(self.__class__.__name__, key_, str(usr_override_config[key_]))
-
-        with codecs.open(configfile, 'w', 'utf-8') as conffile:
-            config_parser.write(conffile)
 
     def init_db(self):
         """
@@ -126,7 +109,7 @@ class Database(object):
         db_name = self.config['db_name']
         if db_type == 'sqlite':
             # we can ignore host, username, password, etc
-            sql_lite_db_path = os.path.join(os.path.split(CONFIG)[0], db_name)
+            sql_lite_db_path = os.path.join(os.path.split(CONFIG_FILEPATH)[0], db_name)
             self.db_connection_string = 'sqlite:///{}'.format(sql_lite_db_path)
         else:
             username = self.config['username']

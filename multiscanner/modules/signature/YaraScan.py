@@ -8,8 +8,8 @@ import logging
 import os
 import time
 
-from multiscanner.config import CONFIG
-from multiscanner.common.utils import parseDir
+import multiscanner as ms
+from multiscanner.common.utils import parse_dir
 
 
 __authors__ = "Nick Beede, Drew Bonasera"
@@ -18,7 +18,7 @@ __license__ = "MPL 2.0"
 TYPE = "Signature"
 NAME = "Yara"
 DEFAULTCONF = {
-    "ruledir": os.path.join(os.path.split(CONFIG)[0], "etc", "yarasigs"),
+    "ruledir": os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], "etc", "yarasigs"),
     "fileextensions": [".yar", ".yara", ".sig"],
     "ignore-tags": ["TLPRED"],
     "string-threshold": 30,
@@ -51,7 +51,7 @@ def scan(filelist, conf=DEFAULTCONF):
 
     ruleset = {}
     try:
-        rules = parseDir(ruleDir, recursive=True)
+        rules = parse_dir(ruleDir, recursive=True)
     except (OSError, IOError) as e:
         logger.error('Cannot read files: {}'.format(e.filename))
         return None

@@ -4,8 +4,6 @@
 
 from __future__ import (absolute_import, division, unicode_literals, with_statement)
 
-import codecs
-import configparser
 import inspect
 import logging
 import os
@@ -17,8 +15,8 @@ from future import standard_library
 standard_library.install_aliases()
 
 
-from multiscanner.config import CONFIG as MS_CONFIG
 from multiscanner.common import utils
+from multiscanner.config import MSConfigParser, get_config_path
 
 
 DEFAULTCONF = {
@@ -89,56 +87,32 @@ class Storage(object):
 
 
 class StorageHandler(object):
-    def __init__(self, configfile=MS_CONFIG, config=None, configregen=False):
+    def __init__(self, configfile=None, config=None):
         self.storage_lock = threading.Lock()
         self.storage_counter = ThreadCounter()
         # Load all storage classes
         storage_classes = _get_storage_classes()
+        if configfile is None:
+            configfile = get_config_path('storage')
 
         # Read in config
-        if configfile:
-            configfile = utils.get_config_path(MS_CONFIG, 'storage')
-            config_object = configparser.ConfigParser()
-            config_object.optionxform = str
-            # Regen the config if needed or wanted
-            if configregen or not os.path.isfile(configfile):
-                _write_main_config(config_object)
-                _rewrite_config(storage_classes, config_object, configfile)
+        config_object = MSConfigParser()
+        config_object.read(configfile)
+        if config:
+            for key in config:
+                if key not in config_object:
+                    config_object[key] = config[key]
+                else:
+                    config_object[key].update(config[key])
+        config = config_object
 
-            config_object.read(configfile)
-            if config:
-                file_conf = utils.parse_config(config_object)
-                for key in config:
-                    if key not in file_conf:
-                        file_conf[key] = config[key]
-                        file_conf[key]['_load_default'] = True
-                    else:
-                        file_conf[key].update(config[key])
-                config = file_conf
-            else:
-                config = utils.parse_config(config_object)
-        else:
-            if config is None:
-                config = {}
-                for storage_name in storage_classes:
-                    config[storage_name] = {}
-            config['_load_default'] = True
-
-        self.sleep_time = config.get('main', {}).get('retry_time', DEFAULTCONF['retry_time'])
-        self.num_retries = config.get('main', {}).get('retry_num', DEFAULTCONF['retry_num'])
-
+        self.sleep_time = config.get('main', 'retry_time', fallback=DEFAULTCONF['retry_time'])
+        self.num_retries = config.get('main', 'retry_num', fallback=DEFAULTCONF['retry_num'])
         # Set the config inside of the storage classes
         for storage_name in storage_classes:
             if storage_name in config:
-                if '_load_default' in config or '_load_default' in config[storage_name]:
-                    # Remove _load_default from config
-                    if '_load_default' in config[storage_name]:
-                        del config[storage_name]['_load_default']
-                    # Update the default storage config
-                    storage_classes[storage_name].config = storage_classes[storage_name].DEFAULTCONF
-                    storage_classes[storage_name].config.update(config[storage_name])
-                else:
-                    storage_classes[storage_name].config = config[storage_name]
+                storage_classes[storage_name].config = storage_classes[storage_name].DEFAULTCONF
+                storage_classes[storage_name].config.update(config[storage_name])
 
         self.storage_classes = storage_classes
         self.loaded_storage = {}
@@ -264,79 +238,13 @@ class StorageHandler(object):
             return self.storage_counter.is_done()
 
 
-def config_init(filepath, overwrite=False, storage_classes=None):
-    if storage_classes is None:
-        storage_classes = _get_storage_classes()
-    config_object = configparser.ConfigParser()
-    config_object.optionxform = str
-    if overwrite or not os.path.isfile(filepath):
-        _write_main_config(config_object)
-        _rewrite_config(storage_classes, config_object, filepath)
-    else:
-        config_object.read(filepath)
-        _write_main_config(config_object)
-        _write_missing_config(config_object, filepath, storage_classes=storage_classes)
-
-
-def _write_main_config(config_object):
-    if not config_object.has_section('main'):
-        # Write default config
-        config_object.add_section('main')
-        for key in DEFAULTCONF:
-            config_object.set('main', key, str(DEFAULTCONF[key]))
-
-
-def _rewrite_config(storage_classes, config_object, filepath):
-    keys = list(storage_classes.keys())
-    keys.sort()
-    for class_name in keys:
-        conf = storage_classes[class_name].DEFAULTCONF
-        config_object.add_section(class_name)
-        for key in conf:
-            config_object.set(class_name, key, str(conf[key]))
-
-    with codecs.open(filepath, 'w', 'utf-8') as f:
-        config_object.write(f)
-
-
-def _write_missing_config(config_object, filepath, storage_classes=None):
-    """
-    Write in default config for modules not in config file. Returns True if config was written, False if not.
-
-    config_object - The config object
-    filepath - The path to the config file
-    storage_classes - The dictionary object from _get_storage_classes. If None we call _get_storage_classes()
-    """
-    if storage_classes is None:
-        storage_classes = _get_storage_classes()
-    ConfNeedsWrite = False
-    keys = list(storage_classes.keys())
-    keys.sort()
-    for module in keys:
-        if module in config_object:
-            continue
-        try:
-            conf = module.DEFAULTCONF
-        except Exception as e:
-            logger.warning(e)
-            continue
-        ConfNeedsWrite = True
-        config_object.add_section(module)
-        for key in conf:
-            config_object.set(module, key, str(conf[key]))
-
-    if ConfNeedsWrite:
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-        return True
-    return False
-
-
 def _get_storage_classes(dir_path=STORAGE_DIR):
     storage_classes = {}
-    dir_list = utils.parseDir(dir_path, recursive=True)
+    dir_list = utils.parse_dir(dir_path, recursive=True)
     dir_list.remove(os.path.join(dir_path, 'storage.py'))
     # dir_list.remove(os.path.join(dir_path, '__init__.py'))
+    # sql_driver is not configurable in storage.ini, and is used by the api
+    # and celery workers rather than by the StorageHandler
     dir_list.remove(os.path.join(dir_path, 'sql_driver.py'))
     for filename in dir_list:
         if filename.endswith('.py'):

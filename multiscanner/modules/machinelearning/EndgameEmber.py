@@ -19,7 +19,7 @@ import logging
 import os
 from pathlib import Path
 
-from multiscanner import CONFIG
+import multiscanner as ms
 
 
 __authors__ = "Patrick Copeland"
@@ -30,7 +30,7 @@ NAME = "EndgameEmber"
 REQUIRES = ['libmagic']
 DEFAULTCONF = {
     'ENABLED': False,
-    'path-to-model': os.path.join(os.path.split(CONFIG)[0], 'etc', 'ember', 'ember_model_2017.txt'),
+    'path-to-model': os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'ember', 'ember_model_2017.txt'),
 }
 LGBM_MODEL = None
 

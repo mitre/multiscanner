@@ -1,19 +1,22 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
+import mock
 import os
 
 import multiscanner
 
 CWD = os.path.dirname(os.path.abspath(__file__))
+mock_modlist = {'test_subscan': [True, os.path.join(CWD, 'modules')]}
 
 
 def add_int(x, y):
     return x + y
 
 
+@mock.patch('multiscanner.config.MODULE_LIST', mock_modlist)
 def test_subscan():
     m = multiscanner.multiscan(
-        ['fake.zip'], recursive=None, configfile=None,
-        module_list=[os.path.join(CWD, 'modules', 'test_subscan.py')])
+        ['fake.zip'],
+        module_list=['test_subscan'])
     assert m == [([(u'fake.zip', 0)], {'Type': 'Test', 'Name': 'test_subscan'}), ([(u'fake.zip/0', u'fake.zip')], {u'Include': False, u'Type': u'subscan', u'Name': u'Parent'}), ([(u'fake.zip', [u'fake.zip/0'])], {u'Include': False, u'Type': u'subscan', u'Name': u'Children'}), ([(u'fake.zip/0', u'test_subscan')], {u'Include': False, u'Type': u'subscan', u'Name': u'Created by'}), ([(u'fake.zip/0', 1)], {'Type': 'Test', 'Name': 'test_subscan'}), ([(u'fake.zip/0/1', u'fake.zip/0')], {u'Include': False, u'Type': u'subscan', u'Name': u'Parent'}), ([(u'fake.zip/0', [u'fake.zip/0/1'])], {u'Include': False, u'Type': u'subscan', u'Name': u'Children'}), ([(u'fake.zip/0/1', u'test_subscan')], {u'Include': False, u'Type': u'subscan', u'Name': u'Created by'}), ([(u'fake.zip/0/1', 2)], {'Type': 'Test', 'Name': 'test_subscan'})]    # noqa: E501
 
 

@@ -26,20 +26,20 @@ def test_fail_loadModule():
 class _runmod_tests(object):
     @classmethod
     def setup_class(cls):
-        cls.real_mod_dir = multiscanner.MODULESDIR
-        multiscanner.MODULESDIR = os.path.join(CWD, "modules")
-        cls.filelist = utils.parseDir(os.path.join(CWD, 'files'))
+        cls.real_mod_dir = multiscanner.config.MODULES_DIR
+        multiscanner.config.MODULES_DIR = os.path.join(CWD, "modules")
+        cls.filelist = utils.parse_dir(os.path.join(CWD, 'files'))
         cls.files = ['a', 'b', 'C:\\c', '/d/d']
         cls.threadDict = {}
 
     @classmethod
     def teardown_class(cls):
-        multiscanner.MODULESDIR = cls.real_mod_dir
+        multiscanner.config.MODULES_DIR = cls.real_mod_dir
 
 
 class Test_runModule_test_1(_runmod_tests):
     def setup(self):
-        m = utils.load_module('test_1', [multiscanner.MODULESDIR])
+        m = utils.load_module('test_1', [multiscanner.config.MODULES_DIR])
         global_module_interface = multiscanner._GlobalModuleInterface()
         self.result = multiscanner._run_module('test_1', m, self.filelist, self.threadDict, global_module_interface)
         global_module_interface._cleanup()
@@ -55,7 +55,7 @@ class Test_runModule_test_1(_runmod_tests):
 
 class Test_runModule_test_2(_runmod_tests):
     def setup(self):
-        self.m = utils.load_module('test_2', [multiscanner.MODULESDIR])
+        self.m = utils.load_module('test_2', [multiscanner.config.MODULES_DIR])
         self.threadDict['test_2'] = mock.Mock()
         self.threadDict['test_1'] = mock.Mock()
         self.threadDict['test_1'].ret = ([('a', 'a'), ('C:\\c', 'c')], {})
@@ -100,7 +100,7 @@ class test_start_module_threads(_runmod_tests):
 
     def test_all_started(self):
         ThreadList = multiscanner._start_module_threads(
-            self.filelist, utils.parseDir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
+            self.filelist, utils.parse_dir(os.path.join(CWD, "modules")), self.config, self.global_module_interface)
         time.sleep(.001)
         for t in ThreadList:
             assert t.started

@@ -7,7 +7,6 @@ from __future__ import (absolute_import, division, unicode_literals, with_statem
 
 import argparse
 import codecs
-import configparser
 import datetime
 import json
 import logging
@@ -16,6 +15,7 @@ import os
 import random
 import re
 import shutil
+import six
 import string
 import sys
 import tempfile
@@ -29,9 +29,11 @@ standard_library.install_aliases()
 
 from multiscanner.version import __version__ as MS_VERSION
 from multiscanner.common.utils import (basename, convert_encoding, load_module,
-                                       parse_config, parseDir, parseFileList,
-                                       queue2list)
-from multiscanner.config import PY3, CONFIG, MODULESDIR, determine_configuration_path
+                                       parse_file_list, queue2list)
+from multiscanner import config as msconf
+from multiscanner.config import (MSConfigParser, PY3, config_init, get_config_path,
+                                 update_ms_config, update_ms_config_file,
+                                 update_paths_in_config, write_missing_config)
 from multiscanner.storage import storage
 
 
@@ -39,9 +41,9 @@ from multiscanner.storage import storage
 DEFAULTCONF = {
     "copyfilesto": False,
     "group-types": ["Antivirus"],
-    "storage-config": CONFIG.replace('config.ini', 'storage.ini'),
-    "api-config": CONFIG.replace('config.ini', 'api_config.ini'),
-    "web-config": CONFIG.replace('config.ini', 'web_config.ini'),
+    "storage-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'storage.ini'),
+    "api-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'api_config.ini'),
+    "web-config": msconf.CONFIG_FILEPATH.replace('config.ini', 'web_config.ini'),
 }
 
 logger = logging.getLogger(__name__)
@@ -248,49 +250,6 @@ def _run_module(modname, mod, filelist, threadDict, global_module_interface, con
         logger.debug("{} failed check()".format(modname))
 
 
-def _update_DEFAULTCONF(defaultconf, filepath):
-    if 'storage-config' in defaultconf:
-        defaultconf['storage-config'] = filepath.replace('config.ini', 'storage.ini')
-    if 'api-config' in defaultconf:
-        defaultconf['api-config'] = filepath.replace('config.ini', 'api_config.ini')
-    if 'web-config' in defaultconf:
-        defaultconf['web-config'] = filepath.replace('config.ini', 'web_config.ini')
-    if 'ruledir' in defaultconf:
-        defaultconf['ruledir'] = os.path.join(os.path.split(filepath)[0], "etc", "yarasigs")
-    if 'key' in defaultconf:
-        defaultconf['key'] = os.path.join(os.path.split(filepath)[0], 'etc', 'id_rsa')
-    if 'hash_list' in defaultconf:
-        defaultconf['hash_list'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'hash_list')
-    if 'offsets' in defaultconf:
-        defaultconf['offsets'] = os.path.join(os.path.split(filepath)[0], 'etc', 'nsrl', 'offsets')
-
-
-def _get_main_config(config_object, filepath=CONFIG):
-    """
-    Reads in config for main script. It will write defaults if not present.
-    Returns dictionary.
-
-    Config - The config object
-    filepath - The path to the config file
-    """
-    filepath = determine_configuration_path(filepath)
-    # Write main defaults if needed
-    ConfNeedsWrite = False
-    if 'main' not in config_object.sections():
-        ConfNeedsWrite = True
-        _update_DEFAULTCONF(DEFAULTCONF, filepath)
-        config_object.add_section('main')
-        for key in DEFAULTCONF:
-            config_object.set('main', key, str(DEFAULTCONF[key]))
-
-    if ConfNeedsWrite:
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config_object.write(f)
-
-    # Read in main config
-    return parse_config(config_object)['main']
-
-
 def _copy_to_share(filelist, filedic, sharedir):
     """
     Copies files from filelist to a share and populates the filedic. Returns a
@@ -323,12 +282,12 @@ def _copy_to_share(filelist, filedic, sharedir):
     return filelist
 
 
-def _start_module_threads(filelist, ModuleList, config, global_module_interface):
+def _start_module_threads(filelist, module_list, config, global_module_interface):
     """
     Starts each module on the file list in a separate thread. Returns a list of threads
 
     filelist - A lists of strings. The strings are files to be scanned
-    ModuleList - A list of all the modules to be run
+    module_list - A list of the names of all modules to be run
     config - The config dictionary
     global_module_interface - The global module interface to be injected in each module
     """
@@ -337,145 +296,43 @@ def _start_module_threads(filelist, ModuleList, config, global_module_interface)
     ThreadDict = {}
     global_module_interface.run_count += 1
     # Starts a thread for each module.
-    for module in ModuleList:
-        if module.endswith(".py"):
-            modname = os.path.basename(module[:-3])
-
-            # If the module is disabled we don't mess with it further to prevent spamming errors on screen
-            if modname in config:
-                if not config[modname].get('ENABLED', True):
-                    continue
-
-            moddir = os.path.dirname(module)
-            mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-            if not mod:
-                logger.warning("{} not a valid module...".format(module))
+    for modname in module_list:
+        # If the module is disabled we don't mess with it further to prevent spamming errors on screen
+        if modname in config:
+            if not config[modname].get('ENABLED', True):
                 continue
-            conf = None
-            if modname in config:
-                if '_load_default' in config or '_load_default' in config[modname]:
-                    try:
-                        conf = mod.DEFAULTCONF
-                        conf.update(config[modname])
-                    except Exception as e:
-                        logger.warning(e)
-                        conf = config[modname]
-                    # Remove _load_default from config
-                    if '_load_default' in conf:
-                        del conf['_load_default']
-                else:
-                    conf = config[modname]
+        # TODO: What if the module isn't specified in the config
 
-            # Try and read in the default conf if one was not passed
-            if not conf:
-                try:
-                    conf = mod.DEFAULTCONF
-                except Exception as e:
-                    logger.error(e)
-            thread = _Thread(
-                target=_run_module,
-                args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
-            thread.name = modname
-            thread.setDaemon(True)
-            ThreadList.append(thread)
-            ThreadDict[modname] = thread
+        try:
+            moddir = msconf.MODULE_LIST[modname][1]
+        except KeyError:
+            logger.warning(msconf.MODULE_LIST)
+            logger.warning("{} not a valid module...".format(modname))
+            continue
+
+        mod = load_module(modname, [moddir])
+        if not mod:
+            logger.warning("{} not a valid module...".format(modname))
+            continue
+        try:
+            conf = mod.DEFAULTCONF
+        except Exception as e:
+            logger.error(e)
+            conf = {}
+        if modname in config:
+            conf.update(config[modname])
+
+        thread = _Thread(
+            target=_run_module,
+            args=(modname, mod, filelist, ThreadDict, global_module_interface, conf))
+        thread.name = modname
+        thread.setDaemon(True)
+        ThreadList.append(thread)
+        ThreadDict[modname] = thread
+
     for thread in ThreadList:
         thread.start()
     return ThreadList
-
-
-def _write_missing_module_configs(ModuleList, config, filepath=CONFIG):
-    """
-    Write in default config for modules not in config file. Returns True if config was written, False if not.
-
-    ModuleList - The list of modules
-    config - The config object
-    """
-    filepath = determine_configuration_path(filepath)
-    ConfNeedsWrite = False
-    ModuleList.sort()
-    for module in ModuleList:
-        if module.endswith(".py"):
-            modname = os.path.basename(module).split('.')[0]
-            moddir = os.path.dirname(module)
-            if modname not in config.sections():
-                mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-                if mod:
-                    try:
-                        conf = mod.DEFAULTCONF
-                    except Exception as e:
-                        logger.warning(e)
-                        continue
-                    ConfNeedsWrite = True
-                    _update_DEFAULTCONF(conf, filepath)
-                    config.add_section(modname)
-                    for key in conf:
-                        config.set(modname, key, str(conf[key]))
-
-    if 'main' not in config.sections():
-        ConfNeedsWrite = True
-        _update_DEFAULTCONF(DEFAULTCONF, filepath)
-        config.add_section('main')
-        for key in DEFAULTCONF:
-            config.set('main', key, str(DEFAULTCONF[key]))
-
-    if ConfNeedsWrite:
-        with codecs.open(filepath, 'w', 'utf-8') as f:
-            config.write(f)
-        return True
-    return False
-
-
-def _rewrite_config(ModuleList, config, filepath=CONFIG):
-    """
-    Write in default config for all modules.
-
-    ModuleList - The list of modules
-    config - The config object
-    """
-    filepath = determine_configuration_path(filepath)
-    logger.info('Rewriting config...')
-    ModuleList.sort()
-    for module in ModuleList:
-        if module.endswith('.py'):
-            modname = os.path.basename(module).split('.')[0]
-            moddir = os.path.dirname(module)
-            mod = load_module(os.path.basename(module).split('.')[0], [moddir])
-            if mod:
-                try:
-                    conf = mod.DEFAULTCONF
-                except Exception as e:
-                    logger.warning(e)
-                    continue
-                _update_DEFAULTCONF(conf, filepath)
-                config.add_section(modname)
-                for key in conf:
-                    config.set(modname, key, str(conf[key]))
-
-    _update_DEFAULTCONF(DEFAULTCONF, filepath)
-    config.add_section('main')
-    for key in DEFAULTCONF:
-        config.set('main', key, str(DEFAULTCONF[key]))
-
-    with codecs.open(filepath, 'w', 'utf-8') as f:
-        config.write(f)
-
-
-def config_init(filepath, module_list=parseDir(MODULESDIR, recursive=True, exclude=["__init__"])):
-    """
-    Creates a new config file at filepath
-
-    filepath - The config file to create
-    """
-    config = configparser.ConfigParser()
-    config.optionxform = str
-
-    if filepath:
-        _rewrite_config(module_list, config, filepath)
-    else:
-        filepath = determine_configuration_path(filepath)
-        _rewrite_config(module_list, config, filepath)
-    logger.info('Configuration file initialized at {}'.format(filepath))
 
 
 def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, python=False):
@@ -529,84 +386,40 @@ def parse_reports(resultlist, groups=None, ugly=True, includeMetadata=False, pyt
         return json.dumps(finaldata, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
 
 
-def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, config=None, module_list=None):
+def multiscan(Files, config=None, module_list=None):
     """
     The meat and potatoes. Returns the list of module results
 
     Files - A list of files and dirs to be scanned
-    recursive - If true it will search the dirs in Files recursively
-    configregen - If True a new config file will be created overwriting the old
-    configfile - What config file to use. Can be None.
-    config - A dictionary containing the configuration options to be used.
-    module_list - A list of file paths to be used as modules. Each string should end in .py
+    config - ConfigParser object containing the configuration options to be used.
+    module_list - A list of the names of the modules to run on the files.
     """
     # Init some vars
-    # If recursive is False we don't parse the file list and take it as is.
-    if recursive:
-        filelist = parseFileList(Files, recursive=recursive)
-    else:
-        filelist = Files
+    filelist = Files
     # A list of files in the module dir
     if module_list is None:
-        module_list = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
+        module_list = [modname for modname in msconf.MODULE_LIST]
     # A dictionary used for the copyfileto parameter
     filedic = {}
-    # What will be the config file object
-    config_object = None
 
-    # Read in config
-    if configfile:
-        config_object = configparser.ConfigParser()
-        config_object.optionxform = str
-        # Regen the config if needed or wanted
-        if configregen or not os.path.isfile(configfile):
-            _rewrite_config(module_list, config_object, filepath=configfile)
-
-        config_object.read(configfile)
-        main_config = _get_main_config(config_object, filepath=configfile)
-        if config:
-            file_conf = parse_config(config_object)
-            for key in config:
-                if key not in file_conf:
-                    file_conf[key] = config[key]
-                    file_conf[key]['_load_default'] = True
-                else:
-                    file_conf[key].update(config[key])
-            config = file_conf
-        else:
-            config = parse_config(config_object)
-    else:
-        if config is None:
-            config = {}
-        else:
-            config['_load_default'] = True
-        if 'main' in config:
-            main_config = config['main']
-        else:
-            main_config = DEFAULTCONF
-
-    # If none of the files existed
-    if not filelist:
-        raise ValueError("No valid files")
+    if config is None:
+        config = MSConfigParser()
+    elif isinstance(config, dict):
+        config = msconf.dict_to_config(config)
 
     # Copy files to a share if configured
-    if "copyfilesto" not in main_config:
-        main_config["copyfilesto"] = False
-    if main_config["copyfilesto"]:
-        if os.path.isdir(main_config["copyfilesto"]):
-            filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
+    copyfilesto = config.get('main', 'copyfilesto', fallback=DEFAULTCONF['copyfilesto'])
+    if copyfilesto:
+        if os.path.isdir(copyfilesto):
+            filelist = _copy_to_share(filelist, filedic, copyfilesto)
         else:
-            raise IOError('The copyfilesto dir "' + main_config["copyfilesto"] + '" is not a valid dir')
+            raise IOError('The copyfilesto dir "{}" is not a valid dir'.format(copyfilesto))
 
     # Create the global module interface
     global_module_interface = _GlobalModuleInterface()
 
     # Start a thread for each module
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
-
-    # Write the default configure settings for missing ones
-    if config_object:
-        _write_missing_module_configs(module_list, config_object, filepath=configfile)
 
     # Warn about spaces in file names
     for f in filelist:
@@ -636,7 +449,7 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
         time.sleep(1)
 
     # Delete copied files
-    if main_config["copyfilesto"]:
+    if copyfilesto:
         for item in filelist:
             try:
                 os.remove(item)
@@ -678,20 +491,20 @@ def multiscan(Files, recursive=False, configregen=False, configfile=CONFIG, conf
                     from_filename = filedic[base]
                     subscan_list[i] = (file_path, from_filename, module_name)
 
-        results.extend(_subscan(subscan_list, config, main_config, module_list, global_module_interface))
+        results.extend(_subscan(subscan_list, config, copyfilesto, module_list, global_module_interface))
 
     global_module_interface._cleanup()
 
     return results
 
 
-def _subscan(subscan_list, config, main_config, module_list, global_module_interface):
+def _subscan(subscan_list, config, copyfilesto, module_list, global_module_interface):
     """
     Scans files created by modules
 
     subscan_list - The result of _get_subscan_list() from the global module interface
     config - The configuration dictionary
-    main_config - A dictionary of the configuration for main
+    copyfilesto - Directory to copy files to; if False files will not be copied
     module_list - The list of modules
     global_module_interface - The global module interface
     """
@@ -740,10 +553,8 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
     del subscan_list, subfiles_dict
 
     # Copy files to a share if configured
-    if "copyfilesto" not in main_config:
-        main_config["copyfilesto"] = False
-    if main_config["copyfilesto"]:
-        filelist = _copy_to_share(filelist, filedic, main_config["copyfilesto"])
+    if copyfilesto:
+        filelist = _copy_to_share(filelist, filedic, copyfilesto)
 
     # Start a thread for each module
     thread_list = _start_module_threads(filelist, module_list, config, global_module_interface)
@@ -770,7 +581,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
         time.sleep(1)
 
     # Delete copied files
-    if main_config["copyfilesto"]:
+    if copyfilesto:
         for item in filelist:
             os.remove(item)
 
@@ -809,7 +620,7 @@ def _subscan(subscan_list, config, main_config, module_list, global_module_inter
                 null, from_filename = file_mapping[from_filename]
             subscan_list[i] = (file_path, from_filename, module_name)
 
-        results.extend(_subscan(subscan_list, config, main_config, module_list, global_module_interface))
+        results.extend(_subscan(subscan_list, config, copyfilesto, module_list, global_module_interface))
 
     return results
 
@@ -819,7 +630,7 @@ def _parse_args():
     Parses arguments
     """
     # argparse stuff
-    desc = "MultiScanner v{} - Analyse files against multiple engines"
+    desc = "MultiScanner v{} - Analyze files against multiple engines"
     parser = argparse.ArgumentParser(description=desc.format(MS_VERSION))
     parser.add_argument("-c", "--config", required=False, default=None,
                         help="The config file to use")
@@ -848,12 +659,29 @@ def _parse_args():
     parser.add_argument("--resume", action="store_true",
                         help="Read in the report file and continue where we left off")
     parser.add_argument('Files', nargs='+',
-                        help="Files and Directories to analyse")
+                        help="Files and Directories to analyze")
     return parser.parse_args()
+
+
+def _get_main_modules():
+    module_list = {}
+    module_list['main'] = sys.modules[__name__]  # current module
+    for modname, module in sorted(six.iteritems(msconf.MODULE_LIST)):
+        moddir = module[1]
+        mod = load_module(modname, [moddir])
+        if mod:
+            module_list[modname] = mod
+    return module_list
 
 
 def _init(args):
     # Initialize configuration file
+    if args.config is None:
+        args.config = msconf.CONFIG_FILEPATH
+
+    # Compile all the sections to go in the config
+    module_list = _get_main_modules()
+
     if os.path.isfile(args.config):
         logger.warning('{} already exists, overwriting will destroy changes'.format(args.config))
         try:
@@ -862,53 +690,45 @@ def _init(args):
             logger.warning(e)
             answer = 'N'
         if answer == 'y':
-            config_init(args.config)
+            config = config_init(args.config, module_list, overwrite=True)
+            update_ms_config(config)  # Set global main config
+            logger.info('Main configuration file initialized at {}'.format(args.config))
         else:
-            logger.info('Checking for missing modules in configuration...')
-            ModuleList = parseDir(MODULESDIR, recursive=True, exclude=["__init__"])
-            config = configparser.ConfigParser()
-            config.optionxform = str
-            config.read(args.config)
-            _write_missing_module_configs(ModuleList, config, filepath=args.config)
+            logger.info('Checking for missing modules in main configuration...')
+            config = config_init(args.config, module_list, overwrite=False)
+            update_ms_config(config)  # Set global main config
     else:
-        config_init(args.config)
+        config = config_init(args.config, module_list)
+        update_ms_config(config)  # Set global main config
+        logger.info('Main configuration file initialized at {}'.format(args.config))
 
     # Init storage
-    config = configparser.ConfigParser()
-    config.optionxform = str
-    config.read(args.config)
-    config = _get_main_config(config)
-    if os.path.isfile(config["storage-config"]):
-        logger.warning('{} already exists, overwriting will destroy changes'.format(config["storage-config"]))
+    storage_config = get_config_path('storage')
+    storage_classes = storage._get_storage_classes()
+    storage_classes['main'] = sys.modules[storage.__name__]
+    if os.path.isfile(storage_config):
+        logger.warning('{} already exists, overwriting will destroy changes'.format(storage_config))
         try:
             answer = input('Do you wish to overwrite the configuration file [y/N]:')
         except EOFError as e:
             logger.warning(e)
             answer = 'N'
         if answer == 'y':
-            storage.config_init(config["storage-config"], overwrite=True)
-            logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
+            config_init(storage_config, storage_classes, overwrite=True)
+            logger.info('Storage configuration file initialized at {}'.format(storage_config))
         else:
             logger.info('Checking for missing modules in storage configuration...')
-            storage.config_init(config["storage-config"], overwrite=False)
+            config_init(storage_config, storage_classes, overwrite=False)
     else:
-        storage.config_init(config["storage-config"])
-        logger.info('Storage configuration file initialized at {}'.format(config["storage-config"]))
+        config_init(storage_config, storage_classes)
+        logger.info('Storage configuration file initialized at {}'.format(storage_config))
 
     exit(0)
 
 
 def _main():
-    global CONFIG
-
     # Get args
     args = _parse_args()
-    # Set config or update locations
-    if args.config is None:
-        args.config = CONFIG
-    else:
-        CONFIG = args.config
-        _update_DEFAULTCONF(DEFAULTCONF, CONFIG)
 
     # Send all logs to stderr and set verbose
     if args.debug or args.verbose > 1:
@@ -925,12 +745,23 @@ def _main():
         logging.basicConfig(format="%(asctime)s [%(module)s] %(levelname)s: %(message)s",
                             stream=sys.stderr, level=log_lvl)
 
-    # Checks if user is trying to initialize
-    if str(args.Files) == "['init']" and not os.path.isfile('init'):
+    # Check if user is trying to initialize
+    if args.Files == ['init'] and not os.path.isfile('init'):
         _init(args)
 
+    # Set config or update locations
+    if args.config is None:
+        args.config = msconf.CONFIG_FILEPATH
+    else:
+        update_ms_config_file(args.config)
+        update_paths_in_config(DEFAULTCONF, msconf.CONFIG_FILEPATH)
+
+    module_list = _get_main_modules()
     if not os.path.isfile(args.config):
-        config_init(args.config)
+        config_init(args.config, module_list)
+    else:
+        # Write the default config settings for any missing modules
+        write_missing_config(module_list, msconf.MS_CONFIG, msconf.CONFIG_FILEPATH)
 
     # Make sure report is not a dir
     if args.json:
@@ -938,7 +769,7 @@ def _main():
             sys.exit('ERROR:', args.json, 'is a directory, a file is expected')
 
     # Parse the file list
-    parsedlist = parseFileList(args.Files, recursive=args.recursive)
+    parsedlist = parse_file_list(args.Files, recursive=args.recursive)
 
     # Unzip zip files if asked to
     if args.extractzips:
@@ -990,17 +821,12 @@ def _main():
         starttime = str(datetime.datetime.now())
 
         # Run the multiscan
-        results = multiscan(filelist, configfile=args.config)
+        results = multiscan(filelist, config=msconf.MS_CONFIG)
 
         # We need to read in the config for the parseReports call
-        config = configparser.ConfigParser()
-        config.optionxform = str
-        config.read(args.config)
-        config = _get_main_config(config)
+        config = msconf.MS_CONFIG.get_section('main')
         # Make sure we have a group-types
-        if "group-types" not in config:
-            config["group-types"] = []
-        elif not config["group-types"]:
+        if "group-types" not in config or not config["group-types"]:
             config["group-types"] = []
 
         # Add in script metadata

@@ -1,13 +1,8 @@
-import codecs
-from collections import namedtuple
-import configparser
 from flask import Flask, render_template, request
-import os
 import re
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import __version__
-from multiscanner.common import utils
+from multiscanner.config import get_config_path, read_config
 
 DEFAULTCONF = {
     'HOST': "localhost",
@@ -32,21 +27,9 @@ DEFAULTCONF = {
 app = Flask(__name__)
 
 # Finagle Flask to read config from .ini file instead of .py file
-web_config_object = configparser.ConfigParser()
-web_config_object.optionxform = str
-web_config_file = utils.get_config_path(MS_CONFIG, 'web')
-web_config_object.read(web_config_file)
-if not web_config_object.has_section('web') or not os.path.isfile(web_config_file):
-    # Write default config
-    web_config_object.add_section('web')
-    for key in DEFAULTCONF:
-        web_config_object.set('web', key, str(DEFAULTCONF[key]))
-    conffile = codecs.open(web_config_file, 'w', 'utf-8')
-    web_config_object.write(conffile)
-    conffile.close()
-web_config = utils.parse_config(web_config_object)['web']
-conf_tuple = namedtuple('WebConfig', web_config.keys())(*web_config.values())
-app.config.from_object(conf_tuple)
+web_config_file = get_config_path('web')
+web_config = read_config(web_config_file, {'web': DEFAULTCONF}).get_section('web')
+app.config.update(**web_config)
 
 
 @app.context_processor

@@ -43,8 +43,6 @@ by modifying the 'cors' setting in the 'api' section of the api config file.
 TODO:
 * Add doc strings to functions
 '''
-import codecs
-import configparser
 import hashlib
 import json
 import logging
@@ -68,14 +66,14 @@ from uuid import uuid4
 
 from sqlalchemy.exc import SQLAlchemyError
 
-# TODO: Why do we need to parseDir(MODULEDIR) multiple times?
-from multiscanner import MODULESDIR, MS_WD, multiscan, parse_reports, CONFIG as MS_CONFIG
-from multiscanner.common import utils, pdf_generator, stix2_generator
-from multiscanner.config import PY3
+import multiscanner as ms
+from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
+from multiscanner.common import pdf_generator, stix2_generator
+from multiscanner.config import PY3, get_config_path, read_config
+from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
 from multiscanner.storage import StorageHandler
 from multiscanner.storage import sql_driver as database
 from multiscanner.storage.storage import StorageNotLoadedError
-
 
 TASK_NOT_FOUND = {'Message': 'No task with that ID found!'}
 INVALID_REQUEST = {'Message': 'Invalid request parameters'}
@@ -117,39 +115,22 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Flask(__name__)
 app.json_encoder = CustomJSONEncoder
-api_config_object = configparser.ConfigParser()
-api_config_object.optionxform = str
-# TODO: Why does this multiscanner.common instead of just common?
-api_config_file = utils.get_config_path(MS_CONFIG, 'api')
-api_config_object.read(api_config_file)
-if not api_config_object.has_section('api') or not os.path.isfile(api_config_file):
-    # Write default config
-    api_config_object.add_section('api')
-    for key in DEFAULTCONF:
-        api_config_object.set('api', key, str(DEFAULTCONF[key]))
-    conffile = codecs.open(api_config_file, 'w', 'utf-8')
-    api_config_object.write(conffile)
-    conffile.close()
-api_config = utils.parse_config(api_config_object)
+api_config_file = get_config_path('api')
+api_config = read_config(api_config_file, {'api': DEFAULTCONF, 'Database': database.Database.DEFAULTCONF})
 
-# TODO: fix this mess
-# Needs api_config in order to function properly
-from multiscanner.distributed.celery_worker import multiscanner_celery, ssdeep_compare_celery
-from multiscanner.analytics.ssdeep_analytics import SSDeepAnalytic
-
-db = database.Database(config=api_config.get('Database'))
+db = database.Database(config=api_config.get_section('Database'), regenconfig=False)
 # To run under Apache, we need to set up the DB outside of __main__
 # Sleep and retry until database connection is successful
 try:
     # wait this many seconds between tries
-    db_sleep_time = int(api_config_object.get('Database', 'retry_time'))
-except (configparser.NoSectionError, configparser.NoOptionError) as e:
+    db_sleep_time = int(api_config['Database']['retry_time'])
+except KeyError as e:
     logger.debug(e)
     db_sleep_time = database.Database.DEFAULTCONF['retry_time']
 try:
     # max number of times to retry
-    db_num_retries = int(api_config_object.get('Database', 'retry_num'))
-except (configparser.NoSectionError, configparser.NoOptionError) as e:
+    db_num_retries = int(api_config['Database']['retry_num'])
+except KeyError as e:
     logger.debug(e)
     db_num_retries = database.Database.DEFAULTCONF['retry_num']
 
@@ -168,15 +149,8 @@ for x in range(0, db_num_retries):
         logger.error("Retrying...")
         time.sleep(db_sleep_time)
 
-storage_conf = utils.get_config_path(MS_CONFIG, 'storage')
-storage_handler = StorageHandler(configfile=storage_conf)
+storage_handler = StorageHandler()
 handler = storage_handler.load_required_module('ElasticSearchStorage')
-
-ms_config_object = configparser.ConfigParser()
-ms_config_object.optionxform = str
-ms_configfile = MS_CONFIG
-ms_config_object.read(ms_configfile)
-ms_config = utils.parse_config(ms_config_object)
 
 try:
     DISTRIBUTED = api_config['api']['distributed']
@@ -224,21 +198,18 @@ def multiscanner_process(work_queue, exit_signal):
             else:
                 continue
 
-        filelist = [item[0] for item in metadata_list]
-        # modulelist = [item[5] for item in metadata_list]
-        resultlist = multiscan(
-            filelist, configfile=MS_CONFIG
-            # module_list
-        )
-        results = parse_reports(resultlist, python=True)
-
-        scan_time = datetime.now().isoformat()
-
-        if delete_after_scan:
-            for file_name in results:
-                os.remove(file_name)
-
         for item in metadata_list:
+            filelist = [item[0]]
+            module_list = item[5]
+            resultlist = ms.multiscan(
+                filelist,
+                config=ms.config.MS_CONFIG,
+                module_list=module_list
+            )
+            results = ms.parse_reports(resultlist, python=True)
+
+            scan_time = datetime.now().isoformat()
+
             # Use the original filename as the index instead of the full path
             results[item[1]] = results[item[0]]
             del results[item[0]]
@@ -254,12 +225,15 @@ def multiscanner_process(work_queue, exit_signal):
                 task_status='Complete',
                 timestamp=scan_time,
             )
-        metadata_list = []
 
-        storage_handler.store(results, wait=False)
+            storage_handler.store(results, wait=False)
 
-        filelist = []
+            if delete_after_scan:
+                for file_name in results:
+                    os.remove(file_name)
+
         time_stamp = None
+        metadata_list = []
     storage_handler.close()
 
 
@@ -290,24 +264,10 @@ def modules():
     Return a list of module names available for MultiScanner to use,
     and whether or not they are enabled in the config.
     '''
-    files = utils.parseDir(MODULESDIR, True)
-    filenames = [os.path.splitext(os.path.basename(f)) for f in files]
-    module_names = [m[0] for m in filenames if m[1] == '.py']
-
-    ms_config = configparser.ConfigParser()
-    ms_config.optionxform = str
-    ms_config.read(MS_CONFIG)
-    modules = {}
-    for module in module_names:
-        try:
-            is_enabled = ms_config.get(module, 'ENABLED')
-            if is_enabled == "True":
-                modules[module] = True
-            else:
-                modules[module] = False
-        except (configparser.NoSectionError, configparser.NoOptionError) as e:
-            logger.debug(e)
-    return jsonify(modules)
+    modlist = {name: mod[0] for (name, mod) in ms.config.MODULE_LIST.items()}
+    del modlist['filemeta']
+    del modlist['ssdeeper']
+    return jsonify(modlist)
 
 
 @app.route('/api/v2/tasks', methods=['GET'])
@@ -415,7 +375,7 @@ def save_hashed_filename(f, zipped=False):
     # TODO: should we check if the file is already there
     # and skip this step if it is?
     file_path = os.path.join(api_config['api']['upload_folder'], f_name)
-    full_path = os.path.join(MS_WD, file_path)
+    full_path = os.path.join(ms.MS_WD, file_path)
     if zipped:
         shutil.copy2(f.name, full_path)
     else:
@@ -475,7 +435,8 @@ def import_task(file_):
 
 
 def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
-               queue_name='medium_tasks', priority=5, routing_key='tasks.medium'):
+               module_list=None, queue_name='medium_tasks', priority=5,
+               routing_key='tasks.medium'):
     '''
     Queue up a single new task, for a single non-archive file.
     '''
@@ -492,14 +453,15 @@ def queue_task(original_filename, f_name, full_path, metadata, rescan=False,
 
     if DISTRIBUTED:
         # Publish the task to Celery
+        tmp_config = ms.config.parse_config(ms.config.MS_CONFIG)
         multiscanner_celery.apply_async(
             args=(full_path, original_filename, task_id, f_name, metadata),
-            kwargs=dict(config=MS_CONFIG),
+            kwargs=dict(config=tmp_config, module_list=module_list),
             **{'queue': queue_name, 'priority': priority, 'routing_key': routing_key}
         )
     else:
         # Put the task on the queue
-        work_queue.put((full_path, original_filename, task_id, f_name, metadata))
+        work_queue.put((full_path, original_filename, task_id, f_name, metadata, module_list))
 
     return task_id
 
@@ -546,6 +508,7 @@ def create_task():
     task_id_list = []
     extract_dir = None
     rescan = False
+    modules = None
     priority = 5
     routing_key = 'tasks.medium'
     queue_name = 'medium_tasks'
@@ -558,13 +521,10 @@ def create_task():
             elif request.form[key] == 'rescan':
                 rescan = True
         elif key == 'modules':
-            module_names = request.form[key]
-            files = utils.parseDir(MODULESDIR, True)
-            modules = []
-            for f in files:
-                split = os.path.splitext(os.path.basename(f))
-                if split[0] in module_names and split[1] == '.py':
-                    modules.append(f)
+            module_names = request.form[key].split(',')
+            modules = list(set(module_names).intersection(ms.config.MODULE_LIST.keys()))
+            modules.append('filemeta')
+            modules.append('ssdeeper')
         elif key == 'archive-analyze' and request.form[key] == 'true':
             extract_dir = api_config['api']['upload_folder']
             if not os.path.isdir(extract_dir):
@@ -608,7 +568,9 @@ def create_task():
                     unzipped_file = open(os.path.join(extract_dir, uzfile))
                     f_name, full_path = save_hashed_filename(unzipped_file, True)
                     tid = queue_task(uzfile, f_name, full_path, metadata,
-                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
+                                     rescan=rescan, module_list=modules,
+                                     queue_name=queue_name, priority=priority,
+                                     routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = 'ERROR: Failed to extract ' + str(file_) + ' - ' + str(e)
@@ -625,7 +587,9 @@ def create_task():
                     unrarred_file = open(os.path.join(extract_dir, urfile))
                     f_name, full_path = save_hashed_filename(unrarred_file, True)
                     tid = queue_task(urfile, f_name, full_path, metadata,
-                                     rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
+                                     rescan=rescan, module_list=modules,
+                                     queue_name=queue_name, priority=priority,
+                                     routing_key=routing_key)
                     task_id_list.append(tid)
             except RuntimeError as e:
                 msg = "ERROR: Failed to extract " + str(file_) + ' - ' + str(e)
@@ -638,7 +602,9 @@ def create_task():
             # File was not an archive to extract
             f_name, full_path = save_hashed_filename(file_)
             tid = queue_task(original_filename, f_name, full_path, metadata,
-                             rescan=rescan, queue_name=queue_name, priority=priority, routing_key=routing_key)
+                             rescan=rescan, module_list=modules,
+                             queue_name=queue_name, priority=priority,
+                             routing_key=routing_key)
             task_id_list = [tid]
         except SQLAlchemyError:
             abort(HTTP_BAD_REQUEST, {'Message': 'Could not queue task(s) due backend error'})
@@ -887,8 +853,9 @@ def get_maec_report(task_id):
 
     # Get the MAEC report from Cuckoo
     try:
+        cuckoo_report = ms.config.MS_CONFIG.get('Cuckoo', 'API URL', fallback='')
         maec_report = requests.get(
-            '{}/v1/tasks/report/{}/maec'.format(ms_config.get('Cuckoo', {}).get('API URL', ''), cuckoo_task_id)
+            '{}/v1/tasks/report/{}/maec'.format(cuckoo_report, cuckoo_task_id)
         )
     except Exception as e:
         logger.warning('No MAEC report found for that task! - {}'.format(e))
@@ -1132,7 +1099,8 @@ def generate_pdf_report(task_id):
     if report_dict == TASK_STILL_PROCESSING:
         return make_response(jsonify(TASK_STILL_PROCESSING), HTTP_STILL_PROCESSING)
 
-    pdf = pdf_generator.create_pdf_document(MS_CONFIG, report_dict)
+    config_dir = os.path.split(ms.config.CONFIG_FILEPATH)[0]
+    pdf = pdf_generator.create_pdf_document(config_dir, report_dict)
     response = make_response(pdf)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = 'attachment; filename=%s.pdf' % task_id

@@ -5,7 +5,6 @@ import unittest
 import mock
 import multiscanner
 
-from multiscanner.common import utils
 from multiscanner.distributed import celery_worker
 from multiscanner.storage.sql_driver import Database
 
@@ -20,12 +19,10 @@ MS_WD = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Get a subset of simple modules to run in testing
 # the celery worker
-MODULE_LIST = utils.parseDir(multiscanner.MODULESDIR, recursive=True)
-DESIRED_MODULES = [
-    'filemeta.py',
-    'ssdeep.py'
+MODULES_TO_TEST = [
+    'filemeta',
+    'ssdeep'
 ]
-MODULES_TO_TEST = [i for e in DESIRED_MODULES for i in MODULE_LIST if e in i]
 
 
 TEST_DB_PATH = os.path.join(CWD, 'testing.db')
@@ -41,7 +38,7 @@ TEST_TASK_ID = 1
 with open(TEST_FULL_PATH, 'r') as f:
     TEST_FILE_HASH = hashlib.sha256(f.read().encode('utf-8')).hexdigest()
 TEST_METADATA = {}
-TEST_CONFIG = multiscanner.CONFIG
+TEST_CONFIG = multiscanner.config.MS_CONFIG
 
 TEST_REPORT = {
     'filemeta': {
@@ -60,10 +57,6 @@ def post_file(app):
         data={'file': (BytesIO(b'my file contents'), 'hello world.txt'), })
 
 
-# def mock_delay(file_, original_filename, task_id, f_name, metadata, config):
-#     return TEST_REPORT
-
-
 class CeleryTestCase(unittest.TestCase):
     def setUp(self):
         self.sql_db = Database(config=DB_CONF)
@@ -79,7 +72,6 @@ class CeleryTestCase(unittest.TestCase):
 class TestCeleryCase(CeleryTestCase):
     def setUp(self):
         super(self.__class__, self).setUp()
-        # api.multiscanner_celery.delay = mock_delay
 
     def test_base(self):
         self.assertEqual(True, True)

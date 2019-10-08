@@ -58,8 +58,8 @@ def test_basename_win_path():
     assert result == 'd'
 
 
-def test_parseDir():
+def test_parse_dir():
     path = os.path.abspath(os.path.join(MS_WD, 'tests', 'dir_test'))
-    result = utils.parseDir(path, recursive=False)
+    result = utils.parse_dir(path, recursive=False)
     expected = [os.path.join(path, '1.1.txt'), os.path.join(path, '1.2.txt')]
     assert sorted(result) == sorted(expected)

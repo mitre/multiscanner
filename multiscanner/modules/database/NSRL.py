@@ -8,7 +8,7 @@ import gzip
 import os
 import struct
 
-from multiscanner.config import CONFIG
+import multiscanner as ms
 
 __author__ = "Drew Bonasera"
 __license__ = "MPL 2.0"
@@ -19,8 +19,8 @@ NAME = "NSRL"
 REQUIRES = ["filemeta"]
 
 DEFAULTCONF = {
-    'hash_list': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'hash_list'),
-    'offsets': os.path.join(os.path.split(CONFIG)[0], 'etc', 'nsrl', 'offsets'),
+    'hash_list': os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'nsrl', 'hash_list'),
+    'offsets': os.path.join(os.path.split(ms.config.CONFIG_FILEPATH)[0], 'etc', 'nsrl', 'offsets'),
     'ENABLED': True
 }
 

@@ -19,9 +19,8 @@ standard_library.install_aliases()
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from multiscanner import CONFIG as MS_CONFIG
 from multiscanner import multiscan, parse_reports
-from multiscanner.common import utils
+from multiscanner import config as msconf
 from multiscanner.storage import storage
 
 logger = logging.getLogger(__name__)
@@ -81,8 +80,7 @@ def start_observer(directory, work_queue, recursive=False):
 def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, exit_signal):
     filelist = []
     time_stamp = None
-    storage_conf = utils.get_config_path(config, 'storage')
-    storage_handler = storage.StorageHandler(configfile=storage_conf)
+    storage_handler = storage.StorageHandler()
     while not exit_signal.value:
         time.sleep(1)
         try:
@@ -102,7 +100,7 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
             else:
                 continue
 
-        resultlist = multiscan(filelist, configfile=config)
+        resultlist = multiscan(filelist, config=config)
         results = parse_reports(resultlist, python=True)
         if delete:
             for file_name in results:
@@ -118,13 +116,16 @@ def multiscanner_process(work_queue, config, batch_size, wait_seconds, delete, e
 
 def _main():
     args = _parse_args()
+    if args.config != msconf.CONFIG_FILEPATH:
+        msconf.update_ms_config_file(args.config)
+
     work_queue = multiprocessing.Queue()
     exit_signal = multiprocessing.Value('b')
     exit_signal.value = False
     observer = start_observer(args.Directory, work_queue, args.recursive)
     ms_process = multiprocessing.Process(
         target=multiscanner_process,
-        args=(work_queue, args.config, args.batch, args.seconds, args.delete, exit_signal))
+        args=(work_queue, msconf.MS_CONFIG, args.batch, args.seconds, args.delete, exit_signal))
     ms_process.start()
     try:
         while True:
@@ -141,7 +142,7 @@ def _main():
 def _parse_args():
     parser = argparse.ArgumentParser(description='Monitor a directory and submit new files to MultiScanner')
     parser.add_argument("-c", "--config", help="The config file to use", required=False,
-                        default=MS_CONFIG)
+                        default=msconf.CONFIG_FILEPATH)
     parser.add_argument("-s", "--seconds", help="The number of seconds to wait for additional files",
                         required=False, default=120, type=int)
     parser.add_argument("-b", "--batch", help="The max number of files per batch", required=False,
